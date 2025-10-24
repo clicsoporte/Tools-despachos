@@ -267,8 +267,8 @@ export default function PlannerPage() {
             <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6">
                 <h1 className="text-lg font-semibold md:text-2xl">Órdenes de Producción</h1>
                  <div className="flex items-center gap-2 md:gap-4 flex-wrap">
-                    <Button variant="outline" onClick={() => actions.loadInitialData()} disabled={state.isLoading}>
-                        {state.isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCcw className="mr-2 h-4 w-4" />}
+                    <Button variant="outline" onClick={() => actions.loadInitialData(true)} disabled={state.isRefreshing || state.isLoading}>
+                        {state.isRefreshing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCcw className="mr-2 h-4 w-4" />}
                         Refrescar
                     </Button>
                      <div className="flex items-center gap-1">
@@ -417,7 +417,7 @@ export default function PlannerPage() {
             </Card>
             
             <div className="space-y-4 mt-6">
-                {state.isLoading ? (
+                {(state.isLoading && !state.isRefreshing) ? (
                     Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-56 w-full" />)
                 ) : selectors.filteredOrders.length > 0 ? (
                     selectors.filteredOrders.map(renderOrderCard)

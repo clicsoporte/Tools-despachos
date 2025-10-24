@@ -89,6 +89,7 @@ export const usePlanner = () => {
     const [state, setState] = useState({
         isLoading: true,
         isSubmitting: false,
+        isRefreshing: false,
         isNewOrderDialogOpen: false,
         isEditOrderDialogOpen: false,
         activeOrders: [] as ProductionOrder[],
@@ -139,9 +140,15 @@ export const usePlanner = () => {
         setState(prevState => ({ ...prevState, ...newState }));
     }, []);
 
-    const loadInitialData = useCallback(async (page = 0) => {
+    const loadInitialData = useCallback(async (page = 0, isRefresh = false) => {
         let isMounted = true;
-        updateState({ isLoading: true });
+        
+        if (isRefresh) {
+            updateState({ isRefreshing: true });
+        } else {
+            updateState({ isLoading: true });
+        }
+
         try {
             const [ settingsData, ordersData ] = await Promise.all([
                 getPlannerSettings(),
@@ -173,14 +180,16 @@ export const usePlanner = () => {
                 activeOrders: allOrders.filter(activeFilter),
                 archivedOrders: allOrders.filter(o => !activeFilter(o)),
                 totalArchived: ordersData.totalArchivedCount,
-                isLoading: false,
             });
 
         } catch (error) {
              if (isMounted) {
                 logError("Failed to load planner data", { error: (error as Error).message });
                 toast({ title: "Error", description: "No se pudieron cargar los datos del planificador.", variant: "destructive" });
-                updateState({ isLoading: false });
+            }
+        } finally {
+             if (isMounted) {
+                updateState({ isLoading: false, isRefreshing: false });
             }
         }
         return () => { isMounted = false; };
@@ -279,7 +288,7 @@ export const usePlanner = () => {
         setNotePayload: (payload: { orderId: number; notes: string } | null) => updateState({ notePayload: payload }),
         setActionDialogOpen: (isOpen: boolean) => updateState({ isActionDialogOpen: isOpen }),
         
-        loadInitialData: () => loadInitialData(state.archivedPage),
+        loadInitialData: (isRefresh: boolean = false) => loadInitialData(state.archivedPage, isRefresh),
 
         handleCreateOrder: async () => {
             if (!state.newOrder.customerId || !state.newOrder.productId || !state.newOrder.quantity || !state.newOrder.deliveryDate || !currentUser) return;
@@ -543,7 +552,8 @@ export const usePlanner = () => {
             if (!state.notePayload || !state.notePayload.notes.trim() || !currentUser) return;
             updateState({ isSubmitting: true });
             try {
-                const updatedOrder = await addNoteServer({ ...state.notePayload, updatedBy: currentUser.name });
+                const payload = { ...state.notePayload, updatedBy: currentUser.name };
+                const updatedOrder = await addNoteServer(payload);
                 toast({ title: "Nota Añadida" });
                 setState(prevState => ({
                     ...prevState,
@@ -801,4 +811,3 @@ export const usePlanner = () => {
         isAuthorized,
     };
 };
-

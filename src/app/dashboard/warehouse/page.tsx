@@ -1,3 +1,4 @@
+
 /**
  * @fileoverview Main warehouse search page.
  * This component allows users to search for products or customers and see a consolidated
@@ -34,6 +35,11 @@ type CombinedItem = {
     client?: Customer | null;
 };
 
+const normalizeText = (text: string | null | undefined): string => {
+    if (!text) return "";
+    return text.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+};
+
 export default function WarehousePage() {
     useAuthorization(['warehouse:access']);
     const { setTitle } = usePageTitle();
@@ -52,8 +58,12 @@ export default function WarehousePage() {
     const [stockSettings, setStockSettings] = useState<StockSettings | null>(null);
     const [warehouseSettings, setWarehouseSettings] = useState<{ enablePhysicalInventoryTracking: boolean } | null>(null);
 
-    const loadData = useCallback(async () => {
-        setIsLoading(true);
+    const loadData = useCallback(async (isRefresh = false) => {
+        if (isRefresh) {
+            setIsRefreshing(true);
+        } else {
+            setIsLoading(true);
+        }
         try {
             const wData = await getWarehouseData();
             setLocations(wData.locations);
@@ -68,6 +78,7 @@ export default function WarehousePage() {
             toast({ title: "Error de Carga", description: "No se pudieron cargar los datos del almacén.", variant: "destructive"});
         } finally {
             setIsLoading(false);
+            setIsRefreshing(false);
         }
     }, [toast]);
     
@@ -140,15 +151,15 @@ export default function WarehousePage() {
     const filteredItems = useMemo(() => {
         if (!debouncedSearchTerm) return [];
 
-        const searchTerms = debouncedSearchTerm.toLowerCase().split(' ').filter(Boolean);
+        const searchTerms = normalizeText(debouncedSearchTerm).split(' ').filter(Boolean);
         
         const relevantProducts = products.filter(p => {
-            const targetText = `${p.id} ${p.description}`.toLowerCase();
+            const targetText = normalizeText(`${p.id} ${p.description}`);
             return searchTerms.every(term => targetText.includes(term));
         });
 
         const relevantCustomers = customers.filter(c => {
-            const targetText = `${c.id} ${c.name}`.toLowerCase();
+            const targetText = normalizeText(`${c.id} ${c.name}`);
             return searchTerms.every(term => targetText.includes(term));
         });
         const relevantCustomerIds = new Set(relevantCustomers.map(c => c.id));
@@ -201,11 +212,11 @@ export default function WarehousePage() {
             });
         }
         
-        return Object.values(groupedByItem).sort((a, b) => a.product?.id.localeCompare(b.product?.id || '') || 0);
+        return Object.values(groupedByItem).sort((a, b) => (a.product?.id || '').localeCompare(b.product?.id || ''));
 
     }, [debouncedSearchTerm, products, customers, inventory, itemLocations, stock, warehouseSettings, renderLocationPath]);
 
-    if (isLoading || !warehouseSettings) {
+    if (isLoading && !isRefreshing) {
         return (
             <main className="flex-1 p-4 md:p-6 lg:p-8">
                  <Card className="max-w-4xl mx-auto">
@@ -255,7 +266,7 @@ export default function WarehousePage() {
                             />
                         </div>
                          {
-                            !warehouseSettings.enablePhysicalInventoryTracking && (
+                            warehouseSettings && !warehouseSettings.enablePhysicalInventoryTracking && (
                                 <div className="flex items-center gap-2 p-3 rounded-lg bg-blue-50 border border-blue-200 text-blue-800">
                                     <Info className="h-5 w-5"/>
                                     <p className="text-sm">El modo de control de inventario físico está desactivado. Solo se mostrarán ubicaciones asignadas, no cantidades.</p>
@@ -264,7 +275,11 @@ export default function WarehousePage() {
                         }
                         
                         <div className="space-y-4">
-                            {filteredItems.length > 0 ? (
+                            {isLoading ? (
+                                <div className="text-center py-10">
+                                    <Loader2 className="mx-auto h-8 w-8 animate-spin text-muted-foreground" />
+                                </div>
+                            ) : filteredItems.length > 0 ? (
                                 filteredItems.map(item => (
                                     <Card key={item.product?.id} className="w-full">
                                         <CardHeader>

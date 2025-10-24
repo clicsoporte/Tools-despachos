@@ -263,7 +263,7 @@ export default function LogViewerPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {isLoading ? (
+                  {isLoading && !isRefreshing ? (
                      <TableRow>
                         <TableCell colSpan={3} className="h-24 text-center">
                            <div className="flex justify-center items-center gap-2">
