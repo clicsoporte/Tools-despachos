@@ -104,21 +104,29 @@ export async function deleteDraft(id: string): Promise<void> {
 
 
 export async function getNextDraftNumber(): Promise<number> {
-    const db = await connectDb(COST_ASSISTANT_DB_FILE);
-    const row = db.prepare(`SELECT value FROM settings WHERE key = 'nextDraftNumber'`).get() as { value: string } | undefined;
-    return row ? parseInt(row.value, 10) : 1;
+    const settings = await getCostAssistantDbSettings();
+    return settings.nextDraftNumber || 1;
 }
 
 export async function getCostAssistantDbSettings(): Promise<Partial<CostAssistantSettings>> {
     const db = await connectDb(COST_ASSISTANT_DB_FILE);
-    const rows = db.prepare(`SELECT key, value FROM settings`).all() as {key: string, value: string}[];
     const settings: Partial<CostAssistantSettings> = {};
-    for (const row of rows) {
-        if (row.key === 'draftPrefix') {
-            settings.draftPrefix = row.value;
-        } else if (row.key === 'nextDraftNumber') {
-            settings.nextDraftNumber = Number(row.value);
+    try {
+        // Run migration logic directly here to ensure table exists before querying.
+        await runCostAssistantMigrations(db);
+
+        const rows = db.prepare(`SELECT key, value FROM settings`).all() as {key: string, value: string}[];
+        for (const row of rows) {
+            if (row.key === 'draftPrefix') {
+                settings.draftPrefix = row.value;
+            } else if (row.key === 'nextDraftNumber') {
+                settings.nextDraftNumber = Number(row.value);
+            }
         }
+    } catch (error) {
+        console.error("Error fetching cost assistant DB settings:", error);
+        // Return default values if reading fails, but the table should now exist.
+        return { draftPrefix: 'AC-', nextDraftNumber: 1 };
     }
     return settings;
 }
