@@ -97,8 +97,6 @@ export async function initializePlannerDb(db: import('better-sqlite3').Database)
     db.prepare(`INSERT OR IGNORE INTO planner_settings (key, value) VALUES ('fieldsToTrackChanges', '[]')`).run();
     
     console.log(`Database ${PLANNER_DB_FILE} initialized for Production Planner.`);
-    
-    await runPlannerMigrations(db);
 }
 
 export async function runPlannerMigrations(db: import('better-sqlite3').Database) {

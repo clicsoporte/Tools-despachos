@@ -1,7 +1,7 @@
 /**
  * @fileoverview This file handles the SQLite database connection and provides
  * server-side functions for all database operations. It includes initialization,
- * schema creation, data access, and migration logic for all application modules.
+ * schema creation, data access, and a centralized migration system for all application modules.
  */
 "use server";
 
@@ -97,9 +97,6 @@ async function initializeMainDatabase(db: import('better-sqlite3').Database) {
     
     db.prepare(`INSERT OR IGNORE INTO api_settings (id, exchangeRateApi, haciendaExemptionApi, haciendaTributariaApi) VALUES (1, 'https://api.hacienda.go.cr/indicadores/tc/dolar', 'https://api.hacienda.go.cr/fe/ex?autorizacion=', 'https://api.hacienda.go.cr/fe/ae?identificacion=')`).run();
     console.log(`Database ${DB_FILE} initialized.`);
-
-    // After main initialization, apply its migrations
-    await checkAndApplyMigrations(db);
 }
 
 /**
@@ -178,15 +175,17 @@ export async function connectDb(dbFile: string = DB_FILE, forceRecreate = false)
         if (dbModule?.initFn) {
             await dbModule.initFn(db);
         }
-    } else {
-        if (dbModule?.migrationFn) {
-            try {
-                await dbModule.migrationFn(db);
-            } catch (error) {
-                console.error(`Migration failed for ${dbFile}, but continuing. Error:`, error);
-            }
+    }
+    
+    // Always run migrations on every connection attempt for robustness
+    if (dbModule?.migrationFn) {
+        try {
+            await dbModule.migrationFn(db);
+        } catch (error) {
+            console.error(`Migration failed for ${dbFile}, but continuing. Error:`, error);
         }
     }
+
 
     try {
         db.pragma('journal_mode = WAL');
