@@ -1,6 +1,6 @@
 # Clic-Tools: Documentación Técnica y Manual de Usuario
 
-**Clic-Tools v1.7.0** es una aplicación web interna diseñada para centralizar herramientas y procesos empresariales clave en un único panel de control. El objetivo es proporcionar una plataforma sencilla, rápida, segura y altamente configurable, optimizada para su uso en una red local (LAN).
+**Clic-Tools v1.8.0** es una aplicación web interna diseñada para centralizar herramientas y procesos empresariales clave en un único panel de control. El objetivo es proporcionar una plataforma sencilla, rápida, segura y altamente configurable, optimizada para su uso en una red local (LAN).
 
 ---
 
@@ -43,19 +43,25 @@
 
 ## 3. Guía de Módulos (Funcionalidades)
 
-### 3.1. Cotizador (`/dashboard/quoter`)
+### 3.1. Centro de Notificaciones (¡Nuevo!)
+- **Alertas Proactivas:** Un icono de campana en la cabecera muestra un contador de notificaciones no leídas y se anima sutilmente cuando llega una nueva.
+- **Bandeja de Tareas Interactiva:** Al hacer clic en la campana, se despliega un panel con las últimas notificaciones. Cada notificación es un enlace directo a la entidad correspondiente (una orden, una solicitud, etc.).
+- **Notificaciones Accionables:** Ciertas notificaciones (ej: "Se solicita cancelar una orden") incluyen botones para realizar acciones rápidas directamente desde el panel, como "Aprobar" o "Rechazar", convirtiendo las notificaciones en una herramienta de gestión activa.
+- **Inteligencia de Contexto:** El sistema notifica a usuarios específicos (ej: el creador de una orden) o a roles completos (ej: todos los administradores) según la relevancia de la acción.
+
+### 3.2. Cotizador (`/dashboard/quoter`)
 - **Creación Rápida:** Permite buscar y añadir clientes y productos de forma ágil, con autocompletado y atajos de teclado. Muestra la cédula del cliente para evitar confusiones.
 - **Validación en Tiempo Real:** Verifica el estado de exoneración de un cliente directamente con la API de Hacienda al seleccionarlo.
 - **Generación de PDF:** Crea documentos de cotización profesionales con la información de la empresa.
 
-### 3.2. Asistente de Costos (`/dashboard/cost-assistant`)
+### 3.3. Asistente de Costos (`/dashboard/cost-assistant`)
 - **Análisis de Facturas:** Carga facturas de compra en formato XML y extrae automáticamente todos los artículos, cantidades y costos.
 - **Prorrateo de Costos:** Permite ingresar costos adicionales (transporte, aduanas, etc.) que se distribuyen automáticamente entre todos los artículos para obtener un costo final real.
 - **Manejo de Descuentos:** Configura si los descuentos de la factura se trasladan al costo (beneficiando al cliente) o a la ganancia (beneficiando a la empresa).
 - **Cálculo de Precios de Venta:** Ingresa el margen de ganancia deseado para cada artículo y el sistema calcula el precio de venta final sugerido.
 - **Exportación a ERP:** Genera un archivo Excel (`.xlsx`) formateado para ser importado directamente en tu ERP, actualizando los precios de venta de los artículos analizados.
 
-### 3.3. Planificador (`/dashboard/planner`)
+### 3.4. Planificador (`/dashboard/planner`)
 - **Gestión de Órdenes:** Permite crear, editar y visualizar órdenes de producción, mostrando siempre el nombre y la cédula del cliente para mayor claridad.
 - **Visibilidad Controlada:** Por defecto, los usuarios solo ven las órdenes que ellos han creado. Un permiso especial (`planner:read:all`) permite a supervisores y administradores ver todas las órdenes.
 - **Flujo de Estados Completo:** Controla el ciclo de vida de una orden (Pendiente, Aprobada, En Progreso, Completada, etc.).
@@ -67,7 +73,7 @@
 - **Interfaz Optimizada**: La vista de órdenes ahora cuenta con un **encabezado fijo** que permanece visible al hacer scroll, mejorando la legibilidad.
 - **Exportación Flexible:** Permite exportar la vista actual (con filtros) a un archivo **PDF** o **Excel (.xlsx)**.
 
-### 3.4. Solicitud de Compra (`/dashboard/requests`)
+### 3.5. Solicitud de Compra (`/dashboard/requests`)
 - **Visibilidad Controlada:** Igual que el planificador, los usuarios ven por defecto solo sus propias solicitudes. El permiso `requests:read:all` otorga visibilidad total.
 - **Flujo de Aprobación Flexible:**
   - Controla el ciclo de vida de una solicitud, desde "Pendiente" hasta "Recibida".
@@ -78,26 +84,26 @@
 - **Interfaz Optimizada**: La vista de solicitudes ahora cuenta con un **encabezado fijo** que permanece visible al hacer scroll.
 - **Exportación Flexible:** Permite exportar la vista actual (con filtros) a un archivo **PDF** o **Excel (.xlsx)**.
 
-### 3.5. Analíticas y Reportes (`/dashboard/analytics`)
+### 3.6. Analíticas y Reportes (`/dashboard/analytics`)
 Este módulo agrupa herramientas de inteligencia de negocio para ayudar en la toma de decisiones.
 - **Sugerencias de Compra Proactivas (`/purchase-suggestions`):**
     - Analiza los pedidos de venta del ERP en un rango de fechas y los cruza con el inventario actual.
     - Genera una lista consolidada de todos los artículos que tienen un faltante de stock para cumplir con la demanda.
     - Permite filtrar por clasificación de producto (con multiselección), ordenar los resultados por cualquier columna y paginar la lista.
 
-### 3.6. Almacenes (`/dashboard/warehouse`)
+### 3.7. Almacenes (`/dashboard/warehouse`)
 - **Consulta de Inventario:** Permite buscar artículos o clientes y ver sus ubicaciones y existencias en tiempo real, combinando datos del ERP y las ubicaciones físicas asignadas.
 - **Asignación de Ubicaciones:** Herramienta para mover inventario o asignar artículos a ubicaciones físicas en el almacén.
 - **Configuración Flexible:** Soporta un modo "informativo" (solo asignación) y un modo "avanzado" (conteo de existencias físicas por ubicación).
 
-### 3.7. Consultas Hacienda (`/dashboard/hacienda`)
+### 3.8. Consultas Hacienda (`/dashboard/hacienda`)
 - **Búsqueda Unificada:** Centraliza la consulta de situación tributaria y exoneraciones de un cliente.
 
-### 3.8. Buzón de Sugerencias (`/dashboard/admin/suggestions`)
+### 3.9. Buzón de Sugerencias (`/dashboard/admin/suggestions`)
 - **Feedback Directo:** Permite a los usuarios enviar sugerencias o reportar problemas directamente desde la interfaz.
 - **Panel de Administración:** Los administradores pueden ver, gestionar y marcar como leídas las sugerencias para un seguimiento efectivo.
 
-### 3.9. Centro de Ayuda (`/dashboard/help`)
+### 3.10. Centro de Ayuda (`/dashboard/help`) (¡Nuevo!)
 - **Documentación Integrada**: Una guía de usuario completa y siempre actualizada, directamente accesible desde la aplicación.
 - **Búsqueda Inteligente**: Incluye una barra de búsqueda que filtra y resalta las secciones relevantes en tiempo real.
 

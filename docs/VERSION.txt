@@ -1,1 +1,1 @@
-Clic-Tools v1.7.0 - Recuperación de Contraseña y Mejoras de Flujo
+Clic-Tools v1.8.0 - Notificaciones y Centro de Ayuda
