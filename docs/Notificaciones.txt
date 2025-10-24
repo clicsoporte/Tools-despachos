@@ -1,7 +1,7 @@
 # Plan de Acción y Lluvia de Ideas: Sistema de Notificaciones Unificado
 # Versión 2.0 - 2024-10-27
 
-Este documento es nuestra guía maestra para el diseño e implementación del nuevo centro de notificaciones de Clic-Tools, enriquecida con conceptos de la industria observados en el proyecto de ejemplo "Novu".
+Este documento es nuestra guía maestra para el diseño e implementación del nuevo centro de notificaciones de Clic-Tools.
 
 ---
 
@@ -19,33 +19,15 @@ El objetivo es crear un sistema de notificaciones unificado y proactivo dentro d
 
 ---
 
-## 2. Análisis Conceptual (Inspirado en "Novu")
+## 2. Plan de Implementación Técnico
 
-La revisión de los archivos de ejemplo del proyecto "Novu" valida nuestro enfoque y nos da ideas sobre cómo estructurar un sistema robusto a gran escala.
+### Fase 1: La Base de Datos (El Almacén) - COMPLETADA
 
-- **Separación de Servicios:** La idea de separar `api`, `worker` (tareas en segundo plano) y `dashboard` es una práctica sólida que, aunque no implementaremos como microservicios separados por ahora, sí mantendremos lógicamente en nuestra arquitectura de carpetas.
-- **Capa de Acceso a Datos (DAL):** Nuestro enfoque de tener archivos `db.ts` por módulo se alinea con la idea de una DAL, aislando la lógica de la base de datos.
-- **Entidades Clave:** El análisis de la especificación de la API de Novu (`5.txt`) confirma que nuestro modelo de entidades es correcto. Conceptos como `Subscribers` (nuestros `Users`), `Events` (los disparadores) y `Workflows` (nuestros flujos de estado) son el estándar de la industria.
-- **Concepto de "Topics":** La idea de Novu de usar "Topics" para agrupar suscriptores es una versión más avanzada de nuestra idea de "notificar a un rol". Lo incorporaremos como una posible mejora futura.
-- **Concepto de "Layouts" (Plantillas Maestras):** El análisis de `3.5.txt` revela el uso de "Layouts" reutilizables. Esta es una idea clave que adoptaremos: tendremos una plantilla de correo maestra y el contenido dinámico de cada notificación se inyectará en ella. Esto asegura consistencia y facilita el mantenimiento.
-- **Gestión del Ciclo de Vida:** El análisis de `3.6.txt` muestra funcionalidades avanzadas como "posponer" (snooze) y **acciones dentro de la notificación**. Adoptaremos la idea de las acciones para hacer el sistema más interactivo.
-- **Robustez y Escalabilidad (Rate Limiting, Idempotencia):** El análisis de `4.txt` revela que "Novu" utiliza sistemas avanzados de `Rate Limiting` e `Idempotencia` para garantizar que su API sea robusta y escalable. Para nuestra aplicación interna en una red LAN, esta complejidad no es necesaria en la primera versión, pero es una excelente referencia de buenas prácticas si alguna vez la aplicación necesita escalar.
-- **Nueva Funcionalidad Inspirada: Centro de Ayuda Integrado:** El análisis de `2.txt` muestra cómo "Novu" renderiza su documentación directamente en la aplicación. Esto inspira la creación de un nuevo módulo `/dashboard/help` para Clic-Tools, que contendrá una guía de usuario completa y con capacidad de búsqueda, mejorando la autonomía del usuario.
-- **Análisis Final:** Otros archivos (`2-1.txt` a `2-6.txt`, `3-1.txt` a `3-4.txt`) confirman que "Novu" es una aplicación de nivel empresarial con un fuerte enfoque en pruebas, componentes de UI reutilizables y utilidades de bajo nivel. Estos detalles, aunque interesantes, no alteran nuestro plan de acción, ya que utilizamos `ShadCN UI` y `Next.js` que ya nos proveen de estas capacidades.
-
-**Conclusión:** La fase de planificación conceptual ha finalizado. Seguiremos con nuestro plan adaptado a Next.js y `better-sqlite3`, pero usando los conceptos de Novu como una referencia de arquitectura de alta calidad.
-
----
-
-## 3. Plan de Implementación Técnico
-
-### Fase 1: La Base de Datos (El Almacén)
-
-- **Archivo a Modificar:** `src/modules/core/lib/db.ts`
+- **Archivo Modificado:** `src/modules/core/lib/db.ts`
 - **Acción:**
-  1.  Añadir una nueva tabla `notifications` a la función `initializeMainDatabase`.
-  2.  Añadir la creación de esta tabla a la función de migración `checkAndApplyMigrations` para asegurar la compatibilidad con instalaciones existentes.
-- **Esquema de la Tabla `notifications`:**
+  1.  Añadida la nueva tabla `notifications` en `initializeMainDatabase`.
+  2.  Añadida la creación de esta tabla a la función de migración `checkAndApplyMigrations`.
+- **Esquema Final:**
     ```sql
     CREATE TABLE notifications (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -54,43 +36,41 @@ La revisión de los archivos de ejemplo del proyecto "Novu" valida nuestro enfoq
         href TEXT,
         isRead INTEGER DEFAULT 0,
         timestamp TEXT NOT NULL,
-        entityId INTEGER,      -- ID de la orden, solicitud, etc.
-        entityType TEXT,       -- 'production-order', 'purchase-request'
-        taskType TEXT,         -- 'approve', 'review', 'cancellation-request'
+        entityId INTEGER,
+        entityType TEXT,
+        taskType TEXT,
         FOREIGN KEY (userId) REFERENCES users(id) ON DELETE CASCADE
     );
     ```
 
-### Fase 2: El Backend (La Lógica)
+### Fase 2: El Backend (La Lógica) - COMPLETADA
 
-- **Nuevo Archivo:** `src/modules/core/lib/notifications-actions.ts`
-- **Acciones a Crear (Funciones Server-Side):**
-  - **`createNotification(userId, message, href, entityId, entityType, taskType)`**: Crea una notificación para un usuario específico. El `taskType` definirá qué acciones (botones) mostrar.
-  - **`createNotificationForRole(roleId, message, href, ...)`**: Busca todos los usuarios que pertenecen a un rol y les crea una notificación individual. Esta será nuestra implementación inicial de "topics".
-  - **`getNotificationsForUser(userId)`**: Obtiene las últimas 50 notificaciones (leídas y no leídas) para un usuario, ordenadas por fecha.
-  - **`markNotificationAsRead(notificationId, userId)`**: Marca una notificación específica como leída. Deberá validar que la notificación pertenezca al usuario.
-  - **`markAllNotificationsAsRead(userId)`**: Marca todas las notificaciones de un usuario como leídas.
-  - **`executeNotificationAction(notificationId, actionType)`**: Una nueva función que ejecutará una acción asociada a un botón (ej: llamar a `updateProductionOrderStatus` con el estado 'approved').
+- **Archivo Creado:** `src/modules/core/lib/notifications-actions.ts`
+- **Acciones Implementadas:**
+  - `createNotification(data)`: Crea una notificación para un usuario.
+  - `createNotificationForRole(roleId, ...)`: Crea notificaciones para todos los usuarios de un rol.
+  - `getNotificationsForUser(userId)`: Obtiene las notificaciones de un usuario.
+  - `markNotificationAsRead(notificationId, userId)`: Marca una notificación como leída.
+  - `markAllNotificationsAsRead(userId)`: Marca todas como leídas.
+  - `executeNotificationAction(notificationId, actionType, ...)`: Ejecuta una acción (aprobar/rechazar) desde una notificación.
 
-### Fase 3: La Interfaz (Lo que el Usuario Ve)
+### Fase 3: La Interfaz (Lo que el Usuario Ve) - COMPLETADA
 
-- **Nuevo Componente:** `src/components/layout/notification-bell.tsx`
-  - Usará un `Popover` de ShadCN para mostrar la lista de notificaciones.
-  - Mostrará un `Badge` con el contador de notificaciones no leídas.
-  - Cada notificación será un `Link` que al hacer clic llamará a `markNotificationAsRead` y navegará al `href`.
-  - **(Nuevo)** Si una notificación tiene un `taskType` (ej: 'approve'), mostrará botones de acción. Al hacer clic en un botón, se llamará a `executeNotificationAction`.
-  - **(Mejora UX)** La fecha de la notificación se mostrará en formato relativo (ej. "hace 5 min") y con la fecha exacta al pasar el mouse encima.
-- **Modificar `useAuth`:** El hook `useAuth` se encargará de obtener periódicamente (ej. cada 30 segundos) las notificaciones del usuario y el contador de no leídas para que estén disponibles globalmente.
-- **Modificar `header.tsx`:** Se añadirá el componente `NotificationBell` a la cabecera.
+- **Componente Creado:** `src/components/layout/notification-bell.tsx`
+  - Usa `Popover` de ShadCN para mostrar la lista.
+  - Muestra un contador de no leídas.
+  - Cada notificación es un `Link` que marca como leída y navega.
+  - Muestra botones de acción para notificaciones accionables.
+- **Integración:**
+  - El hook `useAuth` ahora obtiene y provee las notificaciones globalmente.
+  - `header.tsx` incluye el componente `NotificationBell`.
 
-### Fase 4: La Integración (Los Disparadores)
+### Fase 4: La Integración (Los Disparadores) - COMPLETADA
 
-Aquí es donde el sistema cobra vida.
-
-- **Archivos a Modificar:** Principalmente en los archivos `actions.ts` de los módulos `planner` y `requests`.
-- **Lógica de Ejemplo:**
-  - En `updateProductionOrderStatus`, si el estado cambia a `approved`, se llamará a `createNotification` para notificar al `requestedBy`.
-  - En `updatePendingAction` (planner y requests), si se solicita una cancelación (`cancellation-request`), se llamará a `createNotificationForRole` para notificar a todos los `'admin'` con el `taskType: 'approve-cancellation'`.
+- **Archivos Modificados:** `planner/lib/actions.ts` y `requests/lib/actions.ts`.
+- **Lógica Implementada:**
+  - En `updateProductionOrderStatus`, se notifica al creador sobre cambios de estado.
+  - En `updatePendingAction` de ambos módulos, se notifica a los administradores sobre solicitudes de cancelación, asignando el `taskType: 'cancellation-request'`.
 
 ### Fase 5 (Futura): Evolución a "Topics"
 
@@ -101,6 +81,6 @@ Aquí es donde el sistema cobra vida.
 
 ## 4. Limitaciones Actuales
 
-- **No habrá notificaciones push** del navegador o del sistema operativo.
-- **No habrá notificaciones por correo electrónico en tiempo real** para cada evento, para evitar el spam. El sistema se centrará en las notificaciones *dentro* de la aplicación.
+- No hay notificaciones push del navegador o del sistema operativo.
+- No hay notificaciones por correo electrónico en tiempo real para cada evento.
 - La primera versión no incluirá la función de "posponer" (snooze).
