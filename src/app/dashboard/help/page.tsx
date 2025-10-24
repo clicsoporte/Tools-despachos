@@ -151,7 +151,7 @@ export default function HelpPage() {
                         <strong>Redirección Inteligente:</strong> Cada notificación es un enlace. Al hacerle clic, te llevará directamente a la orden, solicitud o sección correspondiente.
                     </li>
                     <li>
-                        <strong>Marcar como Leídas:</strong> Al hacer clic en una notificación, se marca automáticamente como leída. También puedes usar el botón "Marcar todas como leídas" para limpiar tu bandeja.
+                        <strong>Marcar como Leídas:</strong> Al hacer clic en una notificación, se marca automáticamente como leída. También puedes usar el botón &quot;Marcar todas como leídas&quot; para limpiar tu bandeja.
                     </li>
                 </ul>
 
@@ -159,7 +159,7 @@ export default function HelpPage() {
                     <AlertTriangle className="h-4 w-4" />
                     <AlertTitle>Notificaciones Accionables</AlertTitle>
                     <AlertDescription>
-                        Algunas notificaciones, como las de "solicitud de cancelación", incluirán botones de acción rápida (ej: "Aprobar", "Rechazar"). Esto te permite gestionar tareas críticas directamente desde el panel de notificaciones sin tener que navegar a la página específica.
+                        Algunas notificaciones, como las de &quot;solicitud de cancelación&quot;, incluirán botones de acción rápida (ej: &quot;Aprobar&quot;, &quot;Rechazar&quot;). Esto te permite gestionar tareas críticas directamente desde el panel de notificaciones sin tener que navegar a la página específica.
                     </AlertDescription>
                 </Alert>
             </div>
@@ -855,3 +855,4 @@ export default function HelpPage() {
     </main>
   );
 }
+
