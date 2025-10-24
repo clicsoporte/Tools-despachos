@@ -20,45 +20,37 @@ export function useAuthorization(requiredPermissions: string[] = []): UseAuthori
     const router = useRouter();
     const pathname = usePathname();
     const { toast } = useToast();
-    const { user, userRole, isLoading } = useAuth(); // Use the new central auth context
+    const { user, userRole, isLoading, isReady } = useAuth(); // Use isReady from the central auth context
 
     const userPermissions = useMemo(() => userRole?.permissions || [], [userRole]);
 
     const isAuthorized = useMemo(() => {
-        if (isLoading) return null; // Still loading, no decision yet
-        if (!user || !userRole) return false; // No user or role, not authorized
+        if (!isReady) return null; // Wait until all auth data is ready before making a decision.
+        if (!user || !userRole) return false; // No user or role, not authorized.
         
-        // If no specific permissions are required, just being logged in is enough
+        // If no specific permissions are required, being logged in and ready is enough.
         if (requiredPermissions.length === 0) return true;
         
         // Admin has all permissions, always.
         if (userRole.id === 'admin') return true;
         
-        // Check if the user has at least one of the required permissions
+        // Check if the user has at least one of the required permissions.
         return requiredPermissions.some(p => userPermissions.includes(p));
-    }, [isLoading, user, userRole, requiredPermissions, userPermissions]);
+    }, [isReady, user, userRole, requiredPermissions, userPermissions]);
 
     useEffect(() => {
-        // Only act if authorization status is definitively decided (not null) and it's negative
+        // Only act if authorization status is definitively decided (not null) and it's negative.
         if (isAuthorized === false) {
              // Instead of a toast and redirect which can cause a flash of content,
              // components should use the `isAuthorized` flag to conditionally render.
              // This keeps the control within the component and provides a smoother experience.
              // If a component absolutely needs a redirect, it can implement it itself.
-             // We'll show a toast only if the user somehow lands on a protected page.
-            if (pathname !== '/dashboard' && pathname !== '/') {
-                 toast({
-                    title: 'Acceso Denegado',
-                    description: 'No tienes los permisos necesarios para ver esta página.',
-                    variant: 'destructive'
-                });
-                router.replace('/dashboard');
-            }
+             // The main redirect logic is now in DashboardLayout.
         }
     }, [isAuthorized, router, toast, pathname]);
 
     const hasPermission = (permission: string) => {
-        if (isLoading || !userRole) return false;
+        if (!isReady || !userRole) return false;
         if (userRole.id === 'admin') return true;
         return userPermissions.includes(permission);
     };

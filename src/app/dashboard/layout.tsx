@@ -38,37 +38,36 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { user, isLoading } = useAuth();
+  const { user, isReady, isLoading } = useAuth();
   const router = useRouter();
-  const [isVerified, setIsVerified] = useState(false);
 
+  // This effect is the single source of truth for session verification.
+  // It waits until the auth state is fully resolved.
   useEffect(() => {
-    // This effect is the single source of truth for session verification.
-    // It waits until the auth state is fully resolved (isLoading is false).
-    if (!isLoading) {
-      if (user) {
-        // If there's a user, we can safely show the dashboard.
-        setIsVerified(true);
-      } else {
-        // If there's no user after loading, it means the session is invalid.
-        // Redirect to the login page. This is the only place this redirect happens.
-        router.replace('/');
-      }
+    // If loading is finished (`!isLoading`) but the context isn't ready and there's no user,
+    // it implies an invalid session (e.g., deleted user, expired token). Redirect to login.
+    if (!isLoading && !isReady && !user) {
+      router.replace('/');
     }
-  }, [isLoading, user, router]);
+  }, [isLoading, isReady, user, router]);
 
-  // While waiting for the initial check, show a global loading screen.
-  // We use `!isVerified` which covers both the initial `isLoading` state
-  // and the brief moment before the redirect happens if the user is not authenticated.
-  if (!isVerified) {
+  // While waiting for the initial check and for all auth data to be ready,
+  // show a global loading screen.
+  if (isLoading || !isReady) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-background">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
       </div>
     );
   }
+  
+  // If after all loading, there is still no user, render nothing to avoid flashes
+  // while the redirect effect takes place.
+  if (!user) {
+      return null;
+  }
 
-  // Once verified, render the full dashboard layout.
+  // Once ready and user is confirmed, render the full dashboard layout.
   return (
       <PageTitleProvider initialTitle="Panel">
         <SidebarProvider>

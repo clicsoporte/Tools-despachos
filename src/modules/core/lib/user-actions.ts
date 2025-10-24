@@ -24,7 +24,9 @@ export async function createFirstUser(
   clientInfo: { ip: string, host: string }
 ): Promise<void> {
   // Force a recreation of the main DB to ensure it's not corrupt from a bad reset.
-  const db = await connectDb(DB_FILE, true);
+  // This adds resilience to the setup process.
+  await connectDb(DB_FILE, true); 
+  const db = await connectDb(DB_FILE);
   
   const userCount = await getUserCount();
   if (userCount > 0) {
