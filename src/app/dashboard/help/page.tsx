@@ -17,7 +17,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "../../../components/ui/accordion";
-import { Code, FileUp, FileTerminal, Network, ShieldCheck, Users, Building, FileDown, PlusCircle, UserCog, DatabaseZap, Keyboard, DollarSign, ShieldQuestion, LifeBuoy, Rocket, Boxes, CalendarCheck, ShoppingCart, Truck, PackageCheck, Factory, CheckCircle, XCircle, ShieldAlert, Search, Wrench, Map, PackagePlus, BookMarked, Save, Copy, Folder, AlertTriangle, ToggleRight, FilePlusIcon, Warehouse, Send, Loader2, Play, Pause, History, Undo2, Info, BadgeInfo, CreditCard, MessageSquare, Trash2, Download, Briefcase, Store, ListChecks, Hourglass, Layers, UploadCloud, BarChartBig, Lightbulb, FileText, Calculator, PanelLeft, Mail, KeyRound } from "lucide-react";
+import { Code, FileUp, FileTerminal, Network, ShieldCheck, Users, Building, FileDown, PlusCircle, UserCog, DatabaseZap, Keyboard, DollarSign, ShieldQuestion, LifeBuoy, Rocket, Boxes, CalendarCheck, ShoppingCart, Truck, PackageCheck, Factory, CheckCircle, XCircle, ShieldAlert, Search, Wrench, Map, PackagePlus, BookMarked, Save, Copy, Folder, AlertTriangle, ToggleRight, FilePlusIcon, Warehouse, Send, Loader2, Play, Pause, History, Undo2, Info, BadgeInfo, CreditCard, MessageSquare, Trash2, Download, Briefcase, Store, ListChecks, Hourglass, Layers, UploadCloud, BarChartBig, Lightbulb, FileText, Calculator, PanelLeft, Mail, KeyRound, BellRing } from "lucide-react";
 import { Skeleton } from "../../../components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useAuth } from "@/modules/core/hooks/useAuth";
@@ -128,6 +128,41 @@ export default function HelpPage() {
                     </AlertDescription>
                 </Alert>
             </>
+        )
+    },
+    {
+        title: "Guía del Centro de Notificaciones",
+        icon: <BellRing className="mr-4 h-6 w-6 text-yellow-500" />,
+        content: (
+             <div className="space-y-4">
+                <p>
+                El Centro de Notificaciones es el corazón de la comunicación proactiva de la aplicación. En lugar de que tengas que revisar constantemente los módulos, el sistema te avisará cuando algo requiera tu atención.
+                </p>
+                
+                <h4 className="font-semibold text-lg pt-2 border-t">¿Cómo Funciona?</h4>
+                <ul className="list-disc space-y-3 pl-6">
+                    <li>
+                        <strong>Icono de Campana (<BellRing className="inline h-4 w-4"/>):</strong> Ubicado en la cabecera, este icono mostrará un punto rojo con un número que indica cuántas notificaciones tienes sin leer. Si llega una nueva, se animará sutilmente.
+                    </li>
+                    <li>
+                        <strong>Panel de Notificaciones:</strong> Al hacer clic en la campana, se desplegará una lista con tus últimas notificaciones, ordenadas de la más reciente a la más antigua.
+                    </li>
+                    <li>
+                        <strong>Redirección Inteligente:</strong> Cada notificación es un enlace. Al hacerle clic, te llevará directamente a la orden, solicitud o sección correspondiente.
+                    </li>
+                    <li>
+                        <strong>Marcar como Leídas:</strong> Al hacer clic en una notificación, se marca automáticamente como leída. También puedes usar el botón "Marcar todas como leídas" para limpiar tu bandeja.
+                    </li>
+                </ul>
+
+                <Alert variant="default" className="mt-4">
+                    <AlertTriangle className="h-4 w-4" />
+                    <AlertTitle>Notificaciones Accionables</AlertTitle>
+                    <AlertDescription>
+                        Algunas notificaciones, como las de "solicitud de cancelación", incluirán botones de acción rápida (ej: "Aprobar", "Rechazar"). Esto te permite gestionar tareas críticas directamente desde el panel de notificaciones sin tener que navegar a la página específica.
+                    </AlertDescription>
+                </Alert>
+            </div>
         )
     },
     {
@@ -723,7 +758,22 @@ export default function HelpPage() {
         icon: <ListChecks className="mr-4 h-6 w-6 text-fuchsia-600" />,
         content: (
              <div className="space-y-4">
-                <h4 className="font-semibold text-lg">Versión 1.7.0 <Badge variant="secondary">Actual</Badge></h4>
+                <h4 className="font-semibold text-lg">Versión 1.8.0 <Badge variant="secondary">Actual</Badge></h4>
+                <p className="text-sm text-muted-foreground">Lanzamiento: Octubre 2024</p>
+                <ul className="list-disc space-y-3 pl-6">
+                    <li>
+                        <strong>Nueva Funcionalidad Mayor: Centro de Notificaciones.</strong> Se ha añadido un sistema de notificaciones en tiempo real dentro de la aplicación.
+                        <ul className="list-[circle] space-y-2 pl-5 mt-2 text-sm">
+                            <li>Un icono de campana en la cabecera alerta sobre nuevas notificaciones.</li>
+                            <li>El panel de notificaciones permite ver y navegar directamente a las órdenes o solicitudes relevantes.</li>
+                            <li>Ciertas notificaciones son accionables, permitiendo aprobar o rechazar tareas directamente desde el panel.</li>
+                        </ul>
+                    </li>
+                     <li>
+                        <strong>Nuevo Módulo: Centro de Ayuda.</strong> Se ha añadido una guía de usuario interactiva y con capacidad de búsqueda directamente en la aplicación para mejorar la autonomía del usuario.
+                    </li>
+                </ul>
+                 <h4 className="font-semibold text-lg pt-4 border-t">Versión 1.7.0</h4>
                 <p className="text-sm text-muted-foreground">Lanzamiento: Octubre 2024</p>
                 <ul className="list-disc space-y-3 pl-6">
                      <li>
