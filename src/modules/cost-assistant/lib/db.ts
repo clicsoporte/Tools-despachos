@@ -35,6 +35,29 @@ export async function initializeCostAssistantDb(db: import('better-sqlite3').Dat
     console.log(`Database ${COST_ASSISTANT_DB_FILE} initialized for Cost Assistant.`);
 }
 
+/**
+ * Checks for and applies necessary database schema migrations for the Cost Assistant module.
+ * @param db - The database instance to migrate.
+ */
+export async function runCostAssistantMigrations(db: import('better-sqlite3').Database) {
+    try {
+        const settingsTable = db.prepare(`SELECT name FROM sqlite_master WHERE type='table' AND name='settings'`).get();
+        if (!settingsTable) {
+            console.log("MIGRATION (cost_assistant.db): Creating 'settings' table.");
+            db.exec(`
+                CREATE TABLE settings (
+                    key TEXT PRIMARY KEY,
+                    value TEXT NOT NULL
+                );
+            `);
+            db.prepare(`INSERT OR IGNORE INTO settings (key, value) VALUES ('nextDraftNumber', '1')`).run();
+            db.prepare(`INSERT OR IGNORE INTO settings (key, value) VALUES ('draftPrefix', 'AC-')`).run();
+        }
+    } catch (error) {
+        console.error("Error during cost assistant migrations:", error);
+    }
+}
+
 
 export async function getAllDrafts(userId: number): Promise<CostAnalysisDraft[]> {
     const db = await connectDb(COST_ASSISTANT_DB_FILE);

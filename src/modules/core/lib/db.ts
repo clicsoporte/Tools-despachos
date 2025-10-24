@@ -17,7 +17,7 @@ import { logInfo, logWarn, logError } from './logger';
 import { initializePlannerDb, runPlannerMigrations } from '../../planner/lib/db';
 import { initializeRequestsDb, runRequestMigrations } from '../../requests/lib/db';
 import { initializeWarehouseDb, runWarehouseMigrations } from '../../warehouse/lib/db';
-import { initializeCostAssistantDb } from '../../cost-assistant/lib/db';
+import { initializeCostAssistantDb, runCostAssistantMigrations } from '../../cost-assistant/lib/db';
 
 
 const DB_FILE = 'intratool.db';
@@ -26,6 +26,81 @@ const CABYS_FILE_PATH = path.join(process.cwd(), 'docs', 'Datos', 'cabys.csv');
 const UPDATE_BACKUP_DIR = 'update_backups';
 const VERSION_FILE_PATH = path.join(process.cwd(), 'docs', 'VERSION.txt');
 
+/**
+ * Initializes the main database with all core system tables.
+ * This function is called automatically when the main DB file is first created.
+ * @param {Database.Database} db - The database instance to initialize.
+ */
+async function initializeMainDatabase(db: import('better-sqlite3').Database) {
+    const schema = `
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY,
+            name TEXT NOT NULL,
+            email TEXT UNIQUE NOT NULL,
+            password TEXT NOT NULL,
+            phone TEXT,
+            whatsapp TEXT,
+            erpAlias TEXT,
+            avatar TEXT,
+            role TEXT,
+            recentActivity TEXT,
+            securityQuestion TEXT,
+            securityAnswer TEXT,
+            forcePasswordChange BOOLEAN DEFAULT FALSE
+        );
+        CREATE TABLE IF NOT EXISTS roles (
+            id TEXT PRIMARY KEY,
+            name TEXT NOT NULL,
+            permissions TEXT NOT NULL
+        );
+        CREATE TABLE IF NOT EXISTS company_settings (
+            id INTEGER PRIMARY KEY,
+            name TEXT, taxId TEXT, address TEXT, phone TEXT, email TEXT, logoUrl TEXT,
+            systemName TEXT, quotePrefix TEXT, nextQuoteNumber INTEGER, decimalPlaces INTEGER, quoterShowTaxId BOOLEAN,
+            searchDebounceTime INTEGER, syncWarningHours REAL, lastSyncTimestamp TEXT,
+            importMode TEXT, customerFilePath TEXT, productFilePath TEXT, exemptionFilePath TEXT, stockFilePath TEXT, locationFilePath TEXT, cabysFilePath TEXT, supplierFilePath TEXT
+        );
+        CREATE TABLE IF NOT EXISTS logs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            timestamp TEXT NOT NULL,
+            type TEXT NOT NULL,
+            message TEXT NOT NULL,
+            details TEXT
+        );
+        CREATE TABLE IF NOT EXISTS api_settings (id INTEGER PRIMARY KEY, exchangeRateApi TEXT, haciendaExemptionApi TEXT, haciendaTributariaApi TEXT);
+        CREATE TABLE IF NOT EXISTS customers (id TEXT PRIMARY KEY, name TEXT, address TEXT, phone TEXT, taxId TEXT, currency TEXT, creditLimit REAL, paymentCondition TEXT, salesperson TEXT, active TEXT, email TEXT, electronicDocEmail TEXT);
+        CREATE TABLE IF NOT EXISTS products (id TEXT PRIMARY KEY, description TEXT, classification TEXT, lastEntry TEXT, active TEXT, notes TEXT, unit TEXT, isBasicGood TEXT, cabys TEXT);
+        CREATE TABLE IF NOT EXISTS exemptions (code TEXT PRIMARY KEY, description TEXT, customer TEXT, authNumber TEXT, startDate TEXT, endDate TEXT, percentage REAL, docType TEXT, institutionName TEXT, institutionCode TEXT);
+        CREATE TABLE IF NOT EXISTS quote_drafts (id TEXT PRIMARY KEY, createdAt TEXT NOT NULL, userId INTEGER, customerId TEXT, customerDetails TEXT, lines TEXT, totals TEXT, notes TEXT, currency TEXT, exchangeRate REAL, purchaseOrderNumber TEXT, deliveryAddress TEXT, deliveryDate TEXT, sellerName TEXT, sellerType TEXT, quoteDate TEXT, validUntilDate TEXT, paymentTerms TEXT, creditDays INTEGER);
+        CREATE TABLE IF NOT EXISTS exemption_laws (docType TEXT PRIMARY KEY, institutionName TEXT, authNumber TEXT);
+        CREATE TABLE IF NOT EXISTS cabys_catalog (code TEXT PRIMARY KEY, description TEXT, taxRate REAL);
+        CREATE TABLE IF NOT EXISTS stock (itemId TEXT PRIMARY KEY, stockByWarehouse TEXT, totalStock REAL);
+        CREATE TABLE IF NOT EXISTS sql_config (key TEXT PRIMARY KEY, value TEXT);
+        CREATE TABLE IF NOT EXISTS import_queries (type TEXT PRIMARY KEY, query TEXT);
+        CREATE TABLE IF NOT EXISTS suggestions (id INTEGER PRIMARY KEY AUTOINCREMENT, content TEXT, userId INTEGER, userName TEXT, isRead INTEGER DEFAULT 0, timestamp TEXT);
+        CREATE TABLE IF NOT EXISTS user_preferences (userId INTEGER NOT NULL, key TEXT NOT NULL, value TEXT NOT NULL, PRIMARY KEY (userId, key));
+        CREATE TABLE IF NOT EXISTS notifications (id INTEGER PRIMARY KEY AUTOINCREMENT, userId INTEGER NOT NULL, message TEXT NOT NULL, href TEXT, isRead INTEGER DEFAULT 0, timestamp TEXT NOT NULL, entityId INTEGER, entityType TEXT, taskType TEXT, FOREIGN KEY (userId) REFERENCES users(id) ON DELETE CASCADE);
+        CREATE TABLE IF NOT EXISTS email_settings (key TEXT PRIMARY KEY, value TEXT);
+        CREATE TABLE IF NOT EXISTS suppliers (id TEXT PRIMARY KEY, name TEXT, alias TEXT, email TEXT, phone TEXT);
+        CREATE TABLE IF NOT EXISTS erp_order_headers (PEDIDO TEXT PRIMARY KEY, ESTADO TEXT, CLIENTE TEXT, FECHA_PEDIDO TEXT, FECHA_PROMETIDA TEXT, ORDEN_COMPRA TEXT, TOTAL_UNIDADES REAL, MONEDA_PEDIDO TEXT, USUARIO TEXT);
+        CREATE TABLE IF NOT EXISTS erp_order_lines (PEDIDO TEXT, PEDIDO_LINEA INTEGER, ARTICULO TEXT, CANTIDAD_PEDIDA REAL, PRECIO_UNITARIO REAL, PRIMARY KEY (PEDIDO, PEDIDO_LINEA));
+    `;
+    db.exec(schema);
+
+    // Insert default data
+    const insertRole = db.prepare('INSERT OR IGNORE INTO roles (id, name, permissions) VALUES (@id, @name, @permissions)');
+    const insertRolesTransaction = db.transaction((roles) => { for (const role of roles) insertRole.run({ ...role, permissions: JSON.stringify(role.permissions) }); });
+    insertRolesTransaction(initialRoles);
+    
+    const insertCompany = db.prepare('INSERT OR IGNORE INTO company_settings (id, name, taxId, address, phone, email, systemName, quotePrefix, nextQuoteNumber, decimalPlaces, quoterShowTaxId, searchDebounceTime, syncWarningHours, importMode) VALUES (1, @name, @taxId, @address, @phone, @email, @systemName, @quotePrefix, @nextQuoteNumber, @decimalPlaces, @quoterShowTaxId, @searchDebounceTime, @syncWarningHours, @importMode)');
+    insertCompany.run({ ...initialCompany, quoterShowTaxId: initialCompany.quoterShowTaxId ? 1 : 0 });
+    
+    db.prepare(`INSERT OR IGNORE INTO api_settings (id, exchangeRateApi, haciendaExemptionApi, haciendaTributariaApi) VALUES (1, 'https://api.hacienda.go.cr/indicadores/tc/dolar', 'https://api.hacienda.go.cr/fe/ex?autorizacion=', 'https://api.hacienda.go.cr/fe/ae?identificacion=')`).run();
+    console.log(`Database ${DB_FILE} initialized.`);
+
+    // After main initialization, apply its migrations
+    await checkAndApplyMigrations(db);
+}
 
 /**
  * Acts as a registry for all database modules in the application.
@@ -37,7 +112,7 @@ const DB_MODULES: DatabaseModule[] = [
     { id: 'purchase-requests', name: 'Solicitud de Compra', dbFile: 'requests.db', initFn: initializeRequestsDb, migrationFn: runRequestMigrations },
     { id: 'production-planner', name: 'Planificador de Producción', dbFile: 'planner.db', initFn: initializePlannerDb, migrationFn: runPlannerMigrations },
     { id: 'warehouse-management', name: 'Gestión de Almacenes', dbFile: 'warehouse.db', initFn: initializeWarehouseDb, migrationFn: runWarehouseMigrations },
-    { id: 'cost-assistant', name: 'Asistente de Costos', dbFile: 'cost_assistant.db', initFn: initializeCostAssistantDb, migrationFn: undefined },
+    { id: 'cost-assistant', name: 'Asistente de Costos', dbFile: 'cost_assistant.db', initFn: initializeCostAssistantDb, migrationFn: runCostAssistantMigrations },
 ];
 
 
@@ -287,75 +362,6 @@ export async function checkAndApplyMigrations(db: import('better-sqlite3').Datab
     } catch (error) {
         console.error("Failed to apply migrations:", error);
     }
-}
-
-export async function initializeMainDatabase(db: import('better-sqlite3').Database) {
-    const mainSchema = `
-        CREATE TABLE users (
-            id INTEGER PRIMARY KEY, name TEXT NOT NULL, email TEXT UNIQUE NOT NULL, password TEXT NOT NULL,
-            phone TEXT, whatsapp TEXT, erpAlias TEXT, avatar TEXT, role TEXT NOT NULL, recentActivity TEXT,
-            securityQuestion TEXT, securityAnswer TEXT, forcePasswordChange BOOLEAN DEFAULT FALSE
-        );
-        CREATE TABLE company_settings (
-            id INTEGER PRIMARY KEY DEFAULT 1, name TEXT, taxId TEXT, address TEXT, phone TEXT, email TEXT,
-            logoUrl TEXT, systemName TEXT, quotePrefix TEXT, nextQuoteNumber INTEGER, decimalPlaces INTEGER,
-            searchDebounceTime INTEGER, importMode TEXT, lastSyncTimestamp TEXT, customerFilePath TEXT,
-            productFilePath TEXT, exemptionFilePath TEXT, stockFilePath TEXT, locationFilePath TEXT, cabysFilePath TEXT,
-            supplierFilePath TEXT, quoterShowTaxId BOOLEAN, syncWarningHours REAL
-        );
-        CREATE TABLE api_settings (id INTEGER PRIMARY KEY DEFAULT 1, exchangeRateApi TEXT, haciendaExemptionApi TEXT, haciendaTributariaApi TEXT);
-        CREATE TABLE email_settings (key TEXT PRIMARY KEY, value TEXT);
-        CREATE TABLE exemption_laws (docType TEXT PRIMARY KEY, institutionName TEXT NOT NULL, authNumber TEXT);
-        CREATE TABLE logs (id INTEGER PRIMARY KEY AUTOINCREMENT, timestamp TEXT NOT NULL, type TEXT NOT NULL, message TEXT NOT NULL, details TEXT);
-        CREATE TABLE customers (id TEXT PRIMARY KEY, name TEXT, address TEXT, phone TEXT, taxId TEXT, currency TEXT, creditLimit REAL, paymentCondition TEXT, salesperson TEXT, active TEXT, email TEXT, electronicDocEmail TEXT);
-        CREATE TABLE products (id TEXT PRIMARY KEY, description TEXT, classification TEXT, lastEntry TEXT, active TEXT, notes TEXT, unit TEXT, isBasicGood TEXT, cabys TEXT);
-        CREATE TABLE suppliers (id TEXT PRIMARY KEY, name TEXT, alias TEXT, email TEXT, phone TEXT);
-        CREATE TABLE exemptions (code TEXT PRIMARY KEY, description TEXT, customer TEXT, authNumber TEXT, startDate TEXT, endDate TEXT, percentage REAL, docType TEXT, institutionName TEXT, institutionCode TEXT);
-        CREATE TABLE stock (itemId TEXT PRIMARY KEY, stockByWarehouse TEXT NOT NULL, totalStock REAL NOT NULL);
-        CREATE TABLE stock_settings (key TEXT PRIMARY KEY, value TEXT);
-        CREATE TABLE roles (id TEXT PRIMARY KEY, name TEXT NOT NULL, permissions TEXT NOT NULL);
-        CREATE TABLE quote_drafts (id TEXT PRIMARY KEY, createdAt TEXT NOT NULL, userId INTEGER, customerId TEXT, customerDetails TEXT, lines TEXT, totals TEXT, notes TEXT, currency TEXT, exchangeRate REAL, purchaseOrderNumber TEXT, deliveryAddress TEXT, deliveryDate TEXT, sellerName TEXT, sellerType TEXT, quoteDate TEXT, validUntilDate TEXT, paymentTerms TEXT, creditDays INTEGER);
-        CREATE TABLE sql_config (key TEXT PRIMARY KEY, value TEXT);
-        CREATE TABLE import_queries (type TEXT PRIMARY KEY, query TEXT);
-        CREATE TABLE cabys_catalog (code TEXT PRIMARY KEY, description TEXT NOT NULL, taxRate REAL);
-        CREATE TABLE suggestions (id INTEGER PRIMARY KEY AUTOINCREMENT, content TEXT NOT NULL, userId INTEGER NOT NULL, userName TEXT NOT NULL, isRead INTEGER DEFAULT 0, timestamp TEXT NOT NULL);
-        CREATE TABLE notifications (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            userId INTEGER NOT NULL,
-            message TEXT NOT NULL,
-            href TEXT,
-            isRead INTEGER DEFAULT 0,
-            timestamp TEXT NOT NULL,
-            entityId INTEGER,
-            entityType TEXT,
-            taskType TEXT,
-            FOREIGN KEY (userId) REFERENCES users(id) ON DELETE CASCADE
-        );
-        CREATE TABLE erp_order_headers (PEDIDO TEXT PRIMARY KEY, ESTADO TEXT, CLIENTE TEXT, FECHA_PEDIDO TEXT, FECHA_PROMETIDA TEXT, ORDEN_COMPRA TEXT, TOTAL_UNIDADES REAL, MONEDA_PEDIDO TEXT, USUARIO TEXT);
-        CREATE TABLE erp_order_lines (PEDIDO TEXT, PEDIDO_LINEA INTEGER, ARTICULO TEXT, CANTIDAD_PEDIDA REAL, PRECIO_UNITARIO REAL, PRIMARY KEY (PEDIDO, PEDIDO_LINEA));
-        CREATE TABLE user_preferences (userId INTEGER NOT NULL, key TEXT NOT NULL, value TEXT NOT NULL, PRIMARY KEY (userId, key));
-    `;
-
-    db.exec(mainSchema);
-
-    // Initial users are no longer created here. They are created via the setup wizard.
-    
-    db.prepare(`INSERT OR IGNORE INTO company_settings (id, name, taxId, address, phone, email, systemName, quotePrefix, nextQuoteNumber, decimalPlaces, searchDebounceTime, importMode, quoterShowTaxId, syncWarningHours) VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
-        initialCompany.name, initialCompany.taxId, initialCompany.address, initialCompany.phone, initialCompany.email, initialCompany.systemName,
-        initialCompany.quotePrefix, initialCompany.nextQuoteNumber, initialCompany.decimalPlaces, initialCompany.searchDebounceTime, initialCompany.importMode, 1, 12
-    );
-    
-    db.prepare(`INSERT INTO api_settings (id, exchangeRateApi, haciendaExemptionApi, haciendaTributariaApi) VALUES (1, ?, ?, ?)`).run(
-        'https://api.hacienda.go.cr/indicadores/tc/dolar', 
-        'https://api.hacienda.go.cr/fe/ex?autorizacion=',
-        'https://api.hacienda.go.cr/fe/ae?identificacion='
-    );
-
-    const roleInsert = db.prepare('INSERT INTO roles (id, name, permissions) VALUES (@id, @name, @permissions)');
-    initialRoles.forEach(role => roleInsert.run({ ...role, permissions: JSON.stringify(role.permissions) }));
-
-    console.log(`Database ${DB_FILE} initialized with default company settings and roles.`);
-    await checkAndApplyMigrations(db);
 }
 
 export async function getUserCount(): Promise<number> {
