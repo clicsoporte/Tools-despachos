@@ -17,7 +17,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "../../../components/ui/accordion";
-import { Code, FileUp, FileTerminal, Network, ShieldCheck, Users, Building, FileDown, PlusCircle, UserCog, DatabaseZap, Keyboard, DollarSign, ShieldQuestion, LifeBuoy, Rocket, Boxes, CalendarCheck, ShoppingCart, Truck, PackageCheck, Factory, CheckCircle, XCircle, ShieldAlert, Search, Wrench, Map, PackagePlus, BookMarked, Save, Copy, Folder, AlertTriangle, ToggleRight, FilePlusIcon, Warehouse, Send, Loader2, Play, Pause, History, Undo2, Info, BadgeInfo, CreditCard, MessageSquare, Trash2, Download, Briefcase, Store, ListChecks, Hourglass, Layers, UploadCloud, BarChartBig, Lightbulb, FileText, Calculator, PanelLeft, Mail, KeyRound, BellRing } from "lucide-react";
+import { Code, FileUp, FileTerminal, Network, ShieldCheck, Users, Building, FileDown, PlusCircle, UserCog, DatabaseZap, Keyboard, DollarSign, ShieldQuestion, LifeBuoy, Rocket, Boxes, CalendarCheck, ShoppingCart, Truck, PackageCheck, Factory, CheckCircle, XCircle, ShieldAlert, Search, Wrench, Map, PackagePlus, BookMarked, Save, Copy, Folder, AlertTriangle, ToggleRight, FilePlusIcon, Warehouse, Send, Loader2, Play, Pause, History, Undo2, Info, BadgeInfo, CreditCard, MessageSquare, Trash2, Download, Briefcase, Store, ListChecks, Hourglass, Layers, UploadCloud, BarChartBig, Lightbulb, FileText, Calculator, PanelLeft, Mail, KeyRound, BellRing, Palette, UserCheck } from "lucide-react";
 import { Skeleton } from "../../../components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useAuth } from "@/modules/core/hooks/useAuth";
@@ -198,7 +198,7 @@ export default function HelpPage() {
                         </ol>
                     </li>
                     <li>
-                        <strong>Ventajas:</strong> Es más rápido, directo y elimina la necesidad de generar archivos manually.
+                        <strong>Ventajas:</strong> Es más rápido, directo y elimina la necesidad de generar archivos manualmente.
                     </li>
                 </ul>
 
@@ -309,7 +309,7 @@ export default function HelpPage() {
                         <strong>Paso 3: Ajustar y Calcular Precios.</strong>
                         <ul className="list-[circle] space-y-2 pl-5 mt-2 text-sm">
                             <li>En la tabla de &quot;Artículos Extraídos&quot;, puedes editar la mayoría de los campos.</li>
-                            <li><strong>Costo Unit. (s/IVA):</strong> Este es el costo real del artículo (costo de factura + costo prorrateado +/- efecto del descuento). Puedes **sobrescribirlo manually** si necesitas ajustar el costo base para un artículo específico.</li>
+                            <li><strong>Costo Unit. (s/IVA):</strong> Este es el costo real del artículo (costo de factura + costo prorrateado +/- efecto del descuento). Puedes **sobrescribirlo manualmente** si necesitas ajustar el costo base para un artículo específico.</li>
                             <li><strong>Imp. %:</strong> El sistema extrae el impuesto del XML, pero puedes editarlo aquí si es necesario (ej. de &quot;13&quot; a &quot;1&quot;).</li>
                             <li><strong>Margen:</strong> Introduce el margen de ganancia deseado (ej. &quot;20&quot; para un 20%).</li>
                             <li>El sistema calculará automáticamente el **P.V.P. Unitario Sugerido** y la **Ganancia por Línea** en tiempo real.</li>
@@ -499,6 +499,21 @@ export default function HelpPage() {
                         </ul>
                     </li>
                 </ol>
+                 <h4 className="font-semibold text-lg pt-2 border-t">Reporte de Permisos de Usuario (<UserCheck className="inline h-5 w-5 text-fuchsia-600"/>)</h4>
+                <ol className="list-decimal space-y-3 pl-6">
+                    <li>
+                        <strong>¿Qué hace?:</strong> Esta es una herramienta de auditoría crucial. Te muestra una lista de todos los usuarios del sistema, su rol asignado y un desglose completo de todos los permisos que ese rol les concede.
+                    </li>
+                    <li>
+                        <strong>¿Cómo se usa?:</strong>
+                        <ul className="list-[circle] space-y-2 pl-5 mt-2 text-sm">
+                            <li>Accede al reporte para ver la tabla completa.</li>
+                            <li>Usa la barra de búsqueda para filtrar rápidamente por nombre de usuario, correo o nombre del rol.</li>
+                            <li>Haz clic en los encabezados de columna "Usuario" o "Rol" para ordenar la lista.</li>
+                            <li>Exporta la vista actual a **PDF** o **Excel** para compartirla o archivarla como un registro de auditoría de seguridad.</li>
+                        </ul>
+                    </li>
+                </ol>
             </div>
         )
     },
@@ -677,6 +692,9 @@ export default function HelpPage() {
                             <p>Herramientas críticas, ahora separadas en secciones para mayor claridad y seguridad:</p>
                             <ul className="list-disc pl-5 text-sm space-y-1 mt-2">
                                 <li><strong>Backups y Puntos de Restauración:</strong> Gestiona backups de **todo el sistema**. Crea un &quot;Punto de Restauración&quot; antes de una actualización y restáuralo si algo sale mal.</li>
+                                <li>
+                                    <strong>Auditoría de Bases de Datos:</strong> Verifica la integridad y estructura de todas las bases de datos para asegurar que las tablas y columnas sean correctas, una herramienta vital después de una actualización.
+                                </li>
                                 <li><strong>Zona de Peligro:</strong> Acciones que afectan módulos **individuales**. Aquí puedes restaurar la base de datos de un solo módulo (ej: `planner.db`) desde un archivo que subas, o resetear un módulo a su estado de fábrica. Estas acciones requieren confirmación estricta para evitar accidentes.</li>
                             </ul>
                         </div>
@@ -692,6 +710,32 @@ export default function HelpPage() {
                         </div>
                     </div>
                 </div>
+            </div>
+        )
+    },
+    {
+        title: "Solución de Problemas: Iconos Invisibles",
+        icon: <Palette className="mr-4 h-6 w-6 text-red-500" />,
+        content: (
+            <div className="space-y-4">
+                <h4 className="font-semibold text-lg pt-2 border-t">El Problema</h4>
+                <p>
+                    <strong>Síntoma:</strong> Al crear una nueva tarjeta de herramienta (ToolCard), el ícono no aparece o se muestra como un cuadrado blanco, a pesar de que el resto de la tarjeta se renderiza correctamente.
+                </p>
+                 <h4 className="font-semibold text-lg pt-2 border-t">Diagnóstico: ¿Por qué Sucede?</h4>
+                <p>
+                    La causa es una optimización de **Tailwind CSS**. Para mantener el archivo CSS final pequeño, Tailwind escanea todos tus archivos en busca de los nombres de clase que usas. Si defines un color como `'bg-purple-600'` en un archivo de datos (como `data.ts`) pero esa clase no está escrita explícitamente en ningún archivo `.tsx`, el compilador de Tailwind piensa que "nadie la está usando" y la **elimina** del CSS final. Cuando el componente intenta usar esa clase, ya no existe.
+                </p>
+                 <h4 className="font-semibold text-lg pt-2 border-t">La Solución Definitiva: La `safelist`</h4>
+                <p>La forma correcta de solucionar esto es decirle a Tailwind que **nunca elimine** ciertas clases, incluso si no las encuentra en su escaneo. Esto se hace a través de la `safelist` en el archivo de configuración `tailwind.config.ts`.</p>
+
+                <p><strong>Pasos para Solucionarlo Siempre:</strong></p>
+                 <ol className="list-decimal space-y-2 pl-6">
+                    <li>Elige un color de Tailwind para el fondo del ícono (ej: `bg-fuchsia-600`).</li>
+                    <li>Ve al archivo `tailwind.config.ts` en la raíz del proyecto.</li>
+                    <li>**Añade esa clase exacta** (ej: `'bg-fuchsia-600'`) al array `safelist`.</li>
+                    <li>Ahora ya puedes usar esa clase en el archivo `data.ts` para tu nueva herramienta, con la certeza de que no será eliminada.</li>
+                </ol>
             </div>
         )
     },
@@ -714,7 +758,7 @@ export default function HelpPage() {
                         <strong>Paso 3: Actualizar y Reconstruir.</strong> Abre una terminal en la carpeta del proyecto, ejecuta `npm install --omit=dev` para instalar cualquier nueva dependencia y luego `npm run build` para compilar la nueva versión.
                     </li>
                     <li>
-                        <strong>Paso 4: Reiniciar.</strong> Vuelve a iniciar la aplicación (ej: `pm2 start clic-tools`). Al arrancar, el sistema detectará que las bases de datos en la carpeta `dbs/` no tienen las últimas columnas o tablas y las añadirá automáticamente sin borrar los datos existentes.
+                        <strong>Paso 4: Reiniciar y Verificar.</strong> Vuelve a iniciar la aplicación (ej: `pm2 start clic-tools`). Al arrancar, el sistema detectará las diferencias y añadirá las nuevas tablas o columnas automáticamente. Luego, ve a **Administración &gt; Mantenimiento &gt; Auditoría y Verificación** y ejecuta la auditoría para confirmar que todas las bases de datos tienen la estructura correcta.
                     </li>
                 </ol>
                 <Alert variant="destructive">
@@ -742,13 +786,16 @@ export default function HelpPage() {
                         <strong>Mejora Mayor de Arquitectura: Sistema de Migraciones de Base de Datos.</strong> Se implementó un sistema centralizado que verifica y actualiza automáticamente el esquema de **todas** las bases de datos del sistema (`planner.db`, `requests.db`, `cost_assistant.db`, etc.) al iniciar la aplicación, garantizando que las actualizaciones futuras no causen errores de &quot;tabla no encontrada&quot;.
                     </li>
                     <li>
-                        <strong>Mejora de UX: Eliminación de Parpadeos.</strong> Se corrigió el parpadeo que ocurría en los módulos de Planificador, Solicitudes y Visor de Eventos al presionar el botón de refrescar. Ahora los datos se actualizan en segundo plano sin interrumpir la vista del usuario.
-                    </li>
-                     <li>
-                        <strong>Nueva Funcionalidad: Recuperación de Contraseña.</strong> Se implementó un flujo completo para que los usuarios puedan recuperar su contraseña a través de un correo electrónico con una clave temporal. Incluye una pantalla de configuración SMTP para administradores.
+                        <strong>Nueva Funcionalidad Mayor: Auditoría de Bases de Datos.</strong> En Mantenimiento, se añadió una herramienta para verificar la integridad estructural de todas las bases de datos, asegurando que las tablas y columnas sean correctas después de una actualización.
                     </li>
                     <li>
-                        **Corrección de Bugs:** Se solucionó un error que causaba una advertencia de `NaN` en la consola al usar campos numéricos y se corrigió de manera definitiva el error `no such table: settings` en el módulo de Asistente de Costos.
+                        <strong>Nueva Funcionalidad: Recuperación de Contraseña.</strong> Se implementó un flujo completo para que los usuarios puedan recuperar su contraseña a través de un correo electrónico con una clave temporal. Incluye una pantalla de configuración SMTP para administradores.
+                    </li>
+                     <li>
+                        <strong>Nuevo Módulo: Reporte de Permisos de Usuario.</strong> En la sección de Analíticas, se ha añadido un reporte para auditar y exportar qué permisos tiene cada usuario.
+                    </li>
+                     <li>
+                        <strong>Completitud de Funcionalidades:</strong> Se implementó la lógica faltante en los módulos de Compras (retroceso de estados) y Mantenimiento (reseteo de fábrica y restauración individual).
                     </li>
                 </ul>
                 <h4 className="font-semibold text-lg pt-4 border-t">Versión 1.8.0</h4>
