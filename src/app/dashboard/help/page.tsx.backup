@@ -1,3 +1,5 @@
+
+
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
@@ -15,73 +17,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "../../../components/ui/accordion";
-import {
-  Code,
-  FileUp,
-  FileTerminal,
-  Network,
-  ShieldCheck,
-  Users,
-  Building,
-  FileDown,
-  PlusCircle,
-  UserCog,
-  DatabaseZap,
-  Keyboard,
-  DollarSign,
-  ShieldQuestion,
-  LifeBuoy,
-  Rocket,
-  Boxes,
-  CalendarCheck,
-  ShoppingCart,
-  Truck,
-  PackageCheck,
-  Factory,
-  CheckCircle,
-  XCircle,
-  ShieldAlert,
-  Search,
-  Wrench,
-  Map,
-  PackagePlus,
-  BookMarked,
-  Save,
-  Copy,
-  Folder,
-  AlertTriangle,
-  ToggleRight,
-  FilePlusIcon,
-  Warehouse,
-  Send,
-  Loader2,
-  Play,
-  Pause,
-  History,
-  Undo2,
-  Info,
-  BadgeInfo,
-  CreditCard,
-  MessageSquare,
-  Trash2,
-  Download,
-  Briefcase,
-  Store,
-  ListChecks,
-  Hourglass,
-  Layers,
-  UploadCloud,
-  BarChartBig,
-  Lightbulb,
-  FileText,
-  Calculator,
-  PanelLeft,
-  Mail,
-  KeyRound,
-  BellRing,
-  Palette,
-  UserCheck,
-} from "lucide-react";
+import { Code, FileUp, FileTerminal, Network, ShieldCheck, Users, Building, FileDown, PlusCircle, UserCog, DatabaseZap, Keyboard, DollarSign, ShieldQuestion, LifeBuoy, Rocket, Boxes, CalendarCheck, ShoppingCart, Truck, PackageCheck, Factory, CheckCircle, XCircle, ShieldAlert, Search, Wrench, Map, PackagePlus, BookMarked, Save, Copy, Folder, AlertTriangle, ToggleRight, FilePlusIcon, Warehouse, Send, Loader2, Play, Pause, History, Undo2, Info, BadgeInfo, CreditCard, MessageSquare, Trash2, Download, Briefcase, Store, ListChecks, Hourglass, Layers, UploadCloud, BarChartBig, Lightbulb, FileText, Calculator, PanelLeft, Mail, KeyRound, BellRing, Palette, UserCheck } from "lucide-react";
 import { Skeleton } from "../../../components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useAuth } from "@/modules/core/hooks/useAuth";
@@ -89,36 +25,27 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 
 // --- Helper Functions ---
+
+// Normaliza el texto: lo convierte a minúsculas y elimina los acentos.
 const normalizeText = (text: string | null | undefined): string => {
-  if (!text) return "";
-  return text.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    if (!text) return "";
+    return text.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 };
 
-const HighlightedText = ({
-  text,
-  highlight,
-}: {
-  text: string;
-  highlight: string;
-}) => {
+// Componente para resaltar texto
+const HighlightedText = ({ text, highlight }: { text: string; highlight: string }) => {
   if (!highlight.trim()) {
     return <>{text}</>;
   }
   const normalizedHighlight = normalizeText(highlight);
-  const parts = text.split(
-    new RegExp(
-      `(${normalizedHighlight.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`,
-      "gi"
-    )
-  );
 
+  const parts = text.split(new RegExp(`(${normalizedHighlight.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi'));
+  
   return (
     <>
       {parts.map((part, i) =>
         normalizeText(part).toLowerCase() === normalizedHighlight ? (
-          <mark key={i} className="bg-yellow-300 p-0 m-0">
-            {part}
-          </mark>
+          <mark key={i} className="bg-yellow-300 p-0 m-0">{part}</mark>
         ) : (
           <span key={i}>{part}</span>
         )
@@ -127,58 +54,56 @@ const HighlightedText = ({
   );
 };
 
-const HelpSection = ({
-  title,
-  icon,
-  content,
-  searchTerm,
-}: {
-  title: string;
-  icon: React.ReactNode;
-  content: React.ReactNode;
-  searchTerm: string;
-}) => {
-  const contentString = useMemo(() => {
-    const getText = (node: React.ReactNode): string => {
-      if (typeof node === "string") return node;
-      if (Array.isArray(node)) return node.map(getText).join(" ");
-      if (typeof node === "object" && node !== null && "props" in node && node.props.children) {
-        return getText(node.props.children);
-      }
-      return "";
-    };
-    return getText(content);
-  }, [content]);
 
-  const isVisible = useMemo(() => {
-    const searchTerms = normalizeText(searchTerm).split(" ").filter(Boolean);
-    if (searchTerms.length === 0) return true;
-    const targetText = normalizeText(title + " " + contentString);
-    return searchTerms.every((term) => targetText.includes(term));
-  }, [searchTerm, title, contentString]);
+// Componente para una sección de ayuda individual
+const HelpSection = ({ title, icon, content, searchTerm }: { title: string, icon: React.ReactNode, content: React.ReactNode, searchTerm: string }) => {
+    
+    const contentString = useMemo(() => {
+        // Simple function to extract text from JSX for searching
+        const getText = (node: React.ReactNode): string => {
+            if (typeof node === 'string') return node;
+            if (Array.isArray(node)) return node.map(getText).join(' ');
+            if (typeof node === 'object' && node !== null && 'props' in node && node.props.children) {
+                return getText(node.props.children);
+            }
+            return '';
+        };
+        return getText(content);
+    }, [content]);
 
-  if (!isVisible) return null;
+    const isVisible = useMemo(() => {
+        const searchTerms = normalizeText(searchTerm).split(' ').filter(Boolean);
+        if (searchTerms.length === 0) return true;
 
-  return (
-    <AccordionItem value={title}>
-      <AccordionTrigger className="text-lg font-semibold">
-        <div className="flex items-center">
-          {icon}
-          <HighlightedText text={title} highlight={searchTerm} />
-        </div>
-      </AccordionTrigger>
-      <AccordionContent className="prose max-w-none text-base">
-        {content}
-      </AccordionContent>
-    </AccordionItem>
-  );
+        const targetText = normalizeText(title + ' ' + contentString);
+        return searchTerms.every(term => targetText.includes(term));
+    }, [searchTerm, title, contentString]);
+
+    if (!isVisible) {
+        return null;
+    }
+
+    return (
+        <AccordionItem value={title}>
+            <AccordionTrigger className="text-lg font-semibold">
+                <div className="flex items-center">
+                    {icon}
+                    <HighlightedText text={title} highlight={searchTerm} />
+                </div>
+            </AccordionTrigger>
+            <AccordionContent className="prose max-w-none text-base">
+                {content}
+            </AccordionContent>
+        </AccordionItem>
+    );
 };
+
 
 export default function HelpPage() {
   const { setTitle } = usePageTitle();
   const { companyData } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
-
+  
   useEffect(() => {
     setTitle("Centro de Ayuda");
   }, [setTitle]);
@@ -308,14 +233,14 @@ export default function HelpPage() {
                         <strong>Plantilla Personalizable:</strong> En esta misma pantalla, se puede personalizar el **asunto y el cuerpo del correo** de recuperación, usando `[NOMBRE_USUARIO]` y `[CLAVE_TEMPORAL]` como placeholders.
                     </li>
                     <li>
-                        <strong>Prueba de Conexión:</strong> Es crucial usar el botón **&quot;Enviar Correo de Prueba&quot;** para verificar que la configuración sea correcta.
+                        <strong>Prueba de Conexión:</strong> Es crucial usar el botón <strong>&quot;Enviar Correo de Prueba&quot;</strong> para verificar que la configuración sea correcta.
                     </li>
                 </ul>
 
                 <h4 className="font-semibold text-lg pt-2 border-t">Flujo de Recuperación para Usuarios</h4>
                  <ul className="list-disc space-y-3 pl-6">
                     <li>
-                        <strong>Olvidé mi contraseña:</strong> En la pantalla de login, el usuario hace clic en el enlace, ingresa su correo y el sistema le envía una **contraseña temporal**.
+                        <strong>¿Olvidé mi contraseña?:</strong> En la pantalla de login, el usuario hace clic en el enlace, ingresa su correo y el sistema le envía una **contraseña temporal**.
                     </li>
                     <li>
                         <strong>Inicio de Sesión Forzado:</strong> Al ingresar con la contraseña temporal, la misma tarjeta de login se transforma y le pide al usuario que establezca una **nueva contraseña personal**.
@@ -327,7 +252,7 @@ export default function HelpPage() {
 
                  <h4 className="font-semibold text-lg pt-2 border-t">Creación de Nuevos Usuarios</h4>
                  <ul className="list-disc space-y-3 pl-6">
-                    <li>Al crear un nuevo usuario, el administrador ahora tiene una casilla: **&quot;Forzar cambio de contraseña en el próximo inicio de sesión&quot;**.</li>
+                    <li>Al crear un nuevo usuario, el administrador ahora tiene una casilla: <strong>&quot;Forzar cambio de contraseña en el próximo inicio de sesión&quot;</strong>.</li>
                     <li>Si se marca, el nuevo usuario seguirá el mismo flujo de cambio de contraseña forzado la primera vez que ingrese, asegurando que establezca una clave personal y segura.</li>
                  </ul>
             </div>
@@ -384,7 +309,7 @@ export default function HelpPage() {
                         <strong>Paso 3: Ajustar y Calcular Precios.</strong>
                         <ul className="list-[circle] space-y-2 pl-5 mt-2 text-sm">
                             <li>En la tabla de &quot;Artículos Extraídos&quot;, puedes editar la mayoría de los campos.</li>
-                            <li><strong>Costo Unit. (s/IVA):</strong> Este es el costo real del artículo (costo de factura + costo prorrateado +/- efecto del descuento). Puedes **sobrescribirlo manually** si necesitas ajustar el costo base para un artículo específico.</li>
+                            <li><strong>Costo Unit. (s/IVA):</strong> Este es el costo real del artículo (costo de factura + costo prorrateado +/- efecto del descuento). Puedes **sobrescribirlo manualmente** si necesitas ajustar el costo base para un artículo específico.</li>
                             <li><strong>Imp. %:</strong> El sistema extrae el impuesto del XML, pero puedes editarlo aquí si es necesario (ej. de &quot;13&quot; a &quot;1&quot;).</li>
                             <li><strong>Margen:</strong> Introduce el margen de ganancia deseado (ej. &quot;20&quot; para un 20%).</li>
                             <li>El sistema calculará automáticamente el **P.V.P. Unitario Sugerido** y la **Ganancia por Línea** en tiempo real.</li>
@@ -431,9 +356,7 @@ export default function HelpPage() {
                         <ul className="list-[circle] space-y-2 pl-5 mt-2 text-sm">
                             <li>Modifica directamente los campos de cantidad y precio.</li>
                             <li><strong>Atajos de Teclado (<Keyboard className="inline h-4 w-4" />):</strong> Usa la tecla `Enter` en los campos &quot;Cantidad&quot; y &quot;Precio&quot;. El sistema te moverá eficientemente: de Cantidad a Precio, y de Precio de vuelta al buscador de productos para que puedas seguir añadiendo artículos sin usar el mouse.</li>
-                             <li>
-                                <strong>Uso en Móviles:</strong> En pantallas pequeñas, los campos de Cantidad y Precio tienen más espacio. Si necesitas ver otras columnas como “Cabys” o “Unidad”, puedes activarlas desde los checkboxes que aparecen encima de la tabla.
-                            </li>
+                            <li><strong>Uso en Móviles:</strong> En pantallas pequeñas, los campos de Cantidad y Precio ahora tienen más espacio. Si necesitas ver otras columnas como &quot;Cabys&quot; o &quot;Unidad&quot;, puedes activarlas desde los checkboxes que aparecen encima de la tabla.</li>
                         </ul>
                     </li>
                     <li>
@@ -472,7 +395,7 @@ export default function HelpPage() {
                 <h4 className="font-semibold text-lg pt-2 border-t">Funcionalidades Clave</h4>
                 <ul className="list-disc space-y-3 pl-6">
                 <li>
-                    <strong>Visibilidad por Defecto:</strong> Por seguridad y claridad, la vista de solicitudes siempre mostrará por defecto solo los documentos que tú has creado. Si tienes el permiso <code>requests:read:all</code>, podrás desmarcar la casilla &apos;Mostrar solo mis solicitudes&apos; para ver las de todos los usuarios.
+                    <strong>Visibilidad por Defecto:</strong> Por seguridad y claridad, la vista de solicitudes siempre mostrará por defecto solo los documentos que tú has creado. Si tienes el permiso `requests:read:all`, podrás desmarcar la casilla &apos;Mostrar solo mis solicitudes&apos; para ver las de todos los usuarios.
                 </li>
                 <li>
                     <strong>Creación Inteligente desde ERP (<Layers className="inline h-4 w-4"/>):</strong> Permite crear solicitudes de compra automáticamente a partir de un pedido de venta del ERP. El sistema analiza el pedido, compara con el inventario actual y sugiere qué artículos comprar.
@@ -484,7 +407,7 @@ export default function HelpPage() {
                     <strong>Alerta de Duplicados (<Info className="inline h-4 w-4 text-amber-500" />):</strong> Al crear una solicitud, si el sistema detecta que ya existen otras solicitudes activas (pendientes, aprobadas u ordenadas) para el mismo artículo, te mostrará una advertencia para evitar compras duplicadas.
                 </li>
                 <li>
-                    <strong>Pasos Opcionales:</strong> En <strong>Administración &gt; Config. Compras</strong>, puedes activar el paso de “Recibido en Bodega” y el paso final “Ingresado en ERP” para un control más detallado del proceso logístico.
+                    <strong>Pasos Opcionales:</strong> En <strong>Administración &gt; Config. Compras</strong>, puedes activar el paso de `Recibido en Bodega` y el paso final `Ingresado en ERP` para un control más detallado del proceso logístico.
                 </li>
                 <li>
                     <strong>Exportación:</strong> Puedes generar un archivo **PDF** o **Excel (.xlsx)** del reporte actual, incluyendo los filtros que hayas aplicado.
@@ -503,16 +426,16 @@ export default function HelpPage() {
                 </p>
                 <ul className="list-disc space-y-3 pl-6">
                     <li>
-                        **Visibilidad por Defecto:** Por defecto, el planificador te mostrará solo las órdenes que tú has creado. Los usuarios con el permiso <code>planner:read:all</code> pueden desmarcar el filtro para tener una vista global de la producción.
+                        <strong>Visibilidad por Defecto:</strong> Por defecto, el planificador te mostrará solo las órdenes que tú has creado. Los usuarios con el permiso `planner:read:all` pueden desmarcar el filtro para tener una vista global de la producción.
                     </li>
                     <li>
-                        **Paso 1: Crear Órdenes.** Similar a los otros módulos, crea una nueva orden de producción buscando al cliente y el producto. Establece la cantidad, la fecha de entrega y la prioridad.
+                        <strong>Paso 1: Crear Órdenes.</strong> Similar a los otros módulos, crea una nueva orden de producción buscando al cliente y el producto. Establece la cantidad, la fecha de entrega y la prioridad.
                          <ul className="list-[circle] space-y-2 pl-5 mt-2 text-sm">
                             <li>**Alerta de Duplicados (<Info className="inline h-4 w-4 text-amber-500" />):** Al seleccionar un producto, el sistema te avisará si ya existen otras órdenes de producción activas para ese mismo artículo, ayudándote a evitar duplicar trabajo.</li>
                         </ul>
                     </li>
                     <li>
-                        **Paso 2: Flujo de Estados y Trazabilidad.**
+                        <strong>Paso 2: Flujo de Estados y Trazabilidad.</strong>
                         <ul className="list-[circle] space-y-2 pl-5 mt-2 text-sm">
                             <li>**Pendiente:** La orden ha sido creada y espera aprobación.</li>
                             <li>**Aprobada (<CheckCircle className="inline h-4 w-4 text-green-600"/>):** La orden está autorizada para producción.</li>
@@ -524,7 +447,7 @@ export default function HelpPage() {
                         </ul>
                     </li>
                     <li>
-                        **Paso 3: Alertas y Solicitudes de Cambio.**
+                        <strong>Paso 3: Alertas y Solicitudes de Cambio.</strong>
                         <ul className="list-[circle] space-y-2 pl-5 mt-2 text-sm">
                             <li>**Aviso de &quot;Modificado&quot; (<AlertTriangle className="inline h-4 w-4 text-red-600" />):** Si una orden se edita después de ser aprobada, aparecerá esta alerta para notificar a todos sobre el cambio.</li>
                             <li>**Solicitar Desaprobación (<Undo2 className="inline h-4 w-4 text-orange-600"/>):** Si una orden ya aprobada necesita un cambio mayor (ej: cambiar de producto), un usuario puede &quot;Solicitar Desaprobación&quot;. Esto bloquea la orden y requiere que un administrador la apruebe o rechace para devolverla al estado &quot;Pendiente&quot;.</li>
@@ -532,11 +455,11 @@ export default function HelpPage() {
                         </ul>
                     </li>
                     <li>
-                        **Paso 4: Programación y Prioridades.**
+                        <strong>Paso 4: Programación y Prioridades.</strong>
                         <ul className="list-[circle] space-y-2 pl-5 mt-2 text-sm">
                             <li>**Programación por Rango:** Haz clic en el área de &quot;Fecha Programada&quot; para abrir un calendario y seleccionar un rango de fechas de inicio y fin.</li>
                             <li>**Asignación:** Asigna cada orden a una máquina, proceso u operario específico desde el menú desplegable. Estas opciones se configuran en Administración.</li>
-                            <li>**Gestión de Turnos:** Asigna la orden a un turno de trabajo específico. Los turnos disponibles se pueden personalizar completamente en **Administración &gt; Config. Planificador**.</li>
+                            <li>**Gestión de Turnos:** Asigna la orden a un turno de trabajo específico. Los turnos disponibles se pueden personalizar completamente en <strong>Administración &gt; Config. Planificador</strong>.</li>
                             <li>**Prioridades y Cuenta Regresiva:** Usa el selector de prioridad y fíjate en el indicador de días restantes (basado en la fecha de entrega) para organizar el trabajo.</li>
                         </ul>
                     </li>
@@ -746,7 +669,7 @@ export default function HelpPage() {
                     </div>
                     <div className="flex items-start gap-4">
                         <Store className="mt-1 h-6 w-6 text-amber-700 shrink-0" />
-                        <div><h4 className="font-semibold">Config. Compras</h4><p>Define las rutas de entrega, métodos de envío y activa pasos opcionales en el flujo de aprobación como &quot;Recibido en Bodega&quot; o &quot;Ingresado en ERP&quot;.</p></div>
+                        <div><h4 className="font-semibold">Config. Compras</h4><p>Define las rutas de entrega, métodos de envío y activa pasos opcionales en el flujo de aprobación como “Recibido en Bodega” o “Ingresado en ERP”.</p></div>
                     </div>
                     <div className="flex items-start gap-4">
                         <Map className="mt-1 h-6 w-6 text-teal-700 shrink-0" />
@@ -791,23 +714,26 @@ export default function HelpPage() {
         )
     },
     {
-        title: "Guía Técnica: Actualización y Problemas Comunes",
+        title: "Guía Técnica (para Desarrolladores)",
         icon: <Wrench className="mr-4 h-6 w-6 text-slate-600" />,
         content: (
             <div className="space-y-4">
-                 <h4 className="font-semibold text-lg">Proceso de Actualización Seguro</h4>
+                <p>Esta sección contiene notas técnicas importantes para quienes mantienen o actualizan la aplicación.</p>
+
+                <h4 className="font-semibold text-lg pt-4 border-t">Proceso de Actualización</h4>
+                <p>Actualizar la aplicación a una nueva versión sin perder tus datos es un proceso crítico. El sistema está diseñado para manejar esto de forma segura gracias a las **migraciones automáticas**.</p>
                 <ol className="list-decimal space-y-3 pl-6">
                     <li>
                         <strong>Paso 1: Realizar una Copia de Seguridad (<Copy className="inline h-4 w-4"/>).</strong> Este es el paso más importante. Antes de tocar nada, ve a <strong>Administración &gt; Mantenimiento</strong> y haz clic en <strong>&quot;Crear Punto de Restauración&quot;</strong>. Esto generará una copia segura de todas las bases de datos del sistema.
                     </li>
                     <li>
-                        <strong>Paso 2: Reemplazar Archivos.</strong> Detén la aplicación (por ejemplo, usando `pm2 stop clic-tools` en Linux o deteniendo el sitio en IIS). Luego, borra todos los archivos y carpetas de la versión anterior **excepto** la carpeta `dbs/` y, si existe, el archivo `.env.local`. Después, copia todos los archivos de la nueva versión en su lugar.
+                        <strong>Paso 2: Reemplazar Archivos.</strong> Detén la aplicación (por ejemplo, usando `pm2 stop clic-tools`). Luego, borra todos los archivos y carpetas de la versión anterior **excepto** la carpeta `dbs/` y, si existe, el archivo `.env.local`. Después, copia todos los archivos de la nueva versión en su lugar.
                     </li>
                     <li>
                         <strong>Paso 3: Actualizar y Reconstruir.</strong> Abre una terminal en la carpeta del proyecto, ejecuta `npm install --omit=dev` para instalar cualquier nueva dependencia y luego `npm run build` para compilar la nueva versión.
                     </li>
                     <li>
-                        <strong>Paso 4: Reiniciar y Verificar.</strong> Vuelve a iniciar la aplicación (ej: `pm2 start clic-tools`). Al arrancar, el sistema detectará las diferencias y añadirá las nuevas tablas o columnas automáticamente. Luego, ve a **Administración &gt; Mantenimiento &gt; Auditoría y Verificación** y ejecuta la auditoría para confirmar que todas las bases de datos tienen la estructura correcta.
+                        <strong>Paso 4: Reiniciar y Verificar.</strong> Vuelve a iniciar la aplicación (ej: `pm2 start clic-tools`). Al arrancar, el sistema detectará las diferencias y añadirá las nuevas tablas o columnas automáticamente. Luego, ve a <strong>Administración &gt; Mantenimiento &gt; Auditoría y Verificación</strong> y ejecuta la auditoría para confirmar que todas las bases de datos tienen la estructura correcta.
                     </li>
                 </ol>
                 <Alert variant="destructive">
@@ -819,17 +745,15 @@ export default function HelpPage() {
                 </Alert>
 
                 <h4 className="font-semibold text-lg pt-4 border-t">Solución de Problemas: Iconos Invisibles</h4>
-                <div className="space-y-2">
-                    <p><strong>Síntoma:</strong> Al crear una nueva tarjeta de herramienta (ToolCard), el ícono no aparece o se muestra como un cuadrado blanco, a pesar de que el resto de la tarjeta se renderiza correctamente.</p>
-                    <p><strong>Diagnóstico:</strong> La causa es una optimización de **Tailwind CSS**. Si defines un color como `'bg-purple-600'` en un archivo de datos (como `data.ts`) pero esa clase no está escrita explícitamente en ningún archivo `.tsx`, el compilador de Tailwind piensa que “nadie la está usando” y la **elimina** del CSS final.</p>
-                    <p><strong>La Solución Definitiva (La `safelist`):</strong> La forma correcta de solucionar esto es decirle a Tailwind que **nunca elimine** ciertas clases. Esto se hace en el archivo de configuración `tailwind.config.ts`.</p>
-                    <ol className="list-decimal space-y-2 pl-6 text-sm">
-                        <li>Elige un color de Tailwind para el fondo del ícono (ej: `bg-fuchsia-600`).</li>
-                        <li>Ve al archivo `tailwind.config.ts` en la raíz del proyecto.</li>
-                        <li>**Añade esa clase exacta** (ej: `&apos;bg-fuchsia-600&apos;`) al array `safelist`.</li>
-                        <li>Ahora ya puedes usar esa clase en el archivo `data.ts` para tu nueva herramienta, con la certeza de que no será eliminada.</li>
-                    </ol>
-                </div>
+                <p>
+                    <strong>Síntoma:</strong> Al crear una nueva tarjeta de herramienta (ToolCard), el ícono no aparece o se muestra como un cuadrado blanco, a pesar de que el resto de la tarjeta se renderiza correctamente.
+                </p>
+                 <p>
+                    <strong>Diagnóstico:</strong> La causa es una optimización de **Tailwind CSS**. Para mantener el archivo CSS final pequeño, Tailwind escanea todos tus archivos en busca de los nombres de clase que usas. Si defines un color como `'bg-purple-600'` en un archivo de datos (como `data.ts`) pero esa clase no está escrita explícitamente en ningún archivo `.tsx`, el compilador de Tailwind piensa que &quot;nadie la está usando&quot; y la **elimina** del CSS final. Cuando el componente intenta usar esa clase, ya no existe.
+                </p>
+                 <p>
+                    <strong>La Solución Definitiva:</strong> La forma correcta de solucionar esto es decirle a Tailwind que **nunca elimine** ciertas clases, incluso si no las encuentra en su escaneo. Esto se hace a través de la `safelist` en el archivo de configuración `tailwind.config.ts`.
+                 </p>
             </div>
         )
     },
@@ -842,32 +766,37 @@ export default function HelpPage() {
                 <p className="text-sm text-muted-foreground">Lanzamiento: Octubre 2024</p>
                 <ul className="list-disc space-y-3 pl-6">
                     <li>
-                        <strong>Reescritura del Flujo de Autenticación:</strong> Se mejoró el manejo de sesiones para eliminar parpadeos de pantalla y gestionar robustamente sesiones inválidas, previniendo errores de `Cannot read properties of undefined`.
+                        <strong>Mejora Mayor de Arquitectura: Flujo de Autenticación.</strong> Se reescribió por completo el manejo de sesiones y la lógica de carga para eliminar parpadeos de pantalla, prevenir condiciones de carrera y gestionar de forma robusta las sesiones inválidas o caducadas, asegurando un inicio de sesión y navegación más fluidos.
                     </li>
                     <li>
-                        <strong>Sistema de Migraciones de Base de Datos:</strong> Se implementó un sistema centralizado que verifica y actualiza automáticamente el esquema de **todas** las bases de datos al iniciar la aplicación, garantizando que las actualizaciones futuras sean seguras.
+                        <strong>Mejora Mayor de Arquitectura: Sistema de Migraciones de Base de Datos.</strong> Se implementó un sistema centralizado que verifica y actualiza automáticamente el esquema de **todas** las bases de datos del sistema (`planner.db`, `requests.db`, `cost_assistant.db`, etc.) al iniciar la aplicación, garantizando que las actualizaciones futuras no causen errores de &quot;tabla no encontrada&quot;.
                     </li>
                     <li>
-                        <strong>Nueva Herramienta de Auditoría:</strong> En `Mantenimiento`, se añadió una función para verificar la integridad de todas las bases de datos y asegurar que las tablas y columnas sean correctas.
+                        <strong>Nueva Funcionalidad Mayor: Auditoría de Bases de Datos.</strong> En <strong>Administración &gt; Mantenimiento</strong>, se añadió una herramienta para verificar la integridad estructural de todas las bases de datos, asegurando que las tablas y columnas sean correctas después de una actualización.
                     </li>
                     <li>
-                        <strong>Nueva Funcionalidad de Recuperación de Contraseña:</strong> Se implementó un flujo completo para que los usuarios puedan recuperar su contraseña a través de un correo con una clave temporal. Incluye una pantalla de configuración SMTP para administradores.
+                        <strong>Nueva Funcionalidad: Recuperación de Contraseña.</strong> Se implementó un flujo completo de autoservicio para que los usuarios puedan recuperar su contraseña a través de un correo electrónico con una clave temporal. Incluye una pantalla de configuración SMTP y plantillas de correo personalizables para administradores.
                     </li>
                      <li>
-                        <strong>Nuevo Reporte de Permisos de Usuario:</strong> En la sección de `Analíticas`, se ha añadido un reporte para auditar y exportar qué permisos tiene cada usuario según su rol.
+                        <strong>Nuevo Módulo: Reporte de Permisos de Usuario.</strong> En la sección de **Analíticas**, se ha añadido un reporte completo para auditar y exportar qué permisos tiene cada usuario según su rol, mejorando la visibilidad de la seguridad del sistema.
                     </li>
                      <li>
-                        <strong>Completitud de Funcionalidades:</strong> Se implementó la lógica faltante en los módulos de Compras (retroceso de estados) y Mantenimiento (reseteo de fábrica y restauración individual de módulos).
+                        <strong>Completitud de Funcionalidades:</strong> Se implementó la lógica faltante en los módulos de Compras (retroceso de estados) y Mantenimiento (reseteo de fábrica y restauración individual desde un archivo), haciendo todas las opciones de la interfaz completamente funcionales.
                     </li>
                 </ul>
                 <h4 className="font-semibold text-lg pt-4 border-t">Versión 1.8.0</h4>
                 <p className="text-sm text-muted-foreground">Lanzamiento: Octubre 2024</p>
                 <ul className="list-disc space-y-3 pl-6">
                     <li>
-                        <strong>Nuevo Centro de Notificaciones:</strong> Se añadió un sistema de notificaciones en tiempo real dentro de la aplicación. Un icono de campana alerta sobre nuevas notificaciones y permite acciones rápidas.
+                        <strong>Nueva Funcionalidad Mayor: Centro de Notificaciones.</strong> Se ha añadido un sistema de notificaciones en tiempo real dentro de la aplicación.
+                        <ul className="list-[circle] space-y-2 pl-5 mt-2 text-sm">
+                            <li>Un icono de campana en la cabecera alerta sobre nuevas notificaciones.</li>
+                            <li>El panel de notificaciones permite ver y navegar directamente a las órdenes o solicitudes relevantes.</li>
+                            <li>Ciertas notificaciones son accionables, permitiendo aprobar o rechazar tareas directamente desde el panel.</li>
+                        </ul>
                     </li>
                      <li>
-                        <strong>Nuevo Centro de Ayuda:</strong> Se añadió una guía de usuario interactiva y con capacidad de búsqueda directamente en la aplicación para mejorar la autonomía del usuario.
+                        <strong>Nuevo Módulo: Centro de Ayuda.</strong> Se ha añadido una guía de usuario interactiva y con capacidad de búsqueda directamente en la aplicación para mejorar la autonomía del usuario.
                     </li>
                 </ul>
             </div>
@@ -879,49 +808,51 @@ export default function HelpPage() {
     <main className="flex-1 p-4 md:p-6 lg:p-8">
       <div className="space-y-6">
         <Card>
-          <CardHeader>
-            <div className="flex items-center gap-4">
-              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary text-white">
-                <LifeBuoy className="h-6 w-6" />
-              </div>
-              <div>
-                {companyData ? (
-                  <CardTitle className="text-2xl">
-                    Manual de Usuario de {companyData.systemName || "la Aplicación"}
-                  </CardTitle>
-                ) : (
-                  <Skeleton className="h-8 w-96" />
-                )}
-                <CardDescription>
-                  Guía completa sobre cómo utilizar las herramientas y funcionalidades del sistema.
-                </CardDescription>
-              </div>
-            </div>
-            <div className="relative mt-6">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-              <Input
-                placeholder="Escribe para buscar en la ayuda (ej: 'contraseña', 'importar', 'resetear')..."
-                className="w-full pl-10 h-12 text-base"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <Accordion type="multiple" className="w-full">
-              {helpSections.map((section, index) => (
-                <HelpSection
-                  key={index}
-                  title={section.title}
-                  icon={section.icon}
-                  content={section.content}
-                  searchTerm={searchTerm}
-                />
-              ))}
-            </Accordion>
-          </CardContent>
+            <CardHeader>
+                <div className="flex items-center gap-4">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary text-white">
+                        <LifeBuoy className="h-6 w-6" />
+                    </div>
+                    <div>
+                        {companyData ? (
+                        <CardTitle className="text-2xl">Manual de Usuario de {companyData.systemName || "la Aplicación"}</CardTitle>
+                        ) : (
+                            <Skeleton className="h-8 w-96" />
+                        )}
+                        <CardDescription>
+                        Guía completa sobre cómo utilizar las herramientas y funcionalidades del sistema.
+                        </CardDescription>
+                    </div>
+                </div>
+                <div className="relative mt-6">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                    <Input 
+                        placeholder="Escribe para buscar en la ayuda (ej: 'contraseña', 'importar', 'resetear')..."
+                        className="w-full pl-10 h-12 text-base"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+                </div>
+            </CardHeader>
+            <CardContent>
+                <Accordion type="multiple" className="w-full">
+                    {helpSections.map((section, index) => (
+                        <HelpSection
+                            key={index}
+                            title={section.title}
+                            icon={section.icon}
+                            content={section.content}
+                            searchTerm={searchTerm}
+                        />
+                    ))}
+                </Accordion>
+            </CardContent>
         </Card>
       </div>
     </main>
   );
 }
+
+
+
+    

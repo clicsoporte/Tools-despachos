@@ -110,7 +110,7 @@ function HeaderActions() {
                     </div>
                     <Button onClick={handleFullSync} disabled={isSyncing || !hasPermission('admin:import:run')} size="sm" variant="outline" className={cn(isSyncOld && "border-red-500/50 bg-red-50 text-red-500 animate-pulse")}>
                         {isSyncing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
-                        <span className="hidden lg:inline">Sincronizar ERP</span>
+                        <span className="hidden md:inline">Sincronizar ERP</span>
                     </Button>
                 </>
             )}
@@ -161,14 +161,14 @@ function HeaderActions() {
  */
 export function Header({ title }: HeaderProps) {
   return (
-    <header className="sticky top-0 z-10 flex h-auto min-h-16 items-center gap-4 border-b bg-background/80 px-4 py-2 backdrop-blur-sm md:h-16">
+    <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b bg-background/80 px-4 backdrop-blur-sm">
       <div className="flex items-center gap-2">
         <SidebarTrigger className="h-8 w-8 bg-primary/10 text-primary animate-pulse" >
           <PanelLeft />
         </SidebarTrigger>
         <h1 className="text-2xl font-semibold hidden sm:block">{title}</h1>
       </div>
-      <div className="ml-auto flex items-center justify-end gap-2 flex-wrap">
+      <div className="ml-auto flex items-center gap-2">
         <HeaderActions />
       </div>
     </header>
