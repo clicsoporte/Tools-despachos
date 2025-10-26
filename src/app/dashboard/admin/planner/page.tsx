@@ -512,7 +512,7 @@ export default function PlannerSettingsPage() {
                                                 <div key={col.id} className="flex items-center space-x-2">
                                                     <Checkbox
                                                         id={`pdf-col-${col.id}`}
-                                                        checked={settings.pdfExportColumns.includes(col.id)}
+                                                        checked={settings.pdfExportColumns?.includes(col.id)}
                                                         onCheckedChange={(checked) => handlePdfColumnChange(col.id, checked as boolean)}
                                                     />
                                                     <Label htmlFor={`pdf-col-${col.id}`} className="font-normal">{col.label}</Label>

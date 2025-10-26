@@ -106,13 +106,19 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
   }, []);
 
   const loadAuthData = useCallback(async () => {
-    setIsLoading(true);
-    setIsReady(false); // Reset readiness on load
+    // Only set loading to true on the very first load. Subsequent calls (refreshAuth)
+    // will update data in the background without a global loading screen.
+    if (!isReady) {
+        setIsLoading(true);
+    }
+    
     try {
       const currentUser = await getCurrentUserClient();
       
       if (!currentUser) {
           setUser(null);
+          setIsLoading(false); // Stop loading if no user
+          setIsReady(false); // Not ready if no user
           return;
       }
       
@@ -135,17 +141,17 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
       } else {
         setUserRole(null);
       }
-      setIsReady(true); // Signal that all data is loaded
+      setIsReady(true); // Signal that all data is loaded and we are ready
     } catch (error) {
       console.error("Failed to load authentication context data:", error);
       setUser(null);
       setUserRole(null);
       setCompanyData(null);
-      setIsReady(false);
+      setIsReady(false); // Failed to load, so not ready
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [isReady]);
 
   const refreshAuthAndRedirect = async (path: string) => {
     await loadAuthData();
