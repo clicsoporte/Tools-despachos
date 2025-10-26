@@ -57,11 +57,40 @@ export async function logout(userId: number): Promise<void> {
 }
 
 /**
- * Retrieves all users from the database.
- * Passwords are removed before sending the data to the client.
- * @returns {Promise<User[]>} A promise that resolves to an array of all users.
+ * Retrieves all users from the database, intended for server-side use where passwords might be needed.
+ * This is an internal function and should not be confused with the client-safe `getAllUsers`.
+ * @returns {Promise<User[]>} A promise that resolves to an array of all users, including password hashes.
+ */
+async function getAllUsersWithPasswords(): Promise<User[]> {
+    const db = await connectDb();
+    try {
+        const stmt = db.prepare('SELECT * FROM users ORDER BY name');
+        return stmt.all() as User[];
+    } catch (error) {
+        console.error("Failed to get all users:", error);
+        return [];
+    }
+}
+
+/**
+ * Retrieves all users from the database for client-side consumption.
+ * Passwords are removed before sending the data.
+ * @returns {Promise<User[]>} A promise that resolves to an array of all users without passwords.
  */
 export async function getAllUsers(): Promise<User[]> {
+    const users = await getAllUsersWithPasswords();
+    return users.map(u => {
+        const { password, ...userWithoutPassword } = u;
+        return userWithoutPassword;
+    }) as User[];
+}
+
+/**
+ * Retrieves all users from the database for reporting purposes.
+ * Passwords are removed.
+ * @returns {Promise<User[]>} A promise that resolves to an array of all users without passwords.
+ */
+export async function getAllUsersForReport(): Promise<User[]> {
     const db = await connectDb();
     try {
         const stmt = db.prepare('SELECT * FROM users ORDER BY name');
@@ -72,7 +101,7 @@ export async function getAllUsers(): Promise<User[]> {
             return userWithoutPassword;
         }) as User[];
     } catch (error) {
-        console.error("Failed to get all users:", error);
+        console.error("Failed to get all users for report:", error);
         return [];
     }
 }

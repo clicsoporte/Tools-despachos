@@ -4,8 +4,9 @@
 'use server';
 
 import { getCompletedOrdersByDateRange, getPlannerSettings } from '@/modules/planner/lib/db';
-import { getAllProducts, getAllRoles, getAllUsers } from '@/modules/core/lib/db';
-import type { DateRange, ProductionOrder, PlannerSettings, ProductionOrderHistoryEntry, Product } from '@/modules/core/types';
+import { getAllRoles } from '@/modules/core/lib/db';
+import { getAllUsersForReport } from '@/modules/core/lib/auth';
+import type { DateRange, ProductionOrder, PlannerSettings, ProductionOrderHistoryEntry, Product, User, Role } from '@/modules/core/types';
 import { differenceInDays, parseISO } from 'date-fns';
 import type { ProductionReportDetail, ProductionReportData } from '../hooks/useProductionReport';
 import { logError } from '@/modules/core/lib/logger';
@@ -31,6 +32,9 @@ export async function getProductionReportData({ dateRange, filters = {} }: { dat
     if (!dateRange.from) {
         throw new Error("Date 'from' is required for the production report.");
     }
+    
+    // We need to fetch products from the main DB, not the auth context which is client-side.
+    const { default: { getAllProducts } } = await import('@/modules/core/lib/db');
 
     const [allOrders, plannerSettings, allProducts] = await Promise.all([
         getCompletedOrdersByDateRange(dateRange),
@@ -88,10 +92,10 @@ export async function getProductionReportData({ dateRange, filters = {} }: { dat
     };
 }
 
-export async function getUserPermissionsReportData() {
+export async function getUserPermissionsReportData(): Promise<{ users: User[], roles: Role[] }> {
     try {
         const [users, roles] = await Promise.all([
-            getAllUsers(),
+            getAllUsersForReport(),
             getAllRoles()
         ]);
         return { users, roles };
