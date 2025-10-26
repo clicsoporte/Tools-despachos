@@ -103,17 +103,16 @@ function HeaderActions() {
                 </div>
             )}
             {companyData?.lastSyncTimestamp && (
-                <>
-                    <div className={cn("hidden items-center gap-2 text-sm text-muted-foreground p-2 border rounded-lg sm:flex", isSyncOld && "text-red-500 font-medium border-red-500/50 bg-red-50")}>
-                        <Clock className="h-4 w-4" />
-                        <span className="hidden lg:inline">Última Sinc:</span>
-                        <strong>{format(parseISO(companyData.lastSyncTimestamp), 'dd/MM/yy HH:mm')}</strong>
-                    </div>
-                    <Button onClick={handleFullSync} disabled={isSyncing || !hasPermission('admin:import:run')} size="sm" variant="outline" className={cn("h-9 w-9 p-0 sm:w-auto sm:px-3", isSyncOld && "border-red-500/50 bg-red-50 text-red-500 animate-pulse")}>
-                        {isSyncing ? <Loader2 className="animate-spin" /> : <RefreshCw/>}
-                        <span className="hidden sm:inline ml-2">Sincronizar ERP</span>
-                    </Button>
-                </>
+                <div className={cn("hidden items-center gap-2 text-sm text-muted-foreground p-2 border rounded-lg sm:flex", isSyncOld && "text-red-500 font-medium border-red-500/50 bg-red-50")}>
+                    <Clock className="h-4 w-4" />
+                    <span className="hidden lg:inline">Última Sinc:</span>
+                    <strong>{format(parseISO(companyData.lastSyncTimestamp), 'dd/MM/yy HH:mm')}</strong>
+                </div>
+            )}
+             {hasPermission('admin:import:run') && (
+                <Button onClick={handleFullSync} disabled={isSyncing} size="icon" variant="ghost" className="relative">
+                    {isSyncing ? <Loader2 className="h-5 w-5 animate-spin" /> : <RefreshCw className={cn("h-5 w-5", isSyncOld && "animate-pulse text-red-500")}/>}
+                </Button>
             )}
             <Dialog open={isSuggestionDialogOpen} onOpenChange={setSuggestionDialogOpen}>
                 <DialogTrigger asChild>
