@@ -21,7 +21,7 @@ import { Button } from "../ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "../ui/dialog";
 import { Label } from "../ui/label";
 import { Textarea } from "../ui/textarea";
-import { Loader2, RefreshCw, Clock, DollarSign, Send, MessageSquare } from "lucide-react";
+import { Loader2, RefreshCw, Clock, DollarSign, Send, MessageSquare, PanelLeft } from "lucide-react";
 
 interface HeaderProps {
   title: string;
@@ -163,7 +163,9 @@ export function Header({ title }: HeaderProps) {
   return (
     <header className="sticky top-0 z-10 flex h-auto min-h-16 items-center gap-4 border-b bg-background/80 px-4 py-2 backdrop-blur-sm md:h-16">
       <div className="flex items-center gap-2">
-        <SidebarTrigger className="h-8 w-8 bg-primary/10 text-primary animate-pulse" />
+        <SidebarTrigger className="h-8 w-8 bg-primary/10 text-primary animate-pulse" >
+          <PanelLeft />
+        </SidebarTrigger>
         <h1 className="text-2xl font-semibold hidden sm:block">{title}</h1>
       </div>
       <div className="ml-auto flex items-center justify-end gap-2 flex-wrap">

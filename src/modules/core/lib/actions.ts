@@ -4,6 +4,7 @@
 'use server';
 
 import { importAllDataFromFiles as importAllData } from './db';
+import { logWarn } from './logger';
 
 /**
  * A server action that triggers a full data synchronization from the configured source (file or SQL).
@@ -20,9 +21,9 @@ export async function syncAllData(): Promise<{ type: string; count: number; }[]>
  * It relies on a process manager (like PM2 or IIS) to automatically restart the application.
  */
 export async function shutdownServer(): Promise<void> {
-    console.warn("SERVER SHUTDOWN INITIATED. This will terminate the process.");
+    await logWarn("SERVER SHUTDOWN INITIATED VIA ACTION. This will terminate the process.");
     // A small delay to ensure any final logs can be written
     setTimeout(() => {
         process.exit(1);
-    }, 100);
+    }, 500);
 }

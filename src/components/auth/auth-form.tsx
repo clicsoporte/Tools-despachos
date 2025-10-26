@@ -162,7 +162,7 @@ export function AuthForm({ clientInfo }: AuthFormProps) {
         <form onSubmit={handleLogin} className="space-y-4">
             <div className="space-y-2">
                 <Label htmlFor="email">Correo Electrónico</Label>
-                <Input id="email" type="email" placeholder="usuario@ejemplo.com" value={email} onChange={(e) => setEmail(e.target.value)} required suppressHydrationWarning />
+                <Input id="email" type="email" placeholder="usuario@ejemplo.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
             </div>
             <div className="space-y-2">
                 <div className="flex items-center justify-between">
@@ -179,7 +179,7 @@ export function AuthForm({ clientInfo }: AuthFormProps) {
                             <div className="space-y-4 py-4">
                                 <div className="space-y-2">
                                     <Label htmlFor="recovery-email">Correo Electrónico</Label>
-                                    <Input id="recovery-email" type="email" value={recoveryEmail} onChange={e => setRecoveryEmail(e.target.value)} placeholder="tu@correo.com" suppressHydrationWarning />
+                                    <Input id="recovery-email" type="email" value={recoveryEmail} onChange={e => setRecoveryEmail(e.target.value)} placeholder="tu@correo.com" />
                                 </div>
                             </div>
                             <DialogFooter>
@@ -192,7 +192,7 @@ export function AuthForm({ clientInfo }: AuthFormProps) {
                         </DialogContent>
                     </Dialog>
                 </div>
-                <Input id="password" type="password" value={password} onChange={e => setPassword(e.target.value)} required suppressHydrationWarning />
+                <Input id="password" type="password" placeholder="••••••••" value={password} onChange={e => setPassword(e.target.value)} required />
             </div>
             <CardFooter className="p-0 pt-4">
                 <Button type="submit" className="w-full" disabled={isProcessing}>
@@ -208,11 +208,11 @@ export function AuthForm({ clientInfo }: AuthFormProps) {
           <p className="text-sm text-muted-foreground text-center">Por seguridad, debes establecer una nueva contraseña.</p>
           <div className="space-y-2">
               <Label htmlFor="new-password">Nueva Contraseña</Label>
-              <Input id="new-password" type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} required suppressHydrationWarning />
+              <Input id="new-password" type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} required />
           </div>
            <div className="space-y-2">
               <Label htmlFor="confirm-new-password">Confirmar Nueva Contraseña</Label>
-              <Input id="confirm-new-password" type="password" value={confirmNewPassword} onChange={e => setConfirmNewPassword(e.target.value)} required suppressHydrationWarning />
+              <Input id="confirm-new-password" type="password" value={confirmNewPassword} onChange={e => setConfirmNewPassword(e.target.value)} required />
           </div>
            <CardFooter className="p-0 pt-4">
               <Button onClick={handleSetNewPassword} className="w-full" disabled={isProcessing}>
