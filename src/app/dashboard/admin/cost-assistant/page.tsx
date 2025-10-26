@@ -14,25 +14,23 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/modules/core/hooks/use-toast';
 import { getCostAssistantSettings, saveCostAssistantSettings } from '@/modules/cost-assistant/lib/actions';
-import { CostAssistantSettings } from '@/modules/core/types';
+import type { CostAssistantSettings } from '@/modules/core/types';
 import { useAuth } from '@/modules/core/hooks/useAuth';
 
 export default function CostAssistantSettingsPage() {
     const { isAuthorized } = useAuthorization(['admin:settings:cost-assistant']);
     const { setTitle } = usePageTitle();
     const { toast } = useToast();
-    const { user } = useAuth();
-    const [settings, setSettings] = useState<CostAssistantSettings | null>(null);
+    const { user, isReady } = useAuth();
+    const [settings, setSettings] = useState<Partial<CostAssistantSettings> | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
         setTitle("Configuración del Asistente de Costos");
-        if (isAuthorized && user) {
+        if (isReady && isAuthorized && user) {
             getCostAssistantSettings(user.id)
                 .then(data => {
-                    // Provide default values if they are missing
                     const completeSettings = {
-                        ...data,
                         draftPrefix: data.draftPrefix ?? 'AC-',
                         nextDraftNumber: data.nextDraftNumber ?? 1,
                     };
@@ -44,12 +42,12 @@ export default function CostAssistantSettingsPage() {
                 })
                 .finally(() => setIsLoading(false));
         }
-    }, [setTitle, isAuthorized, toast, user]);
+    }, [setTitle, isAuthorized, toast, user, isReady]);
 
     const handleSave = async () => {
         if (!settings || !user) return;
         try {
-            await saveCostAssistantSettings(user.id, settings);
+            await saveCostAssistantSettings(user.id, settings as CostAssistantSettings);
             toast({ title: "Configuración Guardada", description: "Los ajustes del Asistente de Costos han sido actualizados." });
         } catch (error: any) {
             toast({ title: "Error al Guardar", description: error.message, variant: "destructive" });

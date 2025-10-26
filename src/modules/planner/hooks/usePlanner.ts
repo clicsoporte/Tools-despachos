@@ -180,14 +180,14 @@ export const usePlanner = () => {
     
     useEffect(() => {
         setTitle("Planificador OP");
-        if (isAuthReady) { // Use isAuthReady instead of isAuthorized
+        if (isAuthReady) {
             loadInitialData(false);
         }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [setTitle, isAuthReady]); // Use isAuthReady
+    }, [setTitle, isAuthReady]);
     
     useEffect(() => {
-        if (!isAuthReady || state.isLoading) return; // Use isAuthReady
+        if (!isAuthReady || state.isLoading) return;
         let isMounted = true;
         const reload = async () => {
             await loadInitialData(false);

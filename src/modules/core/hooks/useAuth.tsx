@@ -25,8 +25,7 @@ interface AuthContextType {
   stockLevels: StockInfo[];
   allExemptions: Exemption[];
   exemptionLaws: ExemptionLaw[];
-  isLoading: boolean;
-  isReady: boolean; // New flag to signal when ALL auth-related data is loaded
+  isReady: boolean; // Flag to signal when ALL auth-related data is loaded
   exchangeRateData: {
       rate: number | null;
       date: string | null;
@@ -67,8 +66,7 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
   const [unreadSuggestionsCount, setUnreadSuggestionsCount] = useState(0);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadNotificationsCount, setUnreadNotificationsCount] = useState(0);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isReady, setIsReady] = useState(false); // New ready state
+  const [isReady, setIsReady] = useState(false); // Only one state for readiness
 
   const fetchExchangeRate = useCallback(async () => {
     try {
@@ -106,19 +104,12 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
   }, []);
 
   const loadAuthData = useCallback(async () => {
-    // Only set loading to true on the very first load. Subsequent calls (refreshAuth)
-    // will update data in the background without a global loading screen.
-    if (!isReady) {
-        setIsLoading(true);
-    }
-    
     try {
       const currentUser = await getCurrentUserClient();
       
       if (!currentUser) {
           setUser(null);
-          setIsLoading(false); // Stop loading if no user
-          setIsReady(false); // Not ready if no user
+          setIsReady(true); // Ready, but with no user. This signals a redirect.
           return;
       }
       
@@ -141,38 +132,36 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
       } else {
         setUserRole(null);
       }
-      setIsReady(true); // Signal that all data is loaded and we are ready
     } catch (error) {
       console.error("Failed to load authentication context data:", error);
       setUser(null);
       setUserRole(null);
       setCompanyData(null);
-      setIsReady(false); // Failed to load, so not ready
     } finally {
-      setIsLoading(false);
+      setIsReady(true); // Signal that loading is complete, successfully or not.
     }
-  }, [isReady]);
+  }, []);
 
   const refreshAuthAndRedirect = async (path: string) => {
+    setIsReady(false); // Reset readiness to show loading screen during transition
     await loadAuthData();
     router.push(path);
   };
   
   const handleLogout = async () => {
     await clientLogout();
-    // Use a full page reload to ensure all state is cleared, which is more robust
-    // for preventing login/logout issues than just using the router.
+    setIsReady(false);
+    setUser(null);
+    setUserRole(null);
     window.location.href = '/';
   }
 
   useEffect(() => {
-    // This effect runs only once on mount to load initial data.
     loadAuthData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [loadAuthData]);
 
   useEffect(() => {
-    if (user) {
+    if (user && isReady) {
       fetchUnreadNotifications();
       updateUnreadSuggestionsCount();
       const interval = setInterval(() => {
@@ -181,7 +170,7 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
       }, 30000); // Poll every 30 seconds
       return () => clearInterval(interval);
     }
-  }, [user, fetchUnreadNotifications, updateUnreadSuggestionsCount]);
+  }, [user, isReady, fetchUnreadNotifications, updateUnreadSuggestionsCount]);
 
   const contextValue: AuthContextType = {
     user,
@@ -192,8 +181,7 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
     stockLevels,
     allExemptions,
     exemptionLaws,
-    isLoading,
-    isReady, // Expose the new flag
+    isReady,
     exchangeRateData,
     unreadSuggestions,
     unreadSuggestionsCount,

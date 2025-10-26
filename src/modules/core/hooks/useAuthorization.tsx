@@ -6,9 +6,8 @@
 'use client';
 
 import { useEffect, useMemo } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useAuth } from './useAuth';
-import { useToast } from './use-toast';
 
 type UseAuthorizationReturn = {
   isAuthorized: boolean | null;
@@ -18,9 +17,7 @@ type UseAuthorizationReturn = {
 
 export function useAuthorization(requiredPermissions: string[] = []): UseAuthorizationReturn {
     const router = useRouter();
-    const pathname = usePathname();
-    const { toast } = useToast();
-    const { user, userRole, isLoading, isReady } = useAuth(); // Use isReady from the central auth context
+    const { user, userRole, isReady } = useAuth(); // Use isReady from the central auth context
 
     const userPermissions = useMemo(() => userRole?.permissions || [], [userRole]);
 
@@ -39,15 +36,13 @@ export function useAuthorization(requiredPermissions: string[] = []): UseAuthori
     }, [isReady, user, userRole, requiredPermissions, userPermissions]);
 
     useEffect(() => {
-        // Only act if authorization status is definitively decided (not null) and it's negative.
-        if (isAuthorized === false) {
-             // Instead of a toast and redirect which can cause a flash of content,
-             // components should use the `isAuthorized` flag to conditionally render.
-             // This keeps the control within the component and provides a smoother experience.
-             // If a component absolutely needs a redirect, it can implement it itself.
-             // The main redirect logic is now in DashboardLayout.
+        // This effect is now simplified. The main redirect logic is in DashboardLayout.
+        // It's kept in case specific pages need to react to authorization changes in the future,
+        // but it no longer handles the primary redirection responsibility.
+        if (isReady && !isAuthorized) {
+            // Optional: Log an access attempt or handle specific page logic
         }
-    }, [isAuthorized, router, toast, pathname]);
+    }, [isAuthorized, isReady]);
 
     const hasPermission = (permission: string) => {
         if (!isReady || !userRole) return false;

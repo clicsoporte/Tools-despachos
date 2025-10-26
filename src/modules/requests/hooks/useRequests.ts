@@ -277,14 +277,14 @@ export const useRequests = () => {
     
     useEffect(() => {
         setTitle("Solicitud de Compra");
-        if (isAuthReady) { // Depend on isAuthReady
+        if (isAuthReady) {
             loadInitialData(false);
         }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [setTitle, isAuthReady]); // Use isAuthReady
+    }, [setTitle, isAuthReady]);
 
      useEffect(() => {
-        if (!isAuthReady || state.isLoading) return; // Depend on isAuthReady
+        if (!isAuthReady || state.isLoading) return;
         loadInitialData(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [state.viewingArchived, state.archivedPage, state.pageSize, isAuthReady]);
@@ -894,8 +894,6 @@ export const useRequests = () => {
         state,
         actions,
         selectors,
-        isLoading: state.isLoading,
         isAuthorized
     };
 };
-

@@ -11,7 +11,7 @@ import { Header } from "../../components/layout/header";
 import { SidebarInset, SidebarProvider } from "../../components/ui/sidebar";
 import { usePageTitle, PageTitleProvider } from "../../modules/core/hooks/usePageTitle";
 import { useAuth } from "@/modules/core/hooks/useAuth";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 
@@ -38,22 +38,22 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { user, isReady, isLoading } = useAuth();
+  const { user, isReady } = useAuth();
   const router = useRouter();
 
   // This effect is the single source of truth for session verification.
   // It waits until the auth state is fully resolved.
   useEffect(() => {
-    // If loading is finished (`!isLoading`) but the context isn't ready and there's no user,
-    // it implies an invalid session (e.g., deleted user, expired token). Redirect to login.
-    if (!isLoading && !isReady && !user) {
+    // If the auth context is ready but there's no user, it means the session
+    // is invalid (or the user logged out). Redirect to the login page.
+    if (isReady && !user) {
       router.replace('/');
     }
-  }, [isLoading, isReady, user, router]);
+  }, [isReady, user, router]);
 
   // While waiting for the initial check and for all auth data to be ready,
   // show a global loading screen.
-  if (isLoading || !isReady) {
+  if (!isReady) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-background">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
