@@ -637,7 +637,7 @@ export default function QuoterPage() {
               onClick={actions.addManualLine}
             >
               <PlusCircle className="mr-2 h-4 w-4" />
-              Añadir Línea
+              Añadir Línea Manual
             </Button>
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
               <div className="space-y-2">
