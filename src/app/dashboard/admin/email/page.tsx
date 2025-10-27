@@ -82,16 +82,25 @@ export default function EmailSettingsPage() {
     };
 
     const handleTest = async () => {
-        if (!settings || !settings.smtpUser) {
-            toast({ title: "Faltan datos", description: "Por favor, ingresa la dirección de correo del remitente (Usuario) antes de enviar una prueba.", variant: "destructive" });
+        if (!settings || !settings.smtpUser || !user || !user.email) {
+            toast({ title: "Faltan datos", description: "Por favor, completa la configuración SMTP y asegúrate de haber iniciado sesión.", variant: "destructive" });
             return;
         }
+        
         setIsTesting(true);
+
+        // Build a unique list of recipients
+        const recipients = [settings.smtpUser];
+        if (user.email !== settings.smtpUser) {
+            recipients.push(user.email);
+        }
+
         try {
-            await testEmailSettings(settings, settings.smtpUser);
+            await testEmailSettings(settings, recipients);
             toast({
                 title: "Correo de Prueba Enviado",
-                description: `Se envió un correo de prueba a ${settings.smtpUser}. Por favor, verifica la bandeja de entrada.`,
+                description: `Se envió un correo de prueba a: ${recipients.join(', ')}.`,
+                duration: 6000,
             });
         } catch (error: any) {
             logError("Failed to send test email", { error: error.message });

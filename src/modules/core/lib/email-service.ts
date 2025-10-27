@@ -84,7 +84,7 @@ function createTransporter(settings: EmailSettings) {
  * @param options.subject The email subject.
  * @param options.html The HTML body of the email.
  */
-export async function sendEmail({ to, subject, html }: { to: string, subject: string, html: string }) {
+export async function sendEmail({ to, subject, html }: { to: string | string[], subject: string, html: string }) {
     const settings = await getEmailSettings();
     const transporter = createTransporter(settings as EmailSettings);
 
@@ -99,13 +99,13 @@ export async function sendEmail({ to, subject, html }: { to: string, subject: st
 /**
  * Sends a test email to verify SMTP configuration.
  * @param settings The settings to test.
- * @param testRecipientEmail The email address to send the test email to.
+ * @param testRecipientEmails The email addresses to send the test email to.
  */
-export async function testEmailSettings(settings: EmailSettings, testRecipientEmail: string): Promise<void> {
+export async function testEmailSettings(settings: EmailSettings, testRecipientEmails: string[]): Promise<void> {
     const transporter = createTransporter(settings);
     await transporter.sendMail({
         from: `"${settings.smtpUser}" <${settings.smtpUser}>`,
-        to: testRecipientEmail,
+        to: testRecipientEmails.join(','),
         subject: "Correo de Prueba - Clic-Tools",
         html: "<p>¡Hola!</p><p>Este es un correo de prueba para verificar que tu configuración SMTP en Clic-Tools funciona correctamente.</p><p>¡La conexión es exitosa!</p>",
     });
