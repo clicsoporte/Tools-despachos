@@ -89,10 +89,13 @@ export default function PurchaseSuggestionsPage() {
                             <CardTitle>Filtros de Análisis</CardTitle>
                             <CardDescription>Selecciona los filtros para analizar los pedidos del ERP.</CardDescription>
                         </div>
-                        <Button onClick={actions.handleAnalyze} disabled={isLoading}>
-                            {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Search className="mr-2 h-4 w-4" />}
-                            Analizar Pedidos
-                        </Button>
+                        <div className="flex items-center gap-2">
+                            <Button variant="outline" onClick={actions.savePreferences} disabled={isSubmitting}><Save className="mr-2 h-4 w-4"/> Guardar Preferencias</Button>
+                            <Button onClick={actions.handleAnalyze} disabled={isLoading}>
+                                {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Search className="mr-2 h-4 w-4" />}
+                                Analizar Pedidos
+                            </Button>
+                        </div>
                     </div>
                 </CardHeader>
                 <CardContent>
@@ -169,7 +172,6 @@ export default function PurchaseSuggestionsPage() {
                                 </CardDescription>
                             </div>
                             <div className="flex items-center gap-2">
-                                <Button variant="outline" onClick={actions.savePreferences} disabled={isSubmitting}><Save className="mr-2 h-4 w-4"/> Guardar Preferencias</Button>
                                 <Dialog>
                                     <DialogTrigger asChild>
                                         <Button variant="outline"><Columns3 className="mr-2 h-4 w-4"/> Columnas</Button>

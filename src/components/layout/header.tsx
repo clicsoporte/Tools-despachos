@@ -110,8 +110,9 @@ function HeaderActions() {
                 </div>
             )}
              {hasPermission('admin:import:run') && (
-                <Button onClick={handleFullSync} disabled={isSyncing} size="icon" variant="ghost" className="relative">
-                    {isSyncing ? <Loader2 className="h-5 w-5 animate-spin" /> : <RefreshCw className={cn("h-5 w-5", isSyncOld && "animate-pulse text-red-500")}/>}
+                <Button onClick={handleFullSync} disabled={isSyncing} variant="outline" className="h-9 w-9 p-0 sm:w-auto sm:px-3">
+                    {isSyncing ? <Loader2 className="animate-spin h-4 w-4" /> : <RefreshCw className={cn("h-4 w-4", isSyncOld && "animate-pulse text-red-500")}/>}
+                    <span className="hidden sm:inline ml-2">Sincronizar ERP</span>
                 </Button>
             )}
             <Dialog open={isSuggestionDialogOpen} onOpenChange={setSuggestionDialogOpen}>
