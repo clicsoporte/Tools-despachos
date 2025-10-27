@@ -531,6 +531,7 @@ export default function QuoterPage() {
                           ref={(el) => actions.setLineRef(line.id, 'qty', el)}
                           type="text"
                           value={line.displayQuantity}
+                          onFocus={(e) => e.target.select()}
                           onChange={(e) =>
                             actions.updateLine(line.id, {
                               displayQuantity: e.target.value,
@@ -570,6 +571,7 @@ export default function QuoterPage() {
                           ref={(el) => actions.setLineRef(line.id, 'price', el)}
                           type="text"
                           value={line.displayPrice}
+                          onFocus={(e) => e.target.select()}
                           onChange={(e) =>
                             actions.updateLine(line.id, {
                               displayPrice: e.target.value,
