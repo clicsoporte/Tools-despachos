@@ -20,9 +20,11 @@ import {
     getUserByName,
     getRolesWithPermission,
     addNote as addNoteServer,
+} from './db';
+import {
     saveUserPreferences as saveUserPreferencesServer,
     getUserPreferences as getUserPreferencesServer
-} from './db';
+} from '@/modules/core/lib/db';
 import type { PurchaseSuggestion } from '../hooks/useRequestSuggestions.tsx';
 import { getAllProducts, getAllStock, getAllCustomers } from '@/modules/core/lib/db';
 
