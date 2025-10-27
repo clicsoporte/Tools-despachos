@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from '@/components/ui/input';
-import { Loader2, CalendarIcon, FilePlus, Layers, AlertCircle, ShoppingCart, FilterX, Search, FileSpreadsheet, Columns3, ArrowUp, ArrowDown, Info, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Loader2, CalendarIcon, FilePlus, Layers, AlertCircle, ShoppingCart, FilterX, Search, FileSpreadsheet, Columns3, ArrowUp, ArrowDown, Info, ChevronLeft, ChevronRight, Save } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
@@ -169,6 +169,7 @@ export default function PurchaseSuggestionsPage() {
                                 </CardDescription>
                             </div>
                             <div className="flex items-center gap-2">
+                                <Button variant="outline" onClick={actions.savePreferences} disabled={isSubmitting}><Save className="mr-2 h-4 w-4"/> Guardar Preferencias</Button>
                                 <Dialog>
                                     <DialogTrigger asChild>
                                         <Button variant="outline"><Columns3 className="mr-2 h-4 w-4"/> Columnas</Button>

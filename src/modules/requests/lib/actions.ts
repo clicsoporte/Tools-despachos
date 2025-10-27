@@ -4,7 +4,7 @@
  */
 'use client';
 
-import type { PurchaseRequest, UpdateRequestStatusPayload, PurchaseRequestHistoryEntry, RequestSettings, UpdatePurchaseRequestPayload, RejectCancellationPayload, DateRange, AdministrativeAction, AdministrativeActionPayload, StockInfo, ErpOrderHeader, ErpOrderLine, User, RequestNotePayload } from '../../core/types';
+import type { PurchaseRequest, UpdateRequestStatusPayload, PurchaseRequestHistoryEntry, RequestSettings, UpdatePurchaseRequestPayload, RejectCancellationPayload, DateRange, AdministrativeAction, AdministrativeActionPayload, StockInfo, ErpOrderHeader, ErpOrderLine, User, RequestNotePayload, UserPreferences } from '../../core/types';
 import { logInfo, logError } from '@/modules/core/lib/logger';
 import { createNotificationForRole, createNotification } from '@/modules/core/lib/notifications-actions';
 import { 
@@ -19,7 +19,9 @@ import {
     getErpOrderData as getErpOrderDataServer,
     getUserByName,
     getRolesWithPermission,
-    addNote as addNoteServer
+    addNote as addNoteServer,
+    saveUserPreferences as saveUserPreferencesServer,
+    getUserPreferences as getUserPreferencesServer
 } from './db';
 import type { PurchaseSuggestion } from '../hooks/useRequestSuggestions.tsx';
 import { getAllProducts, getAllStock, getAllCustomers } from '@/modules/core/lib/db';
@@ -262,4 +264,22 @@ export async function addNoteToRequest(payload: { requestId: number; notes: stri
     const updatedRequest = await addNoteServer(payload);
     await logInfo(`Note added to request ${updatedRequest.consecutive} by ${payload.updatedBy}.`);
     return updatedRequest;
+}
+
+/**
+ * Gets the saved preferences for the purchase suggestions page for a specific user.
+ * @param userId The ID of the user.
+ * @returns A promise that resolves to the saved preferences or null.
+ */
+export async function getPurchaseSuggestionsPreferences(userId: number): Promise<Partial<UserPreferences> | null> {
+    return getUserPreferencesServer(userId, 'purchaseSuggestionsPrefs');
+}
+
+/**
+ * Saves the preferences for the purchase suggestions page for a specific user.
+ * @param userId The ID of the user.
+ * @param preferences The preferences object to save.
+ */
+export async function savePurchaseSuggestionsPreferences(userId: number, preferences: Partial<UserPreferences>): Promise<void> {
+    return saveUserPreferencesServer(userId, 'purchaseSuggestionsPrefs', preferences);
 }

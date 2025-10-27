@@ -8,8 +8,8 @@ import { useToast } from '@/modules/core/hooks/use-toast';
 import { usePageTitle } from '@/modules/core/hooks/usePageTitle';
 import { useAuthorization } from '@/modules/core/hooks/useAuthorization';
 import { logError, logInfo } from '@/modules/core/lib/logger';
-import { getRequestSuggestions, savePurchaseRequest } from '@/modules/requests/lib/actions';
-import type { Customer, DateRange, PurchaseRequest } from '@/modules/core/types';
+import { getRequestSuggestions, savePurchaseRequest, getPurchaseSuggestionsPreferences, savePurchaseSuggestionsPreferences } from '@/modules/requests/lib/actions';
+import type { Customer, DateRange, PurchaseRequest, UserPreferences } from '@/modules/core/types';
 import { useAuth } from '@/modules/core/hooks/useAuth';
 import { subDays, startOfDay, format, parseISO } from 'date-fns';
 import { useDebounce } from 'use-debounce';
@@ -140,11 +140,28 @@ export function useRequestSuggestions() {
     
     useEffect(() => {
         setTitle("Sugerencias de Compra");
+        const loadPrefsAndData = async () => {
+            if(currentUser) {
+                const prefs = await getPurchaseSuggestionsPreferences(currentUser.id);
+                if (prefs) {
+                    updateState({
+                        classificationFilter: prefs.classificationFilter || [],
+                        showOnlyMyOrders: prefs.showOnlyMyOrders || false,
+                        visibleColumns: prefs.visibleColumns || availableColumns.map(c => c.id),
+                        sortKey: prefs.sortKey || 'earliestCreationDate',
+                        sortDirection: prefs.sortDirection || 'desc',
+                        rowsPerPage: prefs.rowsPerPage || 5,
+                    });
+                }
+            }
+            await handleAnalyze();
+        };
+
         if(isAuthorized) {
-            handleAnalyze();
+            loadPrefsAndData();
         }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [setTitle, isAuthorized]);
+    }, [setTitle, isAuthorized, currentUser?.id]);
 
     const filteredSuggestions = useMemo(() => {
         let filtered = state.suggestions.filter(item => {
@@ -401,6 +418,25 @@ export function useRequestSuggestions() {
         updateState({ sortKey: key, sortDirection: direction });
     };
 
+    const savePreferences = async () => {
+        if (!currentUser) return;
+        const prefsToSave = {
+            classificationFilter: state.classificationFilter,
+            showOnlyMyOrders: state.showOnlyMyOrders,
+            visibleColumns: state.visibleColumns,
+            sortKey: state.sortKey,
+            sortDirection: state.sortDirection,
+            rowsPerPage: state.rowsPerPage,
+        };
+        try {
+            await savePurchaseSuggestionsPreferences(currentUser.id, prefsToSave);
+            toast({ title: "Preferencias Guardadas", description: "Tus filtros y configuraciones de vista han sido guardados." });
+        } catch (error: any) {
+            logError("Failed to save purchase suggestions preferences", { error: error.message });
+            toast({ title: "Error", description: "No se pudieron guardar tus preferencias.", variant: "destructive" });
+        }
+    };
+
     const selectors = {
         filteredSuggestions,
         paginatedSuggestions,
@@ -439,6 +475,7 @@ export function useRequestSuggestions() {
         setDuplicateConfirmOpen: (isOpen: boolean) => updateState({ isDuplicateConfirmOpen: isOpen }),
         setCurrentPage: (page: number) => updateState({ currentPage: page }),
         setRowsPerPage: (size: number) => updateState({ rowsPerPage: size, currentPage: 0 }),
+        savePreferences,
     };
 
     return {
