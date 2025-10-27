@@ -277,7 +277,7 @@ export const useQuoter = () => {
             lastLineRefs?.qty?.focus();
         }, 0);
     }
-  }, [lines.length]);
+  }, [lines]);
 
 
   const customerOptions = useMemo(() => {
