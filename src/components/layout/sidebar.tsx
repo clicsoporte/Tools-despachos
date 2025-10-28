@@ -30,6 +30,8 @@ import {
   Warehouse,
   Search,
   PackagePlus,
+  BookMarked,
+  MessageSquare,
   BarChartBig,
   Calculator,
 } from "lucide-react";
@@ -212,10 +214,10 @@ export function AppSidebar() {
             <SidebarMenuItem>
                 <SidebarMenuButton
                 asChild
-                isActive={isActive("/dashboard/settings")}
+                isActive={isActive("/dashboard/profile")}
                 tooltip="Mi Perfil"
                 >
-                <Link href="/dashboard/settings" onClick={handleLinkClick}>
+                <Link href="/dashboard/profile" onClick={handleLinkClick}>
                     <Settings />
                     <span>Mi Perfil</span>
                 </Link>

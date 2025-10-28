@@ -26,4 +26,6 @@ const nextConfig = {
   },
 };
 
+// A harmless comment to force cache invalidation.
+
 module.exports = nextConfig;
