@@ -374,6 +374,8 @@ export type PurchaseRequest = {
   priority: PurchaseRequestPriority;
   purchaseType: PurchaseType;
   unitSalePrice?: number; // Precio de venta unitario sin IVA
+  salePriceCurrency?: 'CRC' | 'USD';
+  requiresCurrency?: boolean;
   erpOrderNumber?: string; // Número de pedido ERP de origen
   erpOrderLine?: number; // Número de línea del pedido ERP
   erpEntryNumber?: string; // Consecutivo de ingreso en el ERP
@@ -395,8 +397,6 @@ export type PurchaseRequest = {
   hasBeenModified?: boolean;
   sourceOrders?: string[];
   involvedClients?: { id: string; name: string }[];
-  salePriceCurrency?: 'CRC' | 'USD';
-  requiresCurrency?: boolean;
 };
 
 export type UpdatePurchaseRequestPayload = Partial<Omit<PurchaseRequest, 'id' | 'consecutive' | 'requestDate' | 'status' | 'reopened' | 'requestedBy' | 'deliveredQuantity' | 'receivedInWarehouseBy' | 'receivedDate' | 'previousStatus' | 'lastModifiedAt' | 'lastModifiedBy' | 'hasBeenModified' | 'approvedBy' | 'lastStatusUpdateBy' | 'lastStatusUpdateNotes'>> & {
@@ -715,9 +715,15 @@ export type ProductionReportData = {
 }
 
 // --- User Preferences ---
-export type UserPreferences = {
-    [key: string]: any;
+export interface UserPreferences {
+    classificationFilter: string[];
+    showOnlyMyOrders: boolean;
+    visibleColumns: string[];
+    sortKey: 'earliestCreationDate' | 'shortage';
+    sortDirection: 'asc' | 'desc';
+    rowsPerPage: number;
 };
+
 
 // --- Cost Assistant Types ---
 export type CostAssistantLine = {

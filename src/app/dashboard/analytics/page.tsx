@@ -28,6 +28,9 @@ export default function AnalyticsDashboardPage() {
             if (tool.id === 'purchase-suggestions') {
                 return hasPermission('analytics:purchase-suggestions:read');
             }
+            if (tool.id === 'purchase-report') {
+                return hasPermission('analytics:purchase-report:read');
+            }
             if (tool.id === 'production-report') {
                 return hasPermission('analytics:production-report:read');
             }

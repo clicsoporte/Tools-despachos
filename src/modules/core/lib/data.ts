@@ -200,6 +200,7 @@ export const initialRoles: Role[] = [
         "planner:schedule",
         "analytics:read",
         "analytics:purchase-suggestions:read",
+        "analytics:purchase-report:read",
         "analytics:production-report:read",
         "analytics:user-permissions:read",
         "cost-assistant:access",
@@ -290,6 +291,7 @@ export const adminPermissions = [
 export const analyticsPermissions = [
     "analytics:read",
     "analytics:purchase-suggestions:read",
+    "analytics:purchase-report:read",
     "analytics:production-report:read",
     "analytics:user-permissions:read",
 ];
@@ -445,6 +447,15 @@ export const analyticsTools: Tool[] = [
         href: "/dashboard/analytics/purchase-suggestions",
         icon: Lightbulb,
         bgColor: "bg-blue-600",
+        textColor: "text-white",
+    },
+    {
+        id: "purchase-report",
+        name: "Reporte de Compras",
+        description: "Visualizar y exportar un reporte histórico de compras.",
+        href: "/dashboard/analytics/purchase-report",
+        icon: FileText,
+        bgColor: "bg-cyan-600",
         textColor: "text-white",
     },
     {
