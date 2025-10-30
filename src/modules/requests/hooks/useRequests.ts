@@ -50,7 +50,9 @@ const emptyRequest: Omit<PurchaseRequest, 'id' | 'consecutive' | 'requestDate' |
     itemDescription: '',
     quantity: 0,
     notes: '',
-    unitSalePrice: 0,
+    unitSalePrice: undefined,
+    salePriceCurrency: 'CRC',
+    requiresCurrency: false,
     manualSupplier: '',
     erpOrderNumber: '',
     erpOrderLine: 0,
@@ -79,7 +81,7 @@ type UIErpOrderLine = {
 };
 
 
-const statusConfig: { [key: string]: { label: string, color: string } } = {
+const statusConfig: { [key: string]: { label: string; color: string } } = {
     pending: { label: "Pendiente", color: "bg-yellow-500" },
     'purchasing-review': { label: "Revisión Compras", color: "bg-cyan-500" },
     'pending-approval': { label: "Pendiente Aprobación", color: "bg-orange-500" },
@@ -795,7 +797,7 @@ export const useRequests = () => {
             }
         },
         // setters
-        setNewRequestDialogOpen: (isOpen: boolean) => updateState({ isNewRequestDialogOpen: isOpen, newRequest: emptyRequest, clientSearchTerm: '', itemSearchTerm: '' }),
+        setNewRequestDialogOpen: (isOpen: boolean) => updateState({ isNewRequestDialogOpen: isOpen, newRequest: { ...emptyRequest, requiredDate: new Date().toISOString().split('T')[0] }, clientSearchTerm: '', itemSearchTerm: '' }),
         setEditRequestDialogOpen: (isOpen: boolean) => updateState({ isEditRequestDialogOpen: isOpen }),
         setViewingArchived: (isArchived: boolean) => updateState({ viewingArchived: isArchived, archivedPage: 0 }),
         setArchivedPage: (updater: (prev: number) => number) => updateState({ archivedPage: updater(state.archivedPage) }),
