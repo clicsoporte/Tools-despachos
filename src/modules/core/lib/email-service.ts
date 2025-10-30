@@ -33,7 +33,7 @@ export async function getEmailSettings(): Promise<Partial<EmailSettings>> {
             console.warn('email_settings table does not exist. Returning empty settings.');
             return {};
         }
-        logError('Failed to get email settings', { error: (error as Error).message });
+        await logError('getEmailSettings', { error: (error as Error).message });
         return {};
     }
 }

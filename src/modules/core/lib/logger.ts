@@ -31,8 +31,8 @@ export async function logWarn(message: string, details?: Record<string, any>) {
  * @param message The error message to log.
  * @param details Optional structured data, often including the error object.
  */
-export async function logError(message: string, details?: Record<string, any>) {
-  await dbAddLog({ type: "ERROR", message, details });
+export async function logError(context: string, details?: Record<string, any>) {
+  await dbAddLog({ type: "ERROR", message: context, details });
 }
 
 /**

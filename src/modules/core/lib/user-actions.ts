@@ -61,7 +61,7 @@ export async function createFirstUser(
     });
     await logInfo(`Initial admin user '${userToCreate.name}' created successfully.`, clientInfo);
   } catch (error: any) {
-    await logError("Database error during first user creation", { error: error.message, ...clientInfo });
+    await logError("Error in createFirstUser: Database error during user creation", { error: error.message, ...clientInfo });
     throw new Error("Hubo un error al guardar el usuario en la base de datos.");
   }
 }

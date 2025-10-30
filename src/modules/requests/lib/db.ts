@@ -8,6 +8,7 @@ import { getAllUsers as getAllUsersFromMain } from '../../core/lib/auth';
 import { logInfo, logError, logWarn } from '../../core/lib/logger';
 import type { PurchaseRequest, RequestSettings, UpdateRequestStatusPayload, PurchaseRequestHistoryEntry, UpdatePurchaseRequestPayload, RejectCancellationPayload, PurchaseRequestStatus, DateRange, AdministrativeAction, AdministrativeActionPayload, StockInfo, ErpOrderHeader, ErpOrderLine, User, PurchaseSuggestion } from '../../core/types';
 import { format, parseISO } from 'date-fns';
+import { es } from 'date-fns/locale';
 import { executeQuery } from '@/modules/core/lib/sql-service';
 import { getAllProducts, getAllStock, getAllCustomers, getAllErpPurchaseOrderHeaders, getAllErpPurchaseOrderLines } from '@/modules/core/lib/db';
 
@@ -264,21 +265,7 @@ export async function addRequest(request: Omit<PurchaseRequest, 'id' | 'consecut
         status: 'pending',
         reopened: false,
     };
-
-    const stmt = db.prepare(`
-        INSERT INTO purchase_requests (
-            consecutive, requestDate, requiredDate, clientId, clientName, clientTaxId,
-            itemId, itemDescription, quantity, unitSalePrice, salePriceCurrency, requiresCurrency,
-            erpOrderNumber, erpOrderLine, manualSupplier, route, shippingMethod, purchaseOrder,
-            status, pendingAction, notes, requestedBy, reopened, inventory, priority, purchaseType, arrivalDate
-        ) VALUES (
-            @consecutive, @requestDate, @requiredDate, @clientId, @clientName, @clientTaxId,
-            @itemId, @itemDescription, @quantity, @unitSalePrice, @salePriceCurrency, @requiresCurrency,
-            @erpOrderNumber, @erpOrderLine, @manualSupplier, @route, @shippingMethod, @purchaseOrder,
-            @status, @pendingAction, @notes, @requestedBy, @reopened, @inventory, @priority, @purchaseType, @arrivalDate
-        )
-    `);
-
+    
     const preparedRequest = {
         ...newRequest,
         unitSalePrice: newRequest.unitSalePrice ?? null,
@@ -298,16 +285,40 @@ export async function addRequest(request: Omit<PurchaseRequest, 'id' | 'consecut
         clientTaxId: newRequest.clientTaxId || null,
     };
 
-    const info = stmt.run(preparedRequest);
-    const newRequestId = info.lastInsertRowid as number;
+    const transaction = db.transaction(() => {
+        const insertStmt = db.prepare(`
+            INSERT INTO purchase_requests (
+                consecutive, requestDate, requiredDate, clientId, clientName, clientTaxId,
+                itemId, itemDescription, quantity, unitSalePrice, salePriceCurrency, requiresCurrency,
+                erpOrderNumber, erpOrderLine, manualSupplier, route, shippingMethod, purchaseOrder,
+                status, pendingAction, notes, requestedBy, reopened, inventory, priority, purchaseType, arrivalDate
+            ) VALUES (
+                @consecutive, @requestDate, @requiredDate, @clientId, @clientName, @clientTaxId,
+                @itemId, @itemDescription, @quantity, @unitSalePrice, @salePriceCurrency, @requiresCurrency,
+                @erpOrderNumber, @erpOrderLine, @manualSupplier, @route, @shippingMethod, @purchaseOrder,
+                @status, @pendingAction, @notes, @requestedBy, @reopened, @inventory, @priority, @purchaseType, @arrivalDate
+            )
+        `);
+        
+        const info = insertStmt.run(preparedRequest);
+        const newRequestId = info.lastInsertRowid as number;
 
-    await saveSettings({ ...settings, nextRequestNumber: nextNumber + 1 });
-    
-    const historyStmt = db.prepare('INSERT INTO purchase_request_history (requestId, timestamp, status, updatedBy, notes) VALUES (?, ?, ?, ?, ?)');
-    historyStmt.run(newRequestId, new Date().toISOString(), 'pending', newRequest.requestedBy, 'Solicitud creada');
+        db.prepare('UPDATE request_settings SET value = ? WHERE key = \'nextRequestNumber\'').run(nextNumber + 1);
+        
+        const historyStmt = db.prepare('INSERT INTO purchase_request_history (requestId, timestamp, status, updatedBy, notes) VALUES (?, ?, ?, ?, ?)');
+        historyStmt.run(newRequestId, new Date().toISOString(), 'pending', newRequest.requestedBy, 'Solicitud creada');
+        
+        return newRequestId;
+    });
 
-    const createdRequest = db.prepare('SELECT * FROM purchase_requests WHERE id = ?').get(newRequestId) as PurchaseRequest;
-    return createdRequest;
+    try {
+        const newId = transaction();
+        const createdRequest = db.prepare('SELECT * FROM purchase_requests WHERE id = ?').get(newId) as PurchaseRequest;
+        return createdRequest;
+    } catch (error: any) {
+        logError("Error in addRequest transaction", { error: error.message, details: preparedRequest });
+        throw error;
+    }
 }
 
 export async function updateRequest(payload: UpdatePurchaseRequestPayload): Promise<PurchaseRequest> {
@@ -356,6 +367,7 @@ export async function updateRequest(payload: UpdatePurchaseRequestPayload): Prom
             requestId, 
             ...dataToUpdate,
             requiresCurrency: dataToUpdate.requiresCurrency ? 1 : 0,
+            salePriceCurrency: dataToUpdate.salePriceCurrency || 'CRC',
             updatedBy,
             lastModifiedAt: new Date().toISOString(),
             hasBeenModified: hasBeenModified ? 1 : 0
@@ -552,7 +564,7 @@ async function getRealTimeInventory(itemIds: string[], signal?: AbortSignal): Pr
         return JSON.parse(JSON.stringify(result));
 
     } catch (error: any) {
-        logError("Error fetching real-time inventory", { error: error.message, query: stockQuery });
+        logError("Error al obtener el inventario en tiempo real", { error: error.message, query: stockQuery });
         throw error;
     }
 }

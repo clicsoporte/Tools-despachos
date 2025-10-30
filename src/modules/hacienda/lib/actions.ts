@@ -86,7 +86,7 @@ export async function getContributorInfo(taxpayerId: string): Promise<HaciendaCo
         const data = await response.json();
         return data as HaciendaContributorInfo;
     } catch (error: any) {
-        logError("Error al obtener información del contribuyente", { error: error.message, taxpayerId });
+        await logError("Error en getContributorInfo", { error: error.message, taxpayerId });
         return { error: true, message: error.message };
     }
 }
@@ -124,7 +124,7 @@ export async function getExemptionStatus(authNumber: string): Promise<HaciendaEx
         const data = await response.json();
         return data as HaciendaExemptionApiResponse;
     } catch (error: any) {
-        logError("Error al obtener estado de exoneración", { error: error.message, authNumber });
+        await logError("Error en getExemptionStatus", { error: error.message, authNumber });
         return { error: true, message: error.message };
     }
 }

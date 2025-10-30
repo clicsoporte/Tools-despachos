@@ -258,7 +258,7 @@ export async function getAllDrafts(userId: number): Promise<CostAnalysisDraft[]>
     return JSON.parse(JSON.stringify(drafts));
 }
 
-export async function saveDraft(draft: Omit<CostAnalysisDraft, 'id' | 'createdAt' | 'lines'> & { lines: DraftableCostAssistantLine[] }): Promise<void> {
+export async function saveDraft(draft: Omit<CostAnalysisDraft, 'id' | 'createdAt'>): Promise<void> {
     const settings = await getDbSettings();
     const draftPrefix = settings.draftPrefix || 'AC-';
     const nextDraftNumber = settings.nextDraftNumber || 1;

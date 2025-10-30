@@ -43,7 +43,7 @@ export async function login(email: string, passwordProvided: string, clientInfo:
     return { user: null, forcePasswordChange: false };
   } catch (error: any) {
     console.error("Login error:", error);
-    await logWarn(`Login process failed for email: ${email} with error: ${error.message}`, logMeta);
+    await logError(`Login process failed for email: ${email}`, { error: error.message, ...logMeta});
     return { user: null, forcePasswordChange: false };
   }
 }
@@ -101,8 +101,8 @@ export async function getAllUsersForReport(): Promise<User[]> {
             const { password, ...userWithoutPassword } = u;
             return userWithoutPassword;
         }) as User[];
-    } catch (error) {
-        console.error("Failed to get all users for report:", error);
+    } catch (error: any) {
+        await logError("getAllUsersForReport", { error: error.message });
         return [];
     }
 }
@@ -230,8 +230,7 @@ export async function saveAllUsers(users: User[]): Promise<void> {
         transaction(users);
         await logInfo(`${users.length} user records were processed for saving.`);
     } catch (error) {
-        console.error("Failed to save all users:", error);
-        await logError("Failed to save all users.", { error: (error as Error).message });
+        await logError("Failed to save all users (saveAllUsers)", { error: (error as Error).message });
         throw new Error("Database transaction failed to save users.");
     }
 }
