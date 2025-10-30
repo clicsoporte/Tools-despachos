@@ -20,6 +20,7 @@ import {
     getUserByName,
     getRolesWithPermission,
     addNote as addNoteServer,
+    updateRequestDetails as updateRequestDetailsServer,
 } from './db';
 import {
     saveUserPreferences as saveUserPreferencesServer,
@@ -116,6 +117,18 @@ export async function updatePurchaseRequestStatus(payload: UpdateRequestStatusPa
     
     return updatedRequest;
 }
+
+/**
+ * Updates specific details of a purchase request like priority.
+ * @param payload - The details to update.
+ * @returns The updated purchase request.
+ */
+export async function updateRequestDetails(payload: { requestId: number; priority: 'low' | 'medium' | 'high' | 'urgent'; updatedBy: string; }): Promise<PurchaseRequest> {
+    const updatedRequest = await updateRequestDetailsServer(payload);
+    await logInfo(`Details for request ${updatedRequest.consecutive} updated by ${payload.updatedBy}`, { details: payload });
+    return updatedRequest;
+}
+
 
 /**
  * Fetches the history for a specific request.

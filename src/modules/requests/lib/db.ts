@@ -6,7 +6,7 @@
 import { connectDb, getImportQueries as getImportQueriesFromMain, getAllRoles as getAllRolesFromMain } from '../../core/lib/db';
 import { getAllUsers as getAllUsersFromMain } from '../../core/lib/auth';
 import { logInfo, logError, logWarn } from '../../core/lib/logger';
-import type { PurchaseRequest, RequestSettings, UpdateRequestStatusPayload, PurchaseRequestHistoryEntry, UpdatePurchaseRequestPayload, RejectCancellationPayload, PurchaseRequestStatus, DateRange, AdministrativeAction, AdministrativeActionPayload, StockInfo, ErpOrderHeader, ErpOrderLine, User, PurchaseSuggestion } from '../../core/types';
+import type { PurchaseRequest, RequestSettings, UpdateRequestStatusPayload, PurchaseRequestHistoryEntry, UpdatePurchaseRequestPayload, RejectCancellationPayload, PurchaseRequestStatus, DateRange, AdministrativeAction, AdministrativeActionPayload, StockInfo, ErpOrderHeader, ErpOrderLine, User, PurchaseSuggestion, PurchaseRequestPriority } from '../../core/types';
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { executeQuery } from '@/modules/core/lib/sql-service';
@@ -224,20 +224,36 @@ export async function getRequests(options: {
     const finalStatus = settings.useErpEntry ? 'entered-erp' : (settings.useWarehouseReception ? 'received-in-warehouse' : 'ordered');
     const archivedStatuses = `'${finalStatus}', 'canceled'`;
 
+    // Function to parse JSON fields safely
+    const parseJsonFields = (req: any) => {
+        try {
+            req.sourceOrders = req.sourceOrders ? JSON.parse(req.sourceOrders) : [];
+        } catch (e) {
+            req.sourceOrders = [];
+        }
+        try {
+            req.involvedClients = req.involvedClients ? JSON.parse(req.involvedClients) : [];
+        } catch (e) {
+            req.involvedClients = [];
+        }
+        return req;
+    };
+
+
     if (options.page !== undefined && options.pageSize !== undefined) {
         const { page, pageSize } = options;
-        const archivedRequests = db.prepare(`
+        const archivedRequestsRaw = db.prepare(`
             SELECT * FROM purchase_requests 
             WHERE status IN (${archivedStatuses}) 
             ORDER BY requestDate DESC 
             LIMIT ? OFFSET ?
-        `).all(pageSize, page * pageSize) as PurchaseRequest[];
+        `).all(pageSize, page * pageSize) as any[];
 
-        const activeRequests = db.prepare(`
+        const activeRequestsRaw = db.prepare(`
             SELECT * FROM purchase_requests
             WHERE status NOT IN (${archivedStatuses})
             ORDER BY requestDate DESC
-        `).all() as PurchaseRequest[];
+        `).all() as any[];
         
         const totalArchivedCount = (db.prepare(`
             SELECT COUNT(*) as count 
@@ -245,10 +261,14 @@ export async function getRequests(options: {
             WHERE status IN (${archivedStatuses})
         `).get() as { count: number }).count;
         
+        const activeRequests = activeRequestsRaw.map(parseJsonFields);
+        const archivedRequests = archivedRequestsRaw.map(parseJsonFields);
+        
         return { requests: [...activeRequests, ...archivedRequests], totalArchivedCount };
     }
     
-    const allRequests = db.prepare(`SELECT * FROM purchase_requests ORDER BY requestDate DESC`).all() as PurchaseRequest[];
+    const allRequestsRaw = db.prepare(`SELECT * FROM purchase_requests ORDER BY requestDate DESC`).all() as any[];
+    const allRequests = allRequestsRaw.map(parseJsonFields);
     const totalArchivedCount = allRequests.filter(r => archivedStatuses.includes(`'${r.status}'`)).length;
 
     return { requests: allRequests, totalArchivedCount };
@@ -324,7 +344,7 @@ export async function addRequest(request: Omit<PurchaseRequest, 'id' | 'consecut
         const createdRequest = db.prepare('SELECT * FROM purchase_requests WHERE id = ?').get(newId) as PurchaseRequest;
         return createdRequest;
     } catch (error: any) {
-        logError("Failed to create request", { error: error.message, details: preparedRequest });
+        logError("Failed to create request in DB", { context: 'addRequest DB transaction', error: error.message, details: preparedRequest });
         throw error;
     }
 }
@@ -542,43 +562,23 @@ export async function getErpOrderData(identifier: string | DateRange): Promise<{
     return JSON.parse(JSON.stringify({ headers, lines, inventory: relevantInventory }));
 }
 
-async function getRealTimeInventory(itemIds: string[], signal?: AbortSignal): Promise<StockInfo[]> {
-    if (itemIds.length === 0) {
-        return [];
-    }
-    const settings = await getImportQueriesFromMain();
-    const stockQueryTemplate = settings.find(q => q.type === 'stock')?.query;
-
-    if (!stockQueryTemplate) {
-        throw new Error("La consulta SQL para 'stock' no está configurada.");
-    }
+export async function updateRequestDetails(payload: { requestId: number; priority: PurchaseRequestPriority, updatedBy: string }): Promise<PurchaseRequest> {
+    const db = await connectDb(REQUESTS_DB_FILE);
+    const { requestId, priority, updatedBy } = payload;
     
-    const sanitizedItemIds = itemIds.map(id => `'${id.replace(/'/g, "''")}'`).join(',');
-    const stockQuery = `${stockQueryTemplate} AND ARTICULO IN (${sanitizedItemIds})`;
+    const currentRequest = db.prepare('SELECT * FROM purchase_requests WHERE id = ?').get(requestId) as PurchaseRequest | undefined;
+    if (!currentRequest) throw new Error("Request not found.");
 
-    try {
-        const stockData = await executeQuery(stockQuery, signal);
+    const transaction = db.transaction(() => {
+        db.prepare('UPDATE purchase_requests SET priority = ? WHERE id = ?').run(priority, requestId);
         
-        const stockMap = new Map<string, { [key: string]: number }>();
-        for (const item of stockData) {
-            if (!stockMap.has(item.ARTICULO)) {
-                stockMap.set(item.ARTICULO, {});
-            }
-            stockMap.get(item.ARTICULO)![item.BODEGA] = item.CANT_DISPONIBLE;
-        }
+        const historyNote = `Prioridad cambiada a: ${priority}`;
+        const historyStmt = db.prepare('INSERT INTO purchase_request_history (requestId, timestamp, status, updatedBy, notes) VALUES (?, ?, ?, ?, ?)');
+        historyStmt.run(requestId, new Date().toISOString(), currentRequest.status, updatedBy, historyNote);
+    });
 
-        const result: StockInfo[] = [];
-        for (const [itemId, stockByWarehouse] of stockMap.entries()) {
-            const totalStock = Object.values(stockByWarehouse).reduce((acc, val) => acc + val, 0);
-            result.push({ itemId, stockByWarehouse, totalStock });
-        }
-        
-        return JSON.parse(JSON.stringify(result));
-
-    } catch (error: any) {
-        logError("Error al obtener el inventario en tiempo real", { error: error.message, query: stockQuery });
-        throw error;
-    }
+    transaction();
+    return db.prepare('SELECT * FROM purchase_requests WHERE id = ?').get(requestId) as PurchaseRequest;
 }
 
 export async function getUserByName(name: string): Promise<User | null> {
