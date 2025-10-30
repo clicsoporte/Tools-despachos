@@ -7,11 +7,11 @@
 
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, FormEvent } from 'react';
 import { useToast } from '@/modules/core/hooks/use-toast';
 import { usePageTitle } from '@/modules/core/hooks/usePageTitle';
 import { useAuthorization } from '@/modules/core/hooks/useAuthorization';
-import { logError } from '@/modules/core/lib/logger';
+import { logError, logInfo } from '@/modules/core/lib/logger';
 import { 
     getProductionOrders, saveProductionOrder, updateProductionOrder, 
     updateProductionOrderStatus, getOrderHistory, getPlannerSettings, 
@@ -30,7 +30,7 @@ import { generateDocument } from '@/modules/core/lib/pdf-generator';
 import type { RowInput } from 'jspdf-autotable';
 import { addNoteToOrder as addNoteServer } from '@/modules/planner/lib/actions';
 import { exportToExcel } from '@/modules/core/lib/excel-export';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, Undo2, ChevronsLeft, ChevronsRight } from 'lucide-react';
 import { getStatusConfig } from '../lib/utils';
 import { saveUserPreferences, getUserPreferences } from '@/modules/core/lib/db';
 
@@ -39,7 +39,7 @@ const normalizeText = (text: string | null | undefined): string => {
     return text.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 };
 
-const emptyOrder: Omit<ProductionOrder, 'id' | 'consecutive' | 'requestDate' | 'status' | 'reopened' | 'requestedBy' | 'previousStatus' | 'lastModifiedAt' | 'lastModifiedBy' | 'hasBeenModified' | 'approvedBy' | 'lastStatusUpdateBy' | 'lastStatusUpdateNotes'> = {
+const emptyOrder: Omit<ProductionOrder, 'id' | 'consecutive' | 'requestDate' | 'status' | 'reopened' | 'erpPackageNumber' | 'erpTicketNumber' | 'machineId' | 'previousStatus' | 'scheduledStartDate' | 'scheduledEndDate' | 'requestedBy' | 'hasBeenModified' | 'lastModifiedBy' | 'lastModifiedAt' | 'shiftId'> = {
     deliveryDate: '',
     customerId: '',
     customerName: '',
@@ -52,15 +52,9 @@ const emptyOrder: Omit<ProductionOrder, 'id' | 'consecutive' | 'requestDate' | '
     inventory: 0,
     inventoryErp: 0,
     purchaseOrder: '',
-    erpPackageNumber: undefined,
-    erpTicketNumber: undefined,
-    machineId: null,
-    scheduledStartDate: null,
-    scheduledEndDate: null,
     deliveredQuantity: undefined,
     defectiveQuantity: undefined,
     erpOrderNumber: undefined,
-    shiftId: null,
     pendingAction: 'none',
 };
 
@@ -145,6 +139,7 @@ export const usePlanner = () => {
         isActionDialogOpen: false,
         activeOrdersForSelectedProduct: [] as ProductionOrder[], // For duplicate check
         visibleColumns: availableColumns.filter(c => c.defaultVisible).map(c => c.id),
+        orderToConfirmModification: null as ProductionOrder | null,
     });
     
     const [debouncedSearchTerm] = useDebounce(state.searchTerm, authCompanyData?.searchDebounceTime ?? 500);
@@ -246,6 +241,7 @@ export const usePlanner = () => {
         return {
             canEdit: (isPending && hasPermission('planner:edit:pending')) || (!isPending && hasPermission('planner:edit:approved')),
             canApprove: isPending && hasPermission('planner:status:approve'),
+            canConfirmModification: order.hasBeenModified && hasPermission('planner:status:approve'),
             canQueue: isApproved && hasPermission('planner:status:in-progress'),
             canStart: (isApproved || isInQueue) && hasPermission('planner:status:in-progress'),
             canHold: isInProgress && hasPermission('planner:status:on-hold'),
@@ -761,7 +757,28 @@ export const usePlanner = () => {
                 },
                 totals: []
             }).save(`op_${order.consecutive}.pdf`);
-        }
+        },
+        handleConfirmModification: async () => {
+            if (!state.orderToConfirmModification || !currentUser) return;
+
+            const payload: UpdateProductionOrderPayload = {
+                orderId: state.orderToConfirmModification.id,
+                updatedBy: currentUser.name,
+                hasBeenModified: false, // Clear the flag
+            };
+            
+            const updated = await updateProductionOrder(payload);
+            toast({ title: "Modificación Confirmada", description: "La alerta de modificación ha sido eliminada." });
+            
+            setState(prevState => ({
+                ...prevState,
+                activeOrders: prevState.activeOrders.map(o => o.id === updated.id ? updated : o),
+                orderToConfirmModification: null
+            }));
+        },
+        setOrderToConfirmModification: (order: ProductionOrder | null) => {
+            updateState({ orderToConfirmModification: order });
+        },
     };
 
     const selectors = {

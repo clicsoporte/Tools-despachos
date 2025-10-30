@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import React from 'react';
@@ -26,6 +27,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { MultiSelectFilter } from '@/components/ui/multi-select-filter';
+import { DialogColumnSelector } from '@/components/ui/dialog-column-selector';
 
 
 /**
@@ -69,7 +71,7 @@ export default function PlannerPage() {
 
     const renderOrderCard = (order: ProductionOrder) => {
         const {
-            canEdit, canApprove, canQueue, canStart, canHold, canMaintain,
+            canEdit, canApprove, canConfirmModification, canQueue, canStart, canHold, canMaintain,
             canResumeFromHold, canComplete, canRequestUnapproval,
             canCancelPending, canRequestCancel, canReceive, canReopen
         } = selectors.getOrderPermissions(order);
@@ -103,6 +105,7 @@ export default function PlannerPage() {
                                     <DropdownMenuSeparator/>
                                     <DropdownMenuLabel>Cambio de Estado</DropdownMenuLabel>
                                     <DropdownMenuSeparator/>
+                                    {canConfirmModification && <DropdownMenuItem onSelect={() => actions.setOrderToConfirmModification(order)} className="text-green-600 font-bold"><Check className="mr-2"/> Confirmar Modificación</DropdownMenuItem>}
                                     {canApprove && <DropdownMenuItem onSelect={() => actions.openStatusDialog(order, 'approved')} className="text-green-600"><Check className="mr-2"/> Aprobar</DropdownMenuItem>}
                                     
                                     {canQueue && <DropdownMenuItem onSelect={() => actions.openStatusDialog(order, 'in-queue')} className="text-cyan-600"><Hourglass className="mr-2"/> Poner en Cola</DropdownMenuItem>}
@@ -381,6 +384,12 @@ export default function PlannerPage() {
                             </PopoverTrigger>
                             <PopoverContent className="w-auto p-0" align="start"><Calendar mode="range" selected={state.dateFilter} onSelect={actions.setDateFilter} /></PopoverContent>
                         </Popover>
+                        <DialogColumnSelector
+                            allColumns={selectors.availableColumns}
+                            visibleColumns={state.visibleColumns}
+                            onColumnChange={actions.handleColumnVisibilityChange}
+                            onSave={actions.handleSaveColumnVisibility}
+                        />
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                                 <Button variant="outline"><FileDown className="mr-2 h-4 w-4"/>Exportar</Button>
@@ -550,6 +559,21 @@ export default function PlannerPage() {
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
+
+            <AlertDialog open={!!state.orderToConfirmModification} onOpenChange={(open) => { if (!open) actions.setOrderToConfirmModification(null); }}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Confirmar Modificación</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Esta orden fue modificada después de ser aprobada. Al confirmar, la alerta visual será eliminada.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel onClick={() => actions.setOrderToConfirmModification(null)}>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction onClick={actions.handleConfirmModification}>Sí, Confirmar</AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
 
             <Dialog open={state.isHistoryDialogOpen} onOpenChange={actions.setHistoryDialogOpen}>
                 <DialogContent className="sm:max-w-2xl">
