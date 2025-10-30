@@ -9,12 +9,12 @@ import Database from 'better-sqlite3';
 import path from 'path';
 import fs from 'fs';
 import { initialCompany, initialRoles } from './data';
-import type { Company, LogEntry, ApiSettings, User, Product, Customer, Role, QuoteDraft, DatabaseModule, Exemption, ExemptionLaw, StockInfo, StockSettings, ImportQuery, ItemLocation, UpdateBackupInfo, Suggestion, DateRange, Supplier, ErpOrderHeader, ErpOrderLine, Notification, UserPreferences, AuditResult, ErpPurchaseOrderHeader, ErpPurchaseOrderLine } from '@/modules/core/types';
+import type { Company, LogEntry, ApiSettings, User, Product, Customer, Role, QuoteDraft, DatabaseModule, Exemption, ExemptionLaw, StockInfo, StockSettings, ImportQuery, SqlConfig, ItemLocation, UpdateBackupInfo, Suggestion, DateRange, Supplier, ErpOrderHeader, ErpOrderLine, Notification, UserPreferences, AuditResult, ErpPurchaseOrderHeader, ErpPurchaseOrderLine } from '@/modules/core/types';
 import bcrypt from 'bcryptjs';
 import Papa from 'papaparse';
 import { executeQuery } from './sql-service';
 import { logInfo, logWarn, logError } from './logger';
-import { initializePlannerDb, runPlannerMigrations } from '../../planner/lib/db';
+import { initializePlannerDb, runPlannerMigrations, confirmModification as confirmPlannerModification } from '../../planner/lib/db';
 import { initializeRequestsDb, runRequestMigrations } from '../../requests/lib/db';
 import { initializeWarehouseDb, runWarehouseMigrations } from '../../warehouse/lib/db';
 import { initializeCostAssistantDb, runCostAssistantMigrations } from '../../cost-assistant/lib/db';
@@ -1028,7 +1028,7 @@ export async function importAllDataFromFiles(): Promise<{ type: string; count: n
 export async function saveSqlConfig(config: SqlConfig): Promise<void> {
     const db = await connectDb();
     const insert = db.prepare('INSERT OR REPLACE INTO sql_config (key, value) VALUES (@key, @value)');
-    const transaction = db.transaction((cfg) => {
+    const transaction = db.transaction((cfg: any) => {
         for(const key in cfg) if (cfg[key as keyof SqlConfig] !== undefined) insert.run({ key, value: cfg[key as keyof SqlConfig] });
     });
     try {
@@ -1518,3 +1518,6 @@ export async function runDatabaseAudit(userName: string): Promise<AuditResult[]>
     
     return results;
 }
+
+// --- Planner-specific functions moved from core ---
+export { confirmPlannerModification };
