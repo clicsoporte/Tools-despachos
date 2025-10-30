@@ -25,8 +25,9 @@ import {
     saveUserPreferences as saveUserPreferencesServer,
     getUserPreferences as getUserPreferencesServer
 } from '@/modules/core/lib/db';
-import type { PurchaseSuggestion } from '../hooks/useRequestSuggestions.tsx';
-import { getAllProducts, getAllStock, getAllCustomers } from '@/modules/core/lib/db';
+import type { PurchaseSuggestion } from '../hooks/useRequestSuggestions';
+import { getAllProducts, getAllStock, getAllCustomers, getAllErpPurchaseOrders } from '@/modules/core/lib/db';
+import { getAllErpPurchaseOrderLines } from '@/modules/core/lib/db';
 
 /**
  * Fetches purchase requests from the server.
@@ -96,7 +97,6 @@ export async function updatePurchaseRequestStatus(payload: UpdateRequestStatusPa
         if (targetUser) {
              const settings = await getSettings();
              const statusConfig = {
-                ...settings,
                 'pending': 'Pendiente',
                 'purchasing-review': 'Revisión Compras',
                 'pending-approval': 'Pendiente Aprobación',
@@ -106,7 +106,7 @@ export async function updatePurchaseRequestStatus(payload: UpdateRequestStatusPa
                 'entered-erp': 'Ingresado ERP',
                 'canceled': 'Cancelada'
              };
-             const statusLabel = statusConfig[payload.status] || payload.status;
+             const statusLabel = (statusConfig as any)[payload.status] || payload.status;
             await createNotification({
                 userId: targetUser.id,
                 message: `La solicitud ${updatedRequest.consecutive} ha sido actualizada a: ${statusLabel}.`,
@@ -186,10 +186,16 @@ export async function getErpOrderData(identifier: string | DateRange): Promise<{
  */
 export async function getRequestSuggestions(dateRange: DateRange): Promise<PurchaseSuggestion[]> {
     const { headers, lines } = await getErpOrderDataServer(dateRange);
-    const allStock = await getAllStock();
-    const allProducts = await getAllProducts();
-    const allCustomers = await getAllCustomers();
+    const [allStock, allProducts, allCustomers, erpPoHeaders, erpPoLines] = await Promise.all([
+        getAllStock(),
+        getAllProducts(),
+        getAllCustomers(),
+        getAllErpPurchaseOrders(),
+        getAllErpPurchaseOrderLines(),
+    ]);
     const allActiveRequests = await getRequests({}).then(res => res.requests.filter(r => ['pending', 'approved', 'ordered', 'purchasing-review', 'pending-approval'].includes(r.status)));
+
+    const activePoNumbers = new Set(erpPoHeaders.filter(h => h.ESTADO === 'A').map(h => h.ORDEN_COMPRA));
 
     const requiredItems = new Map<string, { totalRequired: number; sourceOrders: Set<string>; clientIds: Set<string>; erpUsers: Set<string>; earliestCreationDate: Date | null, earliestDueDate: Date | null; }>();
 
@@ -226,9 +232,13 @@ export async function getRequestSuggestions(dateRange: DateRange): Promise<Purch
         const stockInfo: StockInfo | undefined = allStock.find((s: StockInfo) => s.itemId === itemId);
         const currentStock = stockInfo?.totalStock ?? 0;
         
+        const inTransitStock = erpPoLines
+            .filter(line => line.ARTICULO === itemId && activePoNumbers.has(line.ORDEN_COMPRA))
+            .reduce((sum, line) => sum + line.CANTIDAD_ORDENADA, 0);
+
         const existingActiveRequests = allActiveRequests.filter(r => r.itemId === itemId);
         
-        const shortage = data.totalRequired - currentStock;
+        const shortage = data.totalRequired - currentStock - inTransitStock;
 
         if (shortage > 0) {
             const productInfo = allProducts.find(p => p.id === itemId);
@@ -243,6 +253,7 @@ export async function getRequestSuggestions(dateRange: DateRange): Promise<Purch
                 itemClassification: productInfo?.classification || 'N/A',
                 totalRequired: data.totalRequired,
                 currentStock,
+                inTransitStock,
                 shortage,
                 sourceOrders: Array.from(data.sourceOrders),
                 involvedClients,
@@ -254,8 +265,9 @@ export async function getRequestSuggestions(dateRange: DateRange): Promise<Purch
         }
     }
 
-    return suggestions.sort((a, b) => b.shortage - a.shortage);
+    return suggestions;
 }
+
 
 /**
  * Adds a note to a purchase request without changing its status.

@@ -27,5 +27,6 @@ const nextConfig = {
 };
 
 // A harmless comment to force cache invalidation on build.
+// Another harmless comment to force a clean build process.
 
 module.exports = nextConfig;
