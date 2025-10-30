@@ -413,8 +413,18 @@ export const useRequests = () => {
         handleStatusUpdate: executeStatusUpdate,
         handleAdminAction,
         handleCreateRequest: async () => {
-            if (!state.newRequest.clientId || !state.newRequest.itemId || !state.newRequest.quantity || !state.newRequest.requiredDate || !currentUser) return;
+            if (!currentUser) return;
             
+            // --- VALIDATION ---
+            if (!state.newRequest.clientId || !state.newRequest.itemId || !state.newRequest.quantity || !state.newRequest.requiredDate) {
+                toast({ title: "Campos Requeridos", description: "Cliente, artículo, cantidad y fecha requerida son obligatorios.", variant: "destructive" });
+                return;
+            }
+            if (state.newRequest.requiresCurrency && (!state.newRequest.unitSalePrice || state.newRequest.unitSalePrice <= 0)) {
+                toast({ title: "Precio de Venta Requerido", description: "Debe ingresar un precio de venta mayor a cero o desmarcar la casilla.", variant: "destructive" });
+                return;
+            }
+
             const requestWithFormattedDate = {
                 ...state.newRequest,
                 requiredDate: new Date(state.newRequest.requiredDate).toISOString().split('T')[0]
@@ -426,7 +436,7 @@ export const useRequests = () => {
                 toast({ title: "Solicitud Creada" });
                 updateState({
                     isNewRequestDialogOpen: false,
-                    newRequest: emptyRequest,
+                    newRequest: { ...emptyRequest, requiredDate: '' },
                     clientSearchTerm: '',
                     itemSearchTerm: '',
                     activeRequests: [createdRequest, ...state.activeRequests]
@@ -931,3 +941,5 @@ export const useRequests = () => {
         isAuthorized
     };
 };
+
+
