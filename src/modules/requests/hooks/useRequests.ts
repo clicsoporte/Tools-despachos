@@ -52,7 +52,7 @@ const emptyRequest: Omit<PurchaseRequest, 'id' | 'consecutive' | 'requestDate' |
     notes: '',
     unitSalePrice: undefined,
     salePriceCurrency: 'CRC',
-    requiresCurrency: false,
+    requiresCurrency: true,
     manualSupplier: '',
     erpOrderNumber: '',
     erpOrderLine: 0,
@@ -348,26 +348,31 @@ export const useRequests = () => {
 
             toast({ title: "Estado Actualizado" });
             
-            // Smart state update instead of full reload
-            const useWarehouse = state.requestSettings?.useWarehouseReception;
-            const useErpEntry = state.requestSettings?.useErpEntry;
-            const finalArchivedStatus = useErpEntry ? 'entered-erp' : (useWarehouse ? 'received-in-warehouse' : 'ordered');
-            const isArchived = updatedRequest.status === finalArchivedStatus || updatedRequest.status === 'canceled';
+            setState(prevState => {
+                const useWarehouse = prevState.requestSettings?.useWarehouseReception;
+                const useErpEntry = prevState.requestSettings?.useErpEntry;
+                const finalArchivedStatus = useErpEntry ? 'entered-erp' : (useWarehouse ? 'received-in-warehouse' : 'ordered');
+                const isArchived = updatedRequest.status === finalArchivedStatus || updatedRequest.status === 'canceled';
 
-            setState(prevState => ({
-                ...prevState,
-                isStatusDialogOpen: false,
-                isActionDialogOpen: false,
-                activeRequests: isArchived 
+                const newActiveRequests = isArchived
                     ? prevState.activeRequests.filter(r => r.id !== updatedRequest.id)
-                    : prevState.activeRequests.map(r => r.id === updatedRequest.id ? updatedRequest : r),
-                archivedRequests: isArchived
+                    : prevState.activeRequests.map(r => r.id === updatedRequest.id ? updatedRequest : r);
+                
+                const newArchivedRequests = isArchived
                     ? [updatedRequest, ...prevState.archivedRequests.filter(r => r.id !== updatedRequest.id)]
-                    : prevState.archivedRequests.filter(r => r.id !== updatedRequest.id),
-            }));
+                    : prevState.archivedRequests.filter(r => r.id !== updatedRequest.id);
+
+                return {
+                    ...prevState,
+                    isStatusDialogOpen: false,
+                    isActionDialogOpen: false,
+                    activeRequests: newActiveRequests,
+                    archivedRequests: newArchivedRequests,
+                };
+            });
 
         } catch (error: any) {
-            logError("Failed to update status", { error: error.message });
+            logError("Failed to update status", { context: 'useRequests.executeStatusUpdate', error: error.message });
             toast({ title: "Error", variant: "destructive" });
         } finally {
             updateState({ isSubmitting: false });
@@ -396,7 +401,7 @@ export const useRequests = () => {
             }
             updateState({ isActionDialogOpen: false });
         } catch (error: any) {
-            logError("Failed to handle admin action", { error: error.message });
+            logError("Failed to handle admin action", { context: 'useRequests.handleAdminAction', error: error.message });
             toast({ title: "Error", variant: "destructive" });
         } finally {
             updateState({ isSubmitting: false });
@@ -427,8 +432,8 @@ export const useRequests = () => {
                     activeRequests: [createdRequest, ...state.activeRequests]
                 });
             } catch (error: any) {
-                logError("Failed to create request", { error: error.message });
-                toast({ title: "Error", description: `No se pudo crear la solicitud. ${error.message}`, variant: "destructive" });
+                logError("Failed to create request", { context: 'useRequests.handleCreateRequest', error: error.message });
+                toast({ title: "Error al Crear", description: `No se pudo crear la solicitud. ${error.message}`, variant: "destructive" });
             } finally {
                 updateState({ isSubmitting: false });
             }
@@ -446,7 +451,7 @@ export const useRequests = () => {
                 });
                 toast({ title: "Solicitud Actualizada" });
             } catch (error: any) {
-                logError("Failed to edit request", { error: error.message });
+                logError("Failed to edit request", { context: 'useRequests.handleEditRequest', error: error.message });
                 toast({ title: "Error", variant: "destructive" });
             } finally {
                 updateState({ isSubmitting: false });
@@ -480,7 +485,7 @@ export const useRequests = () => {
                 });
                 toast({ title: "Solicitud Enviada", description: `Tu solicitud de ${action === 'unapproval-request' ? 'desaprobación' : 'cancelación'} ha sido enviada para revisión.` });
             } catch (error: any) {
-                logError(`Failed to request ${action}`, { error: error.message });
+                logError(`Failed to request ${action}`, { context: 'useRequests.openAdminActionDialog', error: error.message });
                 toast({ title: "Error al Solicitar", description: `No se pudo enviar la solicitud. ${error.message}`, variant: "destructive" });
             } finally {
                 updateState({ isSubmitting: false });
@@ -491,7 +496,7 @@ export const useRequests = () => {
             try {
                 updateState({ history: await getRequestHistory(request.id) });
             } catch (error: any) {
-                logError("Failed to get history", {error: error.message});
+                logError("Failed to get history", { context: 'useRequests.handleOpenHistory', error: error.message});
                 toast({ title: "Error", variant: "destructive" });
             } finally {
                 updateState({ isHistoryLoading: false });
@@ -506,7 +511,7 @@ export const useRequests = () => {
                 updateState({ isReopenDialogOpen: false });
                 await loadInitialData(true);
             } catch (error: any) {
-                logError("Failed to reopen request", { error: error.message });
+                logError("Failed to reopen request", { context: 'useRequests.handleReopenRequest', error: error.message });
                 toast({ title: "Error", variant: "destructive" });
             } finally {
                 updateState({ isSubmitting: false });
@@ -572,7 +577,7 @@ export const useRequests = () => {
                 }
                 
             } catch (error: any) {
-                logError('Failed to fetch ERP order data', { error: error.message, orderNumber: state.erpOrderNumber });
+                logError('Failed to fetch ERP order data', { context: 'useRequests.handleFetchErpOrder', error: error.message, orderNumber: state.erpOrderNumber });
                 toast({ title: "Error al Cargar Pedido", description: error.message, variant: "destructive" });
             } finally {
                 updateState({ isErpLoading: false });
@@ -611,7 +616,7 @@ export const useRequests = () => {
             try {
                 await actions.processSingleErpOrder(header);
             } catch (error: any) {
-                logError('Failed to fetch lines for selected ERP order', { error: error.message, orderNumber: header.PEDIDO });
+                logError('Failed to fetch lines for selected ERP order', { context: 'useRequests.handleSelectErpOrderHeader', error: error.message, orderNumber: header.PEDIDO });
                 toast({ title: "Error al Cargar Líneas", description: error.message, variant: "destructive" });
             } finally {
                 updateState({ isErpLoading: false });
@@ -677,7 +682,7 @@ export const useRequests = () => {
                 updateState({ isErpItemsModalOpen: false, erpOrderNumber: '' });
                 await loadInitialData();
             } catch (error: any) {
-                logError("Failed to create requests from ERP order", { error: error.message });
+                logError("Failed to create requests from ERP order", { context: 'useRequests.handleCreateRequestsFromErp', error: error.message });
                 toast({ title: "Error al Crear Solicitudes", description: error.message, variant: "destructive" });
             } finally {
                 updateState({ isSubmitting: false });
@@ -806,7 +811,7 @@ export const useRequests = () => {
                     archivedRequests: prevState.archivedRequests.map(o => o.id === updatedRequest.id ? updatedRequest : o)
                 }));
             } catch(error: any) {
-                logError("Failed to add note to request", { error: error.message });
+                logError("Failed to add note to request", { context: 'useRequests.handleAddNote', error: error.message });
                 toast({ title: "Error", variant: "destructive" });
             } finally {
                 updateState({ isSubmitting: false });
@@ -822,7 +827,7 @@ export const useRequests = () => {
         // setters
         setNewRequestDialogOpen: (isOpen: boolean) => updateState({ 
             isNewRequestDialogOpen: isOpen, 
-            newRequest: { ...emptyRequest, requiredDate: new Date().toISOString().split('T')[0] }, 
+            newRequest: { ...emptyRequest, requiredDate: '' }, 
             clientSearchTerm: '', 
             itemSearchTerm: '' 
         }),
