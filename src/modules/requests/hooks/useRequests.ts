@@ -15,7 +15,7 @@ import { logError, logInfo } from '@/modules/core/lib/logger';
 import { 
     getPurchaseRequests, savePurchaseRequest, updatePurchaseRequest, 
     updatePurchaseRequestStatus, getRequestHistory, getRequestSettings, 
-    updatePendingAction, getErpOrderData, addNoteToRequest
+    updatePendingAction, getErpOrderData, addNoteToRequest, updateRequestDetails
 } from '@/modules/requests/lib/actions';
 import type { 
     PurchaseRequest, PurchaseRequestStatus, PurchaseRequestPriority, 
@@ -256,7 +256,11 @@ export const useRequests = () => {
             const finalStatus = useErpEntry ? 'entered-erp' : (useWarehouse ? 'received-in-warehouse' : 'ordered');
             const archivedStatuses = `'${finalStatus}', 'canceled'`;
 
-            const allRequests = requestsData.requests;
+            const allRequests = requestsData.requests.map(req => ({
+                ...req,
+                sourceOrders: req.sourceOrders ? JSON.parse(req.sourceOrders as any) : [],
+                involvedClients: req.involvedClients ? JSON.parse(req.involvedClients as any) : [],
+            }));
             
             updateState({
                 activeRequests: allRequests.filter(req => !archivedStatuses.includes(`'${req.status}'`)),
@@ -266,7 +270,7 @@ export const useRequests = () => {
 
         } catch (error) {
              if (isMounted) {
-                logError("Failed to load purchase requests data", { error: (error as Error).message });
+                logError("Failed to load purchase requests data", { context: 'useRequests.loadInitialData', error: (error as Error).message });
                 toast({ title: "Error", description: "No se pudieron cargar las solicitudes de compra.", variant: "destructive" });
             }
         } finally {
@@ -436,7 +440,7 @@ export const useRequests = () => {
                 toast({ title: "Solicitud Creada" });
                 updateState({
                     isNewRequestDialogOpen: false,
-                    newRequest: { ...emptyRequest, requiredDate: '' },
+                    newRequest: { ...emptyRequest, requiredDate: '', requiresCurrency: true },
                     clientSearchTerm: '',
                     itemSearchTerm: '',
                     activeRequests: [createdRequest, ...state.activeRequests]
@@ -827,6 +831,14 @@ export const useRequests = () => {
                 updateState({ isSubmitting: false });
             }
         },
+        handleDetailUpdate: async (requestId: number, details: { priority: PurchaseRequestPriority }) => {
+            if (!currentUser) return;
+            const updated = await updateRequestDetails({ requestId, ...details, updatedBy: currentUser.name });
+            updateState({ 
+                activeRequests: state.activeRequests.map(o => o.id === requestId ? updated : o),
+                archivedRequests: state.archivedRequests.map(o => o.id === requestId ? updated : o)
+            });
+        },
         setNewRequest: (updater: (prev: State['newRequest']) => State['newRequest']) => {
             const newState = updater(state.newRequest);
             if (newState.requiresCurrency && !newState.salePriceCurrency) {
@@ -837,7 +849,7 @@ export const useRequests = () => {
         // setters
         setNewRequestDialogOpen: (isOpen: boolean) => updateState({ 
             isNewRequestDialogOpen: isOpen, 
-            newRequest: { ...emptyRequest, requiredDate: '' }, 
+            newRequest: { ...emptyRequest, requiredDate: '', requiresCurrency: true }, 
             clientSearchTerm: '', 
             itemSearchTerm: '' 
         }),
@@ -941,5 +953,3 @@ export const useRequests = () => {
         isAuthorized
     };
 };
-
-
