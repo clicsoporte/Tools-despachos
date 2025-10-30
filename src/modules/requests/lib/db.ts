@@ -59,7 +59,9 @@ export async function initializeRequestsDb(db: import('better-sqlite3').Database
             previousStatus TEXT,
             lastModifiedBy TEXT,
             lastModifiedAt TEXT,
-            hasBeenModified BOOLEAN DEFAULT FALSE
+            hasBeenModified BOOLEAN DEFAULT FALSE,
+            sourceOrders TEXT,
+            involvedClients TEXT
         );
         CREATE TABLE IF NOT EXISTS purchase_request_history (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -68,7 +70,7 @@ export async function initializeRequestsDb(db: import('better-sqlite3').Database
             status TEXT NOT NULL,
             notes TEXT,
             updatedBy TEXT NOT NULL,
-            FOREIGN KEY (requestId) REFERENCES purchase_requests(id)
+            FOREIGN KEY (requestId) REFERENCES purchase_requests(id) ON DELETE CASCADE
         );
     `;
     db.exec(schema);
@@ -119,6 +121,8 @@ export async function runRequestMigrations(db: import('better-sqlite3').Database
         if (!columns.has('erpEntryNumber')) db.exec(`ALTER TABLE purchase_requests ADD COLUMN erpEntryNumber TEXT`);
         if (!columns.has('salePriceCurrency')) db.exec(`ALTER TABLE purchase_requests ADD COLUMN salePriceCurrency TEXT DEFAULT 'CRC'`);
         if (!columns.has('requiresCurrency')) db.exec(`ALTER TABLE purchase_requests ADD COLUMN requiresCurrency BOOLEAN DEFAULT FALSE`);
+        if (!columns.has('sourceOrders')) db.exec(`ALTER TABLE purchase_requests ADD COLUMN sourceOrders TEXT`);
+        if (!columns.has('involvedClients')) db.exec(`ALTER TABLE purchase_requests ADD COLUMN involvedClients TEXT`);
         
         const settingsTable = db.prepare(`SELECT name FROM sqlite_master WHERE type='table' AND name='request_settings'`).get();
         if(settingsTable){
@@ -283,40 +287,44 @@ export async function addRequest(request: Omit<PurchaseRequest, 'id' | 'consecut
         purchaseType: newRequest.purchaseType || 'single',
         arrivalDate: newRequest.arrivalDate || null,
         clientTaxId: newRequest.clientTaxId || null,
+        sourceOrders: JSON.stringify(newRequest.sourceOrders || []),
+        involvedClients: JSON.stringify(newRequest.involvedClients || []),
     };
 
-    const transaction = db.transaction(() => {
-        const insertStmt = db.prepare(`
-            INSERT INTO purchase_requests (
-                consecutive, requestDate, requiredDate, clientId, clientName, clientTaxId,
-                itemId, itemDescription, quantity, unitSalePrice, salePriceCurrency, requiresCurrency,
-                erpOrderNumber, erpOrderLine, manualSupplier, route, shippingMethod, purchaseOrder,
-                status, pendingAction, notes, requestedBy, reopened, inventory, priority, purchaseType, arrivalDate
-            ) VALUES (
-                @consecutive, @requestDate, @requiredDate, @clientId, @clientName, @clientTaxId,
-                @itemId, @itemDescription, @quantity, @unitSalePrice, @salePriceCurrency, @requiresCurrency,
-                @erpOrderNumber, @erpOrderLine, @manualSupplier, @route, @shippingMethod, @purchaseOrder,
-                @status, @pendingAction, @notes, @requestedBy, @reopened, @inventory, @priority, @purchaseType, @arrivalDate
-            )
-        `);
-        
-        const info = insertStmt.run(preparedRequest);
-        const newRequestId = info.lastInsertRowid as number;
-
-        db.prepare('UPDATE request_settings SET value = ? WHERE key = \'nextRequestNumber\'').run(nextNumber + 1);
-        
-        const historyStmt = db.prepare('INSERT INTO purchase_request_history (requestId, timestamp, status, updatedBy, notes) VALUES (?, ?, ?, ?, ?)');
-        historyStmt.run(newRequestId, new Date().toISOString(), 'pending', newRequest.requestedBy, 'Solicitud creada');
-        
-        return newRequestId;
-    });
-
     try {
+        const transaction = db.transaction(() => {
+            const insertStmt = db.prepare(`
+                INSERT INTO purchase_requests (
+                    consecutive, requestDate, requiredDate, clientId, clientName, clientTaxId,
+                    itemId, itemDescription, quantity, unitSalePrice, salePriceCurrency, requiresCurrency,
+                    erpOrderNumber, erpOrderLine, manualSupplier, route, shippingMethod, purchaseOrder,
+                    status, pendingAction, notes, requestedBy, reopened, inventory, priority, purchaseType, arrivalDate,
+                    sourceOrders, involvedClients
+                ) VALUES (
+                    @consecutive, @requestDate, @requiredDate, @clientId, @clientName, @clientTaxId,
+                    @itemId, @itemDescription, @quantity, @unitSalePrice, @salePriceCurrency, @requiresCurrency,
+                    @erpOrderNumber, @erpOrderLine, @manualSupplier, @route, @shippingMethod, @purchaseOrder,
+                    @status, @pendingAction, @notes, @requestedBy, @reopened, @inventory, @priority, @purchaseType, @arrivalDate,
+                    @sourceOrders, @involvedClients
+                )
+            `);
+            
+            const info = insertStmt.run(preparedRequest);
+            const newRequestId = info.lastInsertRowid as number;
+
+            db.prepare('UPDATE request_settings SET value = ? WHERE key = \'nextRequestNumber\'').run(nextNumber + 1);
+            
+            const historyStmt = db.prepare('INSERT INTO purchase_request_history (requestId, timestamp, status, updatedBy, notes) VALUES (?, ?, ?, ?, ?)');
+            historyStmt.run(newRequestId, new Date().toISOString(), 'pending', newRequest.requestedBy, 'Solicitud creada');
+            
+            return newRequestId;
+        });
+
         const newId = transaction();
         const createdRequest = db.prepare('SELECT * FROM purchase_requests WHERE id = ?').get(newId) as PurchaseRequest;
         return createdRequest;
     } catch (error: any) {
-        logError("Error in addRequest transaction", { error: error.message, details: preparedRequest });
+        logError("Failed to create request", { error: error.message, details: preparedRequest });
         throw error;
     }
 }
@@ -361,7 +369,9 @@ export async function updateRequest(payload: UpdatePurchaseRequestPayload): Prom
                 arrivalDate = @arrivalDate,
                 lastModifiedBy = @updatedBy,
                 lastModifiedAt = @lastModifiedAt,
-                hasBeenModified = @hasBeenModified
+                hasBeenModified = @hasBeenModified,
+                sourceOrders = @sourceOrders,
+                involvedClients = @involvedClients
             WHERE id = @requestId
         `).run({ 
             requestId, 
@@ -370,7 +380,9 @@ export async function updateRequest(payload: UpdatePurchaseRequestPayload): Prom
             salePriceCurrency: dataToUpdate.salePriceCurrency || 'CRC',
             updatedBy,
             lastModifiedAt: new Date().toISOString(),
-            hasBeenModified: hasBeenModified ? 1 : 0
+            hasBeenModified: hasBeenModified ? 1 : 0,
+            sourceOrders: JSON.stringify(dataToUpdate.sourceOrders || []),
+            involvedClients: JSON.stringify(dataToUpdate.involvedClients || []),
         });
 
         if (hasBeenModified) {
