@@ -20,7 +20,7 @@ import {
 import type { 
     PurchaseRequest, PurchaseRequestStatus, PurchaseRequestPriority, 
     PurchaseRequestHistoryEntry, RequestSettings, Company, DateRange, 
-    AdministrativeAction, AdministrativeActionPayload, StockInfo, ErpOrderHeader, ErpOrderLine, User, RequestNotePayload 
+    AdministrativeAction, AdministrativeActionPayload, StockInfo, ErpOrderHeader, ErpOrderLine, User, RequestNotePayload, PurchaseSuggestion 
 } from '../../core/types';
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -411,7 +411,7 @@ export const useRequests = () => {
                 });
             } catch (error: any) {
                 logError("Failed to create request", { error: error.message });
-                toast({ title: "Error", variant: "destructive" });
+                toast({ title: "Error", description: `No se pudo crear la solicitud. ${error.message}`, variant: "destructive" });
             } finally {
                 updateState({ isSubmitting: false });
             }
@@ -796,13 +796,20 @@ export const useRequests = () => {
                 updateState({ isSubmitting: false });
             }
         },
+        setNewRequest: (updater: (prev: State['newRequest']) => State['newRequest']) => {
+            const newState = updater(state.newRequest);
+            // If the requiresCurrency checkbox is checked, ensure a default currency is set
+            if (newState.requiresCurrency && !newState.salePriceCurrency) {
+                newState.salePriceCurrency = 'CRC';
+            }
+            updateState({ newRequest: newState });
+        },
         // setters
         setNewRequestDialogOpen: (isOpen: boolean) => updateState({ isNewRequestDialogOpen: isOpen, newRequest: { ...emptyRequest, requiredDate: new Date().toISOString().split('T')[0] }, clientSearchTerm: '', itemSearchTerm: '' }),
         setEditRequestDialogOpen: (isOpen: boolean) => updateState({ isEditRequestDialogOpen: isOpen }),
         setViewingArchived: (isArchived: boolean) => updateState({ viewingArchived: isArchived, archivedPage: 0 }),
         setArchivedPage: (updater: (prev: number) => number) => updateState({ archivedPage: updater(state.archivedPage) }),
         setPageSize: (size: number) => updateState({ pageSize: size, archivedPage: 0 }),
-        setNewRequest: (updater: (prev: State['newRequest']) => State['newRequest']) => updateState({ newRequest: updater(state.newRequest) }),
         setRequestToEdit: (request: PurchaseRequest | null) => updateState({ requestToEdit: request }),
         setSearchTerm: (term: string) => updateState({ searchTerm: term }),
         setStatusFilter: (filter: string) => updateState({ statusFilter: filter }),
@@ -875,7 +882,7 @@ export const useRequests = () => {
                 const statusMatch = state.statusFilter === 'all' || request.status === state.statusFilter;
                 const classificationMatch = state.classificationFilter === 'all' || (product && product.classification === state.classificationFilter);
                 const dateMatch = !state.dateFilter || !state.dateFilter.from || (new Date(request.requiredDate) >= state.dateFilter.from && new Date(request.requiredDate) <= (state.dateFilter.to || state.dateFilter.from));
-                const myRequestsMatch = !state.showOnlyMyRequests || request.requestedBy === currentUser?.name || (currentUser?.erpAlias && request.erpOrderNumber && request.erpOrderNumber.toLowerCase().includes(currentUser.erpAlias.toLowerCase()));
+                const myRequestsMatch = !state.showOnlyMyRequests || (currentUser?.name && request.requestedBy.toLowerCase() === currentUser.name.toLowerCase()) || (currentUser?.erpAlias && request.erpOrderNumber && request.erpOrderNumber.toLowerCase().includes(currentUser.erpAlias.toLowerCase()));
 
                 return searchMatch && statusMatch && classificationMatch && dateMatch && myRequestsMatch;
             });

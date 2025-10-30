@@ -6,10 +6,10 @@
 import { connectDb, getImportQueries as getImportQueriesFromMain, getAllRoles as getAllRolesFromMain } from '../../core/lib/db';
 import { getAllUsers as getAllUsersFromMain } from '../../core/lib/auth';
 import { logInfo, logError, logWarn } from '../../core/lib/logger';
-import type { PurchaseRequest, RequestSettings, UpdateRequestStatusPayload, PurchaseRequestHistoryEntry, UpdatePurchaseRequestPayload, RejectCancellationPayload, PurchaseRequestStatus, DateRange, AdministrativeAction, AdministrativeActionPayload, StockInfo, ErpOrderHeader, ErpOrderLine, User } from '../../core/types';
+import type { PurchaseRequest, RequestSettings, UpdateRequestStatusPayload, PurchaseRequestHistoryEntry, UpdatePurchaseRequestPayload, RejectCancellationPayload, PurchaseRequestStatus, DateRange, AdministrativeAction, AdministrativeActionPayload, StockInfo, ErpOrderHeader, ErpOrderLine, User, PurchaseSuggestion } from '../../core/types';
 import { format, parseISO } from 'date-fns';
 import { executeQuery } from '@/modules/core/lib/sql-service';
-import type { PurchaseSuggestion } from '../hooks/useRequestSuggestions.tsx';
+import { getAllProducts, getAllStock, getAllCustomers, getAllErpPurchaseOrderHeaders, getAllErpPurchaseOrderLines } from '@/modules/core/lib/db';
 
 const REQUESTS_DB_FILE = 'requests.db';
 
@@ -268,18 +268,22 @@ export async function addRequest(request: Omit<PurchaseRequest, 'id' | 'consecut
     const stmt = db.prepare(`
         INSERT INTO purchase_requests (
             consecutive, requestDate, requiredDate, clientId, clientName, clientTaxId,
-            itemId, itemDescription, quantity, unitSalePrice, erpOrderNumber, erpOrderLine, manualSupplier, route, shippingMethod, purchaseOrder,
-            status, pendingAction, notes, requestedBy, reopened, inventory, priority, purchaseType, arrivalDate, salePriceCurrency, requiresCurrency
+            itemId, itemDescription, quantity, unitSalePrice, salePriceCurrency, requiresCurrency,
+            erpOrderNumber, erpOrderLine, manualSupplier, route, shippingMethod, purchaseOrder,
+            status, pendingAction, notes, requestedBy, reopened, inventory, priority, purchaseType, arrivalDate
         ) VALUES (
             @consecutive, @requestDate, @requiredDate, @clientId, @clientName, @clientTaxId,
-            @itemId, @itemDescription, @quantity, @unitSalePrice, @erpOrderNumber, @erpOrderLine, @manualSupplier, @route, @shippingMethod, @purchaseOrder,
-            @status, @pendingAction, @notes, @requestedBy, @reopened, @inventory, @priority, @purchaseType, @arrivalDate, @salePriceCurrency, @requiresCurrency
+            @itemId, @itemDescription, @quantity, @unitSalePrice, @salePriceCurrency, @requiresCurrency,
+            @erpOrderNumber, @erpOrderLine, @manualSupplier, @route, @shippingMethod, @purchaseOrder,
+            @status, @pendingAction, @notes, @requestedBy, @reopened, @inventory, @priority, @purchaseType, @arrivalDate
         )
     `);
 
     const preparedRequest = {
         ...newRequest,
         unitSalePrice: newRequest.unitSalePrice ?? null,
+        salePriceCurrency: newRequest.salePriceCurrency || 'CRC',
+        requiresCurrency: newRequest.requiresCurrency ? 1 : 0,
         erpOrderNumber: newRequest.erpOrderNumber || null,
         erpOrderLine: newRequest.erpOrderLine || null,
         manualSupplier: newRequest.manualSupplier || null,
@@ -292,8 +296,6 @@ export async function addRequest(request: Omit<PurchaseRequest, 'id' | 'consecut
         purchaseType: newRequest.purchaseType || 'single',
         arrivalDate: newRequest.arrivalDate || null,
         clientTaxId: newRequest.clientTaxId || null,
-        salePriceCurrency: newRequest.salePriceCurrency || 'CRC',
-        requiresCurrency: newRequest.requiresCurrency ? 1 : 0,
     };
 
     const info = stmt.run(preparedRequest);
@@ -353,6 +355,7 @@ export async function updateRequest(payload: UpdatePurchaseRequestPayload): Prom
         `).run({ 
             requestId, 
             ...dataToUpdate,
+            requiresCurrency: dataToUpdate.requiresCurrency ? 1 : 0,
             updatedBy,
             lastModifiedAt: new Date().toISOString(),
             hasBeenModified: hasBeenModified ? 1 : 0
