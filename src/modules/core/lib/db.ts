@@ -9,7 +9,7 @@ import Database from 'better-sqlite3';
 import path from 'path';
 import fs from 'fs';
 import { initialCompany, initialRoles } from './data';
-import type { Company, LogEntry, ApiSettings, User, Product, Customer, Role, QuoteDraft, DatabaseModule, Exemption, ExemptionLaw, StockInfo, StockSettings, SqlConfig, ImportQuery, ItemLocation, UpdateBackupInfo, Suggestion, DateRange, Supplier, ErpOrderHeader, ErpOrderLine, Notification, UserPreferences, AuditResult, ErpPurchaseOrderHeader, ErpPurchaseOrderLine } from '@/modules/core/types';
+import type { Company, LogEntry, ApiSettings, User, Product, Customer, Role, QuoteDraft, DatabaseModule, Exemption, ExemptionLaw, StockInfo, StockSettings, ImportQuery, ItemLocation, UpdateBackupInfo, Suggestion, DateRange, Supplier, ErpOrderHeader, ErpOrderLine, Notification, UserPreferences, AuditResult, ErpPurchaseOrderHeader, ErpPurchaseOrderLine } from '@/modules/core/types';
 import bcrypt from 'bcryptjs';
 import Papa from 'papaparse';
 import { executeQuery } from './sql-service';
@@ -89,7 +89,7 @@ async function initializeMainDatabase(db: import('better-sqlite3').Database) {
         CREATE TABLE IF NOT EXISTS erp_order_headers (PEDIDO TEXT PRIMARY KEY, ESTADO TEXT, CLIENTE TEXT, FECHA_PEDIDO TEXT, FECHA_PROMETIDA TEXT, ORDEN_COMPRA TEXT, TOTAL_UNIDADES REAL, MONEDA_PEDIDO TEXT, USUARIO TEXT);
         CREATE TABLE IF NOT EXISTS erp_order_lines (PEDIDO TEXT, PEDIDO_LINEA INTEGER, ARTICULO TEXT, CANTIDAD_PEDIDA REAL, PRECIO_UNITARIO REAL, PRIMARY KEY (PEDIDO, PEDIDO_LINEA));
         CREATE TABLE IF NOT EXISTS erp_purchase_order_headers (ORDEN_COMPRA TEXT PRIMARY KEY, PROVEEDOR TEXT, FECHA_HORA TEXT, ESTADO TEXT);
-        CREATE TABLE IF NOT EXISTS erp_purchase_order_lines (ORDEN_COMPRA TEXT, ARTICULO TEXT, CANTIDAD_ORDENADA REAL);
+        CREATE TABLE IF NOT EXISTS erp_purchase_order_lines (ORDEN_COMPRA TEXT, ARTICULO TEXT, CANTIDAD_ORDENADA REAL, PRIMARY KEY(ORDEN_COMPRA, ARTICULO));
     `;
     db.exec(schema);
 
@@ -403,7 +403,7 @@ export async function checkAndApplyMigrations(db: import('better-sqlite3').Datab
 
         if (!db.prepare(`SELECT name FROM sqlite_master WHERE type='table' AND name='erp_purchase_order_lines'`).get()) {
             console.log("MIGRATION: Creating erp_purchase_order_lines table.");
-            db.exec(`CREATE TABLE erp_purchase_order_lines (ORDEN_COMPRA TEXT, ARTICULO TEXT, CANTIDAD_ORDENADA REAL);`);
+            db.exec(`CREATE TABLE erp_purchase_order_lines (ORDEN_COMPRA TEXT, ARTICULO TEXT, CANTIDAD_ORDENADA REAL, PRIMARY KEY(ORDEN_COMPRA, ARTICULO));`);
         } else {
              const erpPOLinesInfo = db.prepare(`PRAGMA table_info(erp_purchase_order_lines)`).all() as { name: string }[];
              const erpPOLinesColumns = new Set(erpPOLinesInfo.map(c => c.name));
@@ -874,7 +874,7 @@ async function updateCabysCatalog(data: any[]): Promise<{ count: number }> {
     return { count: data.length };
 }
 
-export async function importDataFromFile(type: 'customers' | 'products' | 'exemptions' | 'stock' | 'locations' | 'cabys' | 'suppliers'): Promise<{ count: number, source: string }> {
+export async function importDataFromFile(type: 'customers' | 'products' | 'exemptions' | 'stock' | 'locations' | 'cabys' | 'suppliers' | 'erp_purchase_order_headers' | 'erp_purchase_order_lines'): Promise<{ count: number, source: string }> {
     const companySettings = await getCompanySettings();
     if (!companySettings) throw new Error("No se pudo cargar la configuración de la empresa.");
     
@@ -887,6 +887,8 @@ export async function importDataFromFile(type: 'customers' | 'products' | 'exemp
         case 'locations': filePath = companySettings.locationFilePath || ''; break;
         case 'cabys': filePath = companySettings.cabysFilePath || ''; break;
         case 'suppliers': filePath = companySettings.supplierFilePath || ''; break;
+        case 'erp_purchase_order_headers': filePath = companySettings.erpPurchaseOrderHeaderFilePath || ''; break;
+        case 'erp_purchase_order_lines': filePath = companySettings.erpPurchaseOrderLineFilePath || ''; break;
     }
     if (!filePath) throw new Error(`La ruta de importación para ${type} no está configurada.`);
     if (!fs.existsSync(filePath)) throw new Error(`El archivo no fue encontrado: ${filePath}`);
@@ -915,6 +917,9 @@ export async function importDataFromFile(type: 'customers' | 'products' | 'exemp
         return { count: new Set(dataArray.map(item => item.itemId)).size, source: filePath };
     }
     else if (type === 'suppliers') await saveAllSuppliers(dataArray as Supplier[]);
+    else if (type === 'erp_purchase_order_headers') await saveAllErpPurchaseOrderHeaders(dataArray as ErpPurchaseOrderHeader[]);
+    else if (type === 'erp_purchase_order_lines') await saveAllErpPurchaseOrderLines(dataArray as ErpPurchaseOrderLine[]);
+    
     return { count: dataArray.length, source: filePath };
 }
 
@@ -970,7 +975,7 @@ export async function importData(type: ImportQuery['type']): Promise<{ count: nu
         if (['erp_order_headers', 'erp_order_lines', 'erp_purchase_order_headers', 'erp_purchase_order_lines'].includes(type)) {
             return { count: 0, source: 'file (skipped)' };
         }
-        return importDataFromFile(type as any); // Cast as 'any' because we've already handled the SQL-only types.
+        return importDataFromFile(type as 'customers' | 'products' | 'exemptions' | 'stock' | 'locations' | 'cabys' | 'suppliers' );
     }
 }
 

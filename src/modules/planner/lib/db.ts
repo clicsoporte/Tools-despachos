@@ -432,6 +432,21 @@ export async function updateOrder(payload: UpdateProductionOrderPayload): Promis
     return updatedOrder;
 }
 
+export async function confirmModification(orderId: number, updatedBy: string): Promise<ProductionOrder> {
+    const db = await connectDb(PLANNER_DB_FILE);
+    db.prepare('UPDATE production_orders SET hasBeenModified = 0, lastModifiedBy = ?, lastModifiedAt = ? WHERE id = ?')
+      .run(updatedBy, new Date().toISOString(), orderId);
+    
+    const currentStatus = (db.prepare('SELECT status FROM production_orders WHERE id = ?').get(orderId) as {status: string}).status;
+    
+    db.prepare('INSERT INTO production_order_history (orderId, timestamp, status, updatedBy, notes) VALUES (?, ?, ?, ?, ?)')
+      .run(orderId, new Date().toISOString(), currentStatus, updatedBy, 'Modificación confirmada y alerta eliminada.');
+      
+    const updatedOrder = db.prepare('SELECT * FROM production_orders WHERE id = ?').get(orderId) as ProductionOrder;
+    return updatedOrder;
+}
+
+
 export async function updateStatus(payload: UpdateStatusPayload): Promise<ProductionOrder> {
     const db = await connectDb(PLANNER_DB_FILE);
     const { orderId, status, notes, updatedBy, deliveredQuantity, defectiveQuantity, erpPackageNumber, erpTicketNumber, reopen } = payload;
