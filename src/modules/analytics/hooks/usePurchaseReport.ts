@@ -10,7 +10,7 @@ import { useToast } from '@/modules/core/hooks/use-toast';
 import { usePageTitle } from '@/modules/core/hooks/usePageTitle';
 import { useAuthorization } from '@/modules/core/hooks/useAuthorization';
 import { logError } from '@/modules/core/lib/logger';
-import { getRequestSuggestions, savePurchaseSuggestionsPreferences, getPurchaseSuggestionsPreferences } from '@/modules/requests/lib/actions';
+import { getRequestSuggestions } from '@/modules/requests/lib/actions';
 import type { DateRange, PurchaseSuggestion, UserPreferences } from '@/modules/core/types';
 import { useAuth } from '@/modules/core/hooks/useAuth';
 import { subDays, startOfDay } from 'date-fns';
@@ -20,6 +20,7 @@ import { generateDocument } from '@/modules/core/lib/pdf-generator';
 import { cn } from '@/lib/utils';
 import { Info } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { saveUserPreferences, getUserPreferences } from '@/modules/core/lib/db';
 
 export type SortKey = keyof Pick<PurchaseSuggestion, 'earliestCreationDate' | 'earliestDueDate' | 'shortage' | 'totalRequired' | 'currentStock' | 'inTransitStock' | 'erpUsers' | 'sourceOrders' | 'involvedClients'> | 'item';
 export type SortDirection = 'asc' | 'desc';
@@ -111,7 +112,7 @@ export function usePurchaseReport() {
         setTitle("Reporte de Compras");
         const loadPrefsAndData = async () => {
              if(currentUser) {
-                const prefs = await getPurchaseSuggestionsPreferences(currentUser.id);
+                const prefs = await getUserPreferences(currentUser.id, 'purchaseReportPrefs');
                 if (prefs) {
                     updateState({
                         classificationFilter: prefs.classificationFilter || [],
@@ -181,16 +182,14 @@ export function usePurchaseReport() {
     };
 
     const getColumnContent = (item: PurchaseSuggestion, colId: string): { type: string, data: any, className?: string } => {
-        let content: React.ReactNode;
         switch (colId) {
-            case 'item':
-                content = (
-                    <div>
-                        <p className="font-medium">{item.itemDescription}</p>
-                        <p className="text-sm text-muted-foreground">{item.itemId}</p>
-                    </div>
-                );
-                return { type: 'reactNode', data: content };
+            case 'item': {
+                const data = {
+                    description: item.itemDescription,
+                    id: item.itemId,
+                };
+                return { type: 'item', data };
+            }
             case 'sourceOrders':
                 return { type: 'string', data: item.sourceOrders.join(', '), className: "text-xs text-muted-foreground truncate max-w-xs" };
             case 'clients':
@@ -273,7 +272,7 @@ export function usePurchaseReport() {
             rowsPerPage: state.rowsPerPage,
         };
         try {
-            await savePurchaseSuggestionsPreferences(currentUser.id, prefsToSave);
+            await saveUserPreferences(currentUser.id, 'purchaseReportPrefs', prefsToSave);
             toast({ title: "Preferencias Guardadas", description: "Tus filtros y configuraciones de vista han sido guardados." });
         } catch (error: any) {
             logError("Failed to save purchase report preferences", { error: error.message });

@@ -30,17 +30,28 @@ import type { PurchaseSuggestion } from '@/modules/core/types';
 // New internal component to render cell content based on type
 const CellRenderer: React.FC<{ item: PurchaseSuggestion, colId: string, selectors: any }> = ({ item, colId, selectors }) => {
     const cell = selectors.getColumnContent(item, colId);
-    
-    if (cell.type === 'reactNode') {
-        return cell.data;
-    }
 
+    if (cell.type === 'reactNode') {
+        return <>{cell.data}</>;
+    }
+    
+    if (cell.type === 'item') {
+        return (
+            <div>
+                <p className="font-medium">{cell.data.description}</p>
+                <p className="text-sm text-muted-foreground">{cell.data.id}</p>
+            </div>
+        );
+    }
+    
     if (cell.type === 'date') {
         return <>{cell.data ? new Date(cell.data).toLocaleDateString('es-CR') : 'N/A'}</>;
     }
+    
     if (cell.type === 'number') {
         return <>{(cell.data ?? 0).toLocaleString()}</>;
     }
+    
     return <>{cell.data}</>;
 };
 
