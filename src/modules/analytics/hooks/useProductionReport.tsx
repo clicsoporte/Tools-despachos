@@ -17,6 +17,7 @@ import { generateDocument } from '@/modules/core/lib/pdf-generator';
 import { cn } from '@/lib/utils';
 import React from 'react';
 import { useDebounce } from 'use-debounce';
+import { getUserPreferences, saveUserPreferences } from '@/modules/core/lib/db';
 
 export interface ProductionReportDetail extends ProductionOrder {
     completionDate: string | null;
@@ -75,7 +76,7 @@ export function useProductionReport() {
     const { isAuthorized } = useAuthorization(['analytics:read', 'analytics:production-report:read']);
     const { setTitle } = usePageTitle();
     const { toast } = useToast();
-    const { companyData: authCompanyData, products: authProducts } = useAuth();
+    const { user, companyData: authCompanyData, products: authProducts } = useAuth();
     
     const [isInitialLoading, setIsInitialLoading] = useState(true);
 
@@ -129,11 +130,21 @@ export function useProductionReport() {
     
     useEffect(() => {
         setTitle("Reporte de Producción");
+        const loadPrefsAndData = async () => {
+             if(user) {
+                const prefs = await getUserPreferences(user.id, 'productionReportPrefs');
+                if (prefs && prefs.visibleColumns) {
+                    updateState({ visibleColumns: prefs.visibleColumns });
+                }
+            }
+            await handleAnalyze();
+        };
+
         if (isAuthorized) {
-            handleAnalyze();
+            loadPrefsAndData();
         }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [setTitle, isAuthorized]);
+    }, [setTitle, isAuthorized, user?.id]);
 
     const handleColumnVisibilityChange = (columnId: string, checked: boolean) => {
         updateState({
@@ -142,6 +153,18 @@ export function useProductionReport() {
                 : state.visibleColumns.filter(id => id !== columnId)
         });
     };
+
+    const handleSaveColumnVisibility = async () => {
+        if (!user) return;
+        try {
+            await saveUserPreferences(user.id, 'productionReportPrefs', { visibleColumns: state.visibleColumns });
+            toast({ title: "Preferencias Guardadas", description: "La visibilidad de las columnas ha sido guardada." });
+        } catch (error: any) {
+            logError("Failed to save production report column visibility", { error: error.message });
+            toast({ title: "Error", description: "No se pudo guardar la configuración de columnas.", variant: "destructive" });
+        }
+    };
+
 
     const getNetDifference = (item: ProductionReportDetail) => (item.deliveredQuantity ?? 0) - (item.defectiveQuantity ?? 0) - item.quantity;
     
@@ -260,6 +283,7 @@ export function useProductionReport() {
         actions: {
             setDateRange: (range: DateRange | undefined) => updateState({ dateRange: range || { from: undefined, to: undefined } }),
             handleAnalyze, handleExportExcel, handleExportPDF, handleColumnVisibilityChange,
+            handleSaveColumnVisibility,
             setProductFilter,
             setProductSearchTerm: (term: string) => updateState({ productSearchTerm: term }),
             setProductSearchOpen: (isOpen: boolean) => updateState({ isProductSearchOpen: isOpen }),

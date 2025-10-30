@@ -712,6 +712,22 @@ export type ErpPurchaseOrderLine = {
 
 
 // --- Analytics Types ---
+export interface PurchaseSuggestion {
+    itemId: string;
+    itemDescription: string;
+    itemClassification: string;
+    totalRequired: number;
+    currentStock: number;
+    inTransitStock: number;
+    shortage: number;
+    sourceOrders: string[];
+    involvedClients: { id: string; name: string }[];
+    erpUsers: string[];
+    earliestCreationDate: string | null;
+    earliestDueDate: string | null;
+    existingActiveRequests: { id: number; consecutive: string, status: string, quantity: number, purchaseOrder?: string, erpOrderNumber?: string }[];
+}
+
 export type ProductionReportData = {
     totals: {
         totalRequested: number;
@@ -727,7 +743,7 @@ export interface UserPreferences {
     classificationFilter: string[];
     showOnlyMyOrders: boolean;
     visibleColumns: string[];
-    sortKey: 'item' | 'sourceOrders' | 'involvedClients' | 'erpUsers' | 'earliestCreationDate' | 'earliestDueDate' | 'shortage' | 'totalRequired' | 'currentStock' | 'inTransitStock';
+    sortKey: 'item' | 'sourceOrders' | 'involvedClients' | 'erpUsers' | 'earliestCreationDate' | 'earliestDueDate' | 'shortage' | 'totalRequired' | 'currentStock' | 'inTransitStock' | undefined;
     sortDirection: 'asc' | 'desc';
     rowsPerPage: number;
 };

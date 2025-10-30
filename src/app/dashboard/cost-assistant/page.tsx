@@ -260,7 +260,7 @@ export default function CostAssistantPage() {
                                  <DialogColumnSelector
                                     allColumns={columns}
                                     visibleColumns={Object.keys(state.columnVisibility).filter(k => state.columnVisibility[k as keyof typeof state.columnVisibility])}
-                                    onColumnChange={actions.handleColumnVisibilityChange}
+                                    onColumnChange={(columnId, checked) => actions.setColumnVisibility(columnId as keyof typeof state.columnVisibility, checked)}
                                     onSave={actions.handleSaveColumnVisibility}
                                 />
                                 {state.exportStatus === 'idle' && (

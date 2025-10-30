@@ -60,7 +60,7 @@ export function usePurchaseReport() {
     const { isAuthorized } = useAuthorization(['analytics:purchase-report:read']);
     const { setTitle } = usePageTitle();
     const { toast } = useToast();
-    const { user: currentUser, products, companyData } = useAuth();
+    const { user: currentUser, products } = useAuth();
     
     const [isInitialLoading, setIsInitialLoading] = useState(true);
 
@@ -138,12 +138,12 @@ export function usePurchaseReport() {
             const classificationMatch = state.classificationFilter.length > 0 ? state.classificationFilter.includes(item.itemClassification) : true;
             if (!classificationMatch) return false;
 
-            const myOrdersMatch = !state.showOnlyMyOrders || (currentUser?.erpAlias && item.erpUsers.some(erpUser => erpUser.toLowerCase() === currentUser!.erpAlias!.toLowerCase()));
+            const myOrdersMatch = !state.showOnlyMyOrders || (currentUser?.erpAlias && item.erpUsers.some((erpUser: string) => erpUser.toLowerCase() === currentUser!.erpAlias!.toLowerCase()));
             if (!myOrdersMatch) return false;
 
             if (searchTerms.length === 0) return true;
 
-            const targetText = normalizeText(`${item.itemId} ${item.itemDescription} ${item.sourceOrders.join(' ')} ${item.involvedClients.map(c => c.name).join(' ')} ${item.erpUsers.join(' ')}`);
+            const targetText = normalizeText(`${item.itemId} ${item.itemDescription} ${item.sourceOrders.join(' ')} ${item.involvedClients.map((c: any) => c.name).join(' ')} ${item.erpUsers.join(' ')}`);
             return searchTerms.every(term => targetText.includes(term));
         });
 
@@ -181,28 +181,35 @@ export function usePurchaseReport() {
     };
 
     const getColumnContent = (item: PurchaseSuggestion, colId: string): { type: string, data: any, className?: string } => {
+        let content: React.ReactNode;
         switch (colId) {
-            case 'item': 
-                return { type: 'item', data: { description: item.itemDescription, id: item.itemId } };
-            case 'sourceOrders': 
+            case 'item':
+                content = (
+                    <div>
+                        <p className="font-medium">{item.itemDescription}</p>
+                        <p className="text-sm text-muted-foreground">{item.itemId}</p>
+                    </div>
+                );
+                return { type: 'reactNode', data: content };
+            case 'sourceOrders':
                 return { type: 'string', data: item.sourceOrders.join(', '), className: "text-xs text-muted-foreground truncate max-w-xs" };
-            case 'clients': 
-                return { type: 'string', data: item.involvedClients.map(c => c.name).join(', '), className: "text-xs text-muted-foreground truncate max-w-xs" };
-            case 'erpUsers': 
+            case 'clients':
+                return { type: 'string', data: item.involvedClients.map((c: any) => c.name).join(', '), className: "text-xs text-muted-foreground truncate max-w-xs" };
+            case 'erpUsers':
                 return { type: 'string', data: item.erpUsers.join(', '), className: "text-xs text-muted-foreground" };
-            case 'creationDate': 
+            case 'creationDate':
                 return { type: 'date', data: item.earliestCreationDate };
-            case 'dueDate': 
+            case 'dueDate':
                 return { type: 'date', data: item.earliestDueDate };
-            case 'required': 
+            case 'required':
                 return { type: 'number', data: item.totalRequired, className: 'text-right' };
-            case 'stock': 
+            case 'stock':
                 return { type: 'number', data: item.currentStock, className: 'text-right' };
-            case 'inTransit': 
+            case 'inTransit':
                 return { type: 'number', data: item.inTransitStock, className: 'text-right font-semibold text-blue-600' };
-            case 'shortage': 
+            case 'shortage':
                 return { type: 'number', data: item.shortage, className: cn('text-right font-bold', item.shortage > 0 ? 'text-red-600' : 'text-green-600') };
-            default: 
+            default:
                 return { type: 'string', data: '' };
         }
     };
@@ -210,6 +217,42 @@ export function usePurchaseReport() {
     const visibleColumnsData = useMemo(() => {
         return state.visibleColumns.map(id => availableColumns.find(col => col.id === id)).filter(Boolean) as (typeof availableColumns)[0][];
     }, [state.visibleColumns]);
+
+    const handleExportExcel = () => {
+        const headers = visibleColumnsData.map(col => col.label);
+        const dataToExport = filteredSuggestions.map(item =>
+            state.visibleColumns.map(colId => {
+                switch(colId) {
+                    case 'item': return `${item.itemDescription} (${item.itemId})`;
+                    case 'sourceOrders': return item.sourceOrders.join(', ');
+                    case 'clients': return item.involvedClients.map((c: any) => c.name).join(', ');
+                    case 'erpUsers': return item.erpUsers.join(', ');
+                    case 'creationDate': return item.earliestCreationDate ? new Date(item.earliestCreationDate).toLocaleDateString('es-CR') : 'N/A';
+                    case 'dueDate': return item.earliestDueDate ? new Date(item.earliestDueDate).toLocaleDateString('es-CR') : 'N/A';
+                    case 'required': return item.totalRequired;
+                    case 'stock': return item.currentStock;
+                    case 'inTransit': return item.inTransitStock;
+                    case 'shortage': return item.shortage;
+                    default: return '';
+                }
+            })
+        );
+        exportToExcel({
+            fileName: 'reporte_compras',
+            sheetName: 'Compras',
+            headers,
+            data: dataToExport,
+            columnWidths: state.visibleColumns.map(id => {
+                switch(id) {
+                    case 'item': return 40;
+                    case 'sourceOrders': return 25;
+                    case 'clients': return 30;
+                    case 'erpUsers': return 20;
+                    default: return 15;
+                }
+            })
+        });
+    };
 
     const handleColumnVisibilityChange = (columnId: string, checked: boolean) => {
         updateState({
@@ -238,42 +281,6 @@ export function usePurchaseReport() {
         }
     };
 
-
-    const handleExportExcel = () => {
-        const headers = visibleColumnsData.map(col => col.label);
-        const dataToExport = filteredSuggestions.map(item =>
-            state.visibleColumns.map(colId => {
-                switch(colId) {
-                    case 'item': return `${item.itemDescription} (${item.itemId})`;
-                    case 'sourceOrders': return item.sourceOrders.join(', ');
-                    case 'clients': return item.involvedClients.map(c => c.name).join(', ');
-                    case 'erpUsers': return item.erpUsers.join(', ');
-                    case 'creationDate': return item.earliestCreationDate ? new Date(item.earliestCreationDate).toLocaleDateString('es-CR') : 'N/A';
-                    case 'dueDate': return item.earliestDueDate ? new Date(item.earliestDueDate).toLocaleDateString('es-CR') : 'N/A';
-                    case 'required': return item.totalRequired;
-                    case 'stock': return item.currentStock;
-                    case 'inTransit': return item.inTransitStock;
-                    case 'shortage': return item.shortage;
-                    default: return '';
-                }
-            })
-        );
-        exportToExcel({
-            fileName: 'reporte_compras',
-            sheetName: 'Compras',
-            headers,
-            data: dataToExport,
-            columnWidths: state.visibleColumns.map(id => {
-                switch(id) {
-                    case 'item': return 40;
-                    case 'sourceOrders': return 25;
-                    case 'clients': return 30;
-                    case 'erpUsers': return 20;
-                    default: return 15;
-                }
-            })
-        });
-    };
 
     const actions = {
         setDateRange: (range: DateRange | undefined) => updateState({ dateRange: range || { from: undefined, to: undefined } }),

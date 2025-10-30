@@ -5,7 +5,7 @@
 'use client';
 
 import React from 'react';
-import { usePurchaseReport, type PurchaseSuggestion, type SortKey } from '@/modules/analytics/hooks/usePurchaseReport';
+import { usePurchaseReport, type SortKey } from '@/modules/analytics/hooks/usePurchaseReport';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -25,19 +25,16 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import Link from 'next/link';
 import { DialogColumnSelector } from '@/components/ui/dialog-column-selector';
+import type { PurchaseSuggestion } from '@/modules/core/types';
 
 // New internal component to render cell content based on type
 const CellRenderer: React.FC<{ item: PurchaseSuggestion, colId: string, selectors: any }> = ({ item, colId, selectors }) => {
     const cell = selectors.getColumnContent(item, colId);
     
-    if (cell.type === 'item') {
-        return (
-            <div>
-                <p className="font-medium">{cell.data.description}</p>
-                <p className="text-sm text-muted-foreground">{cell.data.id}</p>
-            </div>
-        );
+    if (cell.type === 'reactNode') {
+        return cell.data;
     }
+
     if (cell.type === 'date') {
         return <>{cell.data ? new Date(cell.data).toLocaleDateString('es-CR') : 'N/A'}</>;
     }
