@@ -27,9 +27,16 @@ import Link from 'next/link';
 import { DialogColumnSelector } from '@/components/ui/dialog-column-selector';
 
 // New internal component to render cell content based on type
-const CellRenderer: React.FC<{ cell: { type: string, data: any } }> = ({ cell }) => {
-    if (cell.type === 'reactNode') {
-        return <>{cell.data}</>;
+const CellRenderer: React.FC<{ item: PurchaseSuggestion, colId: string, selectors: any }> = ({ item, colId, selectors }) => {
+    const cell = selectors.getColumnContent(item, colId);
+    
+    if (cell.type === 'item') {
+        return (
+            <div>
+                <p className="font-medium">{cell.data.description}</p>
+                <p className="text-sm text-muted-foreground">{cell.data.id}</p>
+            </div>
+        );
     }
     if (cell.type === 'date') {
         return <>{cell.data ? new Date(cell.data).toLocaleDateString('es-CR') : 'N/A'}</>;
@@ -154,8 +161,8 @@ export default function PurchaseReportPage() {
                                         paginatedSuggestions.map((item: PurchaseSuggestion) => (
                                             <TableRow key={item.itemId}>
                                                 {state.visibleColumns.map((colId: string) => {
-                                                    const colData = selectors.getColumnContent(item, colId);
-                                                    return <TableCell key={colId} className={cn(colData.className)}><CellRenderer cell={colData} /></TableCell>;
+                                                    const cellData = selectors.getColumnContent(item, colId);
+                                                    return <TableCell key={colId} className={cn(cellData.className)}><CellRenderer item={item} colId={colId} selectors={selectors} /></TableCell>;
                                                 })}
                                             </TableRow>
                                         ))

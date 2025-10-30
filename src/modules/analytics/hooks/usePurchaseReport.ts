@@ -16,6 +16,7 @@ import { useAuth } from '@/modules/core/hooks/useAuth';
 import { subDays, startOfDay } from 'date-fns';
 import { useDebounce } from 'use-debounce';
 import { exportToExcel } from '@/modules/core/lib/excel-export';
+import { generateDocument } from '@/modules/core/lib/pdf-generator';
 import { cn } from '@/lib/utils';
 import { Info } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -59,7 +60,7 @@ export function usePurchaseReport() {
     const { isAuthorized } = useAuthorization(['analytics:purchase-report:read']);
     const { setTitle } = usePageTitle();
     const { toast } = useToast();
-    const { user: currentUser, products } = useAuth();
+    const { user: currentUser, products, companyData } = useAuth();
     
     const [isInitialLoading, setIsInitialLoading] = useState(true);
 
@@ -127,7 +128,8 @@ export function usePurchaseReport() {
         if(isAuthorized) {
             loadPrefsAndData();
         }
-    }, [setTitle, isAuthorized, handleAnalyze, currentUser?.id]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [setTitle, isAuthorized, currentUser?.id]);
 
     const filteredSuggestions = useMemo(() => {
         let filtered = state.suggestions.filter(item => {
@@ -180,25 +182,28 @@ export function usePurchaseReport() {
 
     const getColumnContent = (item: PurchaseSuggestion, colId: string): { type: string, data: any, className?: string } => {
         switch (colId) {
-            case 'item': {
-                 const itemContent = (
-                    <div>
-                        <p className="font-medium">{item.itemDescription}</p>
-                        <p className="text-sm text-muted-foreground">{item.itemId}</p>
-                    </div>
-                );
-                return { type: 'reactNode', data: itemContent };
-            }
-            case 'sourceOrders': return { type: 'string', data: item.sourceOrders.join(', '), className: "text-xs text-muted-foreground truncate max-w-xs" };
-            case 'clients': return { type: 'string', data: item.involvedClients.map(c => c.name).join(', '), className: "text-xs text-muted-foreground truncate max-w-xs" };
-            case 'erpUsers': return { type: 'string', data: item.erpUsers.join(', '), className: "text-xs text-muted-foreground" };
-            case 'creationDate': return { type: 'date', data: item.earliestCreationDate };
-            case 'dueDate': return { type: 'date', data: item.earliestDueDate };
-            case 'required': return { type: 'number', data: item.totalRequired, className: 'text-right' };
-            case 'stock': return { type: 'number', data: item.currentStock, className: 'text-right' };
-            case 'inTransit': return { type: 'number', data: item.inTransitStock, className: 'text-right font-semibold text-blue-600' };
-            case 'shortage': return { type: 'number', data: item.shortage, className: cn('text-right font-bold', item.shortage > 0 ? 'text-red-600' : 'text-green-600') };
-            default: return { type: 'string', data: '' };
+            case 'item': 
+                return { type: 'item', data: { description: item.itemDescription, id: item.itemId } };
+            case 'sourceOrders': 
+                return { type: 'string', data: item.sourceOrders.join(', '), className: "text-xs text-muted-foreground truncate max-w-xs" };
+            case 'clients': 
+                return { type: 'string', data: item.involvedClients.map(c => c.name).join(', '), className: "text-xs text-muted-foreground truncate max-w-xs" };
+            case 'erpUsers': 
+                return { type: 'string', data: item.erpUsers.join(', '), className: "text-xs text-muted-foreground" };
+            case 'creationDate': 
+                return { type: 'date', data: item.earliestCreationDate };
+            case 'dueDate': 
+                return { type: 'date', data: item.earliestDueDate };
+            case 'required': 
+                return { type: 'number', data: item.totalRequired, className: 'text-right' };
+            case 'stock': 
+                return { type: 'number', data: item.currentStock, className: 'text-right' };
+            case 'inTransit': 
+                return { type: 'number', data: item.inTransitStock, className: 'text-right font-semibold text-blue-600' };
+            case 'shortage': 
+                return { type: 'number', data: item.shortage, className: cn('text-right font-bold', item.shortage > 0 ? 'text-red-600' : 'text-green-600') };
+            default: 
+                return { type: 'string', data: '' };
         }
     };
     
