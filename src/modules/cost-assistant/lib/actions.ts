@@ -6,7 +6,7 @@
 'use server';
 
 import { XMLParser } from 'fast-xml-parser';
-import type { CostAssistantLine, ProcessedInvoiceInfo, CostAnalysisDraft, CostAssistantSettings } from '@/modules/core/types';
+import type { CostAssistantLine, ProcessedInvoiceInfo, CostAnalysisDraft, CostAssistantSettings, DraftableCostAssistantLine } from '@/modules/core/types';
 import { 
     getAllDrafts as getAllDraftsServer, 
     saveDraft as saveDraftServer, 
@@ -258,7 +258,7 @@ export async function getAllDrafts(userId: number): Promise<CostAnalysisDraft[]>
     return JSON.parse(JSON.stringify(drafts));
 }
 
-export async function saveDraft(draft: Omit<CostAnalysisDraft, 'id' | 'createdAt'>): Promise<void> {
+export async function saveDraft(draft: Omit<CostAnalysisDraft, 'id' | 'createdAt' | 'lines'> & { lines: DraftableCostAssistantLine[] }): Promise<void> {
     const settings = await getDbSettings();
     const draftPrefix = settings.draftPrefix || 'AC-';
     const nextDraftNumber = settings.nextDraftNumber || 1;

@@ -750,6 +750,8 @@ export interface UserPreferences {
 
 
 // --- Cost Assistant Types ---
+export type DraftableCostAssistantLine = Omit<CostAssistantLine, 'displayMargin' | 'displayTaxRate' | 'displayUnitCost'>;
+
 export type CostAssistantLine = {
     id: string; // Unique ID for the line, e.g., `${invoiceKey}-${lineNumber}`
     invoiceKey: string;
@@ -789,7 +791,7 @@ export type CostAnalysisDraft = {
     userId: number;
     name: string;
     createdAt: string;
-    lines: CostAssistantLine[];
+    lines: DraftableCostAssistantLine[];
     globalCosts: {
         transportCost: number;
         otherCosts: number;
