@@ -32,9 +32,9 @@ const importTypeTranslations: { [key in ImportType]: string } = {
     stock: 'Existencias',
     locations: 'Ubicaciones',
     cabys: 'Catálogo CABYS',
+    suppliers: 'Proveedores',
     erp_order_headers: 'Pedidos ERP (Cabeceras)',
     erp_order_lines: 'Pedidos ERP (Líneas)',
-    suppliers: 'Proveedores',
     erp_purchase_order_headers: 'Órdenes de Compra ERP (Cabeceras)',
     erp_purchase_order_lines: 'Órdenes de Compra ERP (Líneas)',
 };
@@ -92,7 +92,7 @@ export default function ImportDataPage() {
             
             const updatedQueries = [...queries];
             importTypes.forEach(type => {
-                if (!queries.some(q => q.type === type) && defaultQueries[type]) {
+                if (!queries.some((q: any) => q.type === type) && defaultQueries[type]) {
                     updatedQueries.push({ type, query: defaultQueries[type]! });
                 }
             });

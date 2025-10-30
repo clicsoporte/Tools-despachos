@@ -865,7 +865,7 @@ async function updateCabysCatalog(data: any[]): Promise<{ count: number }> {
     return { count: data.length };
 }
 
-export async function importDataFromFile(type: 'customers' | 'products' | 'exemptions' | 'stock' | 'locations' | 'cabys' | 'suppliers'): Promise<{ count: number, source: string }> {
+export async function importDataFromFile(type: 'customers' | 'products' | 'exemptions' | 'stock' | 'locations' | 'cabys' | 'suppliers' | 'erp_order_headers' | 'erp_order_lines'): Promise<{ count: number, source: string }> {
     const companySettings = await getCompanySettings();
     if (!companySettings) throw new Error("No se pudo cargar la configuración de la empresa.");
     
@@ -1384,6 +1384,26 @@ export async function saveAllErpPurchaseOrderLines(lines: ErpPurchaseOrderLine[]
     } catch (error) {
         console.error("Failed to save ERP purchase order lines:", error);
         throw error;
+    }
+}
+
+export async function getAllErpPurchaseOrderHeaders(): Promise<ErpPurchaseOrderHeader[]> {
+    const db = await connectDb();
+    try {
+        return db.prepare('SELECT * FROM erp_purchase_order_headers').all() as ErpPurchaseOrderHeader[];
+    } catch (error) {
+        console.error("Failed to get all ERP purchase order headers:", error);
+        return [];
+    }
+}
+
+export async function getAllErpPurchaseOrderLines(): Promise<ErpPurchaseOrderLine[]> {
+    const db = await connectDb();
+    try {
+        return db.prepare('SELECT * FROM erp_purchase_order_lines').all() as ErpPurchaseOrderLine[];
+    } catch (error) {
+        console.error("Failed to get all ERP purchase order lines:", error);
+        return [];
     }
 }
 

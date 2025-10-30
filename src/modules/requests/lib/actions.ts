@@ -26,8 +26,8 @@ import {
     getUserPreferences as getUserPreferencesServer
 } from '@/modules/core/lib/db';
 import type { PurchaseSuggestion } from '../hooks/useRequestSuggestions';
-import { getAllProducts, getAllStock, getAllCustomers, getAllErpPurchaseOrders } from '@/modules/core/lib/db';
-import { getAllErpPurchaseOrderLines } from '@/modules/core/lib/db';
+import { getAllProducts, getAllStock, getAllCustomers, getAllErpPurchaseOrderHeaders, getAllErpPurchaseOrderLines } from '@/modules/core/lib/db';
+
 
 /**
  * Fetches purchase requests from the server.
@@ -190,12 +190,12 @@ export async function getRequestSuggestions(dateRange: DateRange): Promise<Purch
         getAllStock(),
         getAllProducts(),
         getAllCustomers(),
-        getAllErpPurchaseOrders(),
+        getAllErpPurchaseOrderHeaders(),
         getAllErpPurchaseOrderLines(),
     ]);
     const allActiveRequests = await getRequests({}).then(res => res.requests.filter(r => ['pending', 'approved', 'ordered', 'purchasing-review', 'pending-approval'].includes(r.status)));
 
-    const activePoNumbers = new Set(erpPoHeaders.filter(h => h.ESTADO === 'A').map(h => h.ORDEN_COMPRA));
+    const activePoNumbers = new Set(erpPoHeaders.filter((h: any) => h.ESTADO === 'A').map((h: any) => h.ORDEN_COMPRA));
 
     const requiredItems = new Map<string, { totalRequired: number; sourceOrders: Set<string>; clientIds: Set<string>; erpUsers: Set<string>; earliestCreationDate: Date | null, earliestDueDate: Date | null; }>();
 
@@ -233,17 +233,17 @@ export async function getRequestSuggestions(dateRange: DateRange): Promise<Purch
         const currentStock = stockInfo?.totalStock ?? 0;
         
         const inTransitStock = erpPoLines
-            .filter(line => line.ARTICULO === itemId && activePoNumbers.has(line.ORDEN_COMPRA))
-            .reduce((sum, line) => sum + line.CANTIDAD_ORDENADA, 0);
+            .filter((line: any) => line.ARTICULO === itemId && activePoNumbers.has(line.ORDEN_COMPRA))
+            .reduce((sum: any, line: any) => sum + line.CANTIDAD_ORDENADA, 0);
 
         const existingActiveRequests = allActiveRequests.filter(r => r.itemId === itemId);
         
         const shortage = data.totalRequired - currentStock - inTransitStock;
 
         if (shortage > 0) {
-            const productInfo = allProducts.find(p => p.id === itemId);
+            const productInfo = allProducts.find((p: any) => p.id === itemId);
             const involvedClients = Array.from(data.clientIds).map(id => {
-                const customer = allCustomers.find(c => c.id === id);
+                const customer = allCustomers.find((c: any) => c.id === id);
                 return { id, name: customer?.name || 'Desconocido' };
             });
             
