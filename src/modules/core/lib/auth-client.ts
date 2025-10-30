@@ -73,7 +73,7 @@ export async function getAllUsers(): Promise<User[]> {
  * @param userData - The new user's data.
  * @returns The created user object.
  */
-export async function addUser(userData: Omit<User, 'id' | 'avatar' | 'recentActivity' | 'securityQuestion' | 'securityAnswer'> & { password: string, forcePasswordChange: boolean }): Promise<User> {
+export async function addUser(userData: Omit<User, 'id' | 'password' | 'avatar' | 'recentActivity' | 'securityQuestion' | 'securityAnswer'> & { password: string, forcePasswordChange: boolean }): Promise<User> {
     return addUserServer(userData);
 }
 

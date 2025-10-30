@@ -13,6 +13,7 @@ import bcrypt from 'bcryptjs';
 import { logInfo, logWarn, logError } from './logger';
 import { headers } from 'next/headers';
 import { getExchangeRate, getEmailSettings } from './api-actions';
+import { NewUserSchema, UserSchema } from './auth-schemas';
 
 const SALT_ROUNDS = 10;
 
@@ -113,24 +114,30 @@ export async function getAllUsersForReport(): Promise<User[]> {
  */
 export async function addUser(userData: Omit<User, 'id' | 'avatar' | 'recentActivity' | 'securityQuestion' | 'securityAnswer'> & { password: string, forcePasswordChange: boolean }): Promise<User> {
   const db = await connectDb();
+
+  // Validate data against the schema first
+  const validationResult = NewUserSchema.safeParse(userData);
+  if (!validationResult.success) {
+      throw new Error(`Validation failed: ${validationResult.error.errors.map(e => e.message).join(', ')}`);
+  }
   
-  const hashedPassword = bcrypt.hashSync(userData.password, SALT_ROUNDS);
+  const hashedPassword = bcrypt.hashSync(validationResult.data.password, SALT_ROUNDS);
 
   const highestIdResult = db.prepare('SELECT MAX(id) as maxId FROM users').get() as { maxId: number | null };
   const nextId = (highestIdResult.maxId || 0) + 1;
 
   const userToCreate: User = {
     id: nextId,
-    name: userData.name,
-    email: userData.email,
+    name: validationResult.data.name,
+    email: validationResult.data.email,
     password: hashedPassword,
-    role: userData.role,
+    role: validationResult.data.role,
     avatar: "",
     recentActivity: "Usuario recién creado.",
-    phone: userData.phone || "",
-    whatsapp: userData.whatsapp || "",
-    erpAlias: userData.erpAlias || "",
-    forcePasswordChange: userData.forcePasswordChange,
+    phone: validationResult.data.phone || "",
+    whatsapp: validationResult.data.whatsapp || "",
+    erpAlias: validationResult.data.erpAlias || "",
+    forcePasswordChange: validationResult.data.forcePasswordChange,
   };
   
   const stmt = db.prepare(
@@ -186,8 +193,16 @@ export async function saveAllUsers(users: User[]): Promise<void> {
         );
 
         for (const user of usersToSave) {
-          let passwordToSave = user.password;
-          const existingUserData = existingUsersMap.get(user.id);
+          // Validate each user object before processing
+          const validationResult = UserSchema.safeParse(user);
+          if (!validationResult.success) {
+              logError(`Skipping user save due to validation error for user ID ${user.id}`, { errors: validationResult.error.flatten() });
+              continue; // Skip this invalid user and continue with the next
+          }
+
+          const validatedUser = validationResult.data;
+          let passwordToSave = validatedUser.password;
+          const existingUserData = existingUsersMap.get(validatedUser.id);
           
           if (passwordToSave && passwordToSave !== existingUserData?.pass) {
               if (!passwordToSave.startsWith('$2a$')) { // Basic check if it's not already a hash
@@ -198,14 +213,14 @@ export async function saveAllUsers(users: User[]): Promise<void> {
           }
 
           const userToInsert = {
-            ...user,
+            ...validatedUser,
             password: passwordToSave,
-            phone: user.phone || null,
-            whatsapp: user.whatsapp || null,
-            erpAlias: user.erpAlias || null,
-            securityQuestion: user.securityQuestion || null,
-            securityAnswer: user.securityAnswer || null,
-            forcePasswordChange: user.forcePasswordChange ? 1 : 0,
+            phone: validatedUser.phone || null,
+            whatsapp: validatedUser.whatsapp || null,
+            erpAlias: validatedUser.erpAlias || null,
+            securityQuestion: validatedUser.securityQuestion || null,
+            securityAnswer: validatedUser.securityAnswer || null,
+            forcePasswordChange: validatedUser.forcePasswordChange ? 1 : 0,
           };
           upsert.run(userToInsert);
         }
@@ -213,7 +228,7 @@ export async function saveAllUsers(users: User[]): Promise<void> {
 
     try {
         transaction(users);
-        await logInfo(`${users.length} user records were updated.`);
+        await logInfo(`${users.length} user records were processed for saving.`);
     } catch (error) {
         console.error("Failed to save all users:", error);
         await logError("Failed to save all users.", { error: (error as Error).message });
