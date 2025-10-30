@@ -181,8 +181,15 @@ export function usePurchaseReport() {
 
     const getColumnContent = (item: PurchaseSuggestion, colId: string): { type: string, data: any, className?: string } => {
         switch (colId) {
-            case 'item':
-                return { type: 'item', data: { itemDescription: item.itemDescription, itemId: item.itemId } };
+            case 'item': {
+                const itemContent = (
+                    <div>
+                        <p className="font-medium">{item.itemDescription}</p>
+                        <p className="text-sm text-muted-foreground">{item.itemId}</p>
+                    </div>
+                );
+                return { type: 'reactNode', data: itemContent };
+            }
             case 'sourceOrders': return { type: 'string', data: item.sourceOrders.join(', '), className: "text-xs text-muted-foreground truncate max-w-xs" };
             case 'clients': return { type: 'string', data: item.involvedClients.map(c => c.name).join(', '), className: "text-xs text-muted-foreground truncate max-w-xs" };
             case 'erpUsers': return { type: 'string', data: item.erpUsers.join(', '), className: "text-xs text-muted-foreground" };
