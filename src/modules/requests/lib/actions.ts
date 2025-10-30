@@ -58,14 +58,14 @@ export async function savePurchaseRequest(request: Omit<PurchaseRequest, 'id' | 
     
     const reviewRoles = await getRolesWithPermission('requests:status:review');
     for (const roleId of reviewRoles) {
-        await createNotification({
-            userId: 0, // Placeholder, createNotificationForRole handles user lookup
-            message: `Nueva solicitud ${createdRequest.consecutive} para "${createdRequest.clientName}" requiere revisión.`,
-            href: `/dashboard/requests?search=${createdRequest.consecutive}`,
-            entityId: createdRequest.id,
-            entityType: 'purchase-request',
-            taskType: 'review',
-        });
+        await createNotificationForRole(
+            roleId,
+            `Nueva solicitud ${createdRequest.consecutive} para "${createdRequest.clientName}" requiere revisión.`,
+            `/dashboard/requests?search=${createdRequest.consecutive}`,
+            createdRequest.id,
+            'purchase-request',
+            'review'
+        );
     }
     
     return createdRequest;
