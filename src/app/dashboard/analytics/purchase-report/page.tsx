@@ -38,7 +38,8 @@ const CellRenderer: React.FC<{ cell: { type: string, data: any } }> = ({ cell })
         case 'date':
             return <>{cell.data ? new Date(cell.data).toLocaleDateString('es-CR') : 'N/A'}</>;
         case 'number':
-            return <>{cell.data.toLocaleString()}</>;
+            // Added check to prevent toLocaleString on undefined
+            return <>{(cell.data ?? 0).toLocaleString()}</>;
         default:
             return <>{cell.data}</>;
     }

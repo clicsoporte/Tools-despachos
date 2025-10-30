@@ -181,28 +181,19 @@ export function usePurchaseReport() {
 
     const getColumnContent = (item: PurchaseSuggestion, colId: string): { type: string, data: any, className?: string } => {
         switch (colId) {
-            case 'item':
+            case 'item': {
                 return { type: 'item', data: item };
-            case 'sourceOrders':
-                return { type: 'string', data: item.sourceOrders.join(', '), className: "text-xs text-muted-foreground truncate max-w-xs" };
-            case 'clients':
-                return { type: 'string', data: item.involvedClients.map(c => c.name).join(', '), className: "text-xs text-muted-foreground truncate max-w-xs" };
-            case 'erpUsers':
-                return { type: 'string', data: item.erpUsers.join(', '), className: "text-xs text-muted-foreground" };
-            case 'creationDate':
-                return { type: 'date', data: item.earliestCreationDate };
-            case 'dueDate':
-                return { type: 'date', data: item.earliestDueDate };
-            case 'required':
-                return { type: 'number', data: item.totalRequired, className: 'text-right' };
-            case 'stock':
-                return { type: 'number', data: item.currentStock, className: 'text-right' };
-            case 'inTransit':
-                return { type: 'number', data: item.inTransitStock, className: 'text-right font-semibold text-blue-600' };
-            case 'shortage':
-                return { type: 'number', data: item.shortage, className: cn('text-right font-bold', item.shortage > 0 ? 'text-red-600' : 'text-green-600') };
-            default:
-                return { type: 'string', data: '' };
+            }
+            case 'sourceOrders': return { type: 'string', data: item.sourceOrders.join(', '), className: "text-xs text-muted-foreground truncate max-w-xs" };
+            case 'clients': return { type: 'string', data: item.involvedClients.map(c => c.name).join(', '), className: "text-xs text-muted-foreground truncate max-w-xs" };
+            case 'erpUsers': return { type: 'string', data: item.erpUsers.join(', '), className: "text-xs text-muted-foreground" };
+            case 'creationDate': return { type: 'date', data: item.earliestCreationDate };
+            case 'dueDate': return { type: 'date', data: item.earliestDueDate };
+            case 'required': return { type: 'number', data: item.totalRequired, className: 'text-right' };
+            case 'stock': return { type: 'number', data: item.currentStock, className: 'text-right' };
+            case 'inTransit': return { type: 'number', data: item.inTransitStock, className: 'text-right font-semibold text-blue-600' };
+            case 'shortage': return { type: 'number', data: item.shortage, className: cn('text-right font-bold', item.shortage > 0 ? 'text-red-600' : 'text-green-600') };
+            default: return { type: 'string', data: '' };
         }
     };
     
