@@ -1,4 +1,5 @@
 
+
 /**
  * @fileoverview The main Quoter page.
  * This component provides the user interface for creating, managing, and generating quotes.
@@ -48,6 +49,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Table,
@@ -72,6 +81,7 @@ import {
   ShieldX,
   AlertTriangle,
   Info,
+  Columns3,
 } from "lucide-react";
 import { SearchInput } from "@/components/ui/search-input";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -79,7 +89,6 @@ import { format, parseISO, isValid } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/modules/core/hooks/useAuth";
 import type { HaciendaExemptionApiResponse } from "@/modules/core/types";
-import { DialogColumnSelector } from "@/components/ui/dialog-column-selector";
 
 const taxes = [
   { name: "IVA 13%", value: 0.13 },
@@ -436,19 +445,38 @@ export default function QuoterPage() {
               </div>
 
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-                <DialogColumnSelector
-                    allColumns={selectors.availableColumns}
-                    visibleColumns={Object.keys(state.columnVisibility).filter(k => state.columnVisibility[k as keyof typeof state.columnVisibility])}
-                    onColumnChange={actions.handleColumnVisibilityChange}
-                    onSave={actions.handleSaveColumnVisibility}
-                />
+                <Dialog>
+                    <DialogTrigger asChild>
+                        <Button variant="outline"><Columns3 className="mr-2 h-4 w-4"/> Columnas</Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                        <DialogHeader>
+                            <DialogTitle>Seleccionar Columnas Visibles</DialogTitle>
+                        </DialogHeader>
+                        <ScrollArea className="max-h-80">
+                            <div className="space-y-2 p-1">
+                            {selectors.availableColumns.map((column: { id: string; label: string; }) => (
+                                <div key={column.id} className="flex items-center space-x-2 p-2 rounded-md hover:bg-muted">
+                                    <Checkbox
+                                        id={`col-${column.id}`}
+                                        checked={state.columnVisibility[column.id as keyof typeof state.columnVisibility]}
+                                        onCheckedChange={(checked) => actions.handleColumnVisibilityChange(column.id, !!checked)}
+                                    />
+                                    <Label htmlFor={`col-${column.id}`} className="font-normal flex-1 cursor-pointer">{column.label}</Label>
+                                </div>
+                            ))}
+                            </div>
+                        </ScrollArea>
+                        <Button onClick={actions.handleSaveColumnVisibility}><Save className="mr-2 h-4 w-4"/> Guardar Preferencias</Button>
+                    </DialogContent>
+                </Dialog>
             </div>
 
             <div className="rounded-lg border overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    {selectors.visibleColumnsData.map(col => (
+                    {selectors.visibleColumnsData.map((col: { id: string; label: string; className: string; }) => (
                         <TableHead key={col.id} className={cn(col.className)}>{col.label}</TableHead>
                     ))}
                     <TableHead className="w-[50px]"></TableHead>
@@ -462,7 +490,7 @@ export default function QuoterPage() {
                       className="cursor-pointer"
                     >
                       {state.columnVisibility.code && (
-                        <TableCell className={cn(selectors.availableColumns.find(c => c.id === 'code')?.className)}>
+                        <TableCell className={cn(selectors.availableColumns.find((c: {id: string}) => c.id === 'code')?.className)}>
                             <Input
                             placeholder="Código"
                             value={line.product.id}
@@ -473,7 +501,7 @@ export default function QuoterPage() {
                         </TableCell>
                       )}
                       {state.columnVisibility.description && (
-                         <TableCell className={cn(selectors.availableColumns.find(c => c.id === 'description')?.className)}>
+                         <TableCell className={cn(selectors.availableColumns.find((c: {id: string}) => c.id === 'description')?.className)}>
                             <Input
                             placeholder="Descripción del artículo"
                             value={line.product.description}
@@ -484,7 +512,7 @@ export default function QuoterPage() {
                         </TableCell>
                       )}
                       {state.columnVisibility.quantity && (
-                         <TableCell className={cn(selectors.availableColumns.find(c => c.id === 'quantity')?.className)}>
+                         <TableCell className={cn(selectors.availableColumns.find((c: {id: string}) => c.id === 'quantity')?.className)}>
                             <Input
                             ref={(el) => actions.setLineRef(line.id, 'qty', el)}
                             type="text"
@@ -498,7 +526,7 @@ export default function QuoterPage() {
                         </TableCell>
                       )}
                       {state.columnVisibility.unit && (
-                         <TableCell className={cn(selectors.availableColumns.find(c => c.id === 'unit')?.className)}>
+                         <TableCell className={cn(selectors.availableColumns.find((c: {id: string}) => c.id === 'unit')?.className)}>
                             <Input
                             placeholder="Unidad"
                             value={line.product.unit}
@@ -509,7 +537,7 @@ export default function QuoterPage() {
                         </TableCell>
                       )}
                       {state.columnVisibility.cabys && (
-                        <TableCell className={cn(selectors.availableColumns.find(c => c.id === 'cabys')?.className)}>
+                        <TableCell className={cn(selectors.availableColumns.find((c: {id: string}) => c.id === 'cabys')?.className)}>
                             <Input
                             placeholder="Cabys"
                             value={line.product.cabys}
@@ -520,7 +548,7 @@ export default function QuoterPage() {
                         </TableCell>
                       )}
                       {state.columnVisibility.price && (
-                        <TableCell className={cn(selectors.availableColumns.find(c => c.id === 'price')?.className)}>
+                        <TableCell className={cn(selectors.availableColumns.find((c: {id: string}) => c.id === 'price')?.className)}>
                             <Input
                             ref={(el) => actions.setLineRef(line.id, 'price', el)}
                             type="text"
@@ -534,7 +562,7 @@ export default function QuoterPage() {
                         </TableCell>
                       )}
                       {state.columnVisibility.tax && (
-                        <TableCell className={cn(selectors.availableColumns.find(c => c.id === 'tax')?.className)}>
+                        <TableCell className={cn(selectors.availableColumns.find((c: {id: string}) => c.id === 'tax')?.className)}>
                             <Select
                             value={String(line.tax)}
                             onValueChange={(value) =>
@@ -558,7 +586,7 @@ export default function QuoterPage() {
                         </TableCell>
                       )}
                       {state.columnVisibility.total && (
-                        <TableCell className={cn("text-right font-medium", selectors.availableColumns.find(c => c.id === 'total')?.className)}>
+                        <TableCell className={cn("text-right font-medium", selectors.availableColumns.find((c: {id: string}) => c.id === 'total')?.className)}>
                             {actions.formatCurrency(
                             line.quantity * line.price * (1 + line.tax)
                             )}
@@ -828,4 +856,3 @@ export default function QuoterPage() {
     </main>
   );
 }
-

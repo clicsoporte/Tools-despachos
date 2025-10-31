@@ -1,4 +1,3 @@
-
 /**
  * @fileoverview Custom hook `useQuoter` for managing the state and logic of the QuoterPage component.
  * This hook encapsulates the entire business logic of the quoting tool, including state management for
@@ -17,6 +16,8 @@ import {
   getAllQuoteDrafts,
   deleteQuoteDraft,
   saveCompanySettings,
+  saveUserPreferences,
+  getUserPreferences,
 } from "@/modules/core/lib/db";
 import { format, parseISO, isValid } from 'date-fns';
 import { useDebounce } from "use-debounce";
@@ -61,8 +62,8 @@ interface LineInputRefs {
 
 type ErrorResponse = { error: boolean; message: string; status?: number };
 
-export function isErrorResponse(data: any): data is ErrorResponse {
-  return (data as ErrorResponse).error !== undefined;
+function isHaciendaErrorResponse(data: any): data is ErrorResponse {
+  return data && (data as ErrorResponse).error !== undefined;
 }
 
 
@@ -80,6 +81,29 @@ const normalizeNumber = (value: string): number => {
     return isNaN(parsed) ? 0 : parsed;
 };
 
+const availableColumns = [
+    { id: 'code', label: 'Código', className: 'min-w-[100px]' },
+    { id: 'description', label: 'Descripción', className: 'min-w-[300px]' },
+    { id: 'quantity', label: 'Cant.', className: 'min-w-[100px]' },
+    { id: 'unit', label: 'Unidad', className: 'min-w-[100px]' },
+    { id: 'cabys', label: 'Cabys', className: 'min-w-[120px]' },
+    { id: 'price', label: 'Precio', className: 'min-w-[120px]' },
+    { id: 'tax', label: 'Impuesto', className: 'min-w-[150px]' },
+    { id: 'total', label: 'Total', className: 'text-right min-w-[120px]' }
+];
+
+const defaultColumnVisibility = {
+    code: true,
+    description: true,
+    quantity: true,
+    unit: true,
+    cabys: false,
+    price: true,
+    tax: true,
+    total: true
+};
+
+type ColumnVisibility = typeof defaultColumnVisibility;
 
 /**
  * Main hook for the Quoter component.
@@ -91,7 +115,7 @@ export const useQuoter = () => {
   const { 
     user: currentUser, customers, products, companyData: authCompanyData, 
     stockLevels, exchangeRateData, allExemptions, exemptionLaws,
-    refreshAuth, isLoading: isAuthLoading 
+    refreshAuth, isReady 
   } = useAuth();
   
   const [quoteNumber, setQuoteNumber] = useState("");
@@ -122,14 +146,7 @@ export const useQuoter = () => {
   const [exemptionInfo, setExemptionInfo] = useState<ExemptionInfo | null>(null);
   const [isMounted, setIsMounted] = useState(false);
 
-  // New state for mobile column visibility
-  const [mobileColumnVisibility, setMobileColumnVisibility] = useState({
-    code: false,
-    unit: false,
-    cabys: false,
-    tax: false,
-    total: true,
-  });
+  const [columnVisibility, setColumnVisibility] = useState<ColumnVisibility>(defaultColumnVisibility);
   
   const [productSearchTerm, setProductSearchTerm] = useState("");
   const [customerSearchTerm, setCustomerSearchTerm] = useState("");
@@ -160,7 +177,7 @@ export const useQuoter = () => {
 
     const data = await getExemptionStatus(authNumber);
         
-    if (isErrorResponse(data)) {
+    if (isHaciendaErrorResponse(data)) {
         logError("Error verifying exemption status", { message: data.message, authNumber });
         setExemptionInfo(prev => {
             if (!prev) return null;
@@ -183,10 +200,11 @@ export const useQuoter = () => {
     
     setExemptionInfo(prev => {
          if (!prev) return null;
+         const haciendaExemption = data as HaciendaExemptionApiResponse;
          return {
             ...prev,
-            haciendaExemption: data,
-            isHaciendaValid: new Date(data.fechaVencimiento) > new Date(),
+            haciendaExemption,
+            isHaciendaValid: isValid(parseISO(haciendaExemption.fechaVencimiento)) && new Date(haciendaExemption.fechaVencimiento) > new Date(),
             isLoading: false,
             apiError: false,
          }
@@ -205,6 +223,15 @@ export const useQuoter = () => {
 
   useEffect(() => {
     setTitle("Cotizador");
+    const loadPreferences = async () => {
+        if (currentUser) {
+            const prefs = await getUserPreferences(currentUser.id, 'quoterPrefs');
+            if (prefs && prefs.columnVisibility) {
+                setColumnVisibility(prev => ({...prev, ...prefs.columnVisibility}));
+            }
+        }
+    };
+
     if (!isMounted) {
         const today = new Date();
         setQuoteDate(today.toISOString().substring(0, 10));
@@ -212,9 +239,10 @@ export const useQuoter = () => {
         const validDate = new Date();
         validDate.setDate(today.getDate() + 8);
         setValidUntilDate(validDate.toISOString().substring(0, 10));
+        loadPreferences();
         setIsMounted(true);
     }
-  }, [setTitle, isMounted]);
+  }, [setTitle, isMounted, currentUser]);
 
   useEffect(() => {
     if (sellerType === "user" && currentUser) {
@@ -235,14 +263,22 @@ export const useQuoter = () => {
       }
   }, [authCompanyData, exchangeRateData]);
 
+  const setLineRef = useCallback((lineId: string, field: 'qty' | 'price', el: HTMLInputElement | null) => {
+    const refs = lineInputRefs.current.get(lineId) || { qty: null, price: null };
+    refs[field] = el;
+    lineInputRefs.current.set(lineId, refs);
+  }, []);
 
   useEffect(() => {
     if (lines.length > 0) {
         const lastLine = lines[lines.length - 1];
         const lastLineRefs = lineInputRefs.current.get(lastLine.id);
-        lastLineRefs?.qty?.focus();
+        setTimeout(() => {
+            lastLineRefs?.qty?.focus();
+        }, 0);
     }
-  }, [lines.length]);
+  }, [lines]);
+
 
   const customerOptions = useMemo(() => {
     if (debouncedCustomerSearch.length < 2) return [];
@@ -253,7 +289,7 @@ export const useQuoter = () => {
         const targetText = `${c.id} ${c.name} ${c.taxId}`.toLowerCase();
         return searchTerms.every(term => targetText.includes(term));
       })
-      .map((c) => ({ value: c.id, label: `[${c.id}] - ${c.name} (${c.taxId})` }));
+      .map((c) => ({ value: c.id, label: `[${c.id}] ${c.name} (${c.taxId})` }));
   }, [customers, showInactiveCustomers, debouncedCustomerSearch]);
 
   const productOptions = useMemo(() => {
@@ -278,32 +314,46 @@ export const useQuoter = () => {
 
 
   // --- ACTIONS ---
-  const addLine = (product: Product) => {
-    const newLineId = new Date().toISOString();
-
+  const addLine = useCallback((product: Product) => {
+    const newLineId = new Date().getTime().toString();
     let taxRate = 0.13;
-    if (product.isBasicGood === 'S') {
-        taxRate = 0.01;
-    } else if (exemptionInfo && exemptionInfo.erpExemption.percentage > 0) {
-        const isExempt = exemptionInfo.isSpecialLaw || exemptionInfo.isHaciendaValid;
-        if (isExempt) {
-          taxRate = 0;
-        }
+    if (product.isBasicGood === 'S') taxRate = 0.01;
+    if (exemptionInfo && exemptionInfo.erpExemption.percentage > 0 && (exemptionInfo.isSpecialLaw || exemptionInfo.isHaciendaValid)) {
+        taxRate = 0;
     }
-    
+    const newLine: QuoteLine = {
+        id: newLineId, product, quantity: 1, price: 0, tax: taxRate,
+        displayQuantity: "1", displayPrice: "0",
+    };
+    setLines(prev => [...prev, newLine]);
+  }, [exemptionInfo]);
+
+  const addManualLine = useCallback(() => {
+    const newLineId = new Date().getTime().toString();
+    const newProduct: Product = {
+      id: "",
+      description: "",
+      active: "S",
+      cabys: "",
+      classification: "",
+      isBasicGood: "N",
+      lastEntry: "",
+      notes: "",
+      unit: "UN",
+    };
     const newLine: QuoteLine = {
       id: newLineId,
-      product,
-      quantity: 0,
+      product: newProduct,
+      quantity: 1,
       price: 0,
-      tax: taxRate,
-      displayQuantity: "",
-      displayPrice: "",
+      tax: 0.13,
+      displayQuantity: "1",
+      displayPrice: "0",
     };
-    setLines((prev) => [...prev, newLine]);
-  };
+    setLines(prev => [...prev, newLine]);
+  }, []);
 
-  const handleSelectProduct = (productId: string) => {
+  const handleSelectProduct = useCallback((productId: string) => {
     setProductSearchOpen(false);
     if (!productId) {
       setProductSearchTerm("");
@@ -314,62 +364,15 @@ export const useQuoter = () => {
       addLine(product);
       setProductSearchTerm("");
     }
-  };
+  }, [products, addLine]);
 
-  const handleProductInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && productOptions.length > 0) { e.preventDefault(); handleSelectProduct(productOptions[0].value); }
-  };
-
-  const handleCustomerInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && customerOptions.length > 0) { e.preventDefault(); handleSelectCustomer(customerOptions[0].value); }
-  };
-
-  const removeLine = (id: string) => {
-    setLines((prev) => prev.filter((line) => line.id !== id));
-    lineInputRefs.current.delete(id);
-  };
-
-  const updateLine = (id: string, updatedField: Partial<QuoteLine>) => {
-    setLines((prev) => prev.map((line) => (line.id === id ? { ...line, ...updatedField } : line)));
-  };
-
-  const updateLineProductDetail = (id: string, updatedField: Partial<Product>) => {
-    setLines((prev) => prev.map((line) =>
-      line.id === id ? { ...line, product: { ...line.product, ...updatedField } } : line
-    ));
-  };
-
-  const handleCurrencyToggle = async () => {
-    if (!exchangeRate) {
-      toast({ title: "Tipo de cambio no disponible", description: "No se puede cambiar de moneda.", variant: "destructive" });
-      await logWarn("Attempted currency toggle without exchange rate");
-      return;
-    }
-    const newCurrency = currency === "CRC" ? "USD" : "CRC";
-    const convertedLines = lines.map((line) => {
-      const newPrice = newCurrency === "USD" ? line.price / exchangeRate : line.price * exchangeRate;
-      return { ...line, price: newPrice, displayPrice: newPrice.toString() };
-    });
-    setLines(convertedLines);
-    setCurrency(newCurrency);
-    await logInfo(`Currency changed to ${newCurrency}`);
-  };
-
-  const formatCurrency = (amount: number) => {
-    const prefix = currency === "CRC" ? "CRC " : "$ ";
-    return `${prefix}${amount.toLocaleString("es-CR", {
-      minimumFractionDigits: decimalPlaces,
-      maximumFractionDigits: decimalPlaces,
-    })}`;
-  };
-
-  const handleSelectCustomer = (customerId: string) => {
+  const handleSelectCustomer = useCallback((customerId: string) => {
     setCustomerSearchOpen(false);
+    setExemptionInfo(null);
     if (!customerId) {
         setSelectedCustomer(null);
         setCustomerDetails("");
         setCustomerSearchTerm("");
-        setExemptionInfo(null);
         return;
     }
     const customer = customers.find((c) => c.id === customerId);
@@ -391,12 +394,10 @@ export const useQuoter = () => {
       
       if (customerExemption) {
           const isErpValid = new Date(customerExemption.endDate) > new Date();
-          
           const matchingLaw = exemptionLaws.find(law => 
               (law.authNumber && String(law.authNumber).trim() === String(customerExemption.authNumber).trim())
           );
           const isSpecial = !!matchingLaw;
-          
           const initialExemptionState: ExemptionInfo = {
               erpExemption: customerExemption,
               haciendaExemption: null,
@@ -411,11 +412,56 @@ export const useQuoter = () => {
           if (!isSpecial) {
               checkExemptionStatus(customerExemption.authNumber);
           }
-      } else {
-          setExemptionInfo(null);
       }
     }
+  }, [customers, allExemptions, exemptionLaws, checkExemptionStatus]);
+
+  const handleProductInputKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && productOptions.length > 0) { e.preventDefault(); handleSelectProduct(productOptions[0].value); }
+  }, [productOptions, handleSelectProduct]);
+
+  const handleCustomerInputKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && customerOptions.length > 0) { e.preventDefault(); handleSelectCustomer(customerOptions[0].value); }
+  }, [customerOptions, handleSelectCustomer]);
+
+  const removeLine = (id: string) => {
+    setLines((prev) => prev.filter((line) => line.id !== id));
+    lineInputRefs.current.delete(id);
   };
+
+  const updateLine = (id: string, updatedField: Partial<QuoteLine>) => {
+    setLines((prev) => prev.map((line) => (line.id === id ? { ...line, ...updatedField } : line)));
+  };
+
+  const updateLineProductDetail = (id: string, updatedField: Partial<Product>) => {
+    setLines((prev) => prev.map((line) =>
+      line.id === id ? { ...line, product: { ...line.product, ...updatedField } } : line
+    ));
+  };
+
+  const handleCurrencyToggle = useCallback(async () => {
+    if (!exchangeRate) {
+      toast({ title: "Tipo de cambio no disponible", description: "No se puede cambiar de moneda.", variant: "destructive" });
+      await logWarn("Attempted currency toggle without exchange rate");
+      return;
+    }
+    const newCurrency = currency === "CRC" ? "USD" : "CRC";
+    const convertedLines = lines.map((line) => {
+      const newPrice = newCurrency === "USD" ? line.price / exchangeRate : line.price * exchangeRate;
+      return { ...line, price: newPrice, displayPrice: newPrice.toString() };
+    });
+    setLines(convertedLines);
+    setCurrency(newCurrency);
+    await logInfo(`Currency changed to ${newCurrency}`);
+  }, [currency, exchangeRate, lines, toast]);
+
+  const formatCurrency = useCallback((amount: number) => {
+    const prefix = currency === "CRC" ? "CRC " : "$ ";
+    return `${prefix}${amount.toLocaleString("es-CR", {
+      minimumFractionDigits: decimalPlaces,
+      maximumFractionDigits: decimalPlaces,
+    })}`;
+  }, [currency, decimalPlaces]);
 
   const handleCustomerDetailsChange = (value: string) => {
     setCustomerDetails(value);
@@ -444,7 +490,7 @@ export const useQuoter = () => {
   };
   
   const generatePDF = async () => {
-    if (isAuthLoading || !companyData) {
+    if (!isReady || !companyData) {
         toast({ title: "Por favor espere", description: "Los datos de configuración de la empresa aún se están cargando.", variant: "destructive" });
         return;
     }
@@ -521,7 +567,7 @@ export const useQuoter = () => {
         totals: [
             { label: 'Subtotal:', value: formatCurrency(totals.subtotal) },
             { label: 'Impuestos:', value: formatCurrency(totals.totalTaxes) },
-            { label: `Total ${currency}:`, value: formatCurrency(totals.total) },
+            { label: 'Total:', value: formatCurrency(totals.total) },
         ]
     });
     
@@ -601,15 +647,15 @@ export const useQuoter = () => {
     }
   };
 
-  const loadDrafts = async () => {
-    if (isAuthLoading || !currentUser) return;
+  const loadDrafts = useCallback(async () => {
+    if (!isReady || !currentUser) return;
     const draftsFromDb = await getAllQuoteDrafts(currentUser.id);
     const enrichedDrafts = draftsFromDb.map(draft => ({
         ...draft,
         customer: customers.find(c => c.id === draft.customerId) || null
     }));
     setSavedDrafts(enrichedDrafts.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
-  };
+  }, [isReady, currentUser, customers]);
 
   const handleLoadDraft = (draft: QuoteDraft) => {
     setQuoteNumber(draft.id);
@@ -671,19 +717,39 @@ export const useQuoter = () => {
     }
   };
 
-  const handleColumnVisibilityChange = (column: keyof typeof mobileColumnVisibility, checked: boolean) => {
-    setMobileColumnVisibility(prev => ({ ...prev, [column]: checked }));
+  const handleColumnVisibilityChange = (columnId: string, checked: boolean) => {
+    setColumnVisibility(prev => ({ ...prev, [columnId]: checked }));
   };
+
+  const handleSaveColumnVisibility = async () => {
+    if (!currentUser) return;
+    try {
+        await saveUserPreferences(currentUser.id, 'quoterPrefs', { columnVisibility });
+        toast({ title: "Preferencias Guardadas", description: "La visibilidad de las columnas ha sido guardada." });
+    } catch (error: any) {
+        logError("Failed to save quoter column visibility", { error: error.message });
+        toast({ title: "Error", description: "No se pudo guardar la configuración de columnas.", variant: "destructive" });
+    }
+  };
+
 
   const totals = useMemo(() => {
     const subtotal = lines.reduce((acc, line) => acc + (line.quantity * line.price), 0);
     const totalTaxes = lines.reduce((acc, line) => acc + (line.quantity * line.price * line.tax), 0);
     const total = subtotal + totalTaxes;
     return { subtotal, totalTaxes, total };
-  }, [lines, decimalPlaces]);
+  }, [lines]);
 
   
-  const selectors = { totals, customerOptions, productOptions };
+  const selectors = { 
+    totals, 
+    customerOptions, 
+    productOptions,
+    availableColumns,
+    visibleColumnsData: useMemo(() => 
+      availableColumns.map(col => columnVisibility[col.id as keyof ColumnVisibility] ? col : null).filter(Boolean) as typeof availableColumns
+    , [columnVisibility])
+  };
 
   return {
     state: {
@@ -692,7 +758,7 @@ export const useQuoter = () => {
       paymentTerms, creditDays, validUntilDate, notes, products, customers, showInactiveCustomers,
       showInactiveProducts, selectedLineForInfo, savedDrafts, decimalPlaces, productSearchTerm, purchaseOrderNumber,
       exemptionInfo, isRefreshing, customerSearchTerm, isProductSearchOpen, isCustomerSearchOpen, isProcessing,
-      mobileColumnVisibility
+      columnVisibility,
     },
     actions: {
       setCurrency, setLines, setSelectedCustomer, setCustomerDetails, setDeliveryAddress, setExchangeRate,
@@ -704,7 +770,10 @@ export const useQuoter = () => {
       handleSelectCustomer, handleSelectProduct, incrementAndSaveQuoteNumber, handleSaveDecimalPlaces,
       generatePDF, resetQuote, saveDraft, loadDrafts, handleLoadDraft, handleDeleteDraft, handleNumericInputBlur,
       handleCustomerDetailsChange, loadInitialData, handleLineInputKeyDown, checkExemptionStatus, handleProductInputKeyDown, handleCustomerInputKeyDown,
-      handleColumnVisibilityChange
+      addManualLine,
+      handleColumnVisibilityChange,
+      handleSaveColumnVisibility,
+      setLineRef,
     },
     refs: { productInputRef, customerInputRef, lineInputRefs },
     selectors,

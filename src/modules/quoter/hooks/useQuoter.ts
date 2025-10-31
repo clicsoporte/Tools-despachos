@@ -1,4 +1,3 @@
-
 /**
  * @fileoverview Custom hook `useQuoter` for managing the state and logic of the QuoterPage component.
  * This hook encapsulates the entire business logic of the quoting tool, including state management for
@@ -10,15 +9,15 @@
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { useToast } from "@/modules/core/hooks/use-toast";
 import { usePageTitle } from "@/modules/core/hooks/usePageTitle";
-import type { Customer, Product, Company, User, QuoteDraft, QuoteLine, Exemption, HaciendaExemptionApiResponse, ExemptionLaw, StockInfo, UserPreferences } from "@/modules/core/types";
+import type { Customer, Product, Company, User, QuoteDraft, QuoteLine, Exemption, HaciendaExemptionApiResponse, ExemptionLaw, StockInfo } from "@/modules/core/types";
 import { logError, logInfo, logWarn } from "@/modules/core/lib/logger";
 import {
   saveQuoteDraft,
   getAllQuoteDrafts,
   deleteQuoteDraft,
   saveCompanySettings,
-  getUserPreferences,
   saveUserPreferences,
+  getUserPreferences,
 } from "@/modules/core/lib/db";
 import { format, parseISO, isValid } from 'date-fns';
 import { useDebounce } from "use-debounce";
@@ -67,6 +66,13 @@ function isHaciendaErrorResponse(data: any): data is ErrorResponse {
   return data && (data as ErrorResponse).error !== undefined;
 }
 
+
+/**
+ * Normalizes a string value into a number.
+ * It handles both commas and dots as decimal separators and strips invalid characters.
+ * @param {string} value - The string to convert.
+ * @returns {number} The parsed number, or 0 if invalid.
+ */
 const normalizeNumber = (value: string): number => {
     if (typeof value !== 'string' || !value.trim()) return 0;
     const standardizedValue = value.replace(/,/g, '.');
@@ -74,6 +80,17 @@ const normalizeNumber = (value: string): number => {
     const parsed = parseFloat(validNumberString);
     return isNaN(parsed) ? 0 : parsed;
 };
+
+const availableColumns = [
+    { id: 'code', label: 'Código', className: 'min-w-[100px]' },
+    { id: 'description', label: 'Descripción', className: 'min-w-[300px]' },
+    { id: 'quantity', label: 'Cant.', className: 'min-w-[100px]' },
+    { id: 'unit', label: 'Unidad', className: 'min-w-[100px]' },
+    { id: 'cabys', label: 'Cabys', className: 'min-w-[120px]' },
+    { id: 'price', label: 'Precio', className: 'min-w-[120px]' },
+    { id: 'tax', label: 'Impuesto', className: 'min-w-[150px]' },
+    { id: 'total', label: 'Total', className: 'text-right min-w-[120px]' }
+];
 
 const defaultColumnVisibility = {
     code: true,
@@ -88,6 +105,10 @@ const defaultColumnVisibility = {
 
 type ColumnVisibility = typeof defaultColumnVisibility;
 
+/**
+ * Main hook for the Quoter component.
+ * @returns An object containing the quoter's state, actions, refs, and memoized selectors.
+ */
 export const useQuoter = () => {
   const { toast } = useToast();
   const { setTitle } = usePageTitle();
@@ -251,10 +272,12 @@ export const useQuoter = () => {
   useEffect(() => {
     if (lines.length > 0) {
         const lastLine = lines[lines.length - 1];
-        const lastLineRefs = lineInputRefs.current.get(lastLine.id);
-        setTimeout(() => {
-            lastLineRefs?.qty?.focus();
-        }, 0);
+        if (lastLine.displayQuantity === "" && lastLine.displayPrice === "") {
+            const lastLineRefs = lineInputRefs.current.get(lastLine.id);
+            setTimeout(() => {
+                lastLineRefs?.qty?.focus();
+            }, 0);
+        }
     }
   }, [lines.length]);
 
@@ -677,11 +700,7 @@ export const useQuoter = () => {
   };
   
   const handleNumericInputBlur = (lineId: string, field: 'quantity' | 'price', displayValue: string) => {
-    let numericValue = normalizeNumber(displayValue);
-    if (field === 'quantity' && numericValue === 0) {
-        numericValue = 1;
-    }
-    
+    const numericValue = normalizeNumber(displayValue);
     updateLine(lineId, {
         [field]: numericValue,
         [field === 'quantity' ? 'displayQuantity' : 'displayPrice']: String(numericValue)
@@ -701,7 +720,7 @@ export const useQuoter = () => {
   };
 
   const handleColumnVisibilityChange = (columnId: string, checked: boolean) => {
-    setColumnVisibility(prev => ({ ...prev, [columnId as keyof ColumnVisibility]: checked }));
+    setColumnVisibility(prev => ({ ...prev, [columnId]: checked }));
   };
 
   const handleSaveColumnVisibility = async () => {
@@ -730,7 +749,7 @@ export const useQuoter = () => {
     productOptions,
     availableColumns,
     visibleColumnsData: useMemo(() => 
-      availableColumns.map(col => columnVisibility[col.id as keyof ColumnVisibility] ? col : null).filter(Boolean) as typeof availableColumns
+      availableColumns.map((col: {id: string; label: string; className: string;}) => columnVisibility[col.id as keyof ColumnVisibility] ? col : null).filter(Boolean) as typeof availableColumns
     , [columnVisibility])
   };
 
@@ -762,4 +781,3 @@ export const useQuoter = () => {
     selectors,
   };
 };
-
