@@ -15,9 +15,17 @@ import Link from "next/link";
 import { formatDistanceToNow, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
 import { cn } from "@/lib/utils";
-import type { Notification } from "@/modules/core/types";
+import type { Notification, ProductionOrderStatus, PurchaseRequestStatus } from "@/modules/core/types";
 import { useToast } from "@/modules/core/hooks/use-toast";
 import React, { useState } from "react";
+import { Badge } from "../ui/badge";
+
+const statusTranslations: { [key: string]: string } = {
+  'canceled': 'Cancelada',
+  'completed': 'Completada',
+  'received-in-warehouse': 'En Bodega',
+  'entered-erp': 'Ingresada ERP'
+};
 
 export function NotificationBell() {
     const { user, unreadNotificationsCount, notifications, fetchUnreadNotifications, unreadSuggestions, updateUnreadSuggestionsCount } = useAuth();
@@ -123,7 +131,12 @@ export function NotificationBell() {
                                     <div className="flex items-start gap-2">
                                         {n.isSuggestion && <MessageSquare className="h-4 w-4 mt-0.5 text-green-600 flex-shrink-0" />}
                                         <div className="flex-1">
-                                            <p className={cn("text-sm", n.isRead === 0 && "font-bold")}>{n.message}</p>
+                                            <div className="flex justify-between items-start">
+                                                <p className={cn("text-sm", n.isRead === 0 && "font-bold")}>{n.message}</p>
+                                                {n.entityStatus && ['canceled', 'completed', 'received-in-warehouse', 'entered-erp'].includes(n.entityStatus) && (
+                                                    <Badge variant="secondary" className="ml-2 whitespace-nowrap">{statusTranslations[n.entityStatus] || n.entityStatus}</Badge>
+                                                )}
+                                            </div>
                                             <p className="text-xs text-muted-foreground mt-1">
                                                 {formatDistanceToNow(new Date(n.timestamp), { addSuffix: true, locale: es })}
                                             </p>
