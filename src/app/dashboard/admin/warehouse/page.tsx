@@ -25,6 +25,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
+import { useRouter } from 'next/navigation';
 
 const emptyLocation: Omit<WarehouseLocation, 'id'> = { name: '', code: '', type: 'building', parentId: null };
 
@@ -96,6 +97,7 @@ export default function WarehouseSettingsPage() {
     useAuthorization(['admin:settings:warehouse']);
     const { setTitle } = usePageTitle();
     const { toast } = useToast();
+    const router = useRouter();
     
     const [settings, setSettings] = useState<WarehouseSettings | null>(null);
     const [locations, setLocations] = useState<WarehouseLocation[]>([]);
@@ -149,6 +151,7 @@ export default function WarehouseSettingsPage() {
             await saveWarehouseSettings(settings);
             toast({ title: "Configuración Guardada", description: "Los ajustes de almacén han sido guardados." });
             logInfo("Warehouse settings updated", { settings });
+            router.refresh();
         } catch (error: any) {
             logError("Failed to save warehouse settings", { error: error.message });
             toast({ title: "Error", description: "No se pudieron guardar los ajustes.", variant: "destructive" });

@@ -22,6 +22,7 @@ import { cn } from "@/lib/utils";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { useRouter } from "next/navigation";
 
 const defaultColors = [ '#8884d8', '#82ca9d', '#ffc658', '#ff8042', '#ff7300', '#0088fe', '#00c49f', '#ffbb28' ];
 
@@ -51,6 +52,7 @@ export default function PlannerSettingsPage() {
     const { isAuthorized } = useAuthorization(['admin:settings:planner']);
     const { setTitle } = usePageTitle();
     const { toast } = useToast();
+    const router = useRouter();
     const [settings, setSettings] = useState<PlannerSettings | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [newMachine, setNewMachine] = useState({ id: "", name: "" });
@@ -167,6 +169,7 @@ export default function PlannerSettingsPage() {
             await savePlannerSettings(settings);
             toast({ title: "Configuración Guardada", description: "Los ajustes del planificador han sido guardados." });
             await logInfo("Planner settings updated", { settings });
+            router.refresh();
         } catch (error: any) {
             logError("Failed to save planner settings", { error: error.message });
             toast({ title: "Error", description: "No se pudieron guardar los ajustes.", variant: "destructive" });

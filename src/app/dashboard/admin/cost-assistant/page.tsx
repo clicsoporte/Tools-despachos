@@ -16,11 +16,13 @@ import { useToast } from '@/modules/core/hooks/use-toast';
 import { getCostAssistantSettings, saveCostAssistantSettings } from '@/modules/cost-assistant/lib/actions';
 import type { CostAssistantSettings } from '@/modules/core/types';
 import { useAuth } from '@/modules/core/hooks/useAuth';
+import { useRouter } from 'next/navigation';
 
 export default function CostAssistantSettingsPage() {
     const { isAuthorized } = useAuthorization(['admin:settings:cost-assistant']);
     const { setTitle } = usePageTitle();
     const { toast } = useToast();
+    const router = useRouter();
     const { user, isReady } = useAuth();
     const [settings, setSettings] = useState<Partial<CostAssistantSettings> | null>(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -49,6 +51,7 @@ export default function CostAssistantSettingsPage() {
         try {
             await saveCostAssistantSettings(user.id, settings as CostAssistantSettings);
             toast({ title: "Configuración Guardada", description: "Los ajustes del Asistente de Costos han sido actualizados." });
+            router.refresh();
         } catch (error: any) {
             toast({ title: "Error al Guardar", description: error.message, variant: "destructive" });
         }

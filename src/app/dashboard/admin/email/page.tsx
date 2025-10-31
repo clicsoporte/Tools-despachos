@@ -17,6 +17,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Mail, Send, Save, Loader2 } from "lucide-react";
 import { useAuth } from "@/modules/core/hooks/useAuth";
+import { useRouter } from "next/navigation";
 
 const initialSettings: EmailSettings = {
     smtpHost: '',
@@ -41,6 +42,7 @@ export default function EmailSettingsPage() {
     const { isAuthorized } = useAuthorization(['admin:settings:general']);
     const { user } = useAuth();
     const { toast } = useToast();
+    const router = useRouter();
     const { setTitle } = usePageTitle();
     
     const [settings, setSettings] = useState<EmailSettings | null>(null);
@@ -75,6 +77,7 @@ export default function EmailSettingsPage() {
                 description: "Los ajustes del servidor de correo han sido guardados.",
             });
             await logInfo("Email settings saved");
+            router.refresh();
         } catch (error: any) {
             logError("Failed to save email settings", { error: error.message });
             toast({ title: "Error", description: "No se pudieron guardar los ajustes de correo.", variant: "destructive" });

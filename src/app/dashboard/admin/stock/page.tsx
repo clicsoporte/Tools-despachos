@@ -16,11 +16,13 @@ import { PlusCircle, Trash2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
+import { useRouter } from "next/navigation";
 
 export default function StockSettingsPage() {
     useAuthorization(['admin:settings:stock']);
     const { setTitle } = usePageTitle();
     const { toast } = useToast();
+    const router = useRouter();
     const [settings, setSettings] = useState<StockSettings | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [newWarehouse, setNewWarehouse] = useState<Warehouse>({ id: "", name: "", isDefault: false, isVisible: true });
@@ -87,6 +89,7 @@ export default function StockSettingsPage() {
             await saveStockSettings(settings);
             toast({ title: "Configuración Guardada", description: "Los ajustes de inventario han sido guardados." });
             await logInfo("Stock settings updated", { settings });
+            router.refresh();
         } catch (error: any) {
             logError("Failed to save stock settings", { error: error.message });
             toast({ title: "Error", description: "No se pudieron guardar los ajustes.", variant: "destructive" });
