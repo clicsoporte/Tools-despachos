@@ -1,4 +1,5 @@
 
+
 /**
  * @fileoverview Custom hook `useRequests` for managing the state and logic of the Purchase Request page.
  * This hook encapsulates all state and actions for the module, keeping the UI component clean.
@@ -832,7 +833,7 @@ export const useRequests = () => {
             updateState({ isSubmitting: true });
             try {
                 const payload = { ...state.notePayload, updatedBy: currentUser.name };
-                const rawUpdatedRequest = await addNoteToRequest(payload);
+                const rawUpdatedRequest = await addNoteServer(payload);
                 const updatedRequest = sanitizeRequest(rawUpdatedRequest);
                 toast({ title: "Nota Añadida" });
                 setState(prevState => ({

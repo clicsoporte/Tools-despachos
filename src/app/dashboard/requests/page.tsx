@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import React from 'react';
@@ -24,7 +25,7 @@ import { SearchInput } from '@/components/ui/search-input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Calendar } from '@/components/ui/calendar';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import type { PurchaseRequest, PurchaseRequestHistoryEntry, RequestNotePayload } from '@/modules/core/types';
+import type { PurchaseRequest, PurchaseRequestHistoryEntry, RequestNotePayload, PurchaseRequestPriority } from '@/modules/core/types';
 import Link from 'next/link';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -111,7 +112,7 @@ export default function PurchaseRequestPage() {
                          <TooltipProvider>
                             <div className="flex items-center gap-1 md:gap-2 flex-shrink-0">
                                 {request.erpOrderNumber && (
-                                    <Tooltip>
+                                     <Tooltip>
                                         <TooltipTrigger asChild>
                                             <Button variant="ghost" size="icon" onClick={() => actions.setContextInfoOpen(request)}><Info className="h-4 w-4 text-blue-600"/></Button>
                                         </TooltipTrigger>
@@ -178,7 +179,7 @@ export default function PurchaseRequestPage() {
                                 </SelectTrigger>
                                 <SelectContent>
                                     {Object.entries(selectors.priorityConfig).map(([key, config]) => (
-                                        <SelectItem key={key} value={key} disabled={!hasPermission('requests:edit:pending')}>{config.label}</SelectItem>
+                                        <SelectItem key={key} value={key} disabled={!selectors.hasPermission('requests:edit:pending')}>{config.label}</SelectItem>
                                     ))}
                                 </SelectContent>
                             </Select>
@@ -472,4 +473,3 @@ export default function PurchaseRequestPage() {
         </main>
     );
 }
-
