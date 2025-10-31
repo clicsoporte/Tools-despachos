@@ -6,7 +6,8 @@
 'use client';
 
 import React from 'react';
-import { useRequestSuggestions, type PurchaseSuggestion, type SortKey } from '@/modules/requests/hooks/useRequestSuggestions';
+import { useRequestSuggestions, type SortKey } from '@/modules/requests/hooks/useRequestSuggestions';
+import type { PurchaseSuggestion } from '@/modules/core/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
