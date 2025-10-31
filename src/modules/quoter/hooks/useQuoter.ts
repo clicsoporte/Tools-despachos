@@ -323,7 +323,7 @@ export const useQuoter = () => {
     }
     const newLine: QuoteLine = {
         id: newLineId, product, quantity: 1, price: 0, tax: taxRate,
-        displayQuantity: "1", displayPrice: "0",
+        displayQuantity: "", displayPrice: "",
     };
     setLines(prev => [...prev, newLine]);
   }, [exemptionInfo]);
@@ -347,8 +347,8 @@ export const useQuoter = () => {
       quantity: 1,
       price: 0,
       tax: 0.13,
-      displayQuantity: "1",
-      displayPrice: "0",
+      displayQuantity: "",
+      displayPrice: "",
     };
     setLines(prev => [...prev, newLine]);
   }, []);
@@ -698,7 +698,11 @@ export const useQuoter = () => {
   };
   
   const handleNumericInputBlur = (lineId: string, field: 'quantity' | 'price', displayValue: string) => {
-    const numericValue = normalizeNumber(displayValue);
+    let numericValue = normalizeNumber(displayValue);
+    if (field === 'quantity' && numericValue === 0) {
+        numericValue = 1; // Default quantity to 1 if left blank
+    }
+    
     updateLine(lineId, {
         [field]: numericValue,
         [field === 'quantity' ? 'displayQuantity' : 'displayPrice']: String(numericValue)
