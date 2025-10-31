@@ -159,27 +159,32 @@ export function useRequestSuggestions() {
     }, [setTitle, isAuthorized, currentUser?.id]);
 
     const filteredSuggestions = useMemo(() => {
-        let filtered = state.suggestions.filter(item => {
+        let filtered = state.suggestions;
+        
+        if (state.showOnlyMyOrders && currentUser?.erpAlias) {
+            const userErpAliasLower = currentUser.erpAlias.toLowerCase();
+            filtered = filtered.filter(item => 
+                item.erpUsers.some(erpUser => erpUser.toLowerCase() === userErpAliasLower)
+            );
+        }
+
+        if (debouncedSearchTerm) {
             const searchTerms = normalizeText(debouncedSearchTerm).split(' ').filter(Boolean);
-            
-            const classificationMatch = state.classificationFilter.length > 0 ? state.classificationFilter.includes(item.itemClassification) : true;
-            if (!classificationMatch) return false;
-
-            const myOrdersMatch = !state.showOnlyMyOrders || (currentUser?.erpAlias && item.erpUsers.some(erpUser => erpUser.toLowerCase() === currentUser!.erpAlias!.toLowerCase()));
-            if (!myOrdersMatch) return false;
-
-            if (searchTerms.length === 0) return true;
-
-            const targetText = normalizeText(`
-                ${item.itemId} 
-                ${item.itemDescription} 
-                ${item.sourceOrders.join(' ')}
-                ${item.involvedClients.map(c => c.name).join(' ')}
-                ${item.erpUsers.join(' ')}
-            `);
-            
-            return searchTerms.every(term => targetText.includes(term));
-        });
+            filtered = filtered.filter(item => {
+                const targetText = normalizeText(`
+                    ${item.itemId} 
+                    ${item.itemDescription} 
+                    ${item.sourceOrders.join(' ')}
+                    ${item.involvedClients.map(c => c.name).join(' ')}
+                    ${item.erpUsers.join(' ')}
+                `);
+                return searchTerms.every(term => targetText.includes(term));
+            });
+        }
+        
+        if (state.classificationFilter.length > 0) {
+            filtered = filtered.filter(item => state.classificationFilter.includes(item.itemClassification));
+        }
 
         // Sorting logic
         filtered.sort((a, b) => {
@@ -336,7 +341,7 @@ export function useRequestSuggestions() {
                         <p className="text-sm text-muted-foreground">{item.itemId}</p>
                     </div>
                 );
-                return { content: itemContent, className: isDuplicate ? 'bg-amber-50' : '' };
+                return { content: itemContent, className: isDuplicate ? 'bg-amber-50 dark:bg-amber-900/20' : '' };
             }
             case 'activeRequests': {
                 if (!isDuplicate) return { content: <p className="text-xs text-muted-foreground">Ninguna</p> };
@@ -359,18 +364,18 @@ export function useRequestSuggestions() {
                         </TooltipContent>
                     </Tooltip>
                 );
-                return { content: badgeContent, className: isDuplicate ? 'bg-amber-50' : '' };
+                return { content: badgeContent, className: isDuplicate ? 'bg-amber-50 dark:bg-amber-900/20' : '' };
             }
-            case 'sourceOrders': return { content: <Tooltip><TooltipTrigger asChild><p className="text-xs text-muted-foreground truncate max-w-xs">{item.sourceOrders.join(', ')}</p></TooltipTrigger><TooltipContent><div className="max-w-md"><p className="font-bold mb-1">Pedidos de Origen:</p><p>{item.sourceOrders.join(', ')}</p></div></TooltipContent></Tooltip>, className: isDuplicate ? 'bg-amber-50' : '' };
-            case 'clients': return { content: <p className="text-xs text-muted-foreground truncate max-w-xs" title={item.involvedClients.map(c => `${c.name} (${c.id})`).join(', ')}>{item.involvedClients.map(c => c.name).join(', ')}</p>, className: isDuplicate ? 'bg-amber-50' : '' };
-            case 'erpUsers': return { content: <p className="text-xs text-muted-foreground">{item.erpUsers.join(', ')}</p>, className: isDuplicate ? 'bg-amber-50' : '' };
-            case 'creationDate': return { content: item.earliestCreationDate ? new Date(item.earliestCreationDate).toLocaleDateString('es-CR') : 'N/A', className: isDuplicate ? 'bg-amber-50' : '' };
-            case 'dueDate': return { content: item.earliestDueDate ? new Date(item.earliestDueDate).toLocaleDateString('es-CR') : 'N/A', className: isDuplicate ? 'bg-amber-50' : '' };
-            case 'required': return { content: item.totalRequired.toLocaleString(), className: cn('text-right', isDuplicate ? 'bg-amber-50' : '') };
-            case 'stock': return { content: item.currentStock.toLocaleString(), className: cn('text-right', isDuplicate ? 'bg-amber-50' : '') };
-            case 'inTransit': return { content: item.inTransitStock.toLocaleString(), className: cn('text-right font-semibold text-blue-600', isDuplicate ? 'bg-amber-50' : '') };
-            case 'shortage': return { content: item.shortage.toLocaleString(), className: cn('text-right font-bold text-red-600', isDuplicate ? 'bg-amber-50' : '') };
-            default: return { content: '', className: isDuplicate ? 'bg-amber-50' : '' };
+            case 'sourceOrders': return { content: <Tooltip><TooltipTrigger asChild><p className="text-xs text-muted-foreground truncate max-w-xs">{item.sourceOrders.join(', ')}</p></TooltipTrigger><TooltipContent><div className="max-w-md"><p className="font-bold mb-1">Pedidos de Origen:</p><p>{item.sourceOrders.join(', ')}</p></div></TooltipContent></Tooltip>, className: isDuplicate ? 'bg-amber-50 dark:bg-amber-900/20' : '' };
+            case 'clients': return { content: <p className="text-xs text-muted-foreground truncate max-w-xs" title={item.involvedClients.map(c => `${c.name} (${c.id})`).join(', ')}>{item.involvedClients.map(c => c.name).join(', ')}</p>, className: isDuplicate ? 'bg-amber-50 dark:bg-amber-900/20' : '' };
+            case 'erpUsers': return { content: <p className="text-xs text-muted-foreground">{item.erpUsers.join(', ')}</p>, className: isDuplicate ? 'bg-amber-50 dark:bg-amber-900/20' : '' };
+            case 'creationDate': return { content: item.earliestCreationDate ? new Date(item.earliestCreationDate).toLocaleDateString('es-CR') : 'N/A', className: isDuplicate ? 'bg-amber-50 dark:bg-amber-900/20' : '' };
+            case 'dueDate': return { content: item.earliestDueDate ? new Date(item.earliestDueDate).toLocaleDateString('es-CR') : 'N/A', className: isDuplicate ? 'bg-amber-50 dark:bg-amber-900/20' : '' };
+            case 'required': return { content: item.totalRequired.toLocaleString(), className: cn('text-right', isDuplicate ? 'bg-amber-50 dark:bg-amber-900/20' : '') };
+            case 'stock': return { content: item.currentStock.toLocaleString(), className: cn('text-right', isDuplicate ? 'bg-amber-50 dark:bg-amber-900/20' : '') };
+            case 'inTransit': return { content: item.inTransitStock.toLocaleString(), className: cn('text-right font-semibold text-blue-600', isDuplicate ? 'bg-amber-50 dark:bg-amber-900/20' : '') };
+            case 'shortage': return { content: item.shortage.toLocaleString(), className: cn('text-right font-bold text-red-600', isDuplicate ? 'bg-amber-50 dark:bg-amber-900/20' : '') };
+            default: return { content: '', className: isDuplicate ? 'bg-amber-50 dark:bg-amber-900/20' : '' };
         }
     };
     
@@ -472,7 +477,7 @@ export function useRequestSuggestions() {
         availableColumns,
         visibleColumnsData,
         getColumnContent,
-        getInTransitStock
+        getInTransitStock,
     };
 
 
