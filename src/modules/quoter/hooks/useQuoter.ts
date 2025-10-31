@@ -565,7 +565,7 @@ export const useQuoter = () => {
             }
         },
         notes: notes,
-        paymentInfo: paymentTerms === 'credito' ? `Crédito ${creditDays} días` : 'Contado',
+        paymentInfo: selectedCustomer ? (paymentTerms === 'credito' ? `Crédito ${creditDays} días` : 'Contado') : undefined,
         totals: [
             { label: 'Subtotal:', value: formatCurrency(totals.subtotal) },
             { label: 'Impuestos:', value: formatCurrency(totals.totalTaxes) },
@@ -701,9 +701,10 @@ export const useQuoter = () => {
   
   const handleNumericInputBlur = (lineId: string, field: 'quantity' | 'price', displayValue: string) => {
     const numericValue = normalizeNumber(displayValue);
+    const finalValue = numericValue === 0 && field === 'quantity' ? 1 : numericValue;
     updateLine(lineId, {
-        [field]: numericValue,
-        [field === 'quantity' ? 'displayQuantity' : 'displayPrice']: String(numericValue)
+        [field]: finalValue,
+        [field === 'quantity' ? 'displayQuantity' : 'displayPrice']: String(finalValue)
     });
   };
 
@@ -749,7 +750,7 @@ export const useQuoter = () => {
     productOptions,
     availableColumns,
     visibleColumnsData: useMemo(() => 
-      availableColumns.map((col: {id: string; label: string; className: string;}) => columnVisibility[col.id as keyof ColumnVisibility] ? col : null).filter(Boolean) as typeof availableColumns
+      availableColumns.map((col) => columnVisibility[col.id as keyof ColumnVisibility] ? col : null).filter(Boolean) as typeof availableColumns
     , [columnVisibility])
   };
 
