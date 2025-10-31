@@ -24,7 +24,7 @@ import { useAuthorization } from "../../../../modules/core/hooks/useAuthorizatio
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useDropzone } from "react-dropzone";
 import { Camera } from "lucide-react";
-import { useAuth } from "@/modules/core/hooks/useAuth";
+import { useRouter } from "next/navigation";
 
 const getInitials = (name: string) => {
     if (!name) return "CL";
@@ -67,7 +67,7 @@ const toDecimalHours = (input: string): number | null => {
 export default function GeneralSettingsPage() {
   const { isAuthorized } = useAuthorization(['admin:settings:general']);
   const { toast } = useToast();
-  const { setCompanyData: setAuthCompanyData } = useAuth();
+  const router = useRouter();
   const [companyData, setCompanyData] = useState<Company | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const { setTitle } = usePageTitle();
@@ -146,9 +146,8 @@ export default function GeneralSettingsPage() {
       title: "Configuración Guardada",
       description: "Los datos de la empresa han sido actualizados.",
     });
-    // Update auth context directly to avoid flicker, instead of full refreshAuth()
-    setAuthCompanyData(companyData);
     await logInfo("Configuración general guardada", { companyName: companyData.name });
+    router.refresh(); // Force a server-side data refresh
   };
   
   if (isAuthorized === null) {
@@ -291,5 +290,3 @@ export default function GeneralSettingsPage() {
       </main>
   );
 }
-
-    
