@@ -11,7 +11,7 @@ import { usePageTitle } from '@/modules/core/hooks/usePageTitle';
 import { useAuthorization } from '@/modules/core/hooks/useAuthorization';
 import { logError } from '@/modules/core/lib/logger';
 import { getRequestSuggestions } from '@/modules/requests/lib/actions';
-import type { DateRange, PurchaseRequest, UserPreferences } from '@/modules/core/types';
+import type { DateRange, UserPreferences, PurchaseSuggestion } from '@/modules/core/types';
 import { useAuth } from '@/modules/core/hooks/useAuth';
 import { subDays, startOfDay } from 'date-fns';
 import { useDebounce } from 'use-debounce';
@@ -20,22 +20,7 @@ import { generateDocument } from '@/modules/core/lib/pdf-generator';
 import { cn } from '@/lib/utils';
 import { Info } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-
-export interface PurchaseSuggestion {
-    itemId: string;
-    itemDescription: string;
-    itemClassification: string;
-    totalRequired: number;
-    currentStock: number;
-    inTransitStock: number;
-    shortage: number;
-    sourceOrders: string[];
-    involvedClients: { id: string; name: string }[];
-    erpUsers: string[];
-    earliestCreationDate: string | null;
-    earliestDueDate: string | null;
-    existingActiveRequests: { id: number; consecutive: string, status: string, quantity: number, purchaseOrder?: string, erpOrderNumber?: string }[];
-}
+import { saveUserPreferences, getUserPreferences } from '@/modules/core/lib/db';
 
 export type SortKey = keyof Pick<PurchaseSuggestion, 'earliestCreationDate' | 'earliestDueDate' | 'shortage' | 'totalRequired' | 'currentStock' | 'inTransitStock' | 'erpUsers' | 'sourceOrders' | 'involvedClients'> | 'item';
 export type SortDirection = 'asc' | 'desc';
@@ -125,10 +110,27 @@ export function usePurchaseReport() {
     
     useEffect(() => {
         setTitle("Reporte de Compras");
+        const loadPrefsAndData = async () => {
+             if(currentUser) {
+                const prefs = await getUserPreferences(currentUser.id, 'purchaseReportPrefs');
+                if (prefs) {
+                    updateState({
+                        classificationFilter: prefs.classificationFilter || [],
+                        showOnlyMyOrders: prefs.showOnlyMyOrders || false,
+                        visibleColumns: prefs.visibleColumns || availableColumns.map(c => c.id),
+                        sortKey: prefs.sortKey || 'earliestCreationDate',
+                        sortDirection: prefs.sortDirection || 'desc',
+                        rowsPerPage: prefs.rowsPerPage || 10,
+                    });
+                }
+            }
+            await handleAnalyze();
+        };
         if(isAuthorized) {
-            handleAnalyze();
+            loadPrefsAndData();
         }
-    }, [setTitle, isAuthorized, handleAnalyze]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [setTitle, isAuthorized, currentUser?.id]);
 
     const filteredSuggestions = useMemo(() => {
         let filtered = state.suggestions.filter(item => {
@@ -137,12 +139,12 @@ export function usePurchaseReport() {
             const classificationMatch = state.classificationFilter.length > 0 ? state.classificationFilter.includes(item.itemClassification) : true;
             if (!classificationMatch) return false;
 
-            const myOrdersMatch = !state.showOnlyMyOrders || (currentUser?.erpAlias && item.erpUsers.some(erpUser => erpUser.toLowerCase() === currentUser!.erpAlias!.toLowerCase()));
+            const myOrdersMatch = !state.showOnlyMyOrders || (currentUser?.erpAlias && item.erpUsers.some((erpUser: string) => erpUser.toLowerCase() === currentUser!.erpAlias!.toLowerCase()));
             if (!myOrdersMatch) return false;
 
             if (searchTerms.length === 0) return true;
 
-            const targetText = normalizeText(`${item.itemId} ${item.itemDescription} ${item.sourceOrders.join(' ')} ${item.involvedClients.map(c => c.name).join(' ')} ${item.erpUsers.join(' ')}`);
+            const targetText = normalizeText(`${item.itemId} ${item.itemDescription} ${item.sourceOrders.join(' ')} ${item.involvedClients.map((c: any) => c.name).join(' ')} ${item.erpUsers.join(' ')}`);
             return searchTerms.every(term => targetText.includes(term));
         });
 
@@ -190,16 +192,38 @@ export function usePurchaseReport() {
                 );
                 return { type: 'reactNode', data: itemContent };
             }
-            case 'sourceOrders': return { type: 'string', data: item.sourceOrders.join(', '), className: "text-xs text-muted-foreground truncate max-w-xs" };
-            case 'clients': return { type: 'string', data: item.involvedClients.map(c => c.name).join(', '), className: "text-xs text-muted-foreground truncate max-w-xs" };
-            case 'erpUsers': return { type: 'string', data: item.erpUsers.join(', '), className: "text-xs text-muted-foreground" };
-            case 'creationDate': return { type: 'date', data: item.earliestCreationDate };
-            case 'dueDate': return { type: 'date', data: item.earliestDueDate };
-            case 'required': return { type: 'number', data: item.totalRequired, className: 'text-right' };
-            case 'stock': return { type: 'number', data: item.currentStock, className: 'text-right' };
-            case 'inTransit': return { type: 'number', data: item.inTransitStock, className: 'text-right font-semibold text-blue-600' };
-            case 'shortage': return { type: 'number', data: item.shortage, className: cn('text-right font-bold', item.shortage > 0 ? 'text-red-600' : 'text-green-600') };
-            default: return { type: 'string', data: '' };
+            case 'sourceOrders': {
+                const content = (
+                    <div className="text-xs text-muted-foreground space-y-0.5">
+                        {item.sourceOrders.map(order => <div key={order}>{order}</div>)}
+                    </div>
+                );
+                return { type: 'reactNode', data: content };
+            }
+            case 'clients': {
+                const content = (
+                    <div className="text-xs text-muted-foreground space-y-0.5">
+                        {item.involvedClients.map(client => <div key={client.id} className="truncate" title={`${client.name} (${client.id})`}>{client.name}</div>)}
+                    </div>
+                );
+                return { type: 'reactNode', data: content };
+            }
+            case 'erpUsers':
+                return { type: 'string', data: item.erpUsers.join(', '), className: "text-xs text-muted-foreground" };
+            case 'creationDate':
+                return { type: 'date', data: item.earliestCreationDate };
+            case 'dueDate':
+                return { type: 'date', data: item.earliestDueDate };
+            case 'required':
+                return { type: 'number', data: item.totalRequired, className: 'text-right' };
+            case 'stock':
+                return { type: 'number', data: item.currentStock, className: 'text-right' };
+            case 'inTransit':
+                return { type: 'number', data: item.inTransitStock, className: 'text-right font-semibold text-blue-600' };
+            case 'shortage':
+                return { type: 'number', data: item.shortage, className: cn('text-right font-bold', item.shortage > 0 ? 'text-red-600' : 'text-green-600') };
+            default:
+                return { type: 'string', data: '' };
         }
     };
     
@@ -214,7 +238,7 @@ export function usePurchaseReport() {
                 switch(colId) {
                     case 'item': return `${item.itemDescription} (${item.itemId})`;
                     case 'sourceOrders': return item.sourceOrders.join(', ');
-                    case 'clients': return item.involvedClients.map(c => c.name).join(', ');
+                    case 'clients': return item.involvedClients.map((c: any) => c.name).join(', ');
                     case 'erpUsers': return item.erpUsers.join(', ');
                     case 'creationDate': return item.earliestCreationDate ? new Date(item.earliestCreationDate).toLocaleDateString('es-CR') : 'N/A';
                     case 'dueDate': return item.earliestDueDate ? new Date(item.earliestDueDate).toLocaleDateString('es-CR') : 'N/A';
@@ -243,6 +267,34 @@ export function usePurchaseReport() {
         });
     };
 
+    const handleColumnVisibilityChange = (columnId: string, checked: boolean) => {
+        updateState({
+            visibleColumns: checked
+                ? [...state.visibleColumns, columnId]
+                : state.visibleColumns.filter(id => id !== columnId)
+        });
+    };
+
+    const savePreferences = async () => {
+        if (!currentUser) return;
+        const prefsToSave: Partial<UserPreferences> = {
+            classificationFilter: state.classificationFilter,
+            showOnlyMyOrders: state.showOnlyMyOrders,
+            visibleColumns: state.visibleColumns,
+            sortKey: state.sortKey,
+            sortDirection: state.sortDirection,
+            rowsPerPage: state.rowsPerPage,
+        };
+        try {
+            await saveUserPreferences(currentUser.id, 'purchaseReportPrefs', prefsToSave);
+            toast({ title: "Preferencias Guardadas", description: "Tus filtros y configuraciones de vista han sido guardados." });
+        } catch (error: any) {
+            logError("Failed to save purchase report preferences", { error: error.message });
+            toast({ title: "Error", description: "No se pudieron guardar tus preferencias.", variant: "destructive" });
+        }
+    };
+
+
     const actions = {
         setDateRange: (range: DateRange | undefined) => updateState({ dateRange: range || { from: undefined, to: undefined } }),
         handleAnalyze,
@@ -254,6 +306,8 @@ export function usePurchaseReport() {
         handleSort,
         setCurrentPage: (page: number) => updateState({ currentPage: page }),
         setRowsPerPage: (size: number) => updateState({ rowsPerPage: size, currentPage: 0 }),
+        handleColumnVisibilityChange,
+        savePreferences,
     };
 
     const selectors = {
