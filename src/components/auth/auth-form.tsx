@@ -162,7 +162,7 @@ export function AuthForm({ clientInfo }: AuthFormProps) {
         <form onSubmit={handleLogin} className="space-y-4">
             <div className="space-y-2">
                 <Label htmlFor="email">Correo Electrónico</Label>
-                <Input id="email" type="email" placeholder="usuario@ejemplo.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
+                <Input id="email" type="email" placeholder="usuario@ejemplo.com" value={email} onChange={(e) => setEmail(e.target.value)} required suppressHydrationWarning />
             </div>
             <div className="space-y-2">
                 <div className="flex items-center justify-between">
@@ -192,7 +192,7 @@ export function AuthForm({ clientInfo }: AuthFormProps) {
                         </DialogContent>
                     </Dialog>
                 </div>
-                <Input id="password" type="password" placeholder="••••••••" value={password} onChange={e => setPassword(e.target.value)} required />
+                <Input id="password" type="password" placeholder="••••••••" value={password} onChange={e => setPassword(e.target.value)} required suppressHydrationWarning />
             </div>
             <CardFooter className="p-0 pt-4">
                 <Button type="submit" className="w-full" disabled={isProcessing}>
