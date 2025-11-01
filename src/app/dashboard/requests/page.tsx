@@ -25,7 +25,7 @@ import { SearchInput } from '@/components/ui/search-input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Calendar } from '@/components/ui/calendar';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import type { PurchaseRequest, PurchaseRequestHistoryEntry, RequestNotePayload, PurchaseRequestPriority } from '@/modules/core/types';
+import type { PurchaseRequest, PurchaseRequestHistoryEntry, RequestNotePayload, PurchaseRequestPriority, ErpPurchaseOrderHeader } from '@/modules/core/types';
 import Link from 'next/link';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -69,7 +69,9 @@ export default function PurchaseRequestPage() {
         contextInfoData,
         erpEntryNumber,
         isAddNoteDialogOpen,
-        notePayload
+        notePayload,
+        isTransitsDialogOpen,
+        activeTransits,
     } = state as any; // Use 'as any' to satisfy TS for now
 
 
@@ -121,6 +123,12 @@ export default function PurchaseRequestPage() {
                                 )}
                                 {!!request.reopened && <Badge variant="destructive"><RefreshCcw className="mr-1 h-3 w-3" /> Reabierta</Badge>}
                                 {!!request.hasBeenModified && <Badge variant="destructive" className="animate-pulse"><AlertTriangle className="mr-1 h-3 w-3" /> Modificado</Badge>}
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <Button variant="ghost" size="icon" onClick={() => actions.handleOpenTransits(request)}><Truck className="h-4 w-4"/></Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent><p>Ver Tránsitos del Producto</p></TooltipContent>
+                                </Tooltip>
                                 <Tooltip>
                                     <TooltipTrigger asChild>
                                         <Button variant="ghost" size="icon" onClick={() => actions.handleOpenHistory(request)}><History className="h-4 w-4" /></Button>
@@ -261,7 +269,7 @@ export default function PurchaseRequestPage() {
             <div className="flex flex-col md:flex-row items-center justify-between gap-4">
                 <h1 className="text-lg font-semibold md:text-2xl">Solicitudes de Compra</h1>
                  <div className="flex items-center gap-2 md:gap-4 flex-wrap">
-                     <Button variant="outline" onClick={() => actions.loadInitialData()} disabled={isLoading}>{isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCcw className="mr-2 h-4 w-4" />}Refrescar</Button>
+                     <Button variant="outline" onClick={() => actions.loadInitialData(true)} disabled={isLoading}>{isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCcw className="mr-2 h-4 w-4" />}Refrescar</Button>
                      <div className="flex items-center gap-1">
                         <Button variant={viewingArchived ? "outline" : "secondary"} onClick={() => actions.setViewingArchived(false)}>Activas</Button>
                         <Button variant={viewingArchived ? "secondary" : "outline"} onClick={() => actions.setViewingArchived(true)}>Archivadas</Button>
@@ -470,6 +478,47 @@ export default function PurchaseRequestPage() {
                 </DialogContent>
             </Dialog>
             <Dialog open={isAddNoteDialogOpen} onOpenChange={actions.setAddNoteDialogOpen}><DialogContent><DialogHeader><DialogTitle>Añadir Nota a la Solicitud {notePayload?.requestId}</DialogTitle><DialogDescription>Agrega una nota o actualización a la solicitud sin cambiar su estado actual.</DialogDescription></DialogHeader><div className="py-4 space-y-2"><Label htmlFor="add-note-textarea">Nota</Label><Textarea id="add-note-textarea" value={notePayload?.notes || ''} onChange={e => actions.setNotePayload({ ...notePayload, notes: e.target.value } as RequestNotePayload)} placeholder="Añade aquí una nota o actualización..." /></div><DialogFooter><DialogClose asChild><Button variant="ghost">Cancelar</Button></DialogClose><Button onClick={actions.handleAddNote} disabled={isSubmitting}>{isSubmitting && <Loader2 className="mr-2 animate-spin"/>}Añadir Nota</Button></DialogFooter></DialogContent></Dialog>
+            
+            {/* Transit Dialog */}
+            <Dialog open={isTransitsDialogOpen} onOpenChange={actions.setTransitsDialogOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Tránsitos para el Producto</DialogTitle>
+                        <DialogDescription>
+                            Órdenes de compra activas en el ERP para el artículo: <strong>{activeTransits?.itemDescription}</strong> ({activeTransits?.itemId})
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="py-4">
+                        {activeTransits && activeTransits.transits.length > 0 ? (
+                            <ScrollArea className="h-60">
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead>Nº OC</TableHead>
+                                            <TableHead>Proveedor</TableHead>
+                                            <TableHead>Fecha</TableHead>
+                                            <TableHead className="text-right">Cantidad</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {activeTransits.transits.map((transit: ErpPurchaseOrderHeader & { quantity: number, supplierName: string }) => (
+                                            <TableRow key={transit.ORDEN_COMPRA}>
+                                                <TableCell>{transit.ORDEN_COMPRA}</TableCell>
+                                                <TableCell>{transit.supplierName}</TableCell>
+                                                <TableCell>{format(new Date(transit.FECHA_HORA), 'dd/MM/yyyy')}</TableCell>
+                                                <TableCell className="text-right font-medium">{transit.quantity}</TableCell>
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                            </ScrollArea>
+                        ) : (
+                            <p className="text-center text-muted-foreground py-8">No se encontraron tránsitos activos para este artículo.</p>
+                        )}
+                    </div>
+                </DialogContent>
+            </Dialog>
+
             {(isSubmitting || isLoading) && (
                 <div className="fixed bottom-4 right-4 flex items-center gap-2 rounded-lg bg-primary p-3 text-primary-foreground shadow-lg">
                     <Loader2 className="h-5 w-5 animate-spin" />

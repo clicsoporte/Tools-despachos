@@ -154,6 +154,8 @@ type State = {
     customers: Customer[];
     erpPoHeaders: ErpPurchaseOrderHeader[];
     erpPoLines: ErpPurchaseOrderLine[];
+    isTransitsDialogOpen: boolean;
+    activeTransits: { itemId: string; itemDescription: string; transits: any[] } | null;
 };
 
 // Helper function to ensure complex fields are in the correct format (array).
@@ -245,6 +247,8 @@ export const useRequests = () => {
         customers: [],
         erpPoHeaders: [],
         erpPoLines: [],
+        isTransitsDialogOpen: false,
+        activeTransits: null,
     });
     
     const [debouncedSearchTerm] = useDebounce(state.searchTerm, state.companyData?.searchDebounceTime ?? 500);
@@ -875,6 +879,28 @@ export const useRequests = () => {
             }
             updateState({ newRequest: newState });
         },
+        handleOpenTransits: (request: PurchaseRequest) => {
+            const activePoNumbers = new Set(state.erpPoHeaders.filter(h => h.ESTADO === 'A').map(h => h.ORDEN_COMPRA));
+            const transitsForProduct = state.erpPoLines
+                .filter(line => line.ARTICULO === request.itemId && activePoNumbers.has(line.ORDEN_COMPRA))
+                .map(line => {
+                    const header = state.erpPoHeaders.find(h => h.ORDEN_COMPRA === line.ORDEN_COMPRA);
+                    return {
+                        ...header,
+                        quantity: line.CANTIDAD_ORDENADA,
+                        supplierName: 'Desconocido' // This needs to be fetched from suppliers table
+                    };
+                });
+            
+            updateState({ 
+                activeTransits: {
+                    itemId: request.itemId,
+                    itemDescription: request.itemDescription,
+                    transits: transitsForProduct
+                },
+                isTransitsDialogOpen: true 
+            });
+        },
         // setters
         setNewRequestDialogOpen: (isOpen: boolean) => updateState({ 
             isNewRequestDialogOpen: isOpen, 
@@ -921,6 +947,7 @@ export const useRequests = () => {
         setContextInfoOpen: (request: PurchaseRequest | null) => updateState({ isContextInfoOpen: !!request, contextInfoData: request }),
         setAddNoteDialogOpen: (isOpen: boolean) => updateState({ isAddNoteDialogOpen: isOpen }),
         setNotePayload: (payload: RequestNotePayload | null) => updateState({ notePayload: payload }),
+        setTransitsDialogOpen: (isOpen: boolean) => updateState({ isTransitsDialogOpen: isOpen }),
     };
 
     const selectors = {
