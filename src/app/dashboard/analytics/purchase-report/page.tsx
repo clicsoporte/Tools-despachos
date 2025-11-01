@@ -5,7 +5,7 @@
 'use client';
 
 import React from 'react';
-import { usePurchaseReport, type SortKey } from '@/modules/analytics/hooks/usePurchaseReport.tsx';
+import { usePurchaseReport, type SortKey } from '@/modules/analytics/hooks/usePurchaseReport';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";

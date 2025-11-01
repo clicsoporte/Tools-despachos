@@ -279,7 +279,7 @@ export const useQuoter = () => {
             }, 0);
         }
     }
-  }, [lines.length]);
+  }, [lines]);
 
 
   const customerOptions = useMemo(() => {
