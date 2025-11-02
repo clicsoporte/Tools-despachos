@@ -34,6 +34,7 @@ import {
   Calculator,
   Mail,
   UserCheck,
+  Truck,
 } from "lucide-react";
 
 /**
@@ -202,6 +203,7 @@ export const initialRoles: Role[] = [
         "analytics:purchase-suggestions:read",
         "analytics:purchase-report:read",
         "analytics:production-report:read",
+        "analytics:transits-report:read",
         "analytics:user-permissions:read",
         "cost-assistant:access",
         "cost-assistant:drafts:read-write",
@@ -293,6 +295,7 @@ export const analyticsPermissions = [
     "analytics:purchase-suggestions:read",
     "analytics:purchase-report:read",
     "analytics:production-report:read",
+    "analytics:transits-report:read",
     "analytics:user-permissions:read",
 ];
 
@@ -456,6 +459,15 @@ export const analyticsTools: Tool[] = [
         href: "/dashboard/analytics/purchase-report",
         icon: FileText,
         bgColor: "bg-cyan-600",
+        textColor: "text-white",
+    },
+     {
+        id: "transits-report",
+        name: "Reporte de Tránsitos",
+        description: "Monitorear órdenes de compra del ERP activas y en tránsito.",
+        href: "/dashboard/analytics/transits-report",
+        icon: Truck,
+        bgColor: "bg-sky-600",
         textColor: "text-white",
     },
     {

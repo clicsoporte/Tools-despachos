@@ -34,7 +34,8 @@ const config: Config = {
     'bg-indigo-500',
     'bg-purple-600',
     'bg-indigo-600',
-    'bg-fuchsia-600'
+    'bg-fuchsia-600',
+    'bg-sky-600',
   ],
   theme: {
     extend: {

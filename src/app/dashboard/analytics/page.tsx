@@ -31,6 +31,9 @@ export default function AnalyticsDashboardPage() {
             if (tool.id === 'purchase-report') {
                 return hasPermission('analytics:purchase-report:read');
             }
+             if (tool.id === 'transits-report') {
+                return hasPermission('analytics:transits-report:read');
+            }
             if (tool.id === 'production-report') {
                 return hasPermission('analytics:production-report:read');
             }

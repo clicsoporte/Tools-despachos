@@ -51,8 +51,6 @@ export type Company = {
     locationFilePath?: string;
     cabysFilePath?: string;
     supplierFilePath?: string;
-    erpPurchaseOrderHeaderFilePath?: string;
-    erpPurchaseOrderLineFilePath?: string;
 };
 
 /**
@@ -595,14 +593,6 @@ export type InventoryItem = {
 
 
 // --- SQL Import Types ---
-export type SqlConfig = {
-  host?: string;
-  port?: string;
-  user?: string;
-  password?: string;
-  database?: string;
-};
-
 export type ImportQuery = {
     type: 'customers' | 'products' | 'exemptions' | 'stock' | 'locations' | 'cabys' | 'suppliers' | 'erp_order_headers' | 'erp_order_lines' | 'erp_purchase_order_headers' | 'erp_purchase_order_lines';
     query: string;
@@ -702,7 +692,7 @@ export type ErpOrderLine = {
 export type ErpPurchaseOrderHeader = {
     ORDEN_COMPRA: string;
     PROVEEDOR: string;
-    FECHA_HORA: string | Date;
+    FECHA_HORA: string;
     ESTADO: string; // 'A' = Activa/Abierta, 'R' = Recibida/Cerrada, 'N' = Anulada
 };
 
