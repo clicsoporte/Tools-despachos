@@ -1375,7 +1375,9 @@ export async function saveAllErpPurchaseOrderHeaders(headers: ErpPurchaseOrderHe
     const transaction = db.transaction((headersToSave: ErpPurchaseOrderHeader[]) => {
         db.prepare('DELETE FROM erp_purchase_order_headers').run();
         for(const header of headersToSave) {
-            insert.run(header.ORDEN_COMPRA, header.PROVEEDOR, header.FECHA_HORA instanceof Date ? header.FECHA_HORA.toISOString() : String(header.FECHA_HORA), header.ESTADO, header.CreatedBy || null);
+            const fechaHora = header.FECHA_HORA;
+            const fechaHoraString = typeof fechaHora === 'object' && fechaHora !== null && 'toISOString' in fechaHora ? (fechaHora as Date).toISOString() : String(fechaHora);
+            insert.run(header.ORDEN_COMPRA, header.PROVEEDOR, fechaHoraString, header.ESTADO, header.CreatedBy || null);
         }
     });
     try {

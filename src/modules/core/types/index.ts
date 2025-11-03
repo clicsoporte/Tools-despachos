@@ -51,6 +51,8 @@ export type Company = {
     locationFilePath?: string;
     cabysFilePath?: string;
     supplierFilePath?: string;
+    erpPurchaseOrderHeaderFilePath?: string;
+    erpPurchaseOrderLineFilePath?: string;
 };
 
 /**
@@ -598,6 +600,14 @@ export type ImportQuery = {
     query: string;
 }
 
+export type SqlConfig = {
+    host?: string;
+    port?: number;
+    user?: string;
+    password?: string;
+    database?: string;
+};
+
 export type { DateRange };
 
 export type PlannerNotePayload = {
@@ -692,8 +702,9 @@ export type ErpOrderLine = {
 export type ErpPurchaseOrderHeader = {
     ORDEN_COMPRA: string;
     PROVEEDOR: string;
-    FECHA_HORA: string;
+    FECHA_HORA: string | Date;
     ESTADO: string; // 'A' = Activa/Abierta, 'R' = Recibida/Cerrada, 'N' = Anulada
+    CreatedBy?: string;
 };
 
 export type ErpPurchaseOrderLine = {
