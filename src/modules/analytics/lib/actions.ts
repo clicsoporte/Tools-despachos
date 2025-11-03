@@ -136,9 +136,12 @@ export async function getActiveTransitsReportData(dateRange: DateRange): Promise
         .filter(line => headerIds.has(line.ORDEN_COMPRA))
         .map(line => {
             const header = filteredHeaders.find(h => h.ORDEN_COMPRA === line.ORDEN_COMPRA)!;
+            const fechaHora = header.FECHA_HORA;
+            const fechaHoraString = typeof fechaHora === 'object' && fechaHora !== null && 'toISOString' in fechaHora ? (fechaHora as Date).toISOString() : String(fechaHora);
+
             return {
                 ...line,
-                FECHA_HORA: header.FECHA_HORA,
+                FECHA_HORA: fechaHoraString,
                 ESTADO: header.ESTADO,
                 PROVEEDOR: header.PROVEEDOR,
                 CreatedBy: header.CreatedBy,

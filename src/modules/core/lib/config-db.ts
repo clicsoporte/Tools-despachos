@@ -22,7 +22,12 @@ export async function getSqlConfig(): Promise<SqlConfig | null> {
         }
         const config: Partial<SqlConfig> = {};
         for (const row of rows) {
-            config[row.key as keyof SqlConfig] = row.value;
+            const key = row.key as keyof SqlConfig;
+            if (key === 'port') {
+                config[key] = Number(row.value);
+            } else {
+                config[key] = row.value;
+            }
         }
         return config as SqlConfig;
     } catch (error) {
