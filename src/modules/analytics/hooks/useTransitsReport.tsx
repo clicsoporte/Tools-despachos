@@ -67,7 +67,7 @@ export function useTransitsReport() {
     const [isInitialLoading, setIsInitialLoading] = useState(true);
 
     const [state, setState] = useState<State>({
-        isLoading: true,
+        isLoading: false,
         dateRange: {
             from: startOfDay(subDays(new Date(), 90)),
             to: new Date(),
@@ -86,7 +86,7 @@ export function useTransitsReport() {
         setState(prevState => ({ ...prevState, ...newState }));
     }, []);
 
-    const fetchData = useCallback(async () => {
+    const handleAnalyze = useCallback(async () => {
         if (!isAuthorized) return;
         updateState({ isLoading: true });
         try {
@@ -107,19 +107,20 @@ export function useTransitsReport() {
     
     useEffect(() => {
         setTitle("Reporte de Tránsitos");
-        const loadPrefsAndData = async () => {
+        const loadPrefs = async () => {
              if(user) {
                 const prefs = await getUserPreferences(user.id, 'transitsReportPrefs');
                 if (prefs && prefs.visibleColumns) {
                     updateState({ visibleColumns: prefs.visibleColumns });
                 }
             }
-            await fetchData();
+            setIsInitialLoading(false); // Mark initial loading as done even if no analysis is run yet.
+            updateState({isLoading: false});
         };
         if (isAuthorized) {
-            loadPrefsAndData();
+            loadPrefs();
         }
-    }, [setTitle, isAuthorized, fetchData, user]);
+    }, [setTitle, isAuthorized, user, updateState]);
 
     const sortedData = useMemo(() => {
         let filtered = state.data;
@@ -247,14 +248,12 @@ export function useTransitsReport() {
     const actions = {
         setDateRange: (range: DateRange | undefined) => {
             updateState({ dateRange: range || { from: undefined, to: undefined } });
-            if (range?.from) {
-                fetchData();
-            }
         },
         setSearchTerm: (term: string) => updateState({ searchTerm: term }),
         setSupplierFilter: (filter: string[]) => updateState({ supplierFilter: filter }),
         handleClearFilters: () => updateState({ searchTerm: '', supplierFilter: [] }),
         handleSort,
+        handleAnalyze,
         handleExportExcel,
         handleExportPDF,
         handleColumnVisibilityChange,

@@ -77,8 +77,16 @@ export default function TransitsReportPage() {
         <main className="flex-1 p-4 md:p-6 lg:p-8 space-y-6">
             <Card>
                 <CardHeader>
-                    <CardTitle>Reporte de Tránsitos (Órdenes de Compra ERP)</CardTitle>
-                    <CardDescription>Analiza las órdenes de compra activas en el ERP para monitorear el inventario en tránsito.</CardDescription>
+                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                        <div>
+                            <CardTitle>Reporte de Tránsitos (Órdenes de Compra ERP)</CardTitle>
+                            <CardDescription>Analiza las órdenes de compra activas en el ERP para monitorear el inventario en tránsito.</CardDescription>
+                        </div>
+                         <Button onClick={actions.handleAnalyze} disabled={isLoading}>
+                            {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Search className="mr-2 h-4 w-4" />}
+                            Analizar
+                        </Button>
+                    </div>
                 </CardHeader>
                 <CardContent>
                     <div className="flex flex-wrap items-center gap-4">
