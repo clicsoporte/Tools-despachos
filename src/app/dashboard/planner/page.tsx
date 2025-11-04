@@ -266,7 +266,7 @@ export default function PlannerPage() {
     }
     
     return (
-        <main className="flex-1 p-4 md:p-6 lg:p-8 flex flex-col">
+        <main className="flex-1 p-4 md:p-6 flex flex-col">
             <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6">
                 <h1 className="text-lg font-semibold md:text-2xl">Órdenes de Producción</h1>
                  <div className="flex items-center gap-2 md:gap-4 flex-wrap">
@@ -362,7 +362,7 @@ export default function PlannerPage() {
                      )}
                 </div>
             </div>
-            <Card className="sticky top-0 z-10">
+            <Card className="md:sticky md:top-[73px] z-10">
                  <CardContent className="p-4 space-y-4">
                     <div className="flex flex-col md:flex-row gap-4">
                         <Input placeholder="Buscar por Nº orden, cliente o producto..." value={state.searchTerm} onChange={(e) => actions.setSearchTerm(e.target.value)} className="max-w-sm" />
@@ -419,7 +419,7 @@ export default function PlannerPage() {
                 </CardContent>
             </Card>
             
-            <ScrollArea className="flex-grow">
+            <ScrollArea className="flex-grow mt-4">
                 <div className="space-y-4 pt-2">
                     {(state.isLoading && !state.isRefreshing) ? (
                         Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-56 w-full" />)
