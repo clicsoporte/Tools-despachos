@@ -1,4 +1,4 @@
-it # Clic-Tools: Documentación Técnica y Manual de Usuario
+# Clic-Tools: Documentación Técnica y Manual de Usuario
 
 **Clic-Tools v2.0.0** es una aplicación web interna diseñada para centralizar herramientas y procesos empresariales clave en un único panel de control. El objetivo es proporcionar una plataforma sencilla, rápida, segura y altamente configurable, optimizada para su uso en una red local (LAN).
 
@@ -92,6 +92,8 @@ Este módulo agrupa herramientas de inteligencia de negocio para ayudar en la to
     - Analiza los pedidos de venta del ERP en un rango de fechas y los cruza con el inventario actual.
     - Genera una lista consolidada de todos los artículos que tienen un faltante de stock para cumplir con la demanda.
     - Permite filtrar por clasificación de producto (con multiselección), ordenar los resultados por cualquier columna y paginar la lista.
+- **Reporte de Tránsitos (`/transits-report`):**
+    - Muestra un listado de todas las órdenes de compra activas en el ERP, permitiendo monitorear el inventario que está en camino.
 
 ### 3.7. Almacenes (`/dashboard/warehouse`)
 - **Consulta de Inventario:** Permite buscar artículos o clientes y ver sus ubicaciones y existencias en tiempo real, combinando datos del ERP y las ubicaciones físicas asignadas.

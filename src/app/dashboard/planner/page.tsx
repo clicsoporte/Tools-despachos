@@ -266,7 +266,7 @@ export default function PlannerPage() {
     }
     
     return (
-        <main className="flex-1 p-4 md:p-6 lg:p-8">
+        <main className="flex-1 p-4 md:p-6 lg:p-8 flex flex-col">
             <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6">
                 <h1 className="text-lg font-semibold md:text-2xl">Órdenes de Producción</h1>
                  <div className="flex items-center gap-2 md:gap-4 flex-wrap">
@@ -362,8 +362,8 @@ export default function PlannerPage() {
                      )}
                 </div>
             </div>
-            <Card>
-                <CardContent className="p-4 space-y-4">
+            <Card className="sticky top-0 z-10">
+                 <CardContent className="p-4 space-y-4">
                     <div className="flex flex-col md:flex-row gap-4">
                         <Input placeholder="Buscar por Nº orden, cliente o producto..." value={state.searchTerm} onChange={(e) => actions.setSearchTerm(e.target.value)} className="max-w-sm" />
                          <MultiSelectFilter
@@ -406,12 +406,6 @@ export default function PlannerPage() {
                         <Button variant="ghost" onClick={() => { actions.setSearchTerm(''); actions.setStatusFilter([]); actions.setClassificationFilter([]); actions.setDateFilter(undefined); actions.setShowOnlyMyOrders(true); }}><FilterX className="mr-2 h-4 w-4" />Limpiar</Button>
                     </div>
                      <div className="flex flex-wrap items-center gap-4">
-                        {state.viewingArchived && (
-                            <div className="flex items-center gap-2">
-                                <Label htmlFor="page-size">Registros por página:</Label>
-                                <Select value={String(state.pageSize)} onValueChange={(value) => actions.setPageSize(Number(value))}><SelectTrigger id="page-size" className="w-[100px]"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="50">50</SelectItem><SelectItem value="100">100</SelectItem><SelectItem value="200">200</SelectItem></SelectContent></Select>
-                            </div>
-                        )}
                          <div className="flex items-center space-x-2">
                             <Checkbox 
                                 id="show-only-my-orders" 
@@ -425,20 +419,22 @@ export default function PlannerPage() {
                 </CardContent>
             </Card>
             
-            <div className="space-y-4 mt-6">
-                {(state.isLoading && !state.isRefreshing) ? (
-                    Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-56 w-full" />)
-                ) : selectors.filteredOrders.length > 0 ? (
-                    selectors.filteredOrders.map(renderOrderCard)
-                ) : (
-                    <div className="col-span-full flex flex-1 items-center justify-center rounded-lg border border-dashed shadow-sm py-24">
-                        <div className="flex flex-col items-center gap-2 text-center">
-                            <h3 className="text-2xl font-bold tracking-tight">No se encontraron órdenes.</h3>
-                            <p className="text-sm text-muted-foreground">Intenta ajustar los filtros de búsqueda o crea una nueva orden.</p>
+            <ScrollArea className="flex-grow">
+                <div className="space-y-4 pt-2">
+                    {(state.isLoading && !state.isRefreshing) ? (
+                        Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-56 w-full" />)
+                    ) : selectors.filteredOrders.length > 0 ? (
+                        selectors.filteredOrders.map(renderOrderCard)
+                    ) : (
+                        <div className="col-span-full flex flex-1 items-center justify-center rounded-lg border border-dashed shadow-sm py-24">
+                            <div className="flex flex-col items-center gap-2 text-center">
+                                <h3 className="text-2xl font-bold tracking-tight">No se encontraron órdenes.</h3>
+                                <p className="text-sm text-muted-foreground">Intenta ajustar los filtros de búsqueda o crea una nueva orden.</p>
+                            </div>
                         </div>
-                    </div>
-                )}
-            </div>
+                    )}
+                </div>
+            </ScrollArea>
 
              {state.viewingArchived && state.totalArchived > state.pageSize && (
                  <div className="flex items-center justify-center space-x-2 py-4">

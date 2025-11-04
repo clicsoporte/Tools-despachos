@@ -161,7 +161,7 @@ type State = {
 // Helper function to ensure complex fields are in the correct format (array).
 const sanitizeRequest = (request: any): PurchaseRequest => {
   const sanitized = { ...request };
-  if (typeof sanitized.sourceOrders === 'string') {
+  if (sanitized.sourceOrders && typeof sanitized.sourceOrders === 'string') {
     try {
       sanitized.sourceOrders = JSON.parse(sanitized.sourceOrders);
     } catch {
@@ -171,7 +171,7 @@ const sanitizeRequest = (request: any): PurchaseRequest => {
       sanitized.sourceOrders = [];
   }
   
-  if (typeof sanitized.involvedClients === 'string') {
+  if (sanitized.involvedClients && typeof sanitized.involvedClients === 'string') {
     try {
       sanitized.involvedClients = JSON.parse(sanitized.involvedClients);
     } catch {
@@ -394,8 +394,6 @@ export const useRequests = () => {
             updateState({
                 isStatusDialogOpen: false,
                 isActionDialogOpen: false,
-                activeRequests: state.activeRequests.map(r => r.id === updatedRequest.id ? updatedRequest : r),
-                archivedRequests: state.archivedRequests.map(r => r.id === updatedRequest.id ? updatedRequest : r),
             });
             // Reload data to correctly move items between active/archived lists
             await loadInitialData(true);
