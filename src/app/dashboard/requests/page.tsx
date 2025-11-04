@@ -264,8 +264,8 @@ export default function PurchaseRequestPage() {
 
     return (
         <main className="flex-1 p-4 md:p-6 flex flex-col">
-            <div className="sticky top-0 z-10 bg-muted/40 backdrop-blur-sm -mx-4 -mt-4 px-4 pt-4 pb-2 md:-mx-6 md:-mt-6 md:px-6 md:pt-6 md:pb-4 mb-6">
-                <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-6">
+            <div className="sticky top-0 z-10 bg-muted/40 backdrop-blur-sm -mx-4 -mt-4 px-4 pt-4 pb-4 md:-mx-6 md:-mt-6 md:px-6 md:pt-6 md:pb-6 space-y-6">
+                <div className="flex flex-col md:flex-row items-center justify-between gap-4">
                     <h1 className="text-lg font-semibold md:text-2xl">Solicitudes de Compra</h1>
                     <div className="flex items-center gap-2 md:gap-4 flex-wrap">
                         <Button variant="outline" onClick={() => actions.loadInitialData(true)} disabled={isLoading}>{isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCcw className="mr-2 h-4 w-4" />}Refrescar</Button>
@@ -365,7 +365,7 @@ export default function PurchaseRequestPage() {
                     </div>
                 </div>
 
-                <Card className="md:sticky md:top-[160px] z-10">
+                <Card>
                     <CardContent className="p-4 space-y-4">
                         <div className="flex flex-col md:flex-row gap-4">
                             <Input placeholder="Buscar por Nº solicitud, cliente, producto o pedido ERP..." value={searchTerm} onChange={(e) => actions.setSearchTerm(e.target.value)} className="max-w-sm" />
