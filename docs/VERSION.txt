@@ -10,3 +10,4 @@ Esta versión se enfoca en la robustez, estabilidad y corrección de errores cr�
 - Mejora de usabilidad: Se implementaron encabezados fijos en los módulos de Planificador y Solicitudes de Compra.
 - Corrección de Lógica: Se restauró la capacidad de retroceder estados en el flujo de aprobación de Solicitudes de Compra.
 - Actualización completa de la documentación interna y externa.
+- Corrección de error de compilación `_document not found` para Next.js App Router.

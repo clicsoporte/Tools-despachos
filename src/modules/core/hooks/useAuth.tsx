@@ -109,10 +109,11 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
       
       if (!currentUser) {
           setUser(null);
-          setIsReady(true); // Ready, but with no user. This signals a redirect.
+          setIsReady(true);
           return;
       }
       
+      // We have a user, now load the rest of the app data
       const data = await getInitialAuthData();
       
       setUser(currentUser);

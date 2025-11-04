@@ -9,10 +9,8 @@ import { headers } from "next/headers";
 import { AuthForm } from "@/components/auth/auth-form";
 import { SetupWizard } from "@/components/auth/setup-wizard";
 import { getCompanySettings, getUserCount } from "@/modules/core/lib/db";
-import { Suspense } from "react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Network, UserPlus } from "lucide-react";
-import { Skeleton } from "@/components/ui/skeleton";
 
 async function CompanyInfo({ hasUsers }: { hasUsers: boolean }) {
   const companyData = await getCompanySettings();
@@ -27,16 +25,6 @@ async function CompanyInfo({ hasUsers }: { hasUsers: boolean }) {
       </CardDescription>
     </CardHeader>
   );
-}
-
-function CompanyInfoSkeleton() {
-    return (
-        <CardHeader className="text-center">
-            <Skeleton className="mx-auto mb-4 h-16 w-16 rounded-full" />
-            <Skeleton className="h-8 w-48 mx-auto" />
-            <Skeleton className="h-4 w-64 mx-auto mt-2" />
-        </CardHeader>
-    )
 }
 
 /**
@@ -56,9 +44,7 @@ export default async function InitialPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
       <Card className="w-full max-w-sm shadow-2xl">
-        <Suspense fallback={<CompanyInfoSkeleton />}>
-            <CompanyInfo hasUsers={hasUsers} />
-        </Suspense>
+        <CompanyInfo hasUsers={hasUsers} />
         <CardContent>
             {hasUsers ? (
                 <AuthForm clientInfo={clientInfo} />

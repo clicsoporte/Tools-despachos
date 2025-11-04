@@ -10,7 +10,7 @@ import { usePageTitle } from '@/modules/core/hooks/usePageTitle';
 import { useAuthorization } from '@/modules/core/hooks/useAuthorization';
 import { getContributorInfo, getEnrichedExemptionStatus } from '@/modules/hacienda/lib/actions';
 import { getAllExemptions } from '@/modules/core/lib/db';
-import type { Customer, Exemption, HaciendaContributorInfo, EnrichedExemptionInfo } from '@/modules/core/types';
+import type { Customer, Exemption, HaciendaContributorInfo, EnrichedExemptionInfo, Product } from '@/modules/core/types';
 import { Loader2, Search, ShieldCheck, ShieldX } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { format, parseISO, isValid } from 'date-fns';
@@ -130,18 +130,25 @@ const ErpExemptionCard = ({ erpData }: { erpData: Exemption | null }) => {
     );
 };
 
-const HaciendaExemptionCard = ({ data }: { data: EnrichedExemptionInfo | null }) => {
+const HaciendaExemptionCard = ({ data, products }: { data: EnrichedExemptionInfo | null, products: Product[] }) => {
     const [cabysFilter, setCabysFilter] = useState('');
 
     const filteredCabys = useMemo(() => {
         if (!data || !data.enrichedCabys) return [];
-        if (!cabysFilter) return data.enrichedCabys;
+        const enrichedWithLocalMatches = data.enrichedCabys.map(item => {
+            const localMatches = products.filter(p => p.cabys === item.code);
+            return { ...item, localMatches };
+        });
+
+        if (!cabysFilter) return enrichedWithLocalMatches;
+        
         const lowerFilter = cabysFilter.toLowerCase();
-        return data.enrichedCabys.filter(item => 
+        return enrichedWithLocalMatches.filter(item => 
             item.code.toLowerCase().includes(lowerFilter) || 
-            item.description.toLowerCase().includes(lowerFilter)
+            item.description.toLowerCase().includes(lowerFilter) ||
+            item.localMatches.some(p => p.id.toLowerCase().includes(lowerFilter) || p.description.toLowerCase().includes(lowerFilter))
         );
-    }, [data, cabysFilter]);
+    }, [data, cabysFilter, products]);
 
     if (!data) {
         return (
@@ -193,7 +200,7 @@ const HaciendaExemptionCard = ({ data }: { data: EnrichedExemptionInfo | null })
                     <div className="relative">
                         <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                         <Input 
-                            placeholder="Buscar por código o descripción..."
+                            placeholder="Buscar por código CABYS o de artículo..."
                             value={cabysFilter}
                             onChange={(e) => setCabysFilter(e.target.value)}
                             className="pl-9"
@@ -201,12 +208,22 @@ const HaciendaExemptionCard = ({ data }: { data: EnrichedExemptionInfo | null })
                     </div>
                     <div className="space-y-2 max-h-40 overflow-y-auto pr-2">
                         {filteredCabys.map((item, index) => (
-                            <div key={`${item.code}-${index}`} className="p-2 bg-muted/50 rounded-md text-xs flex justify-between items-center">
-                                <div>
-                                    <p className="font-semibold">{item.description}</p>
-                                    <p className="text-muted-foreground">Código: {item.code}</p>
+                            <div key={`${item.code}-${index}`} className="p-2 bg-muted/50 rounded-md text-xs">
+                               <div className="flex justify-between items-center">
+                                    <div>
+                                        <p className="font-semibold">{item.description}</p>
+                                        <p className="text-muted-foreground">Código: {item.code}</p>
+                                    </div>
+                                    <Badge variant="secondary">{item.taxRate * 100}%</Badge>
                                 </div>
-                                <Badge variant="secondary">{item.taxRate * 100}%</Badge>
+                                {item.localMatches.length > 0 && (
+                                    <div className="pl-4 mt-1 border-l-2 border-green-500">
+                                        <p className="text-xs font-semibold text-green-700">Artículos Locales Coincidentes:</p>
+                                        <ul className="list-disc list-inside text-muted-foreground">
+                                            {item.localMatches.map(p => <li key={p.id}>{p.id} - {p.description}</li>)}
+                                        </ul>
+                                    </div>
+                                )}
                             </div>
                         ))}
                     </div>
@@ -221,7 +238,7 @@ export default function HaciendaQueryPage() {
     useAuthorization(['hacienda:query']);
     const { setTitle } = usePageTitle();
     const { toast } = useToast();
-    const { customers, isReady } = useAuth();
+    const { customers, products, isReady } = useAuth();
     
     const [exemptions, setExemptions] = useState<Exemption[]>([]);
     
@@ -304,7 +321,7 @@ export default function HaciendaQueryPage() {
         
         const customer = customers.find(c => c.id === customerId);
         if (customer) {
-            setUnifiedSearchInput(`${customer.id} - ${customer.name}`);
+            setUnifiedSearchInput(`[${customer.id}] ${customer.name}`);
         }
 
         const customerExemption = customer ? exemptions.find(ex => ex.customer === customer.id) : null;
@@ -346,6 +363,10 @@ export default function HaciendaQueryPage() {
             setUnifiedSearchOpen(true);
         } else {
             setUnifiedSearchOpen(false);
+            // Clear results when input is cleared
+            setUnifiedContributorData(null);
+            setUnifiedExemptionData(null);
+            setUnifiedErpExemption(null);
         }
     };
 
@@ -399,7 +420,7 @@ export default function HaciendaQueryPage() {
                                     <ContributorInfoCard data={unifiedContributorData} />
                                     <div className="space-y-6">
                                         <ErpExemptionCard erpData={unifiedErpExemption} />
-                                        <HaciendaExemptionCard data={unifiedExemptionData} />
+                                        <HaciendaExemptionCard data={unifiedExemptionData} products={products} />
                                     </div>
                                 </div>
                             )}
@@ -452,7 +473,7 @@ export default function HaciendaQueryPage() {
                                 </Button>
                             </div>
                             {isExemptionLoading && <div className="flex justify-center py-4"><Loader2 className="animate-spin" /></div>}
-                            {!isExemptionLoading && exemptionData && <HaciendaExemptionCard data={exemptionData} />}
+                            {!isExemptionLoading && exemptionData && <HaciendaExemptionCard data={exemptionData} products={products}/>}
                         </CardContent>
                     </Card>
                 </TabsContent>
