@@ -263,152 +263,155 @@ export default function PurchaseRequestPage() {
     }
 
     return (
-        <main className="flex-1 p-4 md:p-6 lg:p-8 flex flex-col">
-            <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-6">
-                <h1 className="text-lg font-semibold md:text-2xl">Solicitudes de Compra</h1>
-                 <div className="flex items-center gap-2 md:gap-4 flex-wrap">
-                     <Button variant="outline" onClick={() => actions.loadInitialData(true)} disabled={isLoading}>{isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCcw className="mr-2 h-4 w-4" />}Refrescar</Button>
-                     <div className="flex items-center gap-1">
-                        <Button variant={viewingArchived ? "outline" : "secondary"} onClick={() => actions.setViewingArchived(false)}>Activas</Button>
-                        <Button variant={viewingArchived ? "secondary" : "outline"} onClick={() => actions.setViewingArchived(true)}>Archivadas</Button>
-                     </div>
-                      <Dialog open={isErpOrderModalOpen} onOpenChange={actions.setErpOrderModalOpen}>
-                        <DialogTrigger asChild>
-                            <Button variant="secondary"><Layers className="mr-2"/>Crear desde Pedido ERP</Button>
-                        </DialogTrigger>
-                        <DialogContent className="max-w-2xl">
-                            <DialogHeader><DialogTitle>Buscar Pedido en ERP</DialogTitle><DialogDescription>Ingresa el número de pedido del ERP para cargar sus artículos.</DialogDescription></DialogHeader>
-                            <div className="grid gap-4 py-4">
-                                <Label htmlFor="erp-order-number">Nº de Pedido ERP</Label>
-                                <Input id="erp-order-number" value={erpOrderNumber} onChange={e => actions.setErpOrderNumber(e.target.value)} onKeyDown={e => e.key === 'Enter' && actions.handleFetchErpOrder()} placeholder="Ej: PE0000123456" />
-                            </div>
-                            {isErpLoading && <div className="flex justify-center"><Loader2 className="animate-spin" /></div>}
-                            {erpOrderHeaders.length > 0 && !isErpLoading && (
-                                <div className="space-y-2">
-                                    <p className="font-semibold">Múltiples pedidos encontrados. Por favor, selecciona uno:</p>
-                                    <ScrollArea className="h-60">
-                                        <div className="space-y-2 pr-4">
-                                            {erpOrderHeaders.map((header: any) => (
-                                                <Card key={header.PEDIDO} className="cursor-pointer hover:bg-muted" onClick={() => actions.handleSelectErpOrderHeader(header)}>
-                                                    <CardContent className="p-3">
-                                                        <p className="font-bold"><HighlightedText text={header.PEDIDO} highlight={erpOrderNumber} /></p>
-                                                        <p className="text-sm">{header.CLIENTE_NOMBRE}</p>
-                                                        <p className="text-xs text-muted-foreground">Fecha: {format(new Date(header.FECHA_PEDIDO), 'dd/MM/yyyy')}</p>
-                                                    </CardContent>
-                                                </Card>
-                                            ))}
-                                        </div>
-                                    </ScrollArea>
+        <main className="flex-1 p-4 md:p-6 flex flex-col">
+            <div className="sticky top-0 z-20 bg-muted/40 backdrop-blur-sm -mx-4 -mt-4 px-4 pt-4 pb-2 md:-mx-6 md:-mt-6 md:px-6 md:pt-6 md:pb-4 mb-6">
+                <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-6">
+                    <h1 className="text-lg font-semibold md:text-2xl">Solicitudes de Compra</h1>
+                    <div className="flex items-center gap-2 md:gap-4 flex-wrap">
+                        <Button variant="outline" onClick={() => actions.loadInitialData(true)} disabled={isLoading}>{isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCcw className="mr-2 h-4 w-4" />}Refrescar</Button>
+                        <div className="flex items-center gap-1">
+                            <Button variant={viewingArchived ? "outline" : "secondary"} onClick={() => actions.setViewingArchived(false)}>Activas</Button>
+                            <Button variant={viewingArchived ? "secondary" : "outline"} onClick={() => actions.setViewingArchived(true)}>Archivadas</Button>
+                        </div>
+                        <Dialog open={isErpOrderModalOpen} onOpenChange={actions.setErpOrderModalOpen}>
+                            <DialogTrigger asChild>
+                                <Button variant="secondary"><Layers className="mr-2"/>Crear desde Pedido ERP</Button>
+                            </DialogTrigger>
+                            <DialogContent className="max-w-2xl">
+                                <DialogHeader><DialogTitle>Buscar Pedido en ERP</DialogTitle><DialogDescription>Ingresa el número de pedido del ERP para cargar sus artículos.</DialogDescription></DialogHeader>
+                                <div className="grid gap-4 py-4">
+                                    <Label htmlFor="erp-order-number">Nº de Pedido ERP</Label>
+                                    <Input id="erp-order-number" value={erpOrderNumber} onChange={e => actions.setErpOrderNumber(e.target.value)} onKeyDown={e => e.key === 'Enter' && actions.handleFetchErpOrder()} placeholder="Ej: PE0000123456" />
                                 </div>
-                            )}
-                            <DialogFooter>
-                                <Button variant="ghost" onClick={() => actions.handleCancelErpFetch()}>Cancelar</Button>
-                                <Button onClick={actions.handleFetchErpOrder} disabled={isErpLoading || !erpOrderNumber}>{isErpLoading && <Loader2 className="mr-2 animate-spin"/>}Cargar Pedido</Button>
-                            </DialogFooter>
-                        </DialogContent>
-                    </Dialog>
-                    {selectors.hasPermission('analytics:purchase-suggestions:read') && (
-                        <Button asChild variant="secondary" className="bg-blue-600 text-white hover:bg-blue-700">
-                            <Link href="/dashboard/analytics/purchase-suggestions">
-                                <Lightbulb className="mr-2" />
-                                Sugerencias de Compra
-                            </Link>
-                        </Button>
-                    )}
-                     {selectors.hasPermission('requests:create') && (
-                        <Dialog open={isNewRequestDialogOpen} onOpenChange={actions.setNewRequestDialogOpen}>
-                            <DialogTrigger asChild><Button><FilePlus className="mr-2"/> Nueva Solicitud</Button></DialogTrigger>
-                            <DialogContent className="sm:max-w-3xl">
-                                <form onSubmit={(e) => { e.preventDefault(); actions.handleCreateRequest(); }}>
-                                    <DialogHeader><DialogTitle>Crear Nueva Solicitud de Compra</DialogTitle><DialogDescription>Complete los detalles para crear una nueva solicitud.</DialogDescription></DialogHeader>
-                                    <ScrollArea className="h-[60vh] md:h-auto"><div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4">
-                                        <div className="space-y-2"><Label htmlFor="client-search">Cliente</Label><SearchInput options={selectors.clientOptions} onSelect={(value) => actions.handleSelectClient(value)} value={clientSearchTerm} onValueChange={(val) => { actions.setClientSearchTerm(val); if(!val) actions.handleSelectClient(''); }} placeholder="Buscar cliente..." open={isClientSearchOpen} onOpenChange={actions.setClientSearchOpen} /></div>
-                                        <div className="space-y-2"><Label htmlFor="item-search">Artículo / Servicio</Label><SearchInput options={selectors.itemOptions} onSelect={(value) => actions.handleSelectItem(value)} value={itemSearchTerm} onValueChange={(val) => { actions.setItemSearchTerm(val); if(!val) actions.handleSelectItem(''); }} placeholder="Buscar artículo..." open={isItemSearchOpen} onOpenChange={actions.setItemSearchOpen} /></div>
-                                        <div className="space-y-2"><Label htmlFor="new-request-po">Nº Orden de Compra Cliente</Label><Input id="new-request-po" value={newRequest.purchaseOrder || ''} onChange={e => actions.setNewRequest((prev: any) => ({ ...prev, purchaseOrder: e.target.value }))} /></div>
-                                        <div className="space-y-2"><Label htmlFor="new-request-quantity">Cantidad</Label><Input id="new-request-quantity" type="number" placeholder="0.00" value={newRequest.quantity || ''} onChange={e => actions.setNewRequest((prev: any) => ({ ...prev, quantity: Number(e.target.value) }))} required /></div>
-                                        <div className="space-y-2"><Label htmlFor="new-request-required-date">Fecha Requerida</Label><Input id="new-request-required-date" type="date" value={newRequest.requiredDate} onChange={e => actions.setNewRequest((prev: any) => ({ ...prev, requiredDate: e.target.value }))} required /></div>
-                                        <div className="space-y-2"><Label htmlFor="new-request-supplier">Proveedor (Manual)</Label><Input id="new-request-supplier" value={newRequest.manualSupplier || ''} onChange={e => actions.setNewRequest((prev: any) => ({ ...prev, manualSupplier: e.target.value }))} /></div>
-                                        <div className="space-y-2"><Label htmlFor="new-request-erp">Número de Pedido ERP</Label><Input id="new-request-erp" value={newRequest.erpOrderNumber || ''} onChange={e => actions.setNewRequest((prev: any) => ({ ...prev, erpOrderNumber: e.target.value }))} /></div>
-                                        <div className="space-y-2"><Label htmlFor="new-request-inventory-manual">Inventario Actual (Manual)</Label><Input id="new-request-inventory-manual" type="number" placeholder="0.00" value={newRequest.inventory || ''} onChange={e => actions.setNewRequest((prev: any) => ({ ...prev, inventory: Number(e.target.value) }))} /></div>
-                                        <div className="space-y-2"><Label htmlFor="new-request-inventory-erp">Inventario Actual (ERP)</Label><Input id="new-request-inventory-erp" value={(selectors.stockLevels.find((s: any) => s.itemId === newRequest.itemId)?.totalStock ?? 0).toLocaleString()} disabled /></div>
-                                        <div className="space-y-2"><Label htmlFor="new-request-route">Ruta</Label><Select value={newRequest.route} onValueChange={(value) => actions.setNewRequest((prev: any) => ({...prev, route: value}))}><SelectTrigger id="new-request-route"><SelectValue placeholder="Seleccione una ruta" /></SelectTrigger><SelectContent>{requestSettings?.routes.map((route: string) => (<SelectItem key={route} value={route}>{route}</SelectItem>))}</SelectContent></Select></div>
-                                        <div className="space-y-2"><Label htmlFor="new-request-shipping-method">Método de Envío</Label><Select value={newRequest.shippingMethod} onValueChange={(value) => actions.setNewRequest((prev: any) => ({...prev, shippingMethod: value}))}><SelectTrigger id="new-request-shipping-method"><SelectValue placeholder="Seleccione un método" /></SelectTrigger><SelectContent>{requestSettings?.shippingMethods.map((method: string) => (<SelectItem key={method} value={method}>{method}</SelectItem>))}</SelectContent></Select></div>
-                                        <div className="space-y-2"><Label htmlFor="new-request-priority">Prioridad</Label><Select value={newRequest.priority} onValueChange={(value: typeof newRequest.priority) => actions.setNewRequest((prev: any) => ({...prev, priority: value}))}><SelectTrigger id="new-request-priority"><SelectValue /></SelectTrigger><SelectContent>{Object.entries(selectors.priorityConfig).map(([key, {label}]) => <SelectItem key={key} value={key}>{label}</SelectItem>)}</SelectContent></Select></div>
-                                        <div className="space-y-2"><Label>Tipo de Compra</Label><RadioGroup value={newRequest.purchaseType} onValueChange={(value: 'single' | 'multiple') => actions.setNewRequest((prev: any) => ({ ...prev, purchaseType: value }))} className="flex items-center gap-4 pt-2"><div className="flex items-center space-x-2"><RadioGroupItem value="single" id="r-single" /><Label htmlFor="r-single">Proveedor Único</Label></div><div className="flex items-center space-x-2"><RadioGroupItem value="multiple" id="r-multiple" /><Label htmlFor="r-multiple">Múltiples Proveedores</Label></div></RadioGroup></div>
-                                        <div className="space-y-2 col-span-1 md:col-span-2">
-                                            <div className="flex items-center space-x-2">
-                                                <Checkbox id="requiresCurrency" checked={newRequest.requiresCurrency} onCheckedChange={(checked) => actions.setNewRequest((prev: any) => ({ ...prev, requiresCurrency: !!checked }))} />
-                                                <Label htmlFor="requiresCurrency">Registrar Precio de Venta</Label>
+                                {isErpLoading && <div className="flex justify-center"><Loader2 className="animate-spin" /></div>}
+                                {erpOrderHeaders.length > 0 && !isErpLoading && (
+                                    <div className="space-y-2">
+                                        <p className="font-semibold">Múltiples pedidos encontrados. Por favor, selecciona uno:</p>
+                                        <ScrollArea className="h-60">
+                                            <div className="space-y-2 pr-4">
+                                                {erpOrderHeaders.map((header: any) => (
+                                                    <Card key={header.PEDIDO} className="cursor-pointer hover:bg-muted" onClick={() => actions.handleSelectErpOrderHeader(header)}>
+                                                        <CardContent className="p-3">
+                                                            <p className="font-bold"><HighlightedText text={header.PEDIDO} highlight={erpOrderNumber} /></p>
+                                                            <p className="text-sm">{header.CLIENTE_NOMBRE}</p>
+                                                            <p className="text-xs text-muted-foreground">Fecha: {format(new Date(header.FECHA_PEDIDO), 'dd/MM/yyyy')}</p>
+                                                        </CardContent>
+                                                    </Card>
+                                                ))}
                                             </div>
-                                        </div>
-                                        {newRequest.requiresCurrency && (
-                                            <>
-                                                <div className="space-y-2">
-                                                    <Label htmlFor="new-request-unit-sale-price">Precio de Venta Unitario (sin IVA)</Label>
-                                                    <Input id="new-request-unit-sale-price" type="number" placeholder="0.00" value={newRequest.unitSalePrice || ''} onChange={e => actions.setNewRequest((prev: any) => ({ ...prev, unitSalePrice: Number(e.target.value) }))} />
-                                                </div>
-                                                <div className="space-y-2">
-                                                    <Label>Moneda del Precio de Venta</Label>
-                                                    <RadioGroup value={newRequest.salePriceCurrency} onValueChange={(value: 'CRC' | 'USD') => actions.setNewRequest((prev: any) => ({ ...prev, salePriceCurrency: value }))} className="flex items-center gap-4 pt-2">
-                                                        <div className="flex items-center space-x-2"><RadioGroupItem value="CRC" id="r-crc" /><Label htmlFor="r-crc">CRC</Label></div>
-                                                        <div className="flex items-center space-x-2"><RadioGroupItem value="USD" id="r-usd" /><Label htmlFor="r-usd">USD</Label></div>
-                                                    </RadioGroup>
-                                                </div>
-                                            </>
-                                        )}
-                                        <div className="space-y-2 col-span-1 md:col-span-2"><Label htmlFor="new-request-notes">Notas Adicionales</Label><Textarea id="new-request-notes" placeholder="Justificación, detalles del proveedor, etc." value={newRequest.notes || ''} onChange={e => actions.setNewRequest((prev: any) => ({ ...prev, notes: e.target.value }))} /></div>
-                                    </div></ScrollArea><DialogFooter><DialogClose asChild><Button type="button" variant="ghost">Cancelar</Button></DialogClose><Button type="submit" disabled={isSubmitting}>{isSubmitting && <Loader2 className="mr-2 animate-spin"/>}Crear Solicitud</Button></DialogFooter></form>
+                                        </ScrollArea>
+                                    </div>
+                                )}
+                                <DialogFooter>
+                                    <Button variant="ghost" onClick={() => actions.handleCancelErpFetch()}>Cancelar</Button>
+                                    <Button onClick={actions.handleFetchErpOrder} disabled={isErpLoading || !erpOrderNumber}>{isErpLoading && <Loader2 className="mr-2 animate-spin"/>}Cargar Pedido</Button>
+                                </DialogFooter>
                             </DialogContent>
                         </Dialog>
-                     )}
-                </div>
-            </div>
-            <Card className="sticky top-0 z-10">
-                 <CardContent className="p-4 space-y-4">
-                    <div className="flex flex-col md:flex-row gap-4">
-                        <Input placeholder="Buscar por Nº solicitud, cliente, producto o pedido ERP..." value={searchTerm} onChange={(e) => actions.setSearchTerm(e.target.value)} className="max-w-sm" />
-                        <Select value={statusFilter} onValueChange={actions.setStatusFilter}><SelectTrigger className="w-full md:w-[180px]"><SelectValue placeholder="Filtrar por estado..." /></SelectTrigger><SelectContent><SelectItem value="all">Todos los Estados</SelectItem>{Object.entries(selectors.statusConfig).map(([key, { label }]: [string, { label: string }]) => (<SelectItem key={key} value={key}>{label}</SelectItem>))}</SelectContent></Select>
-                         <Select value={classificationFilter} onValueChange={actions.setClassificationFilter}><SelectTrigger className="w-full md:w-[240px]"><SelectValue placeholder="Filtrar por clasificación..." /></SelectTrigger><SelectContent><SelectItem value="all">Todas las Clasificaciones</SelectItem>{selectors.classifications.map((c: string) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent></Select>
-                         <Popover><PopoverTrigger asChild><Button variant={"outline"} className={cn("w-full md:w-[240px] justify-start text-left font-normal", !dateFilter && "text-muted-foreground")}><CalendarIcon className="mr-2 h-4 w-4" />{dateFilter?.from ? (dateFilter.to ? (`${format(dateFilter.from, "LLL dd, y")} - ${format(dateFilter.to, "LLL dd, y")}`) : (format(dateFilter.from, "LLL dd, y"))) : (<span>Filtrar por fecha</span>)}</Button></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="range" selected={dateFilter} onSelect={actions.setDateFilter} /></PopoverContent></Popover>
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <Button variant="outline"><FileDown className="mr-2 h-4 w-4"/>Exportar</Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                                <DropdownMenuItem onSelect={() => actions.handleExportPDF('portrait')}>
-                                    <FileDown className="mr-2 h-4 w-4" /> Exportar a PDF
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onSelect={actions.handleExportExcel}>
-                                    <FileSpreadsheet className="mr-2 h-4 w-4" /> Exportar a Excel
-                                </DropdownMenuItem>
-                            </DropdownMenuContent>
-                        </DropdownMenu>
-                         <Button variant="ghost" onClick={() => { actions.setSearchTerm(''); actions.setStatusFilter('all'); actions.setClassificationFilter('all'); actions.setDateFilter(undefined); actions.setShowOnlyMyRequests(true); }}><FilterX className="mr-2 h-4 w-4" />Limpiar</Button>
-                    </div>
-                     <div className="flex flex-wrap items-center gap-4">
-                        {viewingArchived && (
-                            <div className="flex items-center gap-2">
-                                <Label htmlFor="page-size">Registros por página:</Label>
-                                <Select value={String(pageSize)} onValueChange={(value) => actions.setPageSize(Number(value))}><SelectTrigger id="page-size" className="w-[100px]"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="50">50</SelectItem><SelectItem value="100">100</SelectItem><SelectItem value="200">200</SelectItem></SelectContent></Select>
-                            </div>
+                        {selectors.hasPermission('analytics:purchase-suggestions:read') && (
+                            <Button asChild variant="secondary" className="bg-blue-600 text-white hover:bg-blue-700">
+                                <Link href="/dashboard/analytics/purchase-suggestions">
+                                    <Lightbulb className="mr-2" />
+                                    Sugerencias de Compra
+                                </Link>
+                            </Button>
                         )}
-                         <div className="flex items-center space-x-2">
-                            <Checkbox 
-                                id="show-only-my-requests" 
-                                checked={showOnlyMyRequests} 
-                                onCheckedChange={(checked) => actions.setShowOnlyMyRequests(checked as boolean)}
-                                disabled={!showOnlyMyRequests && !selectors.hasPermission('requests:read:all')}
-                            />
-                            <Label htmlFor="show-only-my-requests" className="font-normal">Mostrar solo mis solicitudes</Label>
-                        </div>
+                        {selectors.hasPermission('requests:create') && (
+                            <Dialog open={isNewRequestDialogOpen} onOpenChange={actions.setNewRequestDialogOpen}>
+                                <DialogTrigger asChild><Button><FilePlus className="mr-2"/> Nueva Solicitud</Button></DialogTrigger>
+                                <DialogContent className="sm:max-w-3xl">
+                                    <form onSubmit={(e) => { e.preventDefault(); actions.handleCreateRequest(); }}>
+                                        <DialogHeader><DialogTitle>Crear Nueva Solicitud de Compra</DialogTitle><DialogDescription>Complete los detalles para crear una nueva solicitud.</DialogDescription></DialogHeader>
+                                        <ScrollArea className="h-[60vh] md:h-auto"><div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4">
+                                            <div className="space-y-2"><Label htmlFor="client-search">Cliente</Label><SearchInput options={selectors.clientOptions} onSelect={(value) => actions.handleSelectClient(value)} value={clientSearchTerm} onValueChange={(val) => { actions.setClientSearchTerm(val); if(!val) actions.handleSelectClient(''); }} placeholder="Buscar cliente..." open={isClientSearchOpen} onOpenChange={actions.setClientSearchOpen} /></div>
+                                            <div className="space-y-2"><Label htmlFor="item-search">Artículo / Servicio</Label><SearchInput options={selectors.itemOptions} onSelect={(value) => actions.handleSelectItem(value)} value={itemSearchTerm} onValueChange={(val) => { actions.setItemSearchTerm(val); if(!val) actions.handleSelectItem(''); }} placeholder="Buscar artículo..." open={isItemSearchOpen} onOpenChange={actions.setItemSearchOpen} /></div>
+                                            <div className="space-y-2"><Label htmlFor="new-request-po">Nº Orden de Compra Cliente</Label><Input id="new-request-po" value={newRequest.purchaseOrder || ''} onChange={e => actions.setNewRequest((prev: any) => ({ ...prev, purchaseOrder: e.target.value }))} /></div>
+                                            <div className="space-y-2"><Label htmlFor="new-request-quantity">Cantidad</Label><Input id="new-request-quantity" type="number" placeholder="0.00" value={newRequest.quantity || ''} onChange={e => actions.setNewRequest((prev: any) => ({ ...prev, quantity: Number(e.target.value) }))} required /></div>
+                                            <div className="space-y-2"><Label htmlFor="new-request-required-date">Fecha Requerida</Label><Input id="new-request-required-date" type="date" value={newRequest.requiredDate} onChange={e => actions.setNewRequest((prev: any) => ({ ...prev, requiredDate: e.target.value }))} required /></div>
+                                            <div className="space-y-2"><Label htmlFor="new-request-supplier">Proveedor (Manual)</Label><Input id="new-request-supplier" value={newRequest.manualSupplier || ''} onChange={e => actions.setNewRequest((prev: any) => ({ ...prev, manualSupplier: e.target.value }))} /></div>
+                                            <div className="space-y-2"><Label htmlFor="new-request-erp">Número de Pedido ERP</Label><Input id="new-request-erp" value={newRequest.erpOrderNumber || ''} onChange={e => actions.setNewRequest((prev: any) => ({ ...prev, erpOrderNumber: e.target.value }))} /></div>
+                                            <div className="space-y-2"><Label htmlFor="new-request-inventory-manual">Inventario Actual (Manual)</Label><Input id="new-request-inventory-manual" type="number" placeholder="0.00" value={newRequest.inventory || ''} onChange={e => actions.setNewRequest((prev: any) => ({ ...prev, inventory: Number(e.target.value) }))} /></div>
+                                            <div className="space-y-2"><Label htmlFor="new-request-inventory-erp">Inventario Actual (ERP)</Label><Input id="new-request-inventory-erp" value={(selectors.stockLevels.find((s: any) => s.itemId === newRequest.itemId)?.totalStock ?? 0).toLocaleString()} disabled /></div>
+                                            <div className="space-y-2"><Label htmlFor="new-request-route">Ruta</Label><Select value={newRequest.route} onValueChange={(value) => actions.setNewRequest((prev: any) => ({...prev, route: value}))}><SelectTrigger id="new-request-route"><SelectValue placeholder="Seleccione una ruta" /></SelectTrigger><SelectContent>{requestSettings?.routes.map((route: string) => (<SelectItem key={route} value={route}>{route}</SelectItem>))}</SelectContent></Select></div>
+                                            <div className="space-y-2"><Label htmlFor="new-request-shipping-method">Método de Envío</Label><Select value={newRequest.shippingMethod} onValueChange={(value) => actions.setNewRequest((prev: any) => ({...prev, shippingMethod: value}))}><SelectTrigger id="new-request-shipping-method"><SelectValue placeholder="Seleccione un método" /></SelectTrigger><SelectContent>{requestSettings?.shippingMethods.map((method: string) => (<SelectItem key={method} value={method}>{method}</SelectItem>))}</SelectContent></Select></div>
+                                            <div className="space-y-2"><Label htmlFor="new-request-priority">Prioridad</Label><Select value={newRequest.priority} onValueChange={(value: typeof newRequest.priority) => actions.setNewRequest((prev: any) => ({...prev, priority: value}))}><SelectTrigger id="new-request-priority"><SelectValue /></SelectTrigger><SelectContent>{Object.entries(selectors.priorityConfig).map(([key, {label}]) => <SelectItem key={key} value={key}>{label}</SelectItem>)}</SelectContent></Select></div>
+                                            <div className="space-y-2"><Label>Tipo de Compra</Label><RadioGroup value={newRequest.purchaseType} onValueChange={(value: 'single' | 'multiple') => actions.setNewRequest((prev: any) => ({ ...prev, purchaseType: value }))} className="flex items-center gap-4 pt-2"><div className="flex items-center space-x-2"><RadioGroupItem value="single" id="r-single" /><Label htmlFor="r-single">Proveedor Único</Label></div><div className="flex items-center space-x-2"><RadioGroupItem value="multiple" id="r-multiple" /><Label htmlFor="r-multiple">Múltiples Proveedores</Label></div></RadioGroup></div>
+                                            <div className="space-y-2 col-span-1 md:col-span-2">
+                                                <div className="flex items-center space-x-2">
+                                                    <Checkbox id="requiresCurrency" checked={newRequest.requiresCurrency} onCheckedChange={(checked) => actions.setNewRequest((prev: any) => ({ ...prev, requiresCurrency: !!checked }))} />
+                                                    <Label htmlFor="requiresCurrency">Registrar Precio de Venta</Label>
+                                                </div>
+                                            </div>
+                                            {newRequest.requiresCurrency && (
+                                                <>
+                                                    <div className="space-y-2">
+                                                        <Label htmlFor="new-request-unit-sale-price">Precio de Venta Unitario (sin IVA)</Label>
+                                                        <Input id="new-request-unit-sale-price" type="number" placeholder="0.00" value={newRequest.unitSalePrice || ''} onChange={e => actions.setNewRequest((prev: any) => ({ ...prev, unitSalePrice: Number(e.target.value) }))} />
+                                                    </div>
+                                                    <div className="space-y-2">
+                                                        <Label>Moneda del Precio de Venta</Label>
+                                                        <RadioGroup value={newRequest.salePriceCurrency} onValueChange={(value: 'CRC' | 'USD') => actions.setNewRequest((prev: any) => ({ ...prev, salePriceCurrency: value }))} className="flex items-center gap-4 pt-2">
+                                                            <div className="flex items-center space-x-2"><RadioGroupItem value="CRC" id="r-crc" /><Label htmlFor="r-crc">CRC</Label></div>
+                                                            <div className="flex items-center space-x-2"><RadioGroupItem value="USD" id="r-usd" /><Label htmlFor="r-usd">USD</Label></div>
+                                                        </RadioGroup>
+                                                    </div>
+                                                </>
+                                            )}
+                                            <div className="space-y-2 col-span-1 md:col-span-2"><Label htmlFor="new-request-notes">Notas Adicionales</Label><Textarea id="new-request-notes" placeholder="Justificación, detalles del proveedor, etc." value={newRequest.notes || ''} onChange={e => actions.setNewRequest((prev: any) => ({ ...prev, notes: e.target.value }))} /></div>
+                                        </div></ScrollArea><DialogFooter><DialogClose asChild><Button type="button" variant="ghost">Cancelar</Button></DialogClose><Button type="submit" disabled={isSubmitting}>{isSubmitting && <Loader2 className="mr-2 animate-spin"/>}Crear Solicitud</Button></DialogFooter></form>
+                                </DialogContent>
+                            </Dialog>
+                        )}
                     </div>
-                </CardContent>
-            </Card>
-            <ScrollArea className="flex-grow">
-                <div className="space-y-4 pt-2">
-                    {isLoading ? (<div className="space-y-4"><Skeleton className="h-40 w-full" /><Skeleton className="h-40 w-full" /></div>) : selectors.filteredRequests.length > 0 ? (selectors.filteredRequests.map(renderRequestCard)) : (<div className="flex flex-1 items-center justify-center rounded-lg border border-dashed shadow-sm py-24"><div className="flex flex-col items-center gap-2 text-center"><h3 className="text-2xl font-bold tracking-tight">No se encontraron solicitudes.</h3><p className="text-sm text-muted-foreground">Intenta ajustar los filtros de búsqueda o crea una nueva solicitud.</p></div></div>)}
                 </div>
-            </ScrollArea>
+
+                <Card>
+                    <CardContent className="p-4 space-y-4">
+                        <div className="flex flex-col md:flex-row gap-4">
+                            <Input placeholder="Buscar por Nº solicitud, cliente, producto o pedido ERP..." value={searchTerm} onChange={(e) => actions.setSearchTerm(e.target.value)} className="max-w-sm" />
+                            <Select value={statusFilter} onValueChange={actions.setStatusFilter}><SelectTrigger className="w-full md:w-[180px]"><SelectValue placeholder="Filtrar por estado..." /></SelectTrigger><SelectContent><SelectItem value="all">Todos los Estados</SelectItem>{Object.entries(selectors.statusConfig).map(([key, { label }]: [string, { label: string }]) => (<SelectItem key={key} value={key}>{label}</SelectItem>))}</SelectContent></Select>
+                            <Select value={classificationFilter} onValueChange={actions.setClassificationFilter}><SelectTrigger className="w-full md:w-[240px]"><SelectValue placeholder="Filtrar por clasificación..." /></SelectTrigger><SelectContent><SelectItem value="all">Todas las Clasificaciones</SelectItem>{selectors.classifications.map((c: string) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent></Select>
+                            <Popover><PopoverTrigger asChild><Button variant={"outline"} className={cn("w-full md:w-[240px] justify-start text-left font-normal", !dateFilter && "text-muted-foreground")}><CalendarIcon className="mr-2 h-4 w-4" />{dateFilter?.from ? (dateFilter.to ? (`${format(dateFilter.from, "LLL dd, y")} - ${format(dateFilter.to, "LLL dd, y")}`) : (format(dateFilter.from, "LLL dd, y"))) : (<span>Filtrar por fecha</span>)}</Button></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="range" selected={dateFilter} onSelect={actions.setDateFilter} /></PopoverContent></Popover>
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="outline"><FileDown className="mr-2 h-4 w-4"/>Exportar</Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                    <DropdownMenuItem onSelect={() => actions.handleExportPDF('portrait')}>
+                                        <FileDown className="mr-2 h-4 w-4" /> Exportar a PDF
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onSelect={actions.handleExportExcel}>
+                                        <FileSpreadsheet className="mr-2 h-4 w-4" /> Exportar a Excel
+                                    </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                            <Button variant="ghost" onClick={() => { actions.setSearchTerm(''); actions.setStatusFilter('all'); actions.setClassificationFilter('all'); actions.setDateFilter(undefined); actions.setShowOnlyMyRequests(true); }}><FilterX className="mr-2 h-4 w-4" />Limpiar</Button>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-4">
+                            {viewingArchived && (
+                                <div className="flex items-center gap-2">
+                                    <Label htmlFor="page-size">Registros por página:</Label>
+                                    <Select value={String(pageSize)} onValueChange={(value) => actions.setPageSize(Number(value))}><SelectTrigger id="page-size" className="w-[100px]"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="50">50</SelectItem><SelectItem value="100">100</SelectItem><SelectItem value="200">200</SelectItem></SelectContent></Select>
+                                </div>
+                            )}
+                            <div className="flex items-center space-x-2">
+                                <Checkbox 
+                                    id="show-only-my-requests" 
+                                    checked={showOnlyMyRequests} 
+                                    onCheckedChange={(checked) => actions.setShowOnlyMyRequests(checked as boolean)}
+                                    disabled={!showOnlyMyRequests && !selectors.hasPermission('requests:read:all')}
+                                />
+                                <Label htmlFor="show-only-my-requests" className="font-normal">Mostrar solo mis solicitudes</Label>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
+            
+            <div className="space-y-4 pt-2">
+                {isLoading ? (<div className="space-y-4"><Skeleton className="h-40 w-full" /><Skeleton className="h-40 w-full" /></div>) : selectors.filteredRequests.length > 0 ? (selectors.filteredRequests.map(renderRequestCard)) : (<div className="flex flex-1 items-center justify-center rounded-lg border border-dashed shadow-sm py-24"><div className="flex flex-col items-center gap-2 text-center"><h3 className="text-2xl font-bold tracking-tight">No se encontraron solicitudes.</h3><p className="text-sm text-muted-foreground">Intenta ajustar los filtros de búsqueda o crea una nueva solicitud.</p></div></div>)}
+            </div>
+
              {viewingArchived && totalArchived > pageSize && (<div className="flex items-center justify-center space-x-2 py-4"><Button variant="outline" size="sm" onClick={() => actions.setArchivedPage((p: number) => p - 1)} disabled={archivedPage === 0}><ChevronLeft className="mr-2 h-4 w-4" />Anterior</Button><span className="text-sm text-muted-foreground">Página {archivedPage + 1} de {Math.ceil(totalArchived / pageSize)}</span><Button variant="outline" size="sm" onClick={() => actions.setArchivedPage((p: number) => p + 1)} disabled={(archivedPage + 1) * pageSize >= totalArchived}>Siguiente<ChevronRight className="ml-2 h-4 w-4" /></Button></div>)}
             <Dialog open={isEditRequestDialogOpen} onOpenChange={actions.setEditRequestDialogOpen}><DialogContent className="sm:max-w-3xl"><form onSubmit={actions.handleEditRequest}><DialogHeader><DialogTitle>Editar Solicitud - {requestToEdit?.consecutive}</DialogTitle><DialogDescription>Modifique los detalles de la solicitud.</DialogDescription></DialogHeader><ScrollArea className="h-[60vh] md:h-auto"><div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4"><div className="space-y-2"><Label>Cliente</Label><Input value={requestToEdit?.clientName} disabled /></div><div className="space-y-2"><Label>Artículo / Servicio</Label><Input value={`[${requestToEdit?.itemId}] ${requestToEdit?.itemDescription}`} disabled /></div><div className="space-y-2"><Label htmlFor="edit-request-quantity">Cantidad</Label><Input id="edit-request-quantity" type="number" value={requestToEdit?.quantity || ''} onChange={e => { if (requestToEdit) actions.setRequestToEdit({ ...requestToEdit, quantity: Number(e.target.value) }); }} required /></div><div className="space-y-2"><Label htmlFor="edit-request-required-date">Fecha Requerida</Label><Input id="edit-request-required-date" type="date" value={requestToEdit?.requiredDate ? format(parseISO(requestToEdit.requiredDate), 'yyyy-MM-dd') : ''} onChange={e => { if (requestToEdit) actions.setRequestToEdit({ ...requestToEdit, requiredDate: e.target.value }); }} required /></div><div className="space-y-2"><Label htmlFor="edit-request-priority">Prioridad</Label><Select value={requestToEdit?.priority} onValueChange={(value: typeof newRequest.priority) => { if (requestToEdit) actions.setRequestToEdit({ ...requestToEdit, priority: value }); }}><SelectTrigger id="edit-request-priority"><SelectValue /></SelectTrigger><SelectContent>{Object.entries(selectors.priorityConfig).map(([key, {label}]) => <SelectItem key={key} value={key}>{label}</SelectItem>)}</SelectContent></Select></div><div className="space-y-2"><Label>Tipo de Compra</Label><RadioGroup value={requestToEdit?.purchaseType} onValueChange={(value: 'single' | 'multiple') => { if (requestToEdit) actions.setRequestToEdit({ ...requestToEdit, purchaseType: value }); }} className="flex items-center gap-4 pt-2"><div className="flex items-center space-x-2"><RadioGroupItem value="single" id="r-edit-single" /><Label htmlFor="r-edit-single">Proveedor Único</Label></div><div className="flex items-center space-x-2"><RadioGroupItem value="multiple" id="r-edit-multiple" /><Label htmlFor="r-edit-multiple">Múltiples Proveedores</Label></div></RadioGroup></div><div className="space-y-2 col-span-1 md:col-span-2"><Label htmlFor="edit-request-notes">Notas</Label><Textarea id="edit-request-notes" value={requestToEdit?.notes || ''} onChange={e => { if (requestToEdit) actions.setRequestToEdit({ ...requestToEdit, notes: e.target.value }); }} /></div></div></ScrollArea><DialogFooter><DialogClose asChild><Button type="button" variant="ghost">Cancelar</Button></DialogClose><Button type="submit" disabled={isSubmitting}>{isSubmitting && <Loader2 className="mr-2 animate-spin"/>}Guardar Cambios</Button></DialogFooter></form></DialogContent></Dialog>
             <Dialog open={isStatusDialogOpen} onOpenChange={actions.setStatusDialogOpen}><DialogContent><DialogHeader><DialogTitle>Actualizar Estado de la Solicitud</DialogTitle><DialogDescription>Estás a punto de cambiar el estado de la solicitud {requestToUpdate?.consecutive} a &quot;{newStatus ? selectors.statusConfig[newStatus].label : ''}&quot;.</DialogDescription></DialogHeader><div className="space-y-4 py-4">{newStatus === 'received-in-warehouse' && (<div className="space-y-2"><Label htmlFor="status-delivered-quantity">Cantidad Recibida</Label><Input id="status-delivered-quantity" type="number" value={deliveredQuantity} onChange={(e) => actions.setDeliveredQuantity(e.target.value)} placeholder={`Cantidad solicitada: ${requestToUpdate?.quantity.toLocaleString()}`} /> <p className="text-xs text-muted-foreground">Introduce la cantidad final que se recibió del proveedor.</p></div>)} {newStatus === 'ordered' && (<div className="space-y-2"><Label htmlFor="status-arrival-date">Fecha Estimada de Llegada</Label><Input id="status-arrival-date" type="date" value={arrivalDate} onChange={(e) => actions.setArrivalDate(e.target.value)} /><p className="text-xs text-muted-foreground">Opcional: Fecha en que se espera recibir el producto.</p></div>)} {newStatus === 'entered-erp' && (<div className="space-y-2"><Label htmlFor="erp-entry-number">Número de Consecutivo ERP</Label><Input id="erp-entry-number" value={erpEntryNumber} onChange={(e) => actions.setErpEntryNumber(e.target.value)} placeholder="Ej: ENTR-12345" /></div>)}<div className="space-y-2"><Label htmlFor="status-notes">Notas (Opcional)</Label><Textarea id="status-notes" value={statusUpdateNotes} onChange={(e) => actions.setStatusUpdateNotes(e.target.value)} placeholder="Ej: Aprobado por Gerencia, Orden de compra #1234" /></div></div><DialogFooter><DialogClose asChild><Button variant="ghost">Cancelar</Button></DialogClose><Button onClick={() => actions.handleStatusUpdate()} disabled={isSubmitting}>{isSubmitting && <Loader2 className="mr-2 animate-spin"/>}Actualizar Estado</Button></DialogFooter></DialogContent></Dialog>

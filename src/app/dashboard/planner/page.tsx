@@ -267,174 +267,173 @@ export default function PlannerPage() {
     
     return (
         <main className="flex-1 p-4 md:p-6 flex flex-col">
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6">
-                <h1 className="text-lg font-semibold md:text-2xl">Órdenes de Producción</h1>
-                 <div className="flex items-center gap-2 md:gap-4 flex-wrap">
-                    <Button variant="outline" onClick={() => actions.loadInitialData(true)} disabled={state.isRefreshing || state.isLoading}>
-                        {state.isRefreshing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCcw className="mr-2 h-4 w-4" />}
-                        Refrescar
-                    </Button>
-                     <div className="flex items-center gap-1">
-                        <Button variant={state.viewingArchived ? "outline" : "secondary"} onClick={() => actions.setViewingArchived(false)}>Activas</Button>
-                        <Button variant={state.viewingArchived ? "secondary" : "outline"} onClick={() => actions.setViewingArchived(true)}>Archivadas</Button>
-                     </div>
-                     {selectors.hasPermission('planner:create') && (
-                        <Dialog open={state.isNewOrderDialogOpen} onOpenChange={actions.setNewOrderDialogOpen}>
-                            <DialogTrigger asChild>
-                                <Button><FilePlus className="mr-2"/> Nueva Orden</Button>
-                            </DialogTrigger>
-                            <DialogContent className="sm:max-w-3xl">
-                                <form onSubmit={(e) => { e.preventDefault(); actions.handleCreateOrder(); }}>
-                                    <DialogHeader>
-                                        <DialogTitle>Crear Nueva Orden de Producción</DialogTitle>
-                                        <DialogDescription>Complete los detalles para enviar una nueva orden a producción.</DialogDescription>
-                                    </DialogHeader>
-                                    <ScrollArea className="h-[60vh] md:h-auto">
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4">
-                                            <div className="space-y-2">
-                                                <Label htmlFor="customer-search">Cliente</Label>
-                                                <SearchInput
-                                                    options={selectors.customerOptions}
-                                                    onSelect={actions.handleSelectCustomer}
-                                                    value={state.customerSearchTerm}
-                                                    onValueChange={actions.setCustomerSearchTerm}
-                                                    placeholder="Buscar cliente..."
-                                                    onKeyDown={actions.handleCustomerInputKeyDown}
-                                                    open={state.isCustomerSearchOpen}
-                                                    onOpenChange={actions.setCustomerSearchOpen}
-                                                />
-                                            </div>
-                                            <div className="space-y-2">
-                                                <Label htmlFor="product-search">Producto</Label>
-                                                <SearchInput
-                                                    options={selectors.productOptions}
-                                                    onSelect={actions.handleSelectProduct}
-                                                    value={state.productSearchTerm}
-                                                    onValueChange={actions.setProductSearchTerm}
-                                                    placeholder="Buscar producto..."
-                                                    onKeyDown={actions.handleProductInputKeyDown}
-                                                    open={state.isProductSearchOpen}
-                                                    onOpenChange={actions.setProductSearchOpen}
-                                                />
-                                            </div>
-                                            <div className="space-y-2">
-                                                <Label htmlFor="new-order-purchase-order">Nº Orden de Compra (Opcional)</Label>
-                                                <Input id="new-order-purchase-order" placeholder="Ej: OC-12345" value={state.newOrder.purchaseOrder || ''} onChange={(e) => actions.setNewOrder({ purchaseOrder: e.target.value })} />
-                                            </div>
-                                            <div className="space-y-2">
-                                                <Label htmlFor="new-order-quantity">Cantidad Solicitada</Label>
-                                                <Input id="new-order-quantity" type="number" placeholder="0.00" value={state.newOrder.quantity || ''} onChange={e => actions.setNewOrder({ quantity: Number(e.target.value) })} required />
-                                            </div>
-                                            <div className="space-y-2">
-                                                <Label htmlFor="new-order-inventory">Inventario Actual (Manual)</Label>
-                                                <Input id="new-order-inventory" type="number" placeholder="0.00" value={state.newOrder.inventory || ''} onChange={e => actions.setNewOrder({ inventory: Number(e.target.value) })} />
-                                            </div>
-                                             <div className="space-y-2">
-                                                <Label htmlFor="new-order-inventory-erp">Inventario Actual (ERP)</Label>
-                                                <Input id="new-order-inventory-erp" value={(selectors.stockLevels.find(s => s.itemId === state.newOrder.productId)?.totalStock ?? 0).toLocaleString()} disabled />
-                                            </div>
-                                            <div className="space-y-2">
-                                                <Label htmlFor="new-order-delivery-date">Fecha de Entrega Requerida</Label>
-                                                <Input id="new-order-delivery-date" type="date" value={state.newOrder.deliveryDate} onChange={e => actions.setNewOrder({ deliveryDate: e.target.value })} required />
-                                            </div>
-                                            <div className="space-y-2">
-                                                <Label htmlFor="new-order-priority">Prioridad</Label>
-                                                <Select value={state.newOrder.priority} onValueChange={(value: typeof state.newOrder.priority) => actions.setNewOrder({priority: value})}>
-                                                    <SelectTrigger id="new-order-priority"><SelectValue placeholder="Seleccione una prioridad" /></SelectTrigger>
-                                                    <SelectContent>
-                                                        {Object.entries(selectors.priorityConfig).map(([key, config]) => (<SelectItem key={key} value={key}>{config.label}</SelectItem>))}
-                                                    </SelectContent>
-                                                </Select>
-                                            </div>
-                                            <div className="space-y-2 col-span-1 md:col-span-2">
-                                                <Label htmlFor="new-order-notes">Notas Adicionales</Label>
-                                                <Textarea id="new-order-notes" placeholder="Instrucciones especiales, detalles del pedido, etc." value={state.newOrder.notes || ''} onChange={e => actions.setNewOrder({ notes: e.target.value })} />
-                                            </div>
-                                        </div>
-                                    </ScrollArea>
-                                    <DialogFooter>
-                                        <DialogClose asChild><Button type="button" variant="ghost">Cancelar</Button></DialogClose>
-                                        <Button type="submit" disabled={state.isSubmitting}>{state.isSubmitting && <Loader2 className="mr-2 animate-spin"/>}Crear Orden</Button>
-                                    </DialogFooter>
-                                </form>
-                            </DialogContent>
-                        </Dialog>
-                     )}
-                </div>
-            </div>
-            <Card className="md:sticky md:top-[73px] z-10">
-                 <CardContent className="p-4 space-y-4">
-                    <div className="flex flex-col md:flex-row gap-4">
-                        <Input placeholder="Buscar por Nº orden, cliente o producto..." value={state.searchTerm} onChange={(e) => actions.setSearchTerm(e.target.value)} className="max-w-sm" />
-                         <MultiSelectFilter
-                            title="Estado"
-                            options={Object.entries(selectors.statusConfig).map(([key, { label }]) => ({ value: key, label }))}
-                            selectedValues={state.statusFilter}
-                            onSelectedChange={actions.setStatusFilter}
-                        />
-                         <MultiSelectFilter
-                            title="Clasificación"
-                            options={selectors.classifications.map(c => ({ value: c, label: c }))}
-                            selectedValues={state.classificationFilter}
-                            onSelectedChange={actions.setClassificationFilter}
-                        />
-                        <Popover>
-                            <PopoverTrigger asChild>
-                                <Button variant={"outline"} className={cn("w-full md:w-[240px] justify-start text-left font-normal", !state.dateFilter && "text-muted-foreground")}><CalendarIcon className="mr-2 h-4 w-4" />{state.dateFilter?.from ? (state.dateFilter.to ? (`${format(state.dateFilter.from, "LLL dd, y")} - ${format(state.dateFilter.to, "LLL dd, y")}`) : (format(state.dateFilter.from, "LLL dd, y"))) : (<span>Filtrar por fecha</span>)}</Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0" align="start"><Calendar mode="range" selected={state.dateFilter} onSelect={actions.setDateFilter} /></PopoverContent>
-                        </Popover>
-                        <DialogColumnSelector
-                            allColumns={selectors.availableColumns}
-                            visibleColumns={state.visibleColumns}
-                            onColumnChange={actions.handleColumnVisibilityChange}
-                            onSave={actions.handleSaveColumnVisibility}
-                        />
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <Button variant="outline"><FileDown className="mr-2 h-4 w-4"/>Exportar</Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                                <DropdownMenuItem onSelect={() => actions.handleExportPDF('portrait')}>
-                                    <FileDown className="mr-2 h-4 w-4" /> Exportar a PDF
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onSelect={actions.handleExportExcel}>
-                                    <FileSpreadsheet className="mr-2 h-4 w-4" /> Exportar a Excel
-                                </DropdownMenuItem>
-                            </DropdownMenuContent>
-                        </DropdownMenu>
-                        <Button variant="ghost" onClick={() => { actions.setSearchTerm(''); actions.setStatusFilter([]); actions.setClassificationFilter([]); actions.setDateFilter(undefined); actions.setShowOnlyMyOrders(true); }}><FilterX className="mr-2 h-4 w-4" />Limpiar</Button>
-                    </div>
-                     <div className="flex flex-wrap items-center gap-4">
-                         <div className="flex items-center space-x-2">
-                            <Checkbox 
-                                id="show-only-my-orders" 
-                                checked={state.showOnlyMyOrders} 
-                                onCheckedChange={(checked) => actions.setShowOnlyMyOrders(checked as boolean)}
-                                disabled={!state.showOnlyMyOrders && !selectors.hasPermission('planner:read:all')}
-                            />
-                            <Label htmlFor="show-only-my-orders" className="font-normal">Mostrar solo mis órdenes</Label>
+            <div className="sticky top-0 z-20 bg-muted/40 backdrop-blur-sm -mx-4 -mt-4 px-4 pt-4 pb-2 md:-mx-6 md:-mt-6 md:px-6 md:pt-6 md:pb-4 mb-6">
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6">
+                    <h1 className="text-lg font-semibold md:text-2xl">Órdenes de Producción</h1>
+                    <div className="flex items-center gap-2 md:gap-4 flex-wrap">
+                        <Button variant="outline" onClick={() => actions.loadInitialData(true)} disabled={state.isRefreshing || state.isLoading}>
+                            {state.isRefreshing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCcw className="mr-2 h-4 w-4" />}
+                            Refrescar
+                        </Button>
+                        <div className="flex items-center gap-1">
+                            <Button variant={state.viewingArchived ? "outline" : "secondary"} onClick={() => actions.setViewingArchived(false)}>Activas</Button>
+                            <Button variant={state.viewingArchived ? "secondary" : "outline"} onClick={() => actions.setViewingArchived(true)}>Archivadas</Button>
                         </div>
+                        {selectors.hasPermission('planner:create') && (
+                            <Dialog open={state.isNewOrderDialogOpen} onOpenChange={actions.setNewOrderDialogOpen}>
+                                <DialogTrigger asChild>
+                                    <Button><FilePlus className="mr-2"/> Nueva Orden</Button>
+                                </DialogTrigger>
+                                <DialogContent className="sm:max-w-3xl">
+                                    <form onSubmit={(e) => { e.preventDefault(); actions.handleCreateOrder(); }}>
+                                        <DialogHeader>
+                                            <DialogTitle>Crear Nueva Orden de Producción</DialogTitle>
+                                            <DialogDescription>Complete los detalles para enviar una nueva orden a producción.</DialogDescription>
+                                        </DialogHeader>
+                                        <ScrollArea className="h-[60vh] md:h-auto">
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4">
+                                                <div className="space-y-2">
+                                                    <Label htmlFor="customer-search">Cliente</Label>
+                                                    <SearchInput
+                                                        options={selectors.customerOptions}
+                                                        onSelect={actions.handleSelectCustomer}
+                                                        value={state.customerSearchTerm}
+                                                        onValueChange={actions.setCustomerSearchTerm}
+                                                        placeholder="Buscar cliente..."
+                                                        onKeyDown={actions.handleCustomerInputKeyDown}
+                                                        open={state.isCustomerSearchOpen}
+                                                        onOpenChange={actions.setCustomerSearchOpen}
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label htmlFor="product-search">Producto</Label>
+                                                    <SearchInput
+                                                        options={selectors.productOptions}
+                                                        onSelect={actions.handleSelectProduct}
+                                                        value={state.productSearchTerm}
+                                                        onValueChange={actions.setProductSearchTerm}
+                                                        placeholder="Buscar producto..."
+                                                        onKeyDown={actions.handleProductInputKeyDown}
+                                                        open={state.isProductSearchOpen}
+                                                        onOpenChange={actions.setProductSearchOpen}
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label htmlFor="new-order-purchase-order">Nº Orden de Compra (Opcional)</Label>
+                                                    <Input id="new-order-purchase-order" placeholder="Ej: OC-12345" value={state.newOrder.purchaseOrder || ''} onChange={(e) => actions.setNewOrder({ purchaseOrder: e.target.value })} />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label htmlFor="new-order-quantity">Cantidad Solicitada</Label>
+                                                    <Input id="new-order-quantity" type="number" placeholder="0.00" value={state.newOrder.quantity || ''} onChange={e => actions.setNewOrder({ quantity: Number(e.target.value) })} required />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label htmlFor="new-order-inventory">Inventario Actual (Manual)</Label>
+                                                    <Input id="new-order-inventory" type="number" placeholder="0.00" value={state.newOrder.inventory || ''} onChange={e => actions.setNewOrder({ inventory: Number(e.target.value) })} />
+                                                </div>
+                                                 <div className="space-y-2">
+                                                    <Label htmlFor="new-order-inventory-erp">Inventario Actual (ERP)</Label>
+                                                    <Input id="new-order-inventory-erp" value={(selectors.stockLevels.find(s => s.itemId === state.newOrder.productId)?.totalStock ?? 0).toLocaleString()} disabled />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label htmlFor="new-order-delivery-date">Fecha de Entrega Requerida</Label>
+                                                    <Input id="new-order-delivery-date" type="date" value={state.newOrder.deliveryDate} onChange={e => actions.setNewOrder({ deliveryDate: e.target.value })} required />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label htmlFor="new-order-priority">Prioridad</Label>
+                                                    <Select value={state.newOrder.priority} onValueChange={(value: typeof state.newOrder.priority) => actions.setNewOrder({priority: value})}>
+                                                        <SelectTrigger id="new-order-priority"><SelectValue placeholder="Seleccione una prioridad" /></SelectTrigger>
+                                                        <SelectContent>
+                                                            {Object.entries(selectors.priorityConfig).map(([key, config]) => (<SelectItem key={key} value={key}>{config.label}</SelectItem>))}
+                                                        </SelectContent>
+                                                    </Select>
+                                                </div>
+                                                <div className="space-y-2 col-span-1 md:col-span-2">
+                                                    <Label htmlFor="new-order-notes">Notas Adicionales</Label>
+                                                    <Textarea id="new-order-notes" placeholder="Instrucciones especiales, detalles del pedido, etc." value={state.newOrder.notes || ''} onChange={e => actions.setNewOrder({ notes: e.target.value })} />
+                                                </div>
+                                            </div>
+                                        </ScrollArea>
+                                        <DialogFooter>
+                                            <DialogClose asChild><Button type="button" variant="ghost">Cancelar</Button></DialogClose>
+                                            <Button type="submit" disabled={state.isSubmitting}>{state.isSubmitting && <Loader2 className="mr-2 animate-spin"/>}Crear Orden</Button>
+                                        </DialogFooter>
+                                    </form>
+                                </DialogContent>
+                            </Dialog>
+                        )}
                     </div>
-                </CardContent>
-            </Card>
-            
-            <ScrollArea className="flex-grow mt-4">
-                <div className="space-y-4 pt-2">
-                    {(state.isLoading && !state.isRefreshing) ? (
-                        Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-56 w-full" />)
-                    ) : selectors.filteredOrders.length > 0 ? (
-                        selectors.filteredOrders.map(renderOrderCard)
-                    ) : (
-                        <div className="col-span-full flex flex-1 items-center justify-center rounded-lg border border-dashed shadow-sm py-24">
-                            <div className="flex flex-col items-center gap-2 text-center">
-                                <h3 className="text-2xl font-bold tracking-tight">No se encontraron órdenes.</h3>
-                                <p className="text-sm text-muted-foreground">Intenta ajustar los filtros de búsqueda o crea una nueva orden.</p>
+                </div>
+
+                <Card className="md:sticky md:top-[150px] z-10">
+                    <CardContent className="p-4 space-y-4">
+                        <div className="flex flex-col md:flex-row gap-4">
+                            <Input placeholder="Buscar por Nº orden, cliente o producto..." value={state.searchTerm} onChange={(e) => actions.setSearchTerm(e.target.value)} className="max-w-sm" />
+                            <MultiSelectFilter
+                                title="Estado"
+                                options={Object.entries(selectors.statusConfig).map(([key, { label }]) => ({ value: key, label }))}
+                                selectedValues={state.statusFilter}
+                                onSelectedChange={actions.setStatusFilter}
+                            />
+                            <MultiSelectFilter
+                                title="Clasificación"
+                                options={selectors.classifications.map(c => ({ value: c, label: c }))}
+                                selectedValues={state.classificationFilter}
+                                onSelectedChange={actions.setClassificationFilter}
+                            />
+                            <Popover>
+                                <PopoverTrigger asChild><Button variant={"outline"} className={cn("w-full md:w-[240px] justify-start text-left font-normal", !state.dateFilter && "text-muted-foreground")}><CalendarIcon className="mr-2 h-4 w-4" />{state.dateFilter?.from ? (state.dateFilter.to ? (`${format(state.dateFilter.from, "LLL dd, y")} - ${format(state.dateFilter.to, "LLL dd, y")}`) : (format(state.dateFilter.from, "LLL dd, y"))) : (<span>Filtrar por fecha</span>)}</Button></PopoverTrigger>
+                                <PopoverContent className="w-auto p-0" align="start"><Calendar mode="range" selected={state.dateFilter} onSelect={actions.setDateFilter} /></PopoverContent>
+                            </Popover>
+                            <DialogColumnSelector
+                                allColumns={selectors.availableColumns}
+                                visibleColumns={state.visibleColumns}
+                                onColumnChange={actions.handleColumnVisibilityChange}
+                                onSave={actions.handleSaveColumnVisibility}
+                            />
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="outline"><FileDown className="mr-2 h-4 w-4"/>Exportar</Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                    <DropdownMenuItem onSelect={() => actions.handleExportPDF('portrait')}>
+                                        <FileDown className="mr-2 h-4 w-4" /> Exportar a PDF
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onSelect={actions.handleExportExcel}>
+                                        <FileSpreadsheet className="mr-2 h-4 w-4" /> Exportar a Excel
+                                    </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                            <Button variant="ghost" onClick={() => { actions.setSearchTerm(''); actions.setStatusFilter([]); actions.setClassificationFilter([]); actions.setDateFilter(undefined); actions.setShowOnlyMyOrders(true); }}><FilterX className="mr-2 h-4 w-4" />Limpiar</Button>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-4">
+                            <div className="flex items-center space-x-2">
+                                <Checkbox 
+                                    id="show-only-my-orders" 
+                                    checked={state.showOnlyMyOrders} 
+                                    onCheckedChange={(checked) => actions.setShowOnlyMyOrders(checked as boolean)}
+                                    disabled={!state.showOnlyMyOrders && !selectors.hasPermission('planner:read:all')}
+                                />
+                                <Label htmlFor="show-only-my-orders" className="font-normal">Mostrar solo mis órdenes</Label>
                             </div>
                         </div>
-                    )}
-                </div>
-            </ScrollArea>
+                    </CardContent>
+                </Card>
+            </div>
+            
+            <div className="space-y-4 pt-2">
+                {(state.isLoading && !state.isRefreshing) ? (
+                    Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-56 w-full" />)
+                ) : selectors.filteredOrders.length > 0 ? (
+                    selectors.filteredOrders.map(renderOrderCard)
+                ) : (
+                    <div className="col-span-full flex flex-1 items-center justify-center rounded-lg border border-dashed shadow-sm py-24">
+                        <div className="flex flex-col items-center gap-2 text-center">
+                            <h3 className="text-2xl font-bold tracking-tight">No se encontraron órdenes.</h3>
+                            <p className="text-sm text-muted-foreground">Intenta ajustar los filtros de búsqueda o crea una nueva orden.</p>
+                        </div>
+                    </div>
+                )}
+            </div>
 
              {state.viewingArchived && state.totalArchived > state.pageSize && (
                  <div className="flex items-center justify-center space-x-2 py-4">
