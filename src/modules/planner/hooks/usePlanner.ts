@@ -328,7 +328,27 @@ export const usePlanner = () => {
         loadInitialData,
 
         handleCreateOrder: async () => {
-            if (!state.newOrder.customerId || !state.newOrder.productId || !state.newOrder.quantity || !state.newOrder.deliveryDate || !currentUser) return;
+            if (!currentUser) {
+                toast({ title: "Error de autenticación", variant: "destructive" });
+                return;
+            }
+            if (!state.newOrder.customerId) {
+                toast({ title: "Campo Requerido", description: "Por favor, seleccione un cliente.", variant: "destructive" });
+                return;
+            }
+            if (!state.newOrder.productId) {
+                toast({ title: "Campo Requerido", description: "Por favor, seleccione un producto.", variant: "destructive" });
+                return;
+            }
+            if (!state.newOrder.quantity || state.newOrder.quantity <= 0) {
+                toast({ title: "Campo Requerido", description: "La cantidad solicitada debe ser mayor a cero.", variant: "destructive" });
+                return;
+            }
+            if (!state.newOrder.deliveryDate) {
+                toast({ title: "Campo Requerido", description: "Por favor, especifique la fecha de entrega requerida.", variant: "destructive" });
+                return;
+            }
+
             updateState({ isSubmitting: true });
             try {
                 const createdOrder = await saveProductionOrder(state.newOrder, currentUser.name);
