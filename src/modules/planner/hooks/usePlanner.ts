@@ -31,7 +31,7 @@ import { generateDocument } from '@/modules/core/lib/pdf-generator';
 import type { RowInput } from 'jspdf-autotable';
 import { addNoteToOrder as addNoteServer } from '@/modules/planner/lib/actions';
 import { exportToExcel } from '@/modules/core/lib/excel-export';
-import { AlertCircle, Undo2, ChevronsLeft, ChevronsRight } from 'lucide-react';
+import { AlertCircle, Undo2, ChevronsLeft, ChevronsRight, Send, ShoppingBag } from 'lucide-react';
 import { getStatusConfig } from '../lib/utils';
 import { saveUserPreferences, getUserPreferences } from '@/modules/core/lib/db';
 
@@ -232,12 +232,14 @@ export const usePlanner = () => {
 
     const getOrderPermissions = useCallback((order: ProductionOrder) => {
         const isPending = order.status === 'pending';
+        const isPendingReview = order.status === 'pending-review';
+        const isPendingApproval = order.status === 'pending-approval';
         const isApproved = order.status === 'approved';
         const isInQueue = order.status === 'in-queue';
         const isInProgress = order.status === 'in-progress';
         const isOnHold = order.status === 'on-hold' || order.status === 'in-maintenance';
         const isCompleted = order.status === 'completed';
-        
+    
         let finalArchivedStatus: ProductionOrderStatus = 'completed';
         if (state.plannerSettings?.useWarehouseReception) {
             finalArchivedStatus = 'received-in-warehouse';
@@ -245,9 +247,11 @@ export const usePlanner = () => {
         const isFinalArchived = order.status === finalArchivedStatus || order.status === 'canceled';
     
         return {
-            canEdit: (isPending && hasPermission('planner:edit:pending')) || (!isPending && hasPermission('planner:edit:approved')),
-            canApprove: isPending && hasPermission('planner:status:approve'),
+            canEdit: (isPending || isPendingReview || isPendingApproval) && hasPermission('planner:edit:pending'),
             canConfirmModification: order.hasBeenModified && hasPermission('planner:status:approve'),
+            canSendToReview: isPending && hasPermission('planner:status:review'),
+            canSendToApproval: isPendingReview && hasPermission('planner:status:pending-approval'),
+            canApprove: isPendingApproval && hasPermission('planner:status:approve'),
             canQueue: isApproved && hasPermission('planner:status:in-progress'),
             canStart: (isApproved || isInQueue) && hasPermission('planner:status:in-progress'),
             canHold: isInProgress && hasPermission('planner:status:on-hold'),
@@ -255,7 +259,7 @@ export const usePlanner = () => {
             canResumeFromHold: isOnHold && hasPermission('planner:status:in-progress'),
             canComplete: (isInProgress || isOnHold) && hasPermission('planner:status:completed'),
             canRequestUnapproval: (isApproved || isInQueue || isOnHold || isInProgress) && hasPermission('planner:status:unapprove-request'),
-            canCancelPending: isPending && hasPermission('planner:status:cancel'),
+            canCancelPending: (isPending || isPendingReview || isPendingApproval) && hasPermission('planner:status:cancel'),
             canRequestCancel: (isApproved || isInQueue) && hasPermission('planner:status:cancel-approved'),
             canReceive: isCompleted && !!state.plannerSettings?.useWarehouseReception && hasPermission('planner:receive'),
             canReopen: isFinalArchived && hasPermission('planner:reopen'),

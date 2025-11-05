@@ -53,15 +53,15 @@ export async function saveProductionOrder(order: Omit<ProductionOrder, 'id' | 'c
     const createdOrder = await addOrder(order, requestedBy);
     await logInfo(`Production order ${createdOrder.consecutive} created by ${requestedBy}`, { customer: createdOrder.customerName, product: createdOrder.productDescription, quantity: createdOrder.quantity });
 
-    const approverRoles = await getRolesWithPermission('planner:status:approve');
+    const approverRoles = await getRolesWithPermission('planner:status:review');
     for (const roleId of approverRoles) {
         await createNotificationForRole(
             roleId,
-            `Nueva orden ${createdOrder.consecutive} para "${createdOrder.customerName}" requiere aprobación.`,
+            `Nueva orden ${createdOrder.consecutive} para "${createdOrder.customerName}" requiere revisión.`,
             `/dashboard/planner?search=${createdOrder.consecutive}`,
             createdOrder.id,
             'production-order',
-            'approve'
+            'review'
         );
     }
 
