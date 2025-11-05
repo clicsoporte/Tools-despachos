@@ -11,7 +11,7 @@ import { useAuthorization } from '@/modules/core/hooks/useAuthorization';
 import { logError, logInfo } from '@/modules/core/lib/logger';
 import { getRequestSuggestions, savePurchaseRequest, getAllErpPurchaseOrderHeaders, getAllErpPurchaseOrderLines } from '@/modules/requests/lib/actions';
 import { getUserPreferences, saveUserPreferences } from '@/modules/core/lib/db';
-import type { DateRange, UserPreferences, ErpPurchaseOrderHeader, ErpPurchaseOrderLine, PurchaseSuggestion } from '@/modules/core/types';
+import type { DateRange, UserPreferences, PurchaseSuggestion, PurchaseRequestPriority, ErpPurchaseOrderHeader, ErpPurchaseOrderLine } from '@/modules/core/types';
 import { useAuth } from '@/modules/core/hooks/useAuth';
 import { subDays, startOfDay } from 'date-fns';
 import { useDebounce } from 'use-debounce';
@@ -90,8 +90,8 @@ export function useRequestSuggestions() {
         sortDirection: 'desc',
         isDuplicateConfirmOpen: false,
         itemsToCreate: [],
-        currentPage: 0,
-        rowsPerPage: 5,
+        currentPage: 5,
+        rowsPerPage: 10,
         erpPoHeaders: [],
         erpPoLines: [],
     });

@@ -728,7 +728,15 @@ export interface PurchaseSuggestion {
     erpUsers: string[];
     earliestCreationDate: string | null;
     earliestDueDate: string | null;
-    existingActiveRequests: { id: number; consecutive: string, status: string, quantity: number, purchaseOrder?: string, erpOrderNumber?: string }[];
+    existingActiveRequests: { 
+        id: number; 
+        consecutive: string; 
+        status: string; 
+        quantity: number; 
+        purchaseOrder?: string; 
+        erpOrderNumber?: string;
+        requestedBy: string;
+    }[];
 }
 
 export type ProductionReportData = {
