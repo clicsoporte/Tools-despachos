@@ -72,7 +72,7 @@ export default function PlannerPage() {
             canEdit, canApprove, canConfirmModification, canQueue, canStart, canHold, canMaintain,
             canResumeFromHold, canComplete, canRequestUnapproval,
             canCancelPending, canRequestCancel, canReceive, canReopen,
-            canSendToReview, canSendToApproval,
+            canSendToReview, canSendToApproval, canGoBackToReview, canGoBackToPending
         } = selectors.getOrderPermissions(order);
 
         const daysRemaining = selectors.getDaysRemaining(order.deliveryDate);
@@ -81,7 +81,9 @@ export default function PlannerPage() {
         
         const changeStatusActions = [
             { condition: canSendToReview, action: () => actions.openStatusDialog(order, 'pending-review'), label: 'Enviar a Revisión', icon: <Send className="mr-2"/>, className: 'text-cyan-600' },
+            { condition: canGoBackToPending, action: () => actions.openStatusDialog(order, 'pending'), label: 'Devolver a Pendiente', icon: <Undo2 className="mr-2"/>, className: 'text-orange-600' },
             { condition: canSendToApproval, action: () => actions.openStatusDialog(order, 'pending-approval'), label: 'Enviar a Aprobación', icon: <ShoppingBag className="mr-2"/>, className: 'text-orange-600' },
+            { condition: canGoBackToReview, action: () => actions.openStatusDialog(order, 'pending-review'), label: 'Devolver a Revisión', icon: <Undo2 className="mr-2"/>, className: 'text-orange-600' },
             { condition: canConfirmModification, action: () => actions.setOrderToConfirmModification(order), label: 'Confirmar Modificación', icon: <Check className="mr-2"/>, className: 'text-green-600 font-bold' },
             { condition: canApprove, action: () => actions.openStatusDialog(order, 'approved'), label: 'Aprobar', icon: <Check className="mr-2"/>, className: 'text-green-600' },
             { condition: canQueue, action: () => actions.openStatusDialog(order, 'in-queue'), label: 'Poner en Cola', icon: <Hourglass className="mr-2"/>, className: 'text-cyan-600' },
@@ -124,8 +126,8 @@ export default function PlannerPage() {
                                     <DropdownMenuLabel>Cambio de Estado</DropdownMenuLabel>
                                     <DropdownMenuSeparator/>
                                     {changeStatusActions.length > 0 ? (
-                                        changeStatusActions.map(action => (
-                                            <DropdownMenuItem key={action.label} onSelect={action.action} className={action.className}>
+                                        changeStatusActions.map((action, index) => (
+                                            <DropdownMenuItem key={index} onSelect={action.action} className={action.className}>
                                                 {action.icon} {action.label}
                                             </DropdownMenuItem>
                                         ))
