@@ -478,7 +478,7 @@ export default function HelpPage() {
                     <strong>Creación Inteligente desde ERP (<Layers className="inline h-4 w-4"/>):</strong> Permite crear solicitudes de compra automáticamente a partir de un pedido de venta del ERP. El sistema analiza el pedido, compara con el inventario actual y sugiere qué artículos comprar.
                 </li>
                 <li>
-                    <strong>Creación desde Sugerencias:</strong> En el módulo de Analíticas, puedes generar solicitudes directamente desde la herramienta "Sugerencias de Compra". El sistema creará la solicitud con los datos disponibles y la dejará "Pendiente" para que Compras complete la información faltante, como el precio.
+                    <strong>Creación desde Sugerencias:</strong> En el módulo de Analíticas, puedes generar solicitudes directamente desde la herramienta &quot;Sugerencias de Compra&quot;. El sistema creará la solicitud con los datos disponibles y la dejará &quot;Pendiente&quot; para que Compras complete la información faltante, como el precio.
                 </li>
                 <li>
                     <strong>Aviso de &apos;Modificado&apos; (<AlertTriangle className="inline h-4 w-4 text-red-600" />):</strong> Si una solicitud es editada después de haber sido Aprobada u Ordenada, aparecerá una alerta visual &apos;Modificado&apos; para notificar a todos los involucrados.
@@ -539,7 +539,7 @@ export default function HelpPage() {
                         <ul className="list-[circle] space-y-2 pl-5 mt-2 text-sm">
                             <li>**Programación por Rango:** Haz clic en el área de &quot;Fecha Programada&quot; para abrir un calendario y seleccionar un rango de fechas de inicio y fin.</li>
                             <li>**Asignación:** Asigna cada orden a una máquina, proceso u operario específico desde el menú desplegable. Estas opciones se configuran en Administración.</li>
-                            <li>**Gestión de Turnos:** Asigna la orden a un turno de trabajo específico. Los turnos disponibles se pueden personalizar completamente en **Administración &gt; Config. Planificador**.</li>
+                            <li>**Gestión de Turnos:** Asigna la orden a un turno de trabajo específico. Los turnos disponibles se pueden personalizar completamente en <strong>Administración &gt; Config. Planificador</strong>.</li>
                             <li>**Prioridades y Cuenta Regresiva:** Usa el selector de prioridad y fíjate en el indicador de días restantes (basado en la fecha de entrega) para organizar el trabajo.</li>
                         </ul>
                     </li>
@@ -574,7 +574,7 @@ export default function HelpPage() {
                             <li>**Ordena los resultados:** Haz clic en el encabezado de cualquier columna (ej: &quot;Próxima Entrega&quot; o &quot;Faltante Total&quot;) para ordenar la tabla según ese criterio. Una flecha te indicará el orden actual.</li>
                             <li>También verás información clave como los **clientes involucrados** y la **próxima fecha de entrega** que debes cumplir.</li>
                             <li>Usa los filtros de búsqueda y de clasificación (que ahora permite **selección múltiple**) para refinar la lista.</li>
-                            <li>**Crear Solicitudes:** Marca los artículos que quieres comprar, y haz clic en **&quot;Crear Solicitudes&quot;**. El sistema creará las solicitudes de compra automáticamente en segundo plano, dejándolas en estado "Pendiente" para que el equipo de Compras complete los detalles (como el precio) antes de enviarlas a aprobar.</li>
+                            <li>**Crear Solicitudes:** Marca los artículos que quieres comprar, y haz clic en **&quot;Crear Solicitudes&quot;**. El sistema creará las solicitudes de compra automáticamente en segundo plano, dejándolas en estado &quot;Pendiente&quot; para que el equipo de Compras complete los detalles (como el precio) antes de enviarlas a aprobar.</li>
                             <li>Puedes exportar esta vista a **Excel** para un análisis más profundo.</li>
                         </ul>
                     </li>
@@ -589,7 +589,7 @@ export default function HelpPage() {
                         <ul className="list-[circle] space-y-2 pl-5 mt-2 text-sm">
                             <li>Accede al reporte para ver la tabla completa.</li>
                             <li>Usa la barra de búsqueda para filtrar rápidamente por nombre de usuario, correo o nombre del rol.</li>
-                            <li>Haz clic en los encabezados de columna "Usuario" o "Rol" para ordenar la lista.</li>
+                            <li>Haz clic en los encabezados de columna &quot;Usuario&quot; o &quot;Rol&quot; para ordenar la lista.</li>
                             <li>Exporta la vista actual a **PDF** o **Excel** para compartirla o archivarla como un registro de auditoría de seguridad.</li>
                         </ul>
                     </li>
@@ -810,7 +810,7 @@ export default function HelpPage() {
                         <strong>Paso 3: Actualizar y Reconstruir.</strong> Abre una terminal en la carpeta del proyecto, ejecuta `npm install --omit=dev` para instalar cualquier nueva dependencia y luego `npm run build` para compilar la nueva versión.
                     </li>
                     <li>
-                        <strong>Paso 4: Reiniciar y Verificar.</strong> Vuelve a iniciar la aplicación (ej: `pm2 start clic-tools`). Al arrancar, el sistema detectará las diferencias y añadirá las nuevas tablas o columnas automáticamente. Luego, ve a **Administración &gt; Mantenimiento &gt; Auditoría y Verificación** y ejecuta la auditoría para confirmar que todas las bases de datos tienen la estructura correcta.
+                        <strong>Paso 4: Reiniciar y Verificar.</strong> Vuelve a iniciar la aplicación (ej: `pm2 start clic-tools`). Al arrancar, el sistema detectará las diferencias y añadirá las nuevas tablas o columnas automáticamente. Luego, ve a <strong>Administración &gt; Mantenimiento &gt; Auditoría y Verificación</strong> y ejecuta la auditoría para confirmar que todas las bases de datos tienen la estructura correcta.
                     </li>
                 </ol>
                 <Alert variant="destructive">
@@ -823,7 +823,7 @@ export default function HelpPage() {
 
                 <h4 className="font-semibold text-lg pt-4 border-t">Solución de Problemas: Despliegue en IIS</h4>
                 <div className="space-y-2">
-                    <p><strong>Síntoma:</strong> Después de guardar un cambio en la configuración o importar datos, la aplicación se reinicia o muestra un error "aborted".</p>
+                    <p><strong>Síntoma:</strong> Después de guardar un cambio en la configuración o importar datos, la aplicación se reinicia o muestra un error &quot;aborted&quot;.</p>
                     <p><strong>Diagnóstico:</strong> El vigilante de archivos de `iisnode` está detectando cambios en las bases de datos (`.db`) y reinicia la aplicación de forma incorrecta.</p>
                     <p><strong>La Solución Definitiva (v2.0.0+):</strong> A partir de la versión 2.0.0, el proyecto incluye un archivo `web.config` en la raíz. Este archivo ya está configurado para decirle a IIS que **ignore** los cambios en la carpeta `dbs/`, solucionando el problema de raíz. Simplemente asegúrate de que este archivo se copie al servidor durante el despliegue.</p>
                 </div>
@@ -842,7 +842,7 @@ export default function HelpPage() {
                         <strong>Mejora Mayor de Estabilidad:</strong> Se corrigió un error de compilación crítico (`_document not found`) y se solucionaron reinicios inesperados en entornos de despliegue IIS.
                     </li>
                      <li>
-                        <strong>Mejora de Lógica:</strong> El Asistente de Costos ahora exporta a Excel un reporte idéntico a lo que se ve en pantalla. Además, la creación de solicitudes desde "Sugerencias de Compra" ahora es un proceso de fondo que deja campos en blanco para que Compras los complete, agilizando el flujo de trabajo.
+                        <strong>Mejora de Lógica:</strong> El Asistente de Costos ahora exporta a Excel un reporte idéntico a lo que se ve en pantalla. Además, la creación de solicitudes desde &quot;Sugerencias de Compra&quot; ahora es un proceso de fondo que deja campos en blanco para que Compras los complete, agilizando el flujo de trabajo.
                     </li>
                      <li>
                         <strong>Mejora de Usabilidad:</strong> Se rediseñó el comportamiento de los filtros en los módulos de Planificador y Compras para que actúen como un cabezal único y fijo en pantallas de escritorio, sin afectar la navegación en dispositivos móviles.
