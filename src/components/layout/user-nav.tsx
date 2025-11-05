@@ -80,7 +80,7 @@ export function UserNav({ user: propUser }: UserNavProps) {
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
           <DropdownMenuItem asChild>
-            <Link href="/dashboard/settings">
+            <Link href="/dashboard/profile">
               <UserIcon className="mr-2 h-4 w-4" />
               <span>Perfil</span>
             </Link>

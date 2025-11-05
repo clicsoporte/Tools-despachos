@@ -1,7 +1,7 @@
 /**
  * @fileoverview User profile settings page.
  * Allows the currently logged-in user to update their personal information,
- * security question, and password.
+ * security question, and password. This is the single source of truth for user self-service updates.
  */
 "use client";
 
