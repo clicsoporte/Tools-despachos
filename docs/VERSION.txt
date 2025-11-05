@@ -8,6 +8,10 @@ Esta versión se enfoca en la robustez, estabilidad y corrección de errores cr�
 - Reescritura del flujo de autenticación para eliminar parpadeos y condiciones de carrera.
 - Implementación de un sistema de migración de base de datos para actualizaciones seguras.
 - Mejora de usabilidad: Se implementaron encabezados fijos en los módulos de Planificador y Solicitudes de Compra.
+- Mejora de Lógica: El Asistente de Costos ahora exporta a Excel los datos que se ven en pantalla para un análisis más flexible.
+- Mejora de Lógica: La creación de solicitudes desde "Sugerencias de Compra" ahora crea el documento directamente, dejando campos como el precio en blanco para que Compras los complete.
 - Corrección de Lógica: Se restauró la capacidad de retroceder estados en el flujo de aprobación de Solicitudes de Compra.
 - Actualización completa de la documentación interna y externa.
 - Corrección de error de compilación `_document not found` para Next.js App Router.
+- Corrección de error `FOREIGN KEY constraint failed` al crear notificaciones.
+- Corrección de reinicios inesperados de la aplicación en entornos de despliegue IIS.

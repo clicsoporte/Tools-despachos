@@ -1,5 +1,5 @@
 # Checklist de Regresión de Funcionalidad Crítica
-# Clic-Tools v1.9.0
+# Clic-Tools v2.0.0
 
 Este documento es la lista de verificación maestra para asegurar que las funcionalidades clave del sistema no se hayan roto después de introducir nuevos cambios. Debe ser revisado antes de cada despliegue a producción.
 
@@ -33,6 +33,7 @@ Este documento es la lista de verificación maestra para asegurar que las funcio
 - [ ] **Sincronización ERP:** El botón de "Sincronizar ERP" en el encabezado es funcional y muestra el texto completo en escritorio y solo el ícono en móvil.
 - [ ] **Buzón de Sugerencias:** El botón "Sugerencias" del encabezado abre el diálogo para enviar feedback.
 - [ ] **Centro de Notificaciones:** El icono de la campana muestra el contador de notificaciones no leídas y despliega el panel correctamente.
+- [ ] **Notificaciones Accionables:** Una notificación de "solicitud de cancelación" muestra los botones "Aprobar/Rechazar" y estos funcionan correctamente.
 
 ---
 
@@ -63,9 +64,11 @@ Este documento es la lista de verificación maestra para asegurar que las funcio
 - [ ] **Crear Orden:** Se puede crear una nueva orden de producción asignando un cliente y un producto.
 - [ ] **Cambio de Estado:** Un usuario con permisos puede cambiar el estado de una orden (ej: de `Pendiente` a `Aprobada`).
 - [ ] **Edición de Orden:** Se puede editar una orden `Pendiente`. La edición de una orden `Aprobada` marca la alerta "Modificado".
+- [ ] **Confirmar Modificación:** Un supervisor puede confirmar una modificación en una orden aprobada, limpiando la alerta.
 - [ ] **Asignación y Programación:** Se puede asignar una máquina/turno y programar un rango de fechas en una orden.
 - [ ] **Historial de Orden:** El historial de una orden muestra correctamente los cambios de estado.
-- [ ] **Filtros de Vista:** Los filtros por estado, búsqueda y fecha funcionan correctamente.
+- [ ] **Filtros de Vista (PC):** En escritorio, los filtros permanecen fijos en la parte superior al hacer scroll.
+- [ ] **Filtros de Vista (Móvil):** En móvil, los filtros se desplazan con el contenido y no ocupan espacio de pantalla.
 - [ ] **Exportación:** Se puede exportar la vista actual a PDF y Excel.
 
 ---
@@ -80,12 +83,26 @@ Este documento es la lista de verificación maestra para asegurar que las funcio
 - [ ] **Crear desde Pedido ERP:** La función para crear solicitudes a partir de un pedido del ERP funciona correctamente.
 - [ ] **Cambio de Estado:** Un usuario con permisos puede avanzar el estado de una solicitud (ej: de `Revisión` a `Aprobación`).
 - [ ] **Retroceso de Estado:** Se puede regresar una solicitud de `Pendiente Aprobación` a `Revisión Compras`.
-- [ ] **Filtros de Vista:** Los filtros por estado, búsqueda y fecha funcionan correctamente.
+- [ ] **Filtros de Vista (PC):** En escritorio, los filtros permanecen fijos en la parte superior al hacer scroll.
+- [ ] **Filtros de Vista (Móvil):** En móvil, los filtros se desplazan con el contenido y no ocupan espacio de pantalla.
 - [ ] **Exportación:** Se puede exportar la vista actual a PDF y Excel.
 
 ---
 
-## Módulo 6: Analíticas y Reportes
+## Módulo 6: Asistente de Costos
+
+- **Responsable:** `cost-assistant/page.tsx`, `hooks/useCostAssistant.ts`
+- **Descripción:** Valida la carga de XML y el cálculo de precios.
+
+### Checklist:
+- [ ] **Carga de XML:** Se pueden cargar facturas de compra en formato XML y se extraen los artículos.
+- [ ] **Prorrateo de Costos:** Al añadir costos de transporte u otros, el costo unitario de los artículos se actualiza.
+- [ ] **Cálculo de Precios:** Al introducir un margen de ganancia, el PVP sugerido se calcula correctamente.
+- [ ] **Exportación a Excel:** El botón "Exportar a Excel" genera un archivo con las columnas y datos visibles en pantalla.
+
+---
+
+## Módulo 7: Analíticas y Reportes
 
 - **Responsable:** `analytics/`
 - **Descripción:** Garantiza que las herramientas de inteligencia de negocio funcionen correctamente.
@@ -94,25 +111,28 @@ Este documento es la lista de verificación maestra para asegurar que las funcio
 - [ ] **Sugerencias de Compra:**
     - [ ] El análisis por rango de fechas genera una lista de artículos con faltantes.
     - [ ] Los filtros (búsqueda, clasificación) y la ordenación de columnas funcionan.
-    - [ ] Se pueden seleccionar artículos y crear solicitudes de compra automáticamente.
-    - [ ] Las preferencias de filtros se pueden guardar y cargan correctamente.
+    - [ ] Se pueden seleccionar artículos y **crear solicitudes de compra automáticamente en segundo plano**.
+    - [ ] Las solicitudes creadas aparecen en el módulo de SC con los campos correctos y el precio en blanco.
 - [ ] **Reporte de Permisos de Usuario:**
     - [ ] El reporte carga la lista de todos los usuarios y sus permisos.
     - [ ] Los filtros y la ordenación funcionan.
     - [ ] Se puede exportar el reporte a PDF y Excel.
+- [ ] **Reporte de Tránsitos:**
+    - [ ] El análisis de tránsitos carga las órdenes de compra activas del ERP.
+    - [ ] Los filtros y la ordenación funcionan correctamente.
+    - [ ] Se puede exportar a PDF y Excel.
 
 ---
 
-## Módulo 7: Administración
+## Módulo 8: Administración y Despliegue
 
-- **Responsable:** `admin/`
-- **Descripción:** Valida las funciones críticas de configuración del sistema.
+- **Responsable:** `admin/`, `web.config`
+- **Descripción:** Valida las funciones críticas de configuración y la estabilidad en el entorno de producción.
 
 ### Checklist:
 - [ ] **Gestión de Usuarios:** Se puede crear, editar y eliminar un usuario.
 - [ ] **Gestión de Roles:** Se puede crear un nuevo rol y modificar sus permisos.
-- [ ] **Importación de Datos (Archivos):** Se puede ejecutar la importación desde un archivo `.txt` y los datos se reflejan en la aplicación.
 - [ ] **Importación de Datos (SQL):** Se puede ejecutar la importación desde SQL Server y los datos se reflejan en la aplicación.
 - [ ] **Mantenimiento:** Se puede crear un punto de restauración.
-- [ ] **Mantenimiento:** La función de "Auditoría de Bases de Datos" se ejecuta y muestra un resultado.
+- [ ] **Estabilidad en IIS:** Guardar configuraciones (ej: "Configuración General") **NO** causa un reinicio o un error "aborted" en la aplicación.
 - [ ] **Visor de Eventos:** Los logs del sistema se cargan y se pueden filtrar.

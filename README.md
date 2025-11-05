@@ -39,6 +39,7 @@ Esta versión marca un hito importante, introduciendo mejoras significativas en 
 -   `src/lib/`: Utilidades generales.
 -   `dbs/`: **Directorio persistente** donde se almacenan todos los archivos de base de datos (`.db`).
 -   `docs/`: Documentación del proyecto y archivos de ejemplo.
+-   `web.config`: **(Nuevo en v2.0)** Archivo de configuración para despliegues en IIS que previene reinicios inesperados.
 -   `.env.local`: Archivo **NO COMPARTIDO** donde se almacenan las credenciales de SQL Server y SMTP.
 
 ---
@@ -61,7 +62,7 @@ Esta versión marca un hito importante, introduciendo mejoras significativas en 
 - **Prorrateo de Costos:** Permite ingresar costos adicionales (transporte, aduanas, etc.) que se distribuyen automáticamente entre todos los artículos para obtener un costo final real.
 - **Manejo de Descuentos:** Configura si los descuentos de la factura se trasladan al costo (beneficiando al cliente) o a la ganancia (beneficiando a la empresa).
 - **Cálculo de Precios de Venta:** Ingresa el margen de ganancia deseado para cada artículo y el sistema calcula el precio de venta final sugerido.
-- **Exportación a ERP:** Genera un archivo Excel (`.xlsx`) formateado para ser importado directamente en tu ERP, actualizando los precios de venta de los artículos analizados.
+- **Exportación a Excel:** Genera un archivo Excel (`.xlsx`) con los datos exactos que se ven en pantalla, ideal para análisis o reportes externos.
 
 ### 3.4. Planificador (`/dashboard/planner`)
 - **Gestión de Órdenes:** Permite crear, editar y visualizar órdenes de producción, mostrando siempre el nombre y la cédula del cliente para mayor claridad.
@@ -91,7 +92,7 @@ Este módulo agrupa herramientas de inteligencia de negocio para ayudar en la to
 - **Sugerencias de Compra Proactivas (`/purchase-suggestions`):**
     - Analiza los pedidos de venta del ERP en un rango de fechas y los cruza con el inventario actual.
     - Genera una lista consolidada de todos los artículos que tienen un faltante de stock para cumplir con la demanda.
-    - Permite filtrar por clasificación de producto (con multiselección), ordenar los resultados por cualquier columna y paginar la lista.
+    - Permite filtrar por clasificación de producto (con multiselección), ordenar los resultados y crear las solicitudes de compra directamente desde la herramienta.
 - **Reporte de Tránsitos (`/transits-report`):**
     - Muestra un listado de todas las órdenes de compra activas en el ERP, permitiendo monitorear el inventario que está en camino.
 

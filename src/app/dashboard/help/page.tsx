@@ -308,7 +308,7 @@ export default function HelpPage() {
                         <strong>Plantilla Personalizable:</strong> En esta misma pantalla, se puede personalizar el **asunto y el cuerpo del correo** de recuperación, usando `[NOMBRE_USUARIO]` y `[CLAVE_TEMPORAL]` como placeholders.
                     </li>
                     <li>
-                        <strong>Prueba de Conexión:</strong> Es crucial usar el botón <strong>&quot;Enviar Correo de Prueba&quot;</strong> para verificar que la configuración sea correcta.
+                        <strong>Prueba de Conexión:</strong> Es crucial usar el botón **&quot;Enviar Correo de Prueba&quot;** para verificar que la configuración sea correcta.
                     </li>
                 </ul>
 
@@ -394,7 +394,7 @@ export default function HelpPage() {
                         <strong>Paso 4: Guardar o Exportar.</strong>
                         <ul className="list-[circle] space-y-2 pl-5 mt-2 text-sm">
                             <li><strong>Guardar Borrador (<Save className="inline h-4 w-4"/>):</strong> Si necesitas continuar más tarde, guarda tu análisis como un borrador. Podrás cargarlo desde el botón &quot;Cargar Borradores&quot;.</li>
-                            <li><strong>Exportar para ERP (<FileDown className="inline h-4 w-4"/>):</strong> Cuando los precios estén listos, haz clic en este botón. Se generará un archivo **Excel (.xlsx)** con el formato exacto para ser importado directamente en tu ERP, actualizando o creando los nuevos precios de venta.</li>
+                            <li><strong>Exportar a Excel (<FileDown className="inline h-4 w-4"/>):</strong> Cuando los precios estén listos, haz clic en este botón. Se generará un archivo **Excel (.xlsx)** con los datos exactos que ves en pantalla, ideal para análisis externos o para archivar el cálculo.</li>
                         </ul>
                     </li>
                 </ol>
@@ -476,6 +476,9 @@ export default function HelpPage() {
                 </li>
                 <li>
                     <strong>Creación Inteligente desde ERP (<Layers className="inline h-4 w-4"/>):</strong> Permite crear solicitudes de compra automáticamente a partir de un pedido de venta del ERP. El sistema analiza el pedido, compara con el inventario actual y sugiere qué artículos comprar.
+                </li>
+                <li>
+                    <strong>Creación desde Sugerencias:</strong> En el módulo de Analíticas, puedes generar solicitudes directamente desde la herramienta "Sugerencias de Compra". El sistema creará la solicitud con los datos disponibles y la dejará "Pendiente" para que Compras complete la información faltante, como el precio.
                 </li>
                 <li>
                     <strong>Aviso de &apos;Modificado&apos; (<AlertTriangle className="inline h-4 w-4 text-red-600" />):</strong> Si una solicitud es editada después de haber sido Aprobada u Ordenada, aparecerá una alerta visual &apos;Modificado&apos; para notificar a todos los involucrados.
@@ -571,7 +574,7 @@ export default function HelpPage() {
                             <li>**Ordena los resultados:** Haz clic en el encabezado de cualquier columna (ej: &quot;Próxima Entrega&quot; o &quot;Faltante Total&quot;) para ordenar la tabla según ese criterio. Una flecha te indicará el orden actual.</li>
                             <li>También verás información clave como los **clientes involucrados** y la **próxima fecha de entrega** que debes cumplir.</li>
                             <li>Usa los filtros de búsqueda y de clasificación (que ahora permite **selección múltiple**) para refinar la lista.</li>
-                            <li>Marca los artículos que quieres comprar, y haz clic en **&quot;Crear Solicitudes&quot;** para generar todas las solicitudes de compra de forma automática. El sistema te advertirá si estás a punto de crear una solicitud duplicada.</li>
+                            <li>**Crear Solicitudes:** Marca los artículos que quieres comprar, y haz clic en **&quot;Crear Solicitudes&quot;**. El sistema creará las solicitudes de compra automáticamente en segundo plano, dejándolas en estado "Pendiente" para que el equipo de Compras complete los detalles (como el precio) antes de enviarlas a aprobar.</li>
                             <li>Puedes exportar esta vista a **Excel** para un análisis más profundo.</li>
                         </ul>
                     </li>
@@ -586,7 +589,7 @@ export default function HelpPage() {
                         <ul className="list-[circle] space-y-2 pl-5 mt-2 text-sm">
                             <li>Accede al reporte para ver la tabla completa.</li>
                             <li>Usa la barra de búsqueda para filtrar rápidamente por nombre de usuario, correo o nombre del rol.</li>
-                            <li>Haz clic en los encabezados de columna &quot;Usuario&quot; o &quot;Rol&quot; para ordenar la lista.</li>
+                            <li>Haz clic en los encabezados de columna "Usuario" o "Rol" para ordenar la lista.</li>
                             <li>Exporta la vista actual a **PDF** o **Excel** para compartirla o archivarla como un registro de auditoría de seguridad.</li>
                         </ul>
                     </li>
@@ -818,17 +821,11 @@ export default function HelpPage() {
                     </AlertDescription>
                 </Alert>
 
-                <h4 className="font-semibold text-lg pt-4 border-t">Solución de Problemas: Iconos Invisibles</h4>
+                <h4 className="font-semibold text-lg pt-4 border-t">Solución de Problemas: Despliegue en IIS</h4>
                 <div className="space-y-2">
-                    <p><strong>Síntoma:</strong> Al crear una nueva tarjeta de herramienta (ToolCard), el ícono no aparece o se muestra como un cuadrado blanco, a pesar de que el resto de la tarjeta se renderiza correctamente.</p>
-                    <p><strong>Diagnóstico:</strong> La causa es una optimización de **Tailwind CSS**. Si defines un color como `bg-purple-600` en un archivo de datos (como `data.ts`) pero esa clase no está escrita explícitamente en ningún archivo `.tsx`, el compilador de Tailwind piensa que “nadie la está usando” y la **elimina** del CSS final.</p>
-                    <p><strong>La Solución Definitiva (La `safelist`):</strong> La forma correcta de solucionar esto es decirle a Tailwind que **nunca elimine** ciertas clases. Esto se hace en el archivo de configuración `tailwind.config.ts`.</p>
-                    <ol className="list-decimal space-y-2 pl-6 text-sm">
-                        <li>Elige un color de Tailwind para el fondo del ícono (ej: `bg-fuchsia-600`).</li>
-                        <li>Ve al archivo `tailwind.config.ts` en la raíz del proyecto.</li>
-                        <li>**Añade esa clase exacta** (ej: `&apos;bg-fuchsia-600&apos;`) al array `safelist`.</li>
-                        <li>Ahora ya puedes usar esa clase en el archivo `data.ts` para tu nueva herramienta, con la certeza de que no será eliminada.</li>
-                    </ol>
+                    <p><strong>Síntoma:</strong> Después de guardar un cambio en la configuración o importar datos, la aplicación se reinicia o muestra un error "aborted".</p>
+                    <p><strong>Diagnóstico:</strong> El vigilante de archivos de `iisnode` está detectando cambios en las bases de datos (`.db`) y reinicia la aplicación de forma incorrecta.</p>
+                    <p><strong>La Solución Definitiva (v2.0.0+):</strong> A partir de la versión 2.0.0, el proyecto incluye un archivo `web.config` en la raíz. Este archivo ya está configurado para decirle a IIS que **ignore** los cambios en la carpeta `dbs/`, solucionando el problema de raíz. Simplemente asegúrate de que este archivo se copie al servidor durante el despliegue.</p>
                 </div>
             </div>
         )
@@ -841,6 +838,15 @@ export default function HelpPage() {
                 <h4 className="font-semibold text-lg">Versión 2.0.0 <Badge variant="secondary">Actual</Badge></h4>
                 <p className="text-sm text-muted-foreground">Lanzamiento: Octubre 2024</p>
                 <ul className="list-disc space-y-3 pl-6">
+                     <li>
+                        <strong>Mejora Mayor de Estabilidad:</strong> Se corrigió un error de compilación crítico (`_document not found`) y se solucionaron reinicios inesperados en entornos de despliegue IIS.
+                    </li>
+                     <li>
+                        <strong>Mejora de Lógica:</strong> El Asistente de Costos ahora exporta a Excel un reporte idéntico a lo que se ve en pantalla. Además, la creación de solicitudes desde "Sugerencias de Compra" ahora es un proceso de fondo que deja campos en blanco para que Compras los complete, agilizando el flujo de trabajo.
+                    </li>
+                     <li>
+                        <strong>Mejora de Usabilidad:</strong> Se rediseñó el comportamiento de los filtros en los módulos de Planificador y Compras para que actúen como un cabezal único y fijo en pantallas de escritorio, sin afectar la navegación en dispositivos móviles.
+                    </li>
                     <li>
                         <strong>Nueva Funcionalidad Mayor: Módulo de Analíticas.</strong> Se añadió una sección completa de inteligencia de negocio, incluyendo un reporte proactivo de &quot;Sugerencias de Compra&quot; y un reporte de &quot;Auditoría de Permisos de Usuario&quot;.
                     </li>
@@ -854,23 +860,7 @@ export default function HelpPage() {
                         <strong>Mejora Mayor de Arquitectura: Flujo de Autenticación.</strong> Se reescribió por completo el manejo de sesiones y redirecciones para eliminar parpadeos de pantalla, prevenir condiciones de carrera y gestionar de forma robusta las sesiones inválidas o caducadas.
                     </li>
                     <li>
-                        <strong>Mejora Mayor de Arquitectura: Sistema de Migraciones de Base de Datos.</strong> Se implementó un sistema centralizado que verifica y actualiza automáticamente el esquema de **todas** las bases de datos del sistema (`planner.db`, `requests.db`, `cost_assistant.db`, etc.) al iniciar la aplicación.
-                    </li>
-                </ul>
-                <h4 className="font-semibold text-lg pt-4 border-t">Versión 1.9.0</h4>
-                <p className="text-sm text-muted-foreground">Lanzamiento: Octubre 2024</p>
-                <ul className="list-disc space-y-3 pl-6">
-                    <li>
-                        <strong>Mejora de Flujo:</strong> Se añadió el botón &quot;Confirmar Modificación&quot; en el Planificador para limpiar la alerta visual en órdenes aprobadas que han sido editadas.
-                    </li>
-                    <li>
-                        <strong>Mejora de Lógica:</strong> Se implementó un sistema de validación de datos basado en esquemas (Zod) para fortalecer la integridad de los datos, empezando por el módulo de usuarios.
-                    </li>
-                    <li>
-                        <strong>Mejora de Estabilidad:</strong> Se corrigieron múltiples inconsistencias en el guardado de datos en los módulos de Compras y Asistente de Costos para prevenir errores de `FOREIGN KEY`.
-                    </li>
-                    <li>
-                        <strong>Mejora de Rendimiento:</strong> Se eliminó una recarga de página innecesaria en el módulo de Almacén al sincronizar datos, mejorando la fluidez de la experiencia de usuario.
+                        <strong>Mejora Mayor de Arquitectura: Sistema de Migraciones de Base de Datos.</strong> Se implementó un sistema centralizado que verifica y actualiza automáticamente el esquema de **todas** las bases de datos del sistema al iniciar la aplicación.
                     </li>
                 </ul>
             </div>
