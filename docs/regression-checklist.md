@@ -18,6 +18,7 @@ Este documento es la lista de verificación maestra para asegurar que las funcio
 - [ ] **Asistente de Primera Vez:** Si no hay usuarios en la base de datos, se presenta el asistente para crear el primer administrador.
 - [ ] **Cierre de Sesión:** Un usuario puede cerrar sesión y es redirigido a la página de login.
 - [ ] **Protección de Rutas:** Un usuario no autenticado que intenta acceder a `/dashboard` es redirigido a la página de login.
+- [ ] **Edición de Perfil:** Un usuario puede acceder a `/dashboard/profile` y actualizar su propia información.
 
 ---
 
@@ -61,14 +62,15 @@ Este documento es la lista de verificación maestra para asegurar que las funcio
 - **Descripción:** Asegura la correcta gestión del ciclo de vida de las órdenes de producción.
 
 ### Checklist:
-- [ ] **Crear Orden:** Se puede crear una nueva orden de producción asignando un cliente y un producto.
-- [ ] **Cambio de Estado:** Un usuario con permisos puede cambiar el estado de una orden (ej: de `Pendiente` a `Aprobada`).
+- [ ] **Crear Orden:** Se puede crear una nueva orden de producción asignando un cliente y un producto. El formulario valida campos requeridos.
+- [ ] **Flujo de Estados Intermedios:** Un usuario con permisos puede mover una orden de `Pendiente` -> `Pendiente Revisión` -> `Pendiente Aprobación` -> `Aprobada`.
+- [ ] **Cambio de Estado:** Un usuario con permisos puede cambiar el estado de una orden (ej: de `Aprobada` a `En Progreso`).
 - [ ] **Edición de Orden:** Se puede editar una orden `Pendiente`. La edición de una orden `Aprobada` marca la alerta "Modificado".
 - [ ] **Confirmar Modificación:** Un supervisor puede confirmar una modificación en una orden aprobada, limpiando la alerta.
 - [ ] **Asignación y Programación:** Se puede asignar una máquina/turno y programar un rango de fechas en una orden.
 - [ ] **Historial de Orden:** El historial de una orden muestra correctamente los cambios de estado.
-- [ ] **Filtros de Vista (PC):** En escritorio, los filtros permanecen fijos en la parte superior al hacer scroll.
-- [ ] **Filtros de Vista (Móvil):** En móvil, los filtros se desplazan con el contenido y no ocupan espacio de pantalla.
+- [ ] **Filtros de Vista (PC):** Los filtros y botones se mantienen en un bloque fijo en la parte superior al hacer scroll, sin flotar sobre el contenido.
+- [ ] **Filtros de Vista (Móvil):** Los filtros y botones se desplazan con el contenido y no ocupan espacio de pantalla. El layout no se superpone con el menú lateral.
 - [ ] **Exportación:** Se puede exportar la vista actual a PDF y Excel.
 
 ---
@@ -79,12 +81,12 @@ Este documento es la lista de verificación maestra para asegurar que las funcio
 - **Descripción:** Valida el flujo de creación y aprobación de solicitudes de compra.
 
 ### Checklist:
-- [ ] **Crear Solicitud:** Se puede crear una nueva solicitud de compra.
+- [ ] **Crear Solicitud:** Se puede crear una nueva solicitud de compra manualmente.
 - [ ] **Crear desde Pedido ERP:** La función para crear solicitudes a partir de un pedido del ERP funciona correctamente.
 - [ ] **Cambio de Estado:** Un usuario con permisos puede avanzar el estado de una solicitud (ej: de `Revisión` a `Aprobación`).
 - [ ] **Retroceso de Estado:** Se puede regresar una solicitud de `Pendiente Aprobación` a `Revisión Compras`.
-- [ ] **Filtros de Vista (PC):** En escritorio, los filtros permanecen fijos en la parte superior al hacer scroll.
-- [ ] **Filtros de Vista (Móvil):** En móvil, los filtros se desplazan con el contenido y no ocupan espacio de pantalla.
+- [ ] **Filtros de Vista (PC):** Los filtros y botones se mantienen en un bloque fijo en la parte superior al hacer scroll, sin flotar sobre el contenido.
+- [ ] **Filtros de Vista (Móvil):** Los filtros y botones se desplazan con el contenido y no ocupan espacio de pantalla. El layout no se superpone con el menú lateral.
 - [ ] **Exportación:** Se puede exportar la vista actual a PDF y Excel.
 
 ---
@@ -98,7 +100,7 @@ Este documento es la lista de verificación maestra para asegurar que las funcio
 - [ ] **Carga de XML:** Se pueden cargar facturas de compra en formato XML y se extraen los artículos.
 - [ ] **Prorrateo de Costos:** Al añadir costos de transporte u otros, el costo unitario de los artículos se actualiza.
 - [ ] **Cálculo de Precios:** Al introducir un margen de ganancia, el PVP sugerido se calcula correctamente.
-- [ ] **Exportación a Excel:** El botón "Exportar a Excel" genera un archivo con las columnas y datos visibles en pantalla.
+- [ ] **Exportación a Excel:** El botón "Exportar a Excel" genera un archivo con las columnas y datos visibles en pantalla, en un formato legible y no para ERP.
 
 ---
 
@@ -111,8 +113,8 @@ Este documento es la lista de verificación maestra para asegurar que las funcio
 - [ ] **Sugerencias de Compra:**
     - [ ] El análisis por rango de fechas genera una lista de artículos con faltantes.
     - [ ] Los filtros (búsqueda, clasificación) y la ordenación de columnas funcionan.
-    - [ ] Se pueden seleccionar artículos y **crear solicitudes de compra automáticamente en segundo plano**.
-    - [ ] Las solicitudes creadas aparecen en el módulo de SC con los campos correctos y el precio en blanco.
+    - [ ] Se pueden seleccionar artículos y **crear solicitudes de compra automáticamente en segundo plano**, dejando el precio en blanco.
+    - [ ] Las solicitudes creadas aparecen en el módulo de SC con los campos correctos y listas para ser completadas por Compras.
 - [ ] **Reporte de Permisos de Usuario:**
     - [ ] El reporte carga la lista de todos los usuarios y sus permisos.
     - [ ] Los filtros y la ordenación funcionan.
@@ -136,3 +138,4 @@ Este documento es la lista de verificación maestra para asegurar que las funcio
 - [ ] **Mantenimiento:** Se puede crear un punto de restauración.
 - [ ] **Estabilidad en IIS:** Guardar configuraciones (ej: "Configuración General") **NO** causa un reinicio o un error "aborted" en la aplicación.
 - [ ] **Visor de Eventos:** Los logs del sistema se cargan y se pueden filtrar.
+- [ ] **Script de Despliegue (`setup-ubuntu.sh`):** El script se ejecuta sin errores y configura la aplicación con `pm2`.

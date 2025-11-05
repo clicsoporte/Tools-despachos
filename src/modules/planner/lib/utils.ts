@@ -6,6 +6,8 @@ import type { PlannerSettings, ProductionOrderStatus } from '../../core/types';
 
 const baseStatusConfig: { [key in ProductionOrderStatus]?: { label: string; color: string } } = {
     pending: { label: "Pendiente", color: "bg-yellow-500" },
+    'pending-review': { label: 'Pendiente Revisión', color: 'bg-cyan-500' },
+    'pending-approval': { label: 'Pendiente Aprobación', color: 'bg-orange-500' },
     approved: { label: "Aprobada", color: "bg-green-500" },
     'in-queue': { label: "En Cola", color: "bg-cyan-500"},
     'in-progress': { label: "En Progreso", color: "bg-blue-500" },

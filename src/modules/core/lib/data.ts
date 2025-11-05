@@ -190,6 +190,8 @@ export const initialRoles: Role[] = [
         "planner:edit:approved",
         "planner:reopen",
         "planner:receive",
+        "planner:status:review",
+        "planner:status:pending-approval",
         "planner:status:approve",
         "planner:status:in-progress",
         "planner:status:on-hold",
