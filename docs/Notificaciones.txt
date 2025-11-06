@@ -13,7 +13,7 @@ El objetivo es crear un sistema de notificaciones unificado y proactivo dentro d
 - **Notificaciones en la Interfaz:** Un icono de campana en la cabecera principal mostrará las alertas no leídas.
 - **Alertas Relevantes:** Las notificaciones se generarán a partir de acciones importantes en el sistema (ej: aprobación de una orden, una solicitud que requiere atención, etc.).
 - **Redirección Inteligente:** Cada notificación será un enlace directo a la entidad correspondiente (la orden, la solicitud, etc.).
-- **Gestión por Roles:** El sistema podrá notificar a usuarios específicos o a todos los miembros de un rol (ej: notificar a todos los "admin").
+- **Gestión por Permisos:** El sistema podrá notificar a usuarios específicos o a todos los usuarios con un permiso determinado (ej: notificar a todos los que tengan `admin:suggestions:read` sobre una nueva sugerencia).
 - **Notificaciones Accionables:** Las notificaciones podrán incluir botones para realizar acciones rápidas (ej: "Aprobar", "Marcar como leído") directamente desde el menú, convirtiéndolo en una bandeja de tareas.
 - **Mejora de UX:** La fecha de la notificación se mostrará de forma relativa (ej: "hace 5 minutos") y al pasar el mouse por encima se revelará la fecha y hora exactas.
 
@@ -48,7 +48,7 @@ El objetivo es crear un sistema de notificaciones unificado y proactivo dentro d
 - **Archivo Creado:** `src/modules/core/lib/notifications-actions.ts`
 - **Acciones Implementadas:**
   - `createNotification(data)`: Crea una notificación para un usuario.
-  - `createNotificationForRole(roleId, ...)`: Crea notificaciones para todos los usuarios de un rol.
+  - `createNotificationForRole(roleId, ...)`: (Ahora basado en permisos) Crea notificaciones para todos los usuarios que tengan un permiso específico.
   - `getNotificationsForUser(userId)`: Obtiene las notificaciones de un usuario.
   - `markNotificationAsRead(notificationId, userId)`: Marca una notificación como leída.
   - `markAllNotificationsAsRead(userId)`: Marca todas como leídas.
@@ -67,15 +67,16 @@ El objetivo es crear un sistema de notificaciones unificado y proactivo dentro d
 
 ### Fase 4: La Integración (Los Disparadores) - COMPLETADA
 
-- **Archivos Modificados:** `planner/lib/actions.ts` y `requests/lib/actions.ts`.
+- **Archivos Modificados:** `planner/lib/actions.ts`, `requests/lib/actions.ts`, `core/lib/suggestions-mutations.ts`.
 - **Lógica Implementada:**
   - En `updateProductionOrderStatus`, se notifica al creador sobre cambios de estado.
-  - En `updatePendingAction` de ambos módulos, se notifica a los administradores sobre solicitudes de cancelación, asignando el `taskType: 'cancellation-request'`.
+  - En `updatePendingAction` de ambos módulos, se notifica a los usuarios con permisos sobre solicitudes de cancelación, asignando el `taskType: 'cancellation-request'`.
+  - En `addSuggestion`, se notifica a los usuarios con el permiso `admin:suggestions:read` sobre nuevas sugerencias.
 
 ### Fase 5 (Futura): Evolución a "Topics"
 
-- Inspirado en Novu, podríamos reemplazar la lógica de `createNotificationForRole` con un sistema más flexible de "Topics" o "Grupos de Notificación".
-- Esto permitiría crear grupos personalizados (ej: "Equipo de Ventas Zona Norte") y suscribir usuarios a ellos, sin depender rígidamente de los roles del sistema.
+- Inspirado en Novu, podríamos reemplazar la lógica de notificación por permisos con un sistema más flexible de "Topics" o "Grupos de Notificación".
+- Esto permitiría crear grupos personalizados (ej: "Equipo de Ventas Zona Norte") y suscribir usuarios a ellos, sin depender rígidamente de los roles o permisos del sistema.
 
 ---
 

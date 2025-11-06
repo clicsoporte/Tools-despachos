@@ -81,6 +81,7 @@ import {
   BellRing,
   Palette,
   UserCheck,
+  ShoppingBag,
 } from "lucide-react";
 import { Skeleton } from "../../../components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -226,7 +227,7 @@ export default function HelpPage() {
                         <strong>Redirección Inteligente:</strong> Cada notificación es un enlace. Al hacerle clic, te llevará directamente a la orden, solicitud o sección correspondiente.
                     </li>
                     <li>
-                        <strong>Marcar como Leídas:</strong> Al hacer clic en una notificación, se marca automáticamente como leída. También puedes usar el botón &quot;Marcar todas como leídas&quot; para limpiar tu bandeja.
+                        <strong>Basado en Permisos:</strong> El sistema es inteligente. No recibirás notificaciones de tareas que no puedes realizar. Por ejemplo, solo los usuarios con permiso para aprobar cancelaciones recibirán esa notificación.
                     </li>
                 </ul>
 
@@ -235,6 +236,13 @@ export default function HelpPage() {
                     <AlertTitle>Notificaciones Accionables</AlertTitle>
                     <AlertDescription>
                         Algunas notificaciones, como las de &quot;solicitud de cancelación&quot;, incluirán botones de acción rápida (ej: &quot;Aprobar&quot;, &quot;Rechazar&quot;). Esto te permite gestionar tareas críticas directamente desde el panel de notificaciones sin tener que navegar a la página específica.
+                    </AlertDescription>
+                </Alert>
+                 <Alert variant="default" className="mt-4">
+                    <AlertTriangle className="h-4 w-4" />
+                    <AlertTitle>Notificaciones de Sugerencias</AlertTitle>
+                    <AlertDescription>
+                        Los usuarios con el permiso `admin:suggestions:read` también recibirán una notificación cada vez que se envíe una nueva sugerencia a través del buzón del sistema, asegurando que el feedback sea atendido rápidamente.
                     </AlertDescription>
                 </Alert>
             </div>
@@ -315,7 +323,7 @@ export default function HelpPage() {
                 <h4 className="font-semibold text-lg pt-2 border-t">Flujo de Recuperación para Usuarios</h4>
                  <ul className="list-disc space-y-3 pl-6">
                     <li>
-                        <strong>“¿Olvidé mi contraseña?”:</strong> En la pantalla de login, el usuario hace clic en el enlace, ingresa su correo y el sistema le envía una **contraseña temporal**.
+                        <strong>¿Olvidé mi contraseña?:</strong> En la pantalla de login, el usuario hace clic en el enlace, ingresa su correo y el sistema le envía una **contraseña temporal**.
                     </li>
                     <li>
                         <strong>Inicio de Sesión Forzado:</strong> Al ingresar con la contraseña temporal, la misma tarjeta de login se transforma y le pide al usuario que establezca una **nueva contraseña personal**.
@@ -327,7 +335,7 @@ export default function HelpPage() {
 
                  <h4 className="font-semibold text-lg pt-2 border-t">Creación de Nuevos Usuarios</h4>
                  <ul className="list-disc space-y-3 pl-6">
-                    <li>Al crear un nuevo usuario, el administrador ahora tiene una casilla: <strong>&quot;Forzar cambio de contraseña en el próximo inicio de sesión&quot;</strong>.</li>
+                    <li>Al crear un nuevo usuario, el administrador ahora tiene una casilla: **&quot;Forzar cambio de contraseña en el próximo inicio de sesión&quot;**.</li>
                     <li>Si se marca, el nuevo usuario seguirá el mismo flujo de cambio de contraseña forzado la primera vez que ingrese, asegurando que establezca una clave personal y segura.</li>
                  </ul>
             </div>
@@ -343,12 +351,12 @@ export default function HelpPage() {
                 </p>
                 <ul className="list-disc space-y-3 pl-6">
                     <li>
-                        <strong>Enviar una Sugerencia:</strong> En el panel principal, haz clic en el botón verde <strong>&quot;Sugerencias y Mejoras&quot;</strong> (<MessageSquare className="inline h-4 w-4" />). Se abrirá una ventana donde podrás escribir tu idea, reportar un problema o proponer una mejora. Al enviarla, los administradores serán notificados.
+                        <strong>Enviar una Sugerencia:</strong> En el panel principal, haz clic en el botón verde <strong>&quot;Sugerencias y Mejoras&quot;</strong> (<MessageSquare className="inline h-4 w-4" />). Se abrirá una ventana donde podrás escribir tu idea, reportar un problema o proponer una mejora. Al enviarla, los usuarios con permiso para leer sugerencias serán notificados.
                     </li>
                     <li>
                         <strong>Gestión para Administradores:</strong>
                         <ul className="list-[circle] space-y-2 pl-5 mt-2 text-sm">
-                            <li>Los administradores verán un contador de sugerencias no leídas en el botón de &quot;Configuración&quot; del menú lateral.</li>
+                            <li>Los usuarios con permiso `admin:suggestions:read` verán un contador de sugerencias no leídas en el botón de &quot;Configuración&quot; del menú lateral.</li>
                             <li>Dentro de <strong>Administración &gt; Buzón de Sugerencias</strong>, podrán ver todas las sugerencias enviadas, quién las envió y cuándo.</li>
                             <li>Las sugerencias nuevas aparecen resaltadas. Pueden marcarlas como leídas (<CheckCircle className="inline h-4 w-4 text-green-600"/>) o eliminarlas (<Trash2 className="inline h-4 w-4 text-red-600"/>).</li>
                         </ul>
@@ -431,9 +439,7 @@ export default function HelpPage() {
                         <ul className="list-[circle] space-y-2 pl-5 mt-2 text-sm">
                             <li>Modifica directamente los campos de cantidad y precio.</li>
                             <li><strong>Atajos de Teclado (<Keyboard className="inline h-4 w-4" />):</strong> Usa la tecla `Enter` en los campos &quot;Cantidad&quot; y &quot;Precio&quot;. El sistema te moverá eficientemente: de Cantidad a Precio, y de Precio de vuelta al buscador de productos para que puedas seguir añadiendo artículos sin usar el mouse.</li>
-                             <li>
-                                <strong>Uso en Móviles:</strong> En pantallas pequeñas, los campos de Cantidad y Precio tienen más espacio. Si necesitas ver otras columnas como “Cabys” o “Unidad”, puedes activarlas desde los checkboxes que aparecen encima de la tabla.
-                            </li>
+                            <li><strong>Uso en Móviles:</strong> En pantallas pequeñas, los campos de Cantidad y Precio ahora tienen más espacio. Si necesitas ver otras columnas como &quot;Cabys&quot; o &quot;Unidad&quot;, puedes activarlas desde los checkboxes que aparecen encima de la tabla.</li>
                         </ul>
                     </li>
                     <li>
@@ -472,7 +478,7 @@ export default function HelpPage() {
                 <h4 className="font-semibold text-lg pt-2 border-t">Funcionalidades Clave</h4>
                 <ul className="list-disc space-y-3 pl-6">
                 <li>
-                    <strong>Visibilidad por Defecto:</strong> Por seguridad y claridad, la vista de solicitudes siempre mostrará por defecto solo los documentos que tú has creado. Si tienes el permiso <code>requests:read:all</code>, podrás desmarcar la casilla &quot;Mostrar solo mis solicitudes&quot; para ver las de todos los usuarios.
+                    <strong>Visibilidad por Defecto:</strong> Por seguridad y claridad, la vista de solicitudes siempre mostrará por defecto solo los documentos que tú has creado. Si tienes el permiso `requests:read:all`, podrás desmarcar la casilla &quot;Mostrar solo mis solicitudes&quot; para ver las de todos los usuarios.
                 </li>
                 <li>
                     <strong>Creación Inteligente desde ERP (<Layers className="inline h-4 w-4"/>):</strong> Permite crear solicitudes de compra automáticamente a partir de un pedido de venta del ERP. El sistema analiza el pedido, compara con el inventario actual y sugiere qué artículos comprar.
@@ -487,7 +493,7 @@ export default function HelpPage() {
                     <strong>Alerta de Duplicados (<Info className="inline h-4 w-4 text-amber-500" />):</strong> Al crear una solicitud, si el sistema detecta que ya existen otras solicitudes activas (pendientes, aprobadas u ordenadas) para el mismo artículo, te mostrará una advertencia para evitar compras duplicadas.
                 </li>
                 <li>
-                    <strong>Pasos Opcionales:</strong> En <strong>Administración &gt; Config. Compras</strong>, puedes activar el paso de “Recibido en Bodega” y el paso final “Ingresado en ERP” para un control más detallado del proceso logístico.
+                    <strong>Pasos Opcionales:</strong> En <strong>Administración &gt; Config. Compras</strong>, puedes activar el paso de &quot;Recibido en Bodega&quot; y el paso final &quot;Ingresado en ERP&quot; para un control más detallado del proceso logístico.
                 </li>
                 <li>
                     <strong>Exportación:</strong> Puedes generar un archivo **PDF** o **Excel (.xlsx)** del reporte actual, incluyendo los filtros que hayas aplicado.
@@ -504,47 +510,31 @@ export default function HelpPage() {
                 <p>
                 Organiza y visualiza la carga de trabajo del taller o la producción. Permite un seguimiento detallado de cada orden.
                 </p>
+                
+                <h4 className="font-semibold text-lg pt-2 border-t">Flujo de Estados Mejorado</h4>
+                <p>Las órdenes pasan por varias etapas para un control preciso. Ahora puedes avanzar y retroceder en el flujo para corregir errores.</p>
                 <ul className="list-disc space-y-3 pl-6">
+                    <li><strong>Pendiente:</strong> La orden ha sido creada. Desde aquí, un usuario con permisos la envía al siguiente paso.</li>
+                    <li><strong>Pendiente Revisión (<Send className="inline h-4 w-4 text-cyan-600"/>):</strong> La orden espera la revisión de un supervisor o encargado de producción. Desde aquí se puede **regresar a Pendiente** (<Undo2 className="inline h-4 w-4 text-orange-600"/>) si hay algo que corregir.</li>
+                    <li><strong>Pendiente Aprobación (<ShoppingBag className="inline h-4 w-4 text-orange-600"/>):</strong> La orden ha sido revisada y ahora espera la aprobación final de un gerente. Desde aquí, se puede **regresar a Revisión** (<Undo2 className="inline h-4 w-4 text-orange-600"/>).</li>
+                    <li><strong>Aprobada (<CheckCircle className="inline h-4 w-4 text-green-600"/>):</strong> La orden está autorizada para producción.</li>
+                    <li><strong>En Cola, En Progreso, etc.:</strong> El resto del flujo continúa como antes (En Cola, En Progreso, Completada, etc.).</li>
+                </ul>
+
+                <h4 className="font-semibold text-lg pt-2 border-t">Funcionalidades Clave</h4>
+                 <ul className="list-disc space-y-3 pl-6">
                     <li>
-                        **Visibilidad por Defecto:** Al igual que en Compras, el planificador te mostrará por defecto solo las órdenes que tú has creado. Los usuarios con el permiso <code>planner:read:all</code> pueden desmarcar el filtro para tener una vista global de la producción.
+                        <strong>Visibilidad por Defecto:</strong> Al igual que en Compras, el planificador te mostrará por defecto solo las órdenes que tú has creado. Los usuarios con el permiso `planner:read:all` pueden desmarcar el filtro para tener una vista global de la producción.
                     </li>
                     <li>
-                        **Paso 1: Crear Órdenes.** Similar a los otros módulos, crea una nueva orden de producción buscando al cliente y el producto. Establece la cantidad, la fecha de entrega y la prioridad.
-                         <ul className="list-[circle] space-y-2 pl-5 mt-2 text-sm">
-                            <li>**Alerta de Duplicados (<Info className="inline h-4 w-4 text-amber-500" />):** Al seleccionar un producto, el sistema te avisará si ya existen otras órdenes de producción activas para ese mismo artículo, ayudándote a evitar duplicar trabajo.</li>
-                        </ul>
+                        <strong>Validación de Campos:</strong> Al crear una nueva orden, el sistema ahora te avisará si olvidas seleccionar un cliente, un producto, o si la cantidad es cero, evitando errores.
                     </li>
                     <li>
-                        **Paso 2: Flujo de Estados y Trazabilidad.**
+                        <strong>Alertas y Solicitudes de Cambio:</strong>
                         <ul className="list-[circle] space-y-2 pl-5 mt-2 text-sm">
-                            <li>**Pendiente:** La orden ha sido creada y espera aprobación.</li>
-                            <li>**Aprobada (<CheckCircle className="inline h-4 w-4 text-green-600"/>):** La orden está autorizada para producción.</li>
-                            <li>**En Cola (<Hourglass className="inline h-4 w-4 text-cyan-600"/>):** La orden está lista, esperando que se libere un recurso (ej: una máquina) para poder iniciar.</li>
-                            <li>**En Progreso (<Play className="inline h-4 w-4 text-blue-600"/>):** La orden se está produciendo activamente.</li>
-                            <li>**En Espera / Mantenimiento (<Pause className="inline h-4 w-4 text-gray-600"/>):** La producción se detuvo temporalmente.</li>
-                            <li>**Completada (<PackageCheck className="inline h-4 w-4 text-teal-600"/>):** La producción ha finalizado.</li>
-                            <li>**En Bodega (<Warehouse className="inline h-4 w-4 text-gray-700"/>):** (Paso opcional) El producto terminado ya está en el almacén.</li>
+                            <li><strong>Aviso de &quot;Modificado&quot; (<AlertTriangle className="inline h-4 w-4 text-red-600" />):</strong> Si una orden se edita después de ser aprobada, aparecerá esta alerta. Un supervisor deberá hacer clic en el nuevo botón <strong>&quot;Confirmar Modificación&quot;</strong> para limpiar la alerta, dejando un registro en el historial.</li>
+                            <li><strong>Solicitar Desaprobación / Cancelación:</strong> Si una orden ya aprobada necesita un cambio mayor o debe ser cancelada, puedes solicitarlo. Esto notificará a los administradores para que aprueben o rechacen tu petición. Si es rechazada, recibirás una notificación de vuelta.</li>
                         </ul>
-                    </li>
-                    <li>
-                        **Paso 3: Alertas y Solicitudes de Cambio.**
-                        <ul className="list-[circle] space-y-2 pl-5 mt-2 text-sm">
-                            <li>**Aviso de &quot;Modificado&quot; (<AlertTriangle className="inline h-4 w-4 text-red-600" />):** Si una orden se edita después de ser aprobada, aparecerá esta alerta. Un supervisor deberá hacer clic en el nuevo botón <strong>&quot;Confirmar Modificación&quot;</strong> para limpiar la alerta, dejando un registro en el historial.</li>
-                            <li>**Solicitar Desaprobación (<Undo2 className="inline h-4 w-4 text-orange-600"/>):** Si una orden ya aprobada necesita un cambio mayor (ej: cambiar de producto), un usuario puede &quot;Solicitar Desaprobación&quot;. Esto bloquea la orden y requiere que un administrador la apruebe o rechace para devolverla al estado &quot;Pendiente&quot;.</li>
-                            <li>**Solicitar Cancelación (<XCircle className="inline h-4 w-4 text-red-600"/>):** Similar a la desaprobación, permite pedir la cancelación de una orden que ya está en el flujo, requiriendo aprobación administrativa.</li>
-                        </ul>
-                    </li>
-                    <li>
-                        **Paso 4: Programación y Prioridades.**
-                        <ul className="list-[circle] space-y-2 pl-5 mt-2 text-sm">
-                            <li>**Programación por Rango:** Haz clic en el área de &quot;Fecha Programada&quot; para abrir un calendario y seleccionar un rango de fechas de inicio y fin.</li>
-                            <li>**Asignación:** Asigna cada orden a una máquina, proceso u operario específico desde el menú desplegable. Estas opciones se configuran en Administración.</li>
-                            <li>**Gestión de Turnos:** Asigna la orden a un turno de trabajo específico. Los turnos disponibles se pueden personalizar completamente en <strong>Administración &gt; Config. Planificador</strong>.</li>
-                            <li>**Prioridades y Cuenta Regresiva:** Usa el selector de prioridad y fíjate en el indicador de días restantes (basado en la fecha de entrega) para organizar el trabajo.</li>
-                        </ul>
-                    </li>
-                    <li>
-                        **Exportación:** Puedes generar un archivo **PDF** o **Excel (.xlsx)** del reporte actual.
                     </li>
                     <li>
                         **Historial (<History className="inline h-4 w-4"/>):** Haz clic en el icono de historial en cualquier orden para ver un registro detallado de cada cambio de estado, quién lo hizo y cuándo.
@@ -572,9 +562,13 @@ export default function HelpPage() {
                             <li>Selecciona un rango de fechas de los pedidos del ERP que quieres analizar y haz clic en &quot;Analizar Pedidos&quot;.</li>
                             <li>El sistema te mostrará una tabla con los artículos faltantes. Para cada artículo, verás la cantidad total que necesitas, cuánto tienes en inventario, y el faltante exacto.</li>
                             <li>**Ordena los resultados:** Haz clic en el encabezado de cualquier columna (ej: &quot;Próxima Entrega&quot; o &quot;Faltante Total&quot;) para ordenar la tabla según ese criterio. Una flecha te indicará el orden actual.</li>
-                            <li>También verás información clave como los **clientes involucrados** y la **próxima fecha de entrega** que debes cumplir.</li>
                             <li>Usa los filtros de búsqueda y de clasificación (que ahora permite **selección múltiple**) para refinar la lista.</li>
-                            <li>**Crear Solicitudes:** Marca los artículos que quieres comprar, y haz clic en **&quot;Crear Solicitudes&quot;**. El sistema creará las solicitudes de compra automáticamente en segundo plano, dejándolas en estado &quot;Pendiente&quot; para que el equipo de Compras complete los detalles (como el precio) antes de enviarlas a aprobar.</li>
+                            <li>
+                                <strong>Crear Solicitudes:</strong> Marca los artículos que quieres comprar y haz clic en **&quot;Crear Solicitudes&quot;**. El sistema creará las solicitudes automáticamente en segundo plano, dejándolas &quot;Pendientes&quot; para que Compras complete los detalles (como el precio).
+                            </li>
+                             <li>
+                                <strong>Alerta de Duplicados (<Info className="inline h-4 w-4 text-amber-500"/>):</strong> Si intentas crear una solicitud para un artículo que ya tiene una solicitud activa, el sistema te mostrará una **alerta con detalles**, incluyendo el número de la solicitud existente y quién la creó. Podrás decidir si quieres crear el duplicado o no.
+                            </li>
                             <li>Puedes exportar esta vista a **Excel** para un análisis más profundo.</li>
                         </ul>
                     </li>
@@ -749,7 +743,7 @@ export default function HelpPage() {
                     </div>
                     <div className="flex items-start gap-4">
                         <Store className="mt-1 h-6 w-6 text-amber-700 shrink-0" />
-                        <div><h4 className="font-semibold">Config. Compras</h4><p>Define las rutas de entrega, métodos de envío y activa pasos opcionales en el flujo de aprobación como “Recibido en Bodega” o “Ingresado en ERP”.</p></div>
+                        <div><h4 className="font-semibold">Config. Compras</h4><p>Define las rutas de entrega, métodos de envío y activa pasos opcionales en el flujo de aprobación como &quot;Recibido en Bodega&quot; o &quot;Ingresado en ERP&quot;.</p></div>
                     </div>
                     <div className="flex items-start gap-4">
                         <Map className="mt-1 h-6 w-6 text-teal-700 shrink-0" />
@@ -839,28 +833,25 @@ export default function HelpPage() {
                 <p className="text-sm text-muted-foreground">Lanzamiento: Octubre 2024</p>
                 <ul className="list-disc space-y-3 pl-6">
                      <li>
+                        <strong>Mejora Mayor de Flujo de Trabajo:</strong> Se implementó un flujo de aprobación por etapas (Pendiente, Revisión, Aprobación) en los módulos de Planificador y Solicitudes, con la capacidad de retroceder estados.
+                    </li>
+                     <li>
+                        <strong>Mejora de Notificaciones:</strong> El sistema ahora envía notificaciones basadas en permisos de usuario (no solo por rol) e informa sobre nuevas sugerencias.
+                    </li>
+                     <li>
+                        <strong>Mejora de Usabilidad:</strong> La herramienta de Sugerencias de Compra ahora alerta sobre posibles solicitudes duplicadas. Se rediseñó el comportamiento de los filtros en los módulos principales para una mejor experiencia.
+                    </li>
+                    <li>
                         <strong>Mejora Mayor de Estabilidad:</strong> Se corrigió un error de compilación crítico (`_document not found`) y se solucionaron reinicios inesperados en entornos de despliegue IIS.
                     </li>
                      <li>
-                        <strong>Mejora de Lógica:</strong> El Asistente de Costos ahora exporta a Excel un reporte idéntico a lo que se ve en pantalla. Además, la creación de solicitudes desde &quot;Sugerencias de Compra&quot; ahora es un proceso de fondo que deja campos en blanco para que Compras los complete, agilizando el flujo de trabajo.
-                    </li>
-                     <li>
-                        <strong>Mejora de Usabilidad:</strong> Se rediseñó el comportamiento de los filtros en los módulos de Planificador y Compras para que actúen como un cabezal único y fijo en pantallas de escritorio, sin afectar la navegación en dispositivos móviles.
+                        <strong>Mejora de Lógica:</strong> El Asistente de Costos ahora exporta a Excel un reporte idéntico a lo que se ve en pantalla.
                     </li>
                     <li>
-                        <strong>Nueva Funcionalidad Mayor: Módulo de Analíticas.</strong> Se añadió una sección completa de inteligencia de negocio, incluyendo un reporte proactivo de &quot;Sugerencias de Compra&quot; y un reporte de &quot;Auditoría de Permisos de Usuario&quot;.
+                        <strong>Nueva Funcionalidad Mayor: Módulo de Analíticas, Centro de Ayuda y Recuperación de Contraseña.</strong>
                     </li>
                     <li>
-                        <strong>Nueva Funcionalidad Mayor: Centro de Ayuda.</strong> Se implementó una guía de usuario interactiva y con capacidad de búsqueda directamente en la aplicación.
-                    </li>
-                     <li>
-                        <strong>Nueva Funcionalidad: Recuperación de Contraseña.</strong> Se implementó un flujo completo para que los usuarios puedan recuperar su contraseña a través de un correo con una clave temporal. Incluye una pantalla de configuración SMTP para administradores.
-                    </li>
-                    <li>
-                        <strong>Mejora Mayor de Arquitectura: Flujo de Autenticación.</strong> Se reescribió por completo el manejo de sesiones y redirecciones para eliminar parpadeos de pantalla, prevenir condiciones de carrera y gestionar de forma robusta las sesiones inválidas o caducadas.
-                    </li>
-                    <li>
-                        <strong>Mejora Mayor de Arquitectura: Sistema de Migraciones de Base de Datos.</strong> Se implementó un sistema centralizado que verifica y actualiza automáticamente el esquema de **todas** las bases de datos del sistema al iniciar la aplicación.
+                        <strong>Mejora Mayor de Arquitectura: Flujo de Autenticación y Sistema de Migraciones de Base de Datos.</strong>
                     </li>
                 </ul>
             </div>

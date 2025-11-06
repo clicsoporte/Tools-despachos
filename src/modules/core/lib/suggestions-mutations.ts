@@ -8,7 +8,7 @@
 import { revalidatePath } from 'next/cache';
 import { logInfo, logError } from './logger';
 import { connectDb } from './db';
-import { createNotificationForRole } from './notifications-actions';
+import { createNotificationForPermission } from './notifications-actions';
 
 /**
  * Inserts a new suggestion into the database.
@@ -38,7 +38,7 @@ export async function addSuggestion(content: string, userId: number, userName: s
 
     if (newSuggestionId) {
         try {
-            await createNotificationForRole(
+            await createNotificationForPermission(
                 'admin:suggestions:read', // Target users with this specific permission
                 `Nueva sugerencia enviada por ${userName}`,
                 '/dashboard/admin/suggestions',

@@ -22,16 +22,16 @@ export async function createNotification(notificationData: Omit<Notification, 'i
 }
 
 /**
- * Creates a notification for all users who have a specific role or permission.
- * @param roleOrPermissionId - The ID of the role or permission to target.
+ * Creates a notification for all users who have a specific permission.
+ * @param permission - The permission string required to receive the notification.
  * @param message - The notification message.
  * @param href - An optional URL for the notification to link to.
  * @param entityId - The ID of the entity this notification relates to (e.g., order ID).
  * @param entityType - The type of entity (e.g., 'production-order').
  * @param taskType - A specific identifier for the task (e.g., 'approve').
  */
-export async function createNotificationForRole(
-    roleOrPermissionId: string, 
+export async function createNotificationForPermission(
+    permission: string, 
     message: string, 
     href: string,
     entityId: number,
@@ -40,7 +40,7 @@ export async function createNotificationForRole(
 ): Promise<void> {
     const allUsers = await dbGetAllUsers();
     // Get roles that have this permission. Admin is a special case.
-    const relevantRoleIds = await getRolesWithPermissionFromDb(roleOrPermissionId);
+    const relevantRoleIds = await getRolesWithPermissionFromDb(permission);
     
     // Find all users who either have the role or are admins.
     const targetUsers = allUsers.filter((user: User) => 
@@ -119,28 +119,44 @@ export async function executeNotificationAction(notificationId: number, actionTy
             originalRequester = await getUserByName(currentOrder.requestedBy);
 
             if (notification.taskType === 'cancellation-request') {
-                targetStatus = actionType === 'approve' ? 'canceled' : currentOrder.previousStatus || 'approved';
-                await updatePlannerStatus({
-                    orderId: notification.entityId,
-                    status: targetStatus,
-                    notes: `Solicitud de cancelación ${actionType === 'approve' ? 'aprobada' : 'rechazada'} por ${updatedBy}.`,
+                await updatePendingAction({
+                    entityId: notification.entityId,
+                    action: 'none',
+                    notes: `Solicitud de cancelación ${actionType === 'approve' ? 'aprobada' : 'rechazada'} por ${updatedBy} desde notificación.`,
                     updatedBy,
-                    reopen: false
                 });
+                
+                if (actionType === 'approve') {
+                     await updatePlannerStatus({
+                        orderId: notification.entityId,
+                        status: 'canceled',
+                        notes: `Cancelación aprobada por ${updatedBy}.`,
+                        updatedBy,
+                        reopen: false
+                    });
+                }
             }
         } else if (notification.entityType === 'purchase-request') {
-            const currentRequest = await updatePendingAction({ entityId: notification.entityId, action: 'none', notes: '', updatedBy }); // Dummy call
+            const currentRequest = await updatePendingAction({ entityId: notification.entityId, action: 'none', notes: '', updatedBy }); // Dummy call to get order details
             originalRequester = await getUserByName(currentRequest.requestedBy);
 
              if (notification.taskType === 'cancellation-request') {
-                targetStatus = actionType === 'approve' ? 'canceled' : currentRequest.previousStatus || 'approved';
-                await updateRequestStatus({
-                    requestId: notification.entityId,
-                    status: targetStatus,
-                    notes: `Solicitud de cancelación ${actionType === 'approve' ? 'aprobada' : 'rechazada'} por ${updatedBy}.`,
+                await updatePendingAction({
+                    entityId: notification.entityId,
+                    action: 'none',
+                    notes: `Solicitud de cancelación ${actionType === 'approve' ? 'aprobada' : 'rechazada'} por ${updatedBy} desde notificación.`,
                     updatedBy,
-                    reopen: false
                 });
+
+                if (actionType === 'approve') {
+                    await updateRequestStatus({
+                        requestId: notification.entityId,
+                        status: 'canceled',
+                        notes: `Cancelación aprobada por ${updatedBy}.`,
+                        updatedBy,
+                        reopen: false
+                    });
+                }
             }
         }
 

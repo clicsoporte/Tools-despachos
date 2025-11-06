@@ -128,7 +128,7 @@ export const mainTools: Tool[] = [
     description: "Mover inventario entre ubicaciones físicas.",
     href: "/dashboard/warehouse/assign",
     icon: PackagePlus,
-    bgColor: "bg-teal-700",
+    bgColor: "bg-fuchsia-600",
     textColor: "text-white",
   },
      {
@@ -137,7 +137,7 @@ export const mainTools: Tool[] = [
       description: "Verificar situación tributaria y exoneraciones.",
       href: "/dashboard/hacienda",
       icon: Search,
-      bgColor: "bg-indigo-700",
+      bgColor: "bg-blue-700",
       textColor: "text-white",
     },
   {
@@ -396,7 +396,7 @@ export const adminTools: Tool[] = [
         description: "Gestionar URLs y claves de APIs externas.",
         href: "/dashboard/admin/api",
         icon: Network,
-        bgColor: "bg-indigo-700",
+        bgColor: "bg-blue-700",
         textColor: "text-white",
       },
        {
@@ -423,7 +423,7 @@ export const adminTools: Tool[] = [
         description: "Definir niveles y estructura de ubicaciones físicas.",
         href: "/dashboard/admin/warehouse",
         icon: Map,
-        bgColor: "bg-cyan-600",
+        bgColor: "bg-fuchsia-600",
         textColor: "text-white",
       },
       {

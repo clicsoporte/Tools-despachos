@@ -50,7 +50,7 @@ Esta versión marca un hito importante, introduciendo mejoras significativas en 
 - **Alertas Proactivas:** Un icono de campana en la cabecera muestra un contador de notificaciones no leídas y se anima sutilmente cuando llega una nueva.
 - **Bandeja de Tareas Interactiva:** Al hacer clic en la campana, se despliega un panel con las últimas notificaciones. Cada notificación es un enlace directo a la entidad correspondiente (una orden, una solicitud, etc.).
 - **Notificaciones Accionables:** Ciertas notificaciones (ej: "Se solicita cancelar una orden") incluyen botones para realizar acciones rápidas directamente desde el panel, como "Aprobar" o "Rechazar", convirtiendo las notificaciones en una herramienta de gestión activa.
-- **Inteligencia de Contexto:** El sistema notifica a usuarios específicos (ej: el creador de una orden) o a roles completos (ej: todos los administradores) según la relevancia de la acción.
+- **Inteligencia de Contexto:** El sistema notifica a usuarios específicos (ej: el creador de una orden) o a usuarios con un permiso determinado (ej: todos los que pueden aprobar cancelaciones), según la relevancia de la acción.
 
 ### 3.2. Cotizador (`/dashboard/quoter`)
 - **Creación Rápida:** Permite buscar y añadir clientes y productos de forma ágil, con autocompletado y atajos de teclado. Muestra la cédula del cliente para evitar confusiones.
@@ -67,10 +67,12 @@ Esta versión marca un hito importante, introduciendo mejoras significativas en 
 ### 3.4. Planificador (`/dashboard/planner`)
 - **Gestión de Órdenes:** Permite crear, editar y visualizar órdenes de producción, mostrando siempre el nombre y la cédula del cliente para mayor claridad.
 - **Visibilidad Controlada:** Por defecto, los usuarios solo ven las órdenes que ellos han creado. Un permiso especial (`planner:read:all`) permite a supervisores y administradores ver todas las órdenes.
-- **Flujo de Estados Completo:** Controla el ciclo de vida de una orden (Pendiente, Aprobada, En Progreso, Completada, etc.).
+- **Flujo de Aprobación por Etapas:**
+    - Controla el ciclo de vida de una orden: `Pendiente` -> `Revisión` -> `Aprobación` -> `En Progreso`, etc.
+    - **Flexibilidad de Flujo:** Permite retroceder en el flujo (ej: de `Aprobación` a `Revisión`) para corregir errores sin cancelar la orden.
 - **Trazabilidad:** Cada cambio de estado, nota o modificación queda registrada en un historial detallado por orden.
 - **Alertas Visuales:**
-    - Las órdenes modificadas después de ser aprobadas se marcan visualmente para alertar a los supervisores, quienes pueden "Confirmar la Modificación".
+    - Las órdenes modificadas después de ser aprobadas se marcan visualmente para alertar a los supervisores.
     - Al crear una nueva orden, el sistema avisa si ya existen otras órdenes activas para el mismo producto.
 - **Gestión de Turnos Personalizable**: Desde administración, se puede cambiar el nombre de la etiqueta "Turno" y añadir, editar o eliminar los diferentes turnos de trabajo disponibles.
 - **Interfaz Optimizada**: La vista de órdenes ahora cuenta con un **encabezado fijo** que permanece visible al hacer scroll, mejorando la legibilidad.
@@ -79,9 +81,9 @@ Esta versión marca un hito importante, introduciendo mejoras significativas en 
 ### 3.5. Solicitud de Compra (`/dashboard/requests`)
 - **Visibilidad Controlada:** Por defecto, los usuarios solo ven sus propias solicitudes. El permiso `requests:read:all` otorga visibilidad total al desmarcar el filtro "Mostrar solo mis solicitudes".
 - **Flujo de Aprobación Flexible:**
-  - Controla el ciclo de vida de una solicitud, desde "Pendiente" hasta "Recibida".
+  - Controla el ciclo de vida de una solicitud: `Pendiente` -> `Revisión` -> `Aprobación` -> `Ordenada`, etc.
   - **Pasos Opcionales:** Desde administración se puede activar el estado "Recibido en Bodega" y el estado final "Ingresado en ERP" para una trazabilidad completa.
-  - **Retroceso en el Flujo:** Permite regresar una solicitud de "Revisión" a "Pendiente", o de "Pendiente de Aprobación" de vuelta a "Revisión", para corregir errores.
+  - **Retroceso en el Flujo:** Permite regresar una solicitud de "Aprobación" a "Revisión", o de "Revisión" a "Pendiente", para corregir errores.
 - **Creación Inteligente desde ERP:** Permite crear solicitudes de compra automáticamente a partir de un pedido de venta del ERP. El sistema analiza el pedido, compara con el inventario actual y sugiere qué artículos comprar.
 - **Alerta Visual de Duplicados:** Antes de crear una solicitud, el sistema avisa si ya existen otras solicitudes activas para el mismo artículo.
 - **Interfaz Optimizada**: La vista de solicitudes ahora cuenta con un **encabezado fijo** que permanece visible al hacer scroll.
@@ -92,7 +94,7 @@ Este módulo agrupa herramientas de inteligencia de negocio para ayudar en la to
 - **Sugerencias de Compra Proactivas (`/purchase-suggestions`):**
     - Analiza los pedidos de venta del ERP en un rango de fechas y los cruza con el inventario actual.
     - Genera una lista consolidada de todos los artículos que tienen un faltante de stock para cumplir con la demanda.
-    - Permite filtrar por clasificación de producto (con multiselección), ordenar los resultados y crear las solicitudes de compra directamente desde la herramienta.
+    - Permite filtrar, ordenar los resultados y **crear las solicitudes de compra directamente**, alertando si se va a crear un duplicado.
 - **Reporte de Tránsitos (`/transits-report`):**
     - Muestra un listado de todas las órdenes de compra activas en el ERP, permitiendo monitorear el inventario que está en camino.
 

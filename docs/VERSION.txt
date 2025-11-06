@@ -2,16 +2,12 @@ Clic-Tools v2.0.0 - Lanzamiento de Producción
 
 Esta versión se enfoca en la robustez, estabilidad y corrección de errores críticos para un entorno de producción.
 
-- Nueva Funcionalidad: Módulo de Analíticas y Reportes, incluyendo un reporte de "Sugerencias de Compra Proactivas", un "Reporte de Tránsitos desde el ERP", y un "Reporte de Permisos de Usuario".
-- Nueva Funcionalidad: Centro de Ayuda interactivo y con búsqueda.
-- Nueva Funcionalidad: Recuperación de contraseña por correo electrónico, con configuración SMTP para administradores.
+- Mejora de Flujo de Trabajo: Se implementó un flujo de aprobación por etapas (Pendiente, Revisión, Aprobación) en los módulos de Planificador y Solicitudes, con la capacidad de retroceder estados.
+- Mejora de Notificaciones: El sistema ahora envía notificaciones basadas en permisos de usuario (no solo por rol) e informa sobre nuevas sugerencias.
+- Mejora de Usabilidad: La herramienta de Sugerencias de Compra ahora alerta sobre posibles solicitudes duplicadas con información detallada.
 - Reescritura del flujo de autenticación para eliminar parpadeos y condiciones de carrera.
 - Implementación de un sistema de migración de base de datos para actualizaciones seguras.
-- Mejora de usabilidad: Se implementaron encabezados fijos en los módulos de Planificador y Solicitudes de Compra.
-- Mejora de Lógica: El Asistente de Costos ahora exporta a Excel los datos que se ven en pantalla para un análisis más flexible.
-- Mejora de Lógica: La creación de solicitudes desde "Sugerencias de Compra" ahora crea el documento directamente, dejando campos como el precio en blanco para que Compras los complete.
-- Corrección de Lógica: Se restauró la capacidad de retroceder estados en el flujo de aprobación de Solicitudes de Compra.
+- Adición de recuperación de contraseña y auditoría de permisos de usuario.
+- Solución de errores de compilación y ejecución en servidores IIS.
 - Actualización completa de la documentación interna y externa.
-- Corrección de error de compilación `_document not found` para Next.js App Router.
-- Corrección de error `FOREIGN KEY constraint failed` al crear notificaciones.
-- Corrección de reinicios inesperados de la aplicación en entornos de despliegue IIS.
+- Adición de módulos de analíticas y reportes.
