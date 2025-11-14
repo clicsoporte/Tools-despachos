@@ -1,5 +1,5 @@
 # Checklist de Regresión de Funcionalidad Crítica
-# Clic-Tools v2.0.0
+# Clic-Tools v2.1.0
 
 Este documento es la lista de verificación maestra para asegurar que las funcionalidades clave del sistema no se hayan roto después de introducir nuevos cambios. Debe ser revisado antes de cada despliegue a producción.
 
@@ -82,12 +82,13 @@ Este documento es la lista de verificación maestra para asegurar que las funcio
 - **Descripción:** Valida el flujo de creación y aprobación de solicitudes de compra.
 
 ### Checklist:
-- [ ] **Crear Solicitud:** Se puede crear una nueva solicitud de compra manualmente.
-- [ ] **Crear desde Pedido ERP:** La función para crear solicitudes a partir de un pedido del ERP funciona correctamente.
-- [ ] **Flujo de Avance:** Un usuario con permisos puede avanzar el estado de una solicitud (ej: de `Pendiente` a `Revisión` a `Aprobación`).
-- [ ] **Flujo de Retroceso:** Se puede regresar una solicitud de `Pendiente Aprobación` a `Revisión`, y de `Revisión` a `Pendiente`.
-- [ ] **Filtros de Vista (PC):** Los filtros y botones se mantienen en un bloque fijo en la parte superior al hacer scroll.
-- [ ] **Filtros de Vista (Móvil):** Los filtros y botones se desplazan con el contenido y no ocupan espacio de pantalla.
+- [ ] **Crear Solicitud Manual:** El botón "Nueva Solicitud" abre el formulario y se puede crear una solicitud manualmente.
+- [ ] **Crear desde Pedido ERP:** La función para crear solicitudes a partir de un pedido del ERP funciona correctamente y abre la ventana de selección de artículos.
+- [ ] **Edición Completa (Pendiente):** Una solicitud en estado `Pendiente` o `Revisión` permite editar todos sus campos, incluyendo el precio de venta.
+- [ ] **Análisis de Costos (Nuevo):** Un usuario con permisos puede hacer clic en el botón de `DollarSign` para abrir el diálogo de análisis.
+- [ ] **Cálculo de Ganancia (Nuevo):** En el diálogo de análisis, el margen y la ganancia se calculan correctamente y la alerta de pérdida funciona.
+- [ ] **Guardar Análisis (Nuevo):** Se puede guardar el análisis de costos y los datos se reflejan en el reporte.
+- [ ] **Flujo de Avance y Retroceso:** Se puede avanzar y retroceder el estado de una solicitud.
 - [ ] **Exportación:** Se puede exportar la vista actual a PDF y Excel.
 
 ---
@@ -100,8 +101,7 @@ Este documento es la lista de verificación maestra para asegurar que las funcio
 ### Checklist:
 - [ ] **Carga de XML:** Se pueden cargar facturas de compra en formato XML y se extraen los artículos.
 - [ ] **Prorrateo de Costos:** Al añadir costos de transporte u otros, el costo unitario de los artículos se actualiza.
-- [ ] **Cálculo de Precios:** Al introducir un margen de ganancia, el PVP sugerido se calcula correctamente.
-- [ ] **Exportación a Excel:** El botón "Exportar a Excel" genera un archivo con las columnas y datos visibles en pantalla, en un formato legible y no para ERP.
+- [ ] **Exportación a Excel:** El botón "Exportar a Excel" genera un archivo con las columnas y datos visibles en pantalla.
 
 ---
 
@@ -113,31 +113,31 @@ Este documento es la lista de verificación maestra para asegurar que las funcio
 ### Checklist:
 - [ ] **Sugerencias de Compra:**
     - [ ] El análisis por rango de fechas genera una lista de artículos con faltantes.
-    - [ ] Los filtros (búsqueda, clasificación) y la ordenación de columnas funcionan.
     - [ ] **Alerta de Duplicados:** El sistema alerta correctamente si se intenta crear una SC para un artículo que ya tiene una activa, mostrando detalles.
-    - [ ] Se pueden seleccionar artículos y **crear solicitudes de compra automáticamente en segundo plano**, dejando el precio en blanco.
-    - [ ] Las solicitudes creadas aparecen en el módulo de SC con los campos correctos y listas para ser completadas por Compras.
+    - [ ] Se pueden seleccionar artículos y **crear solicitudes de compra automáticamente**, y el `pendingAction` se asigna correctamente.
 - [ ] **Reporte de Permisos de Usuario:**
     - [ ] El reporte carga la lista de todos los usuarios y sus permisos.
-    - [ ] Los filtros y la ordenación funcionan.
     - [ ] Se puede exportar el reporte a PDF y Excel.
 - [ ] **Reporte de Tránsitos:**
     - [ ] El análisis de tránsitos carga las órdenes de compra activas del ERP.
-    - [ ] Los filtros y la ordenación funcionan correctamente.
     - [ ] Se puede exportar a PDF y Excel.
+- [ ] **Reporte de Compras (Nuevo):**
+    - [ ] El nuevo reporte de compras es accesible desde el panel de Analíticas.
+    - [ ] Carga y muestra los datos de las solicitudes, incluyendo los nuevos campos de costos y ganancias.
+    - [ ] Los filtros y la ordenación de columnas funcionan.
+    - [ ] Se puede exportar el reporte a PDF y Excel.
 
 ---
 
 ## Módulo 8: Administración y Despliegue
 
-- **Responsable:** `admin/`, `web.config`
+- **Responsable:** `admin/`, `next.config.js`
 - **Descripción:** Valida las funciones críticas de configuración y la estabilidad en el entorno de producción.
 
 ### Checklist:
 - [ ] **Gestión de Usuarios:** Se puede crear, editar y eliminar un usuario.
 - [ ] **Gestión de Roles:** Se puede crear un nuevo rol y modificar sus permisos.
 - [ ] **Importación de Datos (SQL):** Se puede ejecutar la importación desde SQL Server y los datos se reflejan en la aplicación.
+- [ ] **Guardar Consultas SQL:** Guardar las consultas SQL no produce un error de "Failed to fetch", gracias al aumento del límite en `next.config.js`.
 - [ ] **Mantenimiento:** Se puede crear un punto de restauración.
 - [ ] **Estabilidad en IIS:** Guardar configuraciones (ej: "Configuración General") **NO** causa un reinicio o un error "aborted" en la aplicación.
-- [ ] **Visor de Eventos:** Los logs del sistema se cargan y se pueden filtrar.
-- [ ] **Script de Despliegue (`setup-ubuntu.sh`):** El script se ejecuta sin errores y configura la aplicación con `pm2`.
