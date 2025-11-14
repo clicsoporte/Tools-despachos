@@ -28,15 +28,15 @@ export type SortDirection = 'asc' | 'desc';
 const availableColumns = [
     { id: 'item', label: 'Artículo', tooltip: 'Código y descripción del artículo con faltante de inventario.', sortable: true },
     { id: 'activeRequests', label: 'Solicitudes Activas (SC)', tooltip: 'Muestra si ya existen solicitudes de compra activas en Clic-Tools para este artículo.' },
-    { id: 'sourceOrders', label: 'Pedidos Origen', tooltip: 'Números de pedido del ERP que requieren este artículo.', sortable: true, sortKey: 'sourceOrders' },
-    { id: 'clients', label: 'Clientes Involucrados', tooltip: 'Lista de todos los clientes de los pedidos analizados que están esperando este artículo.', sortable: true, sortKey: 'involvedClients' },
-    { id: 'erpUsers', label: 'Usuario ERP', tooltip: 'Usuario que creó el pedido en el sistema ERP.', sortable: true, sortKey: 'erpUsers' },
-    { id: 'creationDate', label: 'Fecha Pedido', tooltip: 'La fecha de creación más temprana para este artículo entre todos los pedidos analizados.', sortable: true, sortKey: 'earliestCreationDate' },
-    { id: 'dueDate', label: 'Próxima Entrega', tooltip: 'La fecha de entrega más cercana para este artículo entre todos los pedidos analizados.', sortable: true, sortKey: 'earliestDueDate' },
-    { id: 'required', label: 'Cant. Requerida', tooltip: 'La suma total de este artículo requerida para cumplir con todos los pedidos en el rango de fechas.', align: 'right', sortable: true, sortKey: 'totalRequired' },
-    { id: 'stock', label: 'Inv. Actual (ERP)', tooltip: 'La cantidad total de este artículo disponible en todas las bodegas según la última sincronización del ERP.', align: 'right', sortable: true, sortKey: 'currentStock' },
-    { id: 'inTransit', label: 'Tránsito OC (ERP)', tooltip: 'La cantidad total de este artículo que ya se ordenó a proveedores en el ERP y está en camino.', align: 'right', sortable: true, sortKey: 'inTransitStock'},
-    { id: 'shortage', label: 'Faltante Total', tooltip: 'La cantidad que necesitas comprar para cubrir la demanda (Cant. Requerida - Inv. Actual - Tránsito).', align: 'right', sortable: true, sortKey: 'shortage' },
+    { id: 'sourceOrders', label: 'Pedidos Origen', tooltip: 'Números de pedido del ERP que requieren este artículo.', sortable: true, sortKey: 'sourceOrders' as SortKey },
+    { id: 'clients', label: 'Clientes Involucrados', tooltip: 'Lista de todos los clientes de los pedidos analizados que están esperando este artículo.', sortable: true, sortKey: 'involvedClients' as SortKey },
+    { id: 'erpUsers', label: 'Usuario ERP', tooltip: 'Usuario que creó el pedido en el sistema ERP.', sortable: true, sortKey: 'erpUsers' as SortKey },
+    { id: 'creationDate', label: 'Fecha Pedido', tooltip: 'La fecha de creación más temprana para este artículo entre todos los pedidos analizados.', sortable: true, sortKey: 'earliestCreationDate' as SortKey },
+    { id: 'dueDate', label: 'Próxima Entrega', tooltip: 'La fecha de entrega más cercana para este artículo entre todos los pedidos analizados.', sortable: true, sortKey: 'earliestDueDate' as SortKey },
+    { id: 'required', label: 'Cant. Requerida', tooltip: 'La suma total de este artículo requerida para cumplir con todos los pedidos en el rango de fechas.', align: 'right', sortable: true, sortKey: 'totalRequired' as SortKey },
+    { id: 'stock', label: 'Inv. Actual (ERP)', tooltip: 'La cantidad total de este artículo disponible en todas las bodegas según la última sincronización del ERP.', align: 'right', sortable: true, sortKey: 'currentStock' as SortKey },
+    { id: 'inTransit', label: 'Tránsito OC (ERP)', tooltip: 'La cantidad total de este artículo que ya se ordenó a proveedores en el ERP y está en camino.', align: 'right', sortable: true, sortKey: 'inTransitStock' as SortKey},
+    { id: 'shortage', label: 'Faltante Total', tooltip: 'La cantidad que necesitas comprar para cubrir la demanda (Cant. Requerida - Inv. Actual - Tránsito).', align: 'right', sortable: true, sortKey: 'shortage' as SortKey },
 ];
 
 const normalizeText = (text: string | null | undefined): string => {
@@ -68,6 +68,7 @@ export function usePurchaseSuggestionsLogic() {
     const { isAuthorized, hasPermission } = useAuthorization(['requests:create', 'analytics:purchase-suggestions:read', 'requests:create:duplicate']);
     const { toast } = useToast();
     const { user: currentUser, products } = useAuth();
+    const router = useRouter();
     
     const [isInitialLoading, setIsInitialLoading] = useState(true);
 
@@ -144,7 +145,6 @@ export function usePurchaseSuggestionsLogic() {
         if(isAuthorized) {
             loadPrefsAndData();
         }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isAuthorized, currentUser?.id]);
 
     const filteredSuggestions = useMemo(() => {
@@ -153,7 +153,7 @@ export function usePurchaseSuggestionsLogic() {
         if (state.showOnlyMyOrders && currentUser?.erpAlias) {
             const userErpAliasLower = currentUser.erpAlias.toLowerCase();
             filtered = filtered.filter(item => 
-                item.erpUsers.some(erpUser => erpUser.toLowerCase() === userErpAliasLower)
+                item.erpUsers.some((erpUser: string) => erpUser.toLowerCase() === userErpAliasLower)
             );
         }
 
@@ -177,19 +177,19 @@ export function usePurchaseSuggestionsLogic() {
 
         filtered.sort((a, b) => {
             const dir = state.sortDirection === 'asc' ? 1 : -1;
-            switch(state.sortKey) {
-                case 'item': return a.itemDescription.localeCompare(b.itemDescription) * dir;
-                case 'sourceOrders': return (a.sourceOrders[0] || '').localeCompare(b.sourceOrders[0] || '') * dir;
-                case 'involvedClients': return (a.involvedClients[0]?.name || '').localeCompare(b.involvedClients[0]?.name || '') * dir;
-                case 'erpUsers': return (a.erpUsers.join(', ') || '').localeCompare(b.erpUsers.join(', ') || '') * dir;
-                case 'earliestCreationDate': return (new Date(a.earliestCreationDate || 0).getTime() - new Date(b.earliestCreationDate || 0).getTime()) * dir;
-                case 'earliestDueDate': return (new Date(a.earliestDueDate || 0).getTime() - new Date(b.earliestDueDate || 0).getTime()) * dir;
-                case 'shortage': return (a.shortage - b.shortage) * dir;
-                case 'totalRequired': return (a.totalRequired - b.totalRequired) * dir;
-                case 'currentStock': return (a.currentStock - b.currentStock) * dir;
-                case 'inTransitStock': return (a.inTransitStock - b.inTransitStock) * dir;
-                default: return 0;
+            const valA = a[state.sortKey];
+            const valB = b[state.sortKey];
+
+            if(typeof valA === 'string' && typeof valB === 'string') {
+                return valA.localeCompare(valB, 'es') * dir;
             }
+            if(typeof valA === 'number' && typeof valB === 'number') {
+                return (valA - valB) * dir;
+            }
+             if (valA instanceof Date && valB instanceof Date) {
+                return (valA.getTime() - valB.getTime()) * dir;
+            }
+            return 0;
         });
 
         return filtered;
@@ -249,7 +249,7 @@ export function usePurchaseSuggestionsLogic() {
             toast({ title: "Error de autenticación", variant: "destructive" });
             return;
         }
-
+        
         const itemsToProcess = confirmedItems || selectedSuggestions;
 
         if (itemsToProcess.length === 0) {
@@ -277,7 +277,7 @@ export function usePurchaseSuggestionsLogic() {
                     requiredDate: item.earliestDueDate ? new Date(item.earliestDueDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
                     clientId: client.id,
                     clientName: client.name,
-                    clientTaxId: '', // Will be fetched from DB
+                    clientTaxId: '',
                     itemId: item.itemId,
                     itemDescription: item.itemDescription,
                     quantity: item.shortage,
@@ -287,6 +287,7 @@ export function usePurchaseSuggestionsLogic() {
                     purchaseType: 'single' as const,
                     sourceOrders: item.sourceOrders,
                     involvedClients: item.involvedClients,
+                    pendingAction: 'none'
                 };
                 await savePurchaseRequest(requestPayload as any, currentUser.name);
                 createdCount++;
@@ -296,12 +297,13 @@ export function usePurchaseSuggestionsLogic() {
             }
         }
 
-        updateState({ isSubmitting: false });
+        updateState({ isSubmitting: false, selectedItems: new Set() });
         
         if (createdCount > 0) {
             toast({
                 title: "Solicitudes Creadas",
                 description: `Se crearon ${createdCount} solicitudes de compra.`,
+                action: <Button onClick={() => router.push('/dashboard/requests')}>Ver Solicitudes</Button>
             });
         }
         if (errorCount > 0) {
@@ -315,7 +317,6 @@ export function usePurchaseSuggestionsLogic() {
         await handleAnalyze();
     };
 
-
     const handleColumnVisibilityChange = (columnId: string, checked: boolean) => {
         updateState({
             visibleColumns: checked
@@ -328,63 +329,73 @@ export function usePurchaseSuggestionsLogic() {
         const isDuplicate = item.existingActiveRequests.length > 0;
         const totalRequestedInActive = item.existingActiveRequests.reduce((sum, req) => sum + req.quantity, 0);
 
+        const baseClassName = isDuplicate ? 'bg-amber-50 dark:bg-amber-900/20' : '';
+
         switch (colId) {
             case 'item': {
-                const itemContent = (
-                    <div>
-                        <p className="font-medium">{item.itemDescription}</p>
-                        <p className="text-sm text-muted-foreground">{item.itemId}</p>
-                    </div>
-                );
-                return { content: itemContent, className: isDuplicate ? 'bg-amber-50 dark:bg-amber-900/20' : '' };
+                return { 
+                    content: (
+                        <div>
+                            <p className="font-medium">{item.itemDescription}</p>
+                            <p className="text-sm text-muted-foreground">{item.itemId}</p>
+                        </div>
+                    ), 
+                    className: baseClassName 
+                };
             }
             case 'activeRequests': {
-                if (!isDuplicate) return { content: <p className="text-xs text-muted-foreground">Ninguna</p> };
-                const badgeContent = (
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                            <span className="inline-flex items-center gap-1 rounded-md bg-amber-200 px-2 py-1 text-xs font-semibold text-amber-800">
-                                <Info className="h-3 w-3" />
-                                {totalRequestedInActive.toLocaleString()}
-                            </span>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                            <p className="font-bold">Este artículo ya tiene solicitudes activas:</p>
-                            <ul className="list-disc list-inside mt-1 text-xs">
-                                {item.existingActiveRequests.map(req => (
-                                    <li key={req.id}>{req.consecutive} ({req.status}) - Cant: {req.quantity} - OC: {req.purchaseOrder} - Por: {req.requestedBy}</li>
-                                ))}
-                                <li className="font-semibold mt-1">Total activo: {totalRequestedInActive}</li>
-                            </ul>
-                        </TooltipContent>
-                    </Tooltip>
-                );
-                return { content: badgeContent, className: isDuplicate ? 'bg-amber-50 dark:bg-amber-900/20' : '' };
+                if (!isDuplicate) return { content: <p className="text-xs text-muted-foreground">Ninguna</p>, className: baseClassName };
+                return { 
+                    content: (
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <span className="inline-flex items-center gap-1 rounded-md bg-amber-200 px-2 py-1 text-xs font-semibold text-amber-800">
+                                    <Info className="h-3 w-3" />
+                                    {totalRequestedInActive.toLocaleString()}
+                                </span>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                                <p className="font-bold">Este artículo ya tiene solicitudes activas:</p>
+                                <ul className="list-disc list-inside mt-1 text-xs">
+                                    {item.existingActiveRequests.map(req => (
+                                        <li key={req.id}>{req.consecutive} ({req.status}) - Cant: {req.quantity}</li>
+                                    ))}
+                                    <li className="font-semibold mt-1">Total activo: {totalRequestedInActive}</li>
+                                </ul>
+                            </TooltipContent>
+                        </Tooltip>
+                    ), 
+                    className: baseClassName 
+                };
             }
-            case 'sourceOrders': {
-                const content = (
-                    <div className="text-xs text-muted-foreground space-y-0.5">
-                        {item.sourceOrders.map(order => <div key={order}>{order}</div>)}
-                    </div>
-                );
-                return { content, className: isDuplicate ? 'bg-amber-50 dark:bg-amber-900/20' : '' };
+             case 'sourceOrders': {
+                return { 
+                    content: (
+                        <div className="text-xs text-muted-foreground space-y-0.5">
+                            {item.sourceOrders.map(order => <div key={order}>{order}</div>)}
+                        </div>
+                    ), 
+                    className: baseClassName 
+                };
             }
             case 'clients': {
-                const content = (
-                    <div className="text-xs text-muted-foreground space-y-0.5">
-                        {item.involvedClients.map(client => <div key={client.id} className="truncate" title={`${client.name} (${client.id})`}>{client.name}</div>)}
-                    </div>
-                );
-                return { content, className: isDuplicate ? 'bg-amber-50 dark:bg-amber-900/20' : '' };
+                return { 
+                    content: (
+                        <div className="text-xs text-muted-foreground space-y-0.5">
+                            {item.involvedClients.map(client => <div key={client.id} className="truncate" title={`${client.name} (${client.id})`}>{client.name}</div>)}
+                        </div>
+                    ), 
+                    className: baseClassName 
+                };
             }
-            case 'erpUsers': return { content: <p className="text-xs text-muted-foreground">{item.erpUsers.join(', ')}</p>, className: isDuplicate ? 'bg-amber-50 dark:bg-amber-900/20' : '' };
-            case 'creationDate': return { content: item.earliestCreationDate ? new Date(item.earliestCreationDate).toLocaleDateString('es-CR') : 'N/A', className: isDuplicate ? 'bg-amber-50 dark:bg-amber-900/20' : '' };
-            case 'dueDate': return { content: item.earliestDueDate ? new Date(item.earliestDueDate).toLocaleDateString('es-CR') : 'N/A', className: isDuplicate ? 'bg-amber-50 dark:bg-amber-900/20' : '' };
-            case 'required': return { content: item.totalRequired.toLocaleString(), className: cn('text-right', isDuplicate ? 'bg-amber-50 dark:bg-amber-900/20' : '') };
-            case 'stock': return { content: item.currentStock.toLocaleString(), className: cn('text-right', isDuplicate ? 'bg-amber-50 dark:bg-amber-900/20' : '') };
-            case 'inTransit': return { content: item.inTransitStock.toLocaleString(), className: cn('text-right font-semibold text-blue-600', isDuplicate ? 'bg-amber-50 dark:bg-amber-900/20' : '') };
-            case 'shortage': return { content: item.shortage.toLocaleString(), className: cn('text-right font-bold text-red-600', isDuplicate ? 'bg-amber-50 dark:bg-amber-900/20' : '') };
-            default: return { content: '', className: isDuplicate ? 'bg-amber-50 dark:bg-amber-900/20' : '' };
+            case 'erpUsers': return { content: <p className="text-xs text-muted-foreground">{item.erpUsers.join(', ')}</p>, className: baseClassName };
+            case 'creationDate': return { content: item.earliestCreationDate ? new Date(item.earliestCreationDate).toLocaleDateString('es-CR') : 'N/A', className: baseClassName };
+            case 'dueDate': return { content: item.earliestDueDate ? new Date(item.earliestDueDate).toLocaleDateString('es-CR') : 'N/A', className: baseClassName };
+            case 'required': return { content: item.totalRequired.toLocaleString(), className: cn('text-right', baseClassName) };
+            case 'stock': return { content: item.currentStock.toLocaleString(), className: cn('text-right', baseClassName) };
+            case 'inTransit': return { content: item.inTransitStock.toLocaleString(), className: cn('text-right font-semibold text-blue-600', baseClassName) };
+            case 'shortage': return { content: item.shortage.toLocaleString(), className: cn('text-right font-bold text-red-600', baseClassName) };
+            default: return { content: '', className: baseClassName };
         }
     };
     
@@ -480,7 +491,9 @@ export function usePurchaseSuggestionsLogic() {
             return selectableItems.every(s => state.selectedItems.has(s.itemId));
         }, [filteredSuggestions, state.selectedItems, hasPermission]),
         
-        classifications: useMemo(() => Array.from(new Set(products.map(p => p.classification).filter(Boolean))), [products]),
+        classifications: useMemo<string[]>(() => 
+            Array.from(new Set(products.map(p => p.classification).filter(Boolean)))
+        , [products]),
         availableColumns,
         visibleColumnsData,
         getColumnContent,
@@ -515,5 +528,3 @@ export function usePurchaseSuggestionsLogic() {
         isInitialLoading,
     };
 }
-
-    

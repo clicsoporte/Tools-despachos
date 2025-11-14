@@ -1,8 +1,7 @@
 /**
- * @fileoverview This hook has been refactored. Its logic now resides in 
- * `src/modules/analytics/hooks/usePurchaseSuggestionsLogic.ts`. This file
- * now simply consumes the centralized logic to maintain compatibility with
- * the `purchase-suggestions` page.
+ * @fileoverview This hook has been refactored to be a simple facade.
+ * It now imports and re-exports the centralized logic from `usePurchaseSuggestionsLogic`
+ * to ensure a single source of truth across the application.
  */
 'use client';
 
@@ -15,5 +14,3 @@ export const useRequestSuggestions = () => {
     // This ensures a single source of truth and eliminates code duplication.
     return usePurchaseSuggestionsLogic();
 };
-
-    

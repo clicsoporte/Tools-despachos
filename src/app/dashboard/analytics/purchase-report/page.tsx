@@ -28,7 +28,7 @@ import { DialogColumnSelector } from '@/components/ui/dialog-column-selector';
 import type { PurchaseSuggestion } from '@/modules/core/types';
 
 // New internal component to render cell content based on type
-const CellRenderer: React.FC<{ item: PurchaseSuggestion, colId: string, selectors: any }> = ({ item, colId, selectors }) => {
+const CellRenderer: React.FC<{ item: PurchaseSuggestion, colId: string, selectors: ReturnType<typeof usePurchaseReport>['selectors'] }> = ({ item, colId, selectors }) => {
     const cell = selectors.getColumnContent(item, colId);
 
     if (cell.type === 'reactNode') {
@@ -185,7 +185,7 @@ export default function PurchaseReportPage() {
                                 <Label htmlFor="rows-per-page">Filas por página:</Label>
                                 <Select value={String(rowsPerPage)} onValueChange={(value) => actions.setRowsPerPage(Number(value))}>
                                     <SelectTrigger id="rows-per-page" className="w-20"><SelectValue /></SelectTrigger>
-                                    <SelectContent>{[5, 10, 25, 50, 100].map(size => <SelectItem key={size} value={String(size)}>{size}</SelectItem>)}</SelectContent>
+                                    <SelectContent>{[10, 25, 50, 100].map(size => <SelectItem key={size} value={String(size)}>{size}</SelectItem>)}</SelectContent>
                                 </Select>
                             </div>
                             <span className="text-sm text-muted-foreground">Página {currentPage + 1} de {selectors.totalPages}</span>

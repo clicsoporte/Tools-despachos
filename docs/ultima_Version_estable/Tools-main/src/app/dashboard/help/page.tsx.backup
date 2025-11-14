@@ -1,3 +1,5 @@
+
+
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
@@ -231,14 +233,14 @@ export default function HelpPage() {
                         <strong>Plantilla Personalizable:</strong> En esta misma pantalla, se puede personalizar el **asunto y el cuerpo del correo** de recuperación, usando `[NOMBRE_USUARIO]` y `[CLAVE_TEMPORAL]` como placeholders.
                     </li>
                     <li>
-                        <strong>Prueba de Conexión:</strong> Es crucial usar el botón **&quot;Enviar Correo de Prueba&quot;** para verificar que la configuración sea correcta.
+                        <strong>Prueba de Conexión:</strong> Es crucial usar el botón <strong>&quot;Enviar Correo de Prueba&quot;</strong> para verificar que la configuración sea correcta.
                     </li>
                 </ul>
 
                 <h4 className="font-semibold text-lg pt-2 border-t">Flujo de Recuperación para Usuarios</h4>
                  <ul className="list-disc space-y-3 pl-6">
                     <li>
-                        <strong>Olvidé mi contraseña:</strong> En la pantalla de login, el usuario hace clic en el enlace, ingresa su correo y el sistema le envía una **contraseña temporal**.
+                        <strong>¿Olvidé mi contraseña?:</strong> En la pantalla de login, el usuario hace clic en el enlace, ingresa su correo y el sistema le envía una **contraseña temporal**.
                     </li>
                     <li>
                         <strong>Inicio de Sesión Forzado:</strong> Al ingresar con la contraseña temporal, la misma tarjeta de login se transforma y le pide al usuario que establezca una **nueva contraseña personal**.
@@ -250,7 +252,7 @@ export default function HelpPage() {
 
                  <h4 className="font-semibold text-lg pt-2 border-t">Creación de Nuevos Usuarios</h4>
                  <ul className="list-disc space-y-3 pl-6">
-                    <li>Al crear un nuevo usuario, el administrador ahora tiene una casilla: **&quot;Forzar cambio de contraseña en el próximo inicio de sesión&quot;**.</li>
+                    <li>Al crear un nuevo usuario, el administrador ahora tiene una casilla: <strong>&quot;Forzar cambio de contraseña en el próximo inicio de sesión&quot;</strong>.</li>
                     <li>Si se marca, el nuevo usuario seguirá el mismo flujo de cambio de contraseña forzado la primera vez que ingrese, asegurando que establezca una clave personal y segura.</li>
                  </ul>
             </div>
@@ -405,7 +407,7 @@ export default function HelpPage() {
                     <strong>Alerta de Duplicados (<Info className="inline h-4 w-4 text-amber-500" />):</strong> Al crear una solicitud, si el sistema detecta que ya existen otras solicitudes activas (pendientes, aprobadas u ordenadas) para el mismo artículo, te mostrará una advertencia para evitar compras duplicadas.
                 </li>
                 <li>
-                    <strong>Pasos Opcionales:</strong> En <strong>Administración &gt; Config. Compras</strong>, puedes activar el paso de &apos;Recibido en Bodega&apos; y el paso final &apos;Ingresado en ERP&apos; para un control más detallado del proceso logístico.
+                    <strong>Pasos Opcionales:</strong> En <strong>Administración &gt; Config. Compras</strong>, puedes activar el paso de `Recibido en Bodega` y el paso final `Ingresado en ERP` para un control más detallado del proceso logístico.
                 </li>
                 <li>
                     <strong>Exportación:</strong> Puedes generar un archivo **PDF** o **Excel (.xlsx)** del reporte actual, incluyendo los filtros que hayas aplicado.
@@ -424,16 +426,16 @@ export default function HelpPage() {
                 </p>
                 <ul className="list-disc space-y-3 pl-6">
                     <li>
-                        **Visibilidad por Defecto:** Al igual que en Compras, el planificador te mostrará por defecto solo las órdenes que tú has creado. Los usuarios con el permiso `planner:read:all` pueden desmarcar el filtro para tener una vista global de la producción.
+                        <strong>Visibilidad por Defecto:</strong> Por defecto, el planificador te mostrará solo las órdenes que tú has creado. Los usuarios con el permiso `planner:read:all` pueden desmarcar el filtro para tener una vista global de la producción.
                     </li>
                     <li>
-                        **Paso 1: Crear Órdenes.** Similar a los otros módulos, crea una nueva orden de producción buscando al cliente y el producto. Establece la cantidad, la fecha de entrega y la prioridad.
+                        <strong>Paso 1: Crear Órdenes.</strong> Similar a los otros módulos, crea una nueva orden de producción buscando al cliente y el producto. Establece la cantidad, la fecha de entrega y la prioridad.
                          <ul className="list-[circle] space-y-2 pl-5 mt-2 text-sm">
                             <li>**Alerta de Duplicados (<Info className="inline h-4 w-4 text-amber-500" />):** Al seleccionar un producto, el sistema te avisará si ya existen otras órdenes de producción activas para ese mismo artículo, ayudándote a evitar duplicar trabajo.</li>
                         </ul>
                     </li>
                     <li>
-                        **Paso 2: Flujo de Estados y Trazabilidad.**
+                        <strong>Paso 2: Flujo de Estados y Trazabilidad.</strong>
                         <ul className="list-[circle] space-y-2 pl-5 mt-2 text-sm">
                             <li>**Pendiente:** La orden ha sido creada y espera aprobación.</li>
                             <li>**Aprobada (<CheckCircle className="inline h-4 w-4 text-green-600"/>):** La orden está autorizada para producción.</li>
@@ -445,7 +447,7 @@ export default function HelpPage() {
                         </ul>
                     </li>
                     <li>
-                        **Paso 3: Alertas y Solicitudes de Cambio.**
+                        <strong>Paso 3: Alertas y Solicitudes de Cambio.</strong>
                         <ul className="list-[circle] space-y-2 pl-5 mt-2 text-sm">
                             <li>**Aviso de &quot;Modificado&quot; (<AlertTriangle className="inline h-4 w-4 text-red-600" />):** Si una orden se edita después de ser aprobada, aparecerá esta alerta para notificar a todos sobre el cambio.</li>
                             <li>**Solicitar Desaprobación (<Undo2 className="inline h-4 w-4 text-orange-600"/>):** Si una orden ya aprobada necesita un cambio mayor (ej: cambiar de producto), un usuario puede &quot;Solicitar Desaprobación&quot;. Esto bloquea la orden y requiere que un administrador la apruebe o rechace para devolverla al estado &quot;Pendiente&quot;.</li>
@@ -453,11 +455,11 @@ export default function HelpPage() {
                         </ul>
                     </li>
                     <li>
-                        **Paso 4: Programación y Prioridades.**
+                        <strong>Paso 4: Programación y Prioridades.</strong>
                         <ul className="list-[circle] space-y-2 pl-5 mt-2 text-sm">
                             <li>**Programación por Rango:** Haz clic en el área de &quot;Fecha Programada&quot; para abrir un calendario y seleccionar un rango de fechas de inicio y fin.</li>
                             <li>**Asignación:** Asigna cada orden a una máquina, proceso u operario específico desde el menú desplegable. Estas opciones se configuran en Administración.</li>
-                            <li>**Gestión de Turnos:** Asigna la orden a un turno de trabajo específico. Los turnos disponibles se pueden personalizar completamente en **Administración &gt; Config. Planificador**.</li>
+                            <li>**Gestión de Turnos:** Asigna la orden a un turno de trabajo específico. Los turnos disponibles se pueden personalizar completamente en <strong>Administración &gt; Config. Planificador</strong>.</li>
                             <li>**Prioridades y Cuenta Regresiva:** Usa el selector de prioridad y fíjate en el indicador de días restantes (basado en la fecha de entrega) para organizar el trabajo.</li>
                         </ul>
                     </li>
@@ -507,7 +509,7 @@ export default function HelpPage() {
                         <ul className="list-[circle] space-y-2 pl-5 mt-2 text-sm">
                             <li>Accede al reporte para ver la tabla completa.</li>
                             <li>Usa la barra de búsqueda para filtrar rápidamente por nombre de usuario, correo o nombre del rol.</li>
-                            <li>Haz clic en los encabezados de columna "Usuario" o "Rol" para ordenar la lista.</li>
+                            <li>Haz clic en los encabezados de columna &quot;Usuario&quot; o &quot;Rol&quot; para ordenar la lista.</li>
                             <li>Exporta la vista actual a **PDF** o **Excel** para compartirla o archivarla como un registro de auditoría de seguridad.</li>
                         </ul>
                     </li>
@@ -667,7 +669,7 @@ export default function HelpPage() {
                     </div>
                     <div className="flex items-start gap-4">
                         <Store className="mt-1 h-6 w-6 text-amber-700 shrink-0" />
-                        <div><h4 className="font-semibold">Config. Compras</h4><p>Define las rutas de entrega, métodos de envío y activa pasos opcionales en el flujo de aprobación como &apos;Recibido en Bodega&apos; o &apos;Ingresado en ERP&apos;.</p></div>
+                        <div><h4 className="font-semibold">Config. Compras</h4><p>Define las rutas de entrega, métodos de envío y activa pasos opcionales en el flujo de aprobación como “Recibido en Bodega” o “Ingresado en ERP”.</p></div>
                     </div>
                     <div className="flex items-start gap-4">
                         <Map className="mt-1 h-6 w-6 text-teal-700 shrink-0" />
@@ -712,39 +714,14 @@ export default function HelpPage() {
         )
     },
     {
-        title: "Solución de Problemas: Iconos Invisibles",
-        icon: <Palette className="mr-4 h-6 w-6 text-red-500" />,
-        content: (
-            <div className="space-y-4">
-                <h4 className="font-semibold text-lg pt-2 border-t">El Problema</h4>
-                <p>
-                    <strong>Síntoma:</strong> Al crear una nueva tarjeta de herramienta (ToolCard), el ícono no aparece o se muestra como un cuadrado blanco, a pesar de que el resto de la tarjeta se renderiza correctamente.
-                </p>
-                 <h4 className="font-semibold text-lg pt-2 border-t">Diagnóstico: ¿Por qué Sucede?</h4>
-                <p>
-                    La causa es una optimización de **Tailwind CSS**. Para mantener el archivo CSS final pequeño, Tailwind escanea todos tus archivos en busca de los nombres de clase que usas. Si defines un color como `'bg-purple-600'` en un archivo de datos (como `data.ts`) pero esa clase no está escrita explícitamente en ningún archivo `.tsx`, el compilador de Tailwind piensa que "nadie la está usando" y la **elimina** del CSS final. Cuando el componente intenta usar esa clase, ya no existe.
-                </p>
-                 <h4 className="font-semibold text-lg pt-2 border-t">La Solución Definitiva: La `safelist`</h4>
-                <p>La forma correcta de solucionar esto es decirle a Tailwind que **nunca elimine** ciertas clases, incluso si no las encuentra en su escaneo. Esto se hace a través de la `safelist` en el archivo de configuración `tailwind.config.ts`.</p>
-
-                <p><strong>Pasos para Solucionarlo Siempre:</strong></p>
-                 <ol className="list-decimal space-y-2 pl-6">
-                    <li>Elige un color de Tailwind para el fondo del ícono (ej: `bg-fuchsia-600`).</li>
-                    <li>Ve al archivo `tailwind.config.ts` en la raíz del proyecto.</li>
-                    <li>**Añade esa clase exacta** (ej: `'bg-fuchsia-600'`) al array `safelist`.</li>
-                    <li>Ahora ya puedes usar esa clase en el archivo `data.ts` para tu nueva herramienta, con la certeza de que no será eliminada.</li>
-                </ol>
-            </div>
-        )
-    },
-    {
-        title: "Guía Técnica: ¿Cómo se actualiza la aplicación?",
+        title: "Guía Técnica (para Desarrolladores)",
         icon: <Wrench className="mr-4 h-6 w-6 text-slate-600" />,
         content: (
             <div className="space-y-4">
+                <p>Esta sección contiene notas técnicas importantes para quienes mantienen o actualizan la aplicación.</p>
+
+                <h4 className="font-semibold text-lg pt-4 border-t">Proceso de Actualización</h4>
                 <p>Actualizar la aplicación a una nueva versión sin perder tus datos es un proceso crítico. El sistema está diseñado para manejar esto de forma segura gracias a las **migraciones automáticas**.</p>
-                
-                <h4 className="font-semibold">Proceso de Actualización Seguro:</h4>
                 <ol className="list-decimal space-y-3 pl-6">
                     <li>
                         <strong>Paso 1: Realizar una Copia de Seguridad (<Copy className="inline h-4 w-4"/>).</strong> Este es el paso más importante. Antes de tocar nada, ve a <strong>Administración &gt; Mantenimiento</strong> y haz clic en <strong>&quot;Crear Punto de Restauración&quot;</strong>. Esto generará una copia segura de todas las bases de datos del sistema.
@@ -756,7 +733,7 @@ export default function HelpPage() {
                         <strong>Paso 3: Actualizar y Reconstruir.</strong> Abre una terminal en la carpeta del proyecto, ejecuta `npm install --omit=dev` para instalar cualquier nueva dependencia y luego `npm run build` para compilar la nueva versión.
                     </li>
                     <li>
-                        <strong>Paso 4: Reiniciar y Verificar.</strong> Vuelve a iniciar la aplicación (ej: `pm2 start clic-tools`). Al arrancar, el sistema detectará las diferencias y añadirá las nuevas tablas o columnas automáticamente. Luego, ve a **Administración &gt; Mantenimiento &gt; Auditoría y Verificación** y ejecuta la auditoría para confirmar que todas las bases de datos tienen la estructura correcta.
+                        <strong>Paso 4: Reiniciar y Verificar.</strong> Vuelve a iniciar la aplicación (ej: `pm2 start clic-tools`). Al arrancar, el sistema detectará las diferencias y añadirá las nuevas tablas o columnas automáticamente. Luego, ve a <strong>Administración &gt; Mantenimiento &gt; Auditoría y Verificación</strong> y ejecuta la auditoría para confirmar que todas las bases de datos tienen la estructura correcta.
                     </li>
                 </ol>
                 <Alert variant="destructive">
@@ -766,6 +743,17 @@ export default function HelpPage() {
                         Nunca reemplaces la carpeta &quot;dbs/&quot; del servidor con la de la nueva versión, ya que esto borraría todos tus datos de producción.
                     </AlertDescription>
                 </Alert>
+
+                <h4 className="font-semibold text-lg pt-4 border-t">Solución de Problemas: Iconos Invisibles</h4>
+                <p>
+                    <strong>Síntoma:</strong> Al crear una nueva tarjeta de herramienta (ToolCard), el ícono no aparece o se muestra como un cuadrado blanco, a pesar de que el resto de la tarjeta se renderiza correctamente.
+                </p>
+                 <p>
+                    <strong>Diagnóstico:</strong> La causa es una optimización de **Tailwind CSS**. Para mantener el archivo CSS final pequeño, Tailwind escanea todos tus archivos en busca de los nombres de clase que usas. Si defines un color como `'bg-purple-600'` en un archivo de datos (como `data.ts`) pero esa clase no está escrita explícitamente en ningún archivo `.tsx`, el compilador de Tailwind piensa que &quot;nadie la está usando&quot; y la **elimina** del CSS final. Cuando el componente intenta usar esa clase, ya no existe.
+                </p>
+                 <p>
+                    <strong>La Solución Definitiva:</strong> La forma correcta de solucionar esto es decirle a Tailwind que **nunca elimine** ciertas clases, incluso si no las encuentra en su escaneo. Esto se hace a través de la `safelist` en el archivo de configuración `tailwind.config.ts`.
+                 </p>
             </div>
         )
     },
@@ -778,22 +766,22 @@ export default function HelpPage() {
                 <p className="text-sm text-muted-foreground">Lanzamiento: Octubre 2024</p>
                 <ul className="list-disc space-y-3 pl-6">
                     <li>
-                        <strong>Mejora Mayor de Arquitectura: Flujo de Autenticación.</strong> Se reescribió por completo el manejo de sesiones, login y logout para eliminar parpadeos de pantalla, prevenir condiciones de carrera y gestionar de forma robusta las sesiones inválidas o caducadas.
+                        <strong>Mejora Mayor de Arquitectura: Flujo de Autenticación.</strong> Se reescribió por completo el manejo de sesiones y la lógica de carga para eliminar parpadeos de pantalla, prevenir condiciones de carrera y gestionar de forma robusta las sesiones inválidas o caducadas, asegurando un inicio de sesión y navegación más fluidos.
                     </li>
                     <li>
                         <strong>Mejora Mayor de Arquitectura: Sistema de Migraciones de Base de Datos.</strong> Se implementó un sistema centralizado que verifica y actualiza automáticamente el esquema de **todas** las bases de datos del sistema (`planner.db`, `requests.db`, `cost_assistant.db`, etc.) al iniciar la aplicación, garantizando que las actualizaciones futuras no causen errores de &quot;tabla no encontrada&quot;.
                     </li>
                     <li>
-                        <strong>Nueva Funcionalidad Mayor: Auditoría de Bases de Datos.</strong> En Mantenimiento, se añadió una herramienta para verificar la integridad estructural de todas las bases de datos, asegurando que las tablas y columnas sean correctas después de una actualización.
+                        <strong>Nueva Funcionalidad Mayor: Auditoría de Bases de Datos.</strong> En <strong>Administración &gt; Mantenimiento</strong>, se añadió una herramienta para verificar la integridad estructural de todas las bases de datos, asegurando que las tablas y columnas sean correctas después de una actualización.
                     </li>
                     <li>
-                        <strong>Nueva Funcionalidad: Recuperación de Contraseña.</strong> Se implementó un flujo completo para que los usuarios puedan recuperar su contraseña a través de un correo electrónico con una clave temporal. Incluye una pantalla de configuración SMTP para administradores.
+                        <strong>Nueva Funcionalidad: Recuperación de Contraseña.</strong> Se implementó un flujo completo de autoservicio para que los usuarios puedan recuperar su contraseña a través de un correo electrónico con una clave temporal. Incluye una pantalla de configuración SMTP y plantillas de correo personalizables para administradores.
                     </li>
                      <li>
-                        <strong>Nuevo Módulo: Reporte de Permisos de Usuario.</strong> En la sección de Analíticas, se ha añadido un reporte para auditar y exportar qué permisos tiene cada usuario.
+                        <strong>Nuevo Módulo: Reporte de Permisos de Usuario.</strong> En la sección de **Analíticas**, se ha añadido un reporte completo para auditar y exportar qué permisos tiene cada usuario según su rol, mejorando la visibilidad de la seguridad del sistema.
                     </li>
                      <li>
-                        <strong>Completitud de Funcionalidades:</strong> Se implementó la lógica faltante en los módulos de Compras (retroceso de estados) y Mantenimiento (reseteo de fábrica y restauración individual).
+                        <strong>Completitud de Funcionalidades:</strong> Se implementó la lógica faltante en los módulos de Compras (retroceso de estados) y Mantenimiento (reseteo de fábrica y restauración individual desde un archivo), haciendo todas las opciones de la interfaz completamente funcionales.
                     </li>
                 </ul>
                 <h4 className="font-semibold text-lg pt-4 border-t">Versión 1.8.0</h4>
@@ -864,3 +852,7 @@ export default function HelpPage() {
     </main>
   );
 }
+
+
+
+    

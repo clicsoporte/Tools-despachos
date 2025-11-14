@@ -1,7 +1,7 @@
 /**
  * @fileoverview Page for proactive purchase suggestions.
- * It analyzes ERP orders within a date range, compares them against current
- * inventory, and suggests items that need to be purchased, grouping them by item ID.
+ * This component now correctly uses the centralized `usePurchaseSuggestionsLogic` hook
+ * to display suggestions and create purchase requests.
  */
 'use client';
 
@@ -198,7 +198,7 @@ export default function PurchaseSuggestionsPage() {
                                                 disabled={isLoading || selectors.filteredSuggestions.length === 0}
                                             />
                                         </TableHead>
-                                        {selectors.visibleColumnsData.map((col: { id: string; label: string; tooltip: string; sortable?: boolean; sortKey?: string; align?: string }) => (
+                                        {selectors.visibleColumnsData.map((col) => (
                                             <TableHead key={col.id} className={cn(col.align === 'right' && 'text-right', col.sortable && 'cursor-pointer hover:bg-muted')} onClick={() => col.sortable && actions.handleSort((col.sortKey || col.id) as SortKey)}>
                                                 <Tooltip><TooltipTrigger className='flex items-center gap-2'>
                                                     {col.label}
@@ -262,7 +262,7 @@ export default function PurchaseSuggestionsPage() {
                                     <Label htmlFor="rows-per-page">Filas por página:</Label>
                                     <Select value={String(rowsPerPage)} onValueChange={(value) => actions.setRowsPerPage(Number(value))}>
                                         <SelectTrigger id="rows-per-page" className="w-20"><SelectValue /></SelectTrigger>
-                                        <SelectContent>{[5, 10, 25, 50, 100].map(size => <SelectItem key={size} value={String(size)}>{size}</SelectItem>)}</SelectContent>
+                                        <SelectContent>{[10, 25, 50, 100].map(size => <SelectItem key={size} value={String(size)}>{size}</SelectItem>)}</SelectContent>
                                     </Select>
                                 </div>
                                 <span className="text-sm text-muted-foreground">Página {currentPage + 1} de {selectors.totalPages}</span>
@@ -309,5 +309,3 @@ export default function PurchaseSuggestionsPage() {
         </main>
     );
 }
-
-    
