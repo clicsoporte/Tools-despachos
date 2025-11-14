@@ -16,10 +16,10 @@ import {
     updatePurchaseRequestStatus, getRequestHistory, getRequestSettings, 
     updatePendingAction, getErpOrderData, addNoteToRequest, updateRequestDetails, getAllErpPurchaseOrderHeaders, getAllErpPurchaseOrderLines
 } from '@/modules/requests/lib/actions';
-import { 
+import type { 
     PurchaseRequest, PurchaseRequestStatus, PurchaseRequestPriority, 
     PurchaseRequestHistoryEntry, RequestSettings, Company, DateRange, 
-    AdministrativeAction, AdministrativeActionPayload, StockInfo, ErpOrderHeader, ErpOrderLine, User, RequestNotePayload, ErpPurchaseOrderHeader, ErpPurchaseOrderLine,
+    AdministrativeAction, AdministrativeActionPayload, StockInfo, ErpOrderHeader, ErpOrderLine, User, RequestNotePayload, ErpPurchaseOrderHeader, ErpPurchaseOrderLine
 } from '../../core/types';
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -407,7 +407,7 @@ export const useRequests = () => {
         if (!state.requestToUpdate || !finalStatus || !currentUser) return;
         updateState({ isSubmitting: true });
         try {
-            const rawUpdatedRequest = await updatePurchaseRequestStatus({ 
+            const updatedRequest = await updatePurchaseRequestStatus({ 
                 requestId: state.requestToUpdate.id, 
                 status: finalStatus, 
                 notes: state.statusUpdateNotes, 
@@ -418,14 +418,13 @@ export const useRequests = () => {
                 erpEntryNumber: finalStatus === 'entered-erp' ? state.erpEntryNumber : undefined,
             });
             
-            const updatedRequest = sanitizeRequest(rawUpdatedRequest);
-
             toast({ title: "Estado Actualizado" });
             
             updateState({
                 isStatusDialogOpen: false,
                 isActionDialogOpen: false,
             });
+            // Reload data to correctly move items between active/archived lists
             await loadInitialData(true);
 
         } catch (error: any) {
@@ -445,16 +444,15 @@ export const useRequests = () => {
                 const targetStatus = state.requestToUpdate.pendingAction === 'unapproval-request' ? 'pending' : 'canceled';
                 await executeStatusUpdate(targetStatus);
             } else {
-                 const rawUpdated = await updatePendingAction({
+                 const updated = await updatePendingAction({
                     entityId: state.requestToUpdate.id,
                     action: 'none',
                     notes: state.statusUpdateNotes,
                     updatedBy: currentUser.name,
                 });
-                const updated = sanitizeRequest(rawUpdated);
                 toast({ title: 'Solicitud Rechazada' });
                 updateState({
-                    activeRequests: state.activeRequests.map(r => r.id === updated.id ? updated : r)
+                    activeRequests: state.activeRequests.map(r => r.id === updated.id ? sanitizeRequest(updated) : r)
                 });
             }
             updateState({ isActionDialogOpen: false });
@@ -511,11 +509,10 @@ export const useRequests = () => {
             if (!state.requestToEdit || !currentUser) return;
             updateState({ isSubmitting: true });
             try {
-                const rawUpdated = await updatePurchaseRequest({ requestId: state.requestToEdit.id, updatedBy: currentUser.name, ...state.requestToEdit });
-                const updated = sanitizeRequest(rawUpdated);
+                const updated = await updatePurchaseRequest({ requestId: state.requestToEdit.id, updatedBy: currentUser.name, ...state.requestToEdit });
                 updateState({
-                    activeRequests: state.activeRequests.map(r => r.id === updated.id ? updated : r),
-                    archivedRequests: state.archivedRequests.map(r => r.id === updated.id ? updated : r),
+                    activeRequests: state.activeRequests.map(r => r.id === updated.id ? sanitizeRequest(updated) : r),
+                    archivedRequests: state.archivedRequests.map(r => r.id === updated.id ? sanitizeRequest(updated) : r),
                     isEditRequestDialogOpen: false
                 });
                 toast({ title: "Solicitud Actualizada" });
@@ -541,16 +538,15 @@ export const useRequests = () => {
             if (!currentUser) return;
             updateState({ isSubmitting: true });
             try {
-                const rawUpdated = await updatePendingAction({
+                const updated = await updatePendingAction({
                     entityId: request.id,
                     action,
                     notes: `Solicitud de ${action === 'unapproval-request' ? 'desaprobación' : 'cancelación'} iniciada.`,
                     updatedBy: currentUser.name,
                 });
-                const updated = sanitizeRequest(rawUpdated);
                 updateState({
-                    activeRequests: state.activeRequests.map(r => r.id === updated.id ? updated : r),
-                    archivedRequests: state.archivedRequests.map(r => r.id === updated.id ? updated : r)
+                    activeRequests: state.activeRequests.map(r => r.id === updated.id ? sanitizeRequest(updated) : r),
+                    archivedRequests: state.archivedRequests.map(r => r.id === updated.id ? sanitizeRequest(updated) : r)
                 });
                 toast({ title: "Solicitud Enviada", description: `Tu solicitud de ${action === 'unapproval-request' ? 'desaprobación' : 'cancelación'} ha sido enviada para revisión.` });
             } catch (error: any) {
@@ -875,14 +871,13 @@ export const useRequests = () => {
             updateState({ isSubmitting: true });
             try {
                 const payload = { ...state.notePayload, updatedBy: currentUser.name };
-                const rawUpdatedRequest = await addNoteToRequest(payload);
-                const updatedRequest = sanitizeRequest(rawUpdatedRequest);
+                const updatedRequest = await addNoteToRequest(payload);
                 toast({ title: "Nota Añadida" });
                 setState(prevState => ({
                     ...prevState,
                     isAddNoteDialogOpen: false,
-                    activeRequests: prevState.activeRequests.map(o => o.id === updatedRequest.id ? updatedRequest : o),
-                    archivedRequests: prevState.archivedRequests.map(o => o.id === updatedRequest.id ? updatedRequest : o)
+                    activeRequests: prevState.activeRequests.map(o => o.id === updatedRequest.id ? sanitizeRequest(updatedRequest) : o),
+                    archivedRequests: prevState.archivedRequests.map(o => o.id === updatedRequest.id ? sanitizeRequest(updatedRequest) : o)
                 }));
             } catch(error: any) {
                 logError("Failed to add note to request", { context: 'useRequests.handleAddNote', error: error.message });
@@ -895,8 +890,8 @@ export const useRequests = () => {
             if (!currentUser) return;
             const updated = await updateRequestDetails({ requestId, ...details, updatedBy: currentUser.name });
             updateState({ 
-                activeRequests: state.activeRequests.map(o => o.id === requestId ? updated : o),
-                archivedRequests: state.archivedRequests.map(o => o.id === requestId ? updated : o)
+                activeRequests: state.activeRequests.map(o => o.id === requestId ? sanitizeRequest(updated) : o),
+                archivedRequests: state.archivedRequests.map(o => o.id === requestId ? sanitizeRequest(updated) : o)
             });
         },
         setNewRequest: (updater: (prev: State['newRequest']) => State['newRequest']) => {
@@ -1044,3 +1039,1222 @@ export const useRequests = () => {
 }
 
     
+```
+- src/modules/requests/lib/actions.ts:
+```ts
+/**
+ * @fileoverview Client-side functions for interacting with the request module's server-side DB functions.
+ * This abstraction layer ensures components only call client-safe functions.
+ */
+'use client';
+
+import type { PurchaseRequest, UpdateRequestStatusPayload, PurchaseRequestHistoryEntry, RequestSettings, UpdatePurchaseRequestPayload, RejectCancellationPayload, DateRange, AdministrativeAction, AdministrativeActionPayload, StockInfo, ErpOrderHeader, ErpOrderLine, User, RequestNotePayload, UserPreferences, PurchaseSuggestion, PurchaseRequestPriority, ErpPurchaseOrderHeader, ErpPurchaseOrderLine } from '../../core/types';
+import { logInfo, logError } from '@/modules/core/lib/logger';
+import { createNotificationForPermission, createNotification } from '@/modules/core/lib/notifications-actions';
+import { 
+    getRequests, 
+    addRequest,
+    updateRequest,
+    updateStatus, 
+    getRequestHistory as getRequestHistoryServer,
+    getSettings,
+    saveSettings,
+    updatePendingAction as updatePendingActionServer,
+    getErpOrderData as getErpOrderDataServer,
+    getUserByName,
+    getRolesWithPermission,
+    addNote as addNoteServer,
+    updateRequestDetails as updateRequestDetailsServer
+} from './db';
+import {
+    saveUserPreferences as saveUserPreferencesServer,
+    getUserPreferences as getUserPreferencesServer,
+    getAllErpPurchaseOrderHeaders as getAllErpPurchaseOrderHeadersServer,
+    getAllErpPurchaseOrderLines as getAllErpPurchaseOrderLinesServer,
+} from '@/modules/core/lib/db';
+import { getAllProducts, getAllStock, getAllCustomers } from '@/modules/core/lib/db';
+
+
+/**
+ * Fetches purchase requests from the server.
+ * @param options - Pagination and filtering options.
+ * @returns A promise that resolves to the requests and total archived count.
+ */
+export async function getPurchaseRequests(options: { 
+    page?: number; 
+    pageSize?: number;
+    filters?: {
+        searchTerm?: string;
+        status?: string;
+        classification?: string;
+        dateRange?: DateRange;
+    };
+}): Promise<{ requests: PurchaseRequest[], totalArchivedCount: number }> {
+    return getRequests(options);
+}
+
+/**
+ * Saves a new purchase request.
+ * @param request - The request data to save.
+ * @param requestedBy - The name of the user creating the request.
+ * @returns The newly created purchase request.
+ */
+export async function savePurchaseRequest(request: Omit<PurchaseRequest, 'id' | 'consecutive' | 'requestDate' | 'status' | 'reopened' | 'requestedBy' | 'deliveredQuantity' | 'receivedInWarehouseBy' | 'receivedDate' | 'previousStatus' | 'lastModifiedAt' | 'lastModifiedBy' | 'hasBeenModified' | 'approvedBy' | 'lastStatusUpdateBy' | 'lastStatusUpdateNotes'>, requestedBy: string): Promise<PurchaseRequest> {
+    const createdRequest = await addRequest(request, requestedBy);
+    await logInfo(`Purchase request ${createdRequest.consecutive} created by ${requestedBy}`, { item: createdRequest.itemDescription, quantity: createdRequest.quantity });
+    
+    await createNotificationForPermission(
+        'requests:status:review',
+        `Nueva solicitud ${createdRequest.consecutive} para "${createdRequest.clientName}" requiere revisión.`,
+        `/dashboard/requests?search=${createdRequest.consecutive}`,
+        createdRequest.id,
+        'purchase-request',
+        'review'
+    );
+    
+    return createdRequest;
+}
+
+/**
+ * Updates the main details of an existing purchase request.
+ * @param payload - The data to update.
+ * @returns The updated purchase request.
+ */
+export async function updatePurchaseRequest(payload: UpdatePurchaseRequestPayload): Promise<PurchaseRequest> {
+    const updatedRequest = await updateRequest(payload);
+    await logInfo(`Purchase request ${updatedRequest.consecutive} edited by ${payload.updatedBy}`, { requestId: payload.requestId });
+    return updatedRequest;
+}
+
+/**
+ * Updates the status of a purchase request.
+ * @param payload - The status update information.
+ * @returns The updated purchase request.
+ */
+export async function updatePurchaseRequestStatus(payload: UpdateRequestStatusPayload): Promise<PurchaseRequest> {
+    const updatedRequest = await updateStatus(payload);
+    await logInfo(`Status of request ${updatedRequest.consecutive} updated to '${payload.status}' by ${payload.updatedBy}`, { notes: payload.notes, requestId: payload.requestId });
+    
+    if (updatedRequest.requestedBy !== payload.updatedBy) {
+        const targetUser = await getUserByName(updatedRequest.requestedBy);
+        if (targetUser) {
+             const settings = await getSettings();
+             const statusConfig = {
+                'pending': 'Pendiente',
+                'purchasing-review': 'Revisión Compras',
+                'pending-approval': 'Pendiente Aprobación',
+                'approved': 'Aprobada',
+                'ordered': 'Ordenada',
+                'received-in-warehouse': 'Recibido en Bodega',
+                'entered-erp': 'Ingresado ERP',
+                'canceled': 'Cancelada'
+             };
+             const statusLabel = (statusConfig as any)[payload.status] || payload.status;
+            await createNotification({
+                userId: targetUser.id,
+                message: `La solicitud ${updatedRequest.consecutive} ha sido actualizada a: ${statusLabel}.`,
+                href: `/dashboard/requests?search=${updatedRequest.consecutive}`,
+                entityId: updatedRequest.id,
+                entityType: 'purchase-request',
+                entityStatus: payload.status,
+            });
+        }
+    }
+    
+    return updatedRequest;
+}
+
+/**
+ * Updates specific details of a purchase request like priority.
+ * @param payload - The details to update.
+ * @returns The updated purchase request.
+ */
+export async function updateRequestDetails(payload: { requestId: number; priority: PurchaseRequestPriority, updatedBy: string }): Promise<PurchaseRequest> {
+    const updatedRequest = await updateRequestDetailsServer(payload);
+    await logInfo(`Details for request ${updatedRequest.consecutive} updated by ${payload.updatedBy}`, { details: payload });
+    return updatedRequest;
+}
+
+
+/**
+ * Fetches the history for a specific request.
+ * @param requestId - The ID of the request.
+ * @returns A promise that resolves to an array of history entries.
+ */
+export async function getRequestHistory(requestId: number): Promise<PurchaseRequestHistoryEntry[]> {
+    return getRequestHistoryServer(requestId);
+}
+
+/**
+ * Fetches request settings from the server.
+ * @returns The current request settings.
+ */
+export async function getRequestSettings(): Promise<RequestSettings> {
+    return getSettings();
+}
+
+/**
+ * Saves request settings.
+ * @param settings - The settings object to save.
+ */
+export async function saveRequestSettings(settings: RequestSettings): Promise<void> {
+    await logInfo('Purchase requests settings updated.');
+    return saveSettings(settings);
+}
+
+/**
+ * Updates the pending administrative action for a request.
+ * @param payload - The action details.
+ * @returns The updated purchase request.
+ */
+export async function updatePendingAction(payload: AdministrativeActionPayload): Promise<PurchaseRequest> {
+    const updatedRequest = await updatePendingActionServer(payload);
+    await logInfo(`Administrative action '${payload.action}' initiated for request ${updatedRequest.consecutive} by ${payload.updatedBy}.`);
+    
+    if (payload.action.includes('request')) {
+         await createNotificationForPermission(
+            'requests:status:approve', // A suitable admin-level permission
+            `El usuario ${payload.updatedBy} solicita cancelar la solicitud ${updatedRequest.consecutive}.`,
+            `/dashboard/requests?search=${updatedRequest.consecutive}`,
+            updatedRequest.id,
+            'purchase-request',
+            'cancellation-request'
+        );
+    }
+    
+    return updatedRequest;
+}
+
+/**
+ * Fetches the header and line items for a given ERP order number.
+ * @param orderNumber The ERP order number to fetch.
+ * @returns An object containing the order headers, an array of lines, and the real-time inventory for those lines.
+ */
+export async function getErpOrderData(identifier: string | DateRange): Promise<{headers: ErpOrderHeader[], lines: ErpOrderLine[], inventory: StockInfo[]}> {
+    return getErpOrderDataServer(identifier);
+}
+
+/**
+ * Analyzes ERP orders within a date range and suggests purchases for items with stock shortages.
+ * @param dateRange - The date range for ERP orders to analyze.
+ * @returns A promise that resolves to an array of purchase suggestions.
+ */
+export async function getRequestSuggestions(dateRange: DateRange): Promise<PurchaseSuggestion[]> {
+    const { headers, lines } = await getErpOrderDataServer(dateRange);
+    const [allStock, allProducts, allCustomers, erpPoHeaders, erpPoLines] = await Promise.all([
+        getAllStock(),
+        getAllProducts(),
+        getAllCustomers(),
+        getAllErpPurchaseOrderHeaders(),
+        getAllErpPurchaseOrderLines(),
+    ]);
+    const allActiveRequests = await getRequests({}).then(res => res.requests.filter(r => ['pending', 'approved', 'ordered', 'purchasing-review', 'pending-approval'].includes(r.status)));
+
+    const activePoNumbers = new Set(erpPoHeaders.filter((h: any) => h.ESTADO === 'A').map((h: any) => h.ORDEN_COMPRA));
+
+    const requiredItems = new Map<string, { totalRequired: number; sourceOrders: Set<string>; clientIds: Set<string>; erpUsers: Set<string>; earliestCreationDate: Date | null, earliestDueDate: Date | null; }>();
+
+    for (const line of lines) {
+        const header = headers.find(h => h.PEDIDO === line.PEDIDO);
+        if (!header) continue;
+
+        if (!requiredItems.has(line.ARTICULO)) {
+            requiredItems.set(line.ARTICULO, { totalRequired: 0, sourceOrders: new Set(), clientIds: new Set(), erpUsers: new Set(), earliestCreationDate: null, earliestDueDate: null });
+        }
+        
+        const item = requiredItems.get(line.ARTICULO)!;
+        item.totalRequired += line.CANTIDAD_PEDIDA;
+        item.sourceOrders.add(header.PEDIDO);
+        item.clientIds.add(header.CLIENTE);
+        if (header.USUARIO) {
+            item.erpUsers.add(header.USUARIO);
+        }
+        
+        const creationDate = new Date(header.FECHA_PEDIDO);
+        if (!item.earliestCreationDate || creationDate < item.earliestCreationDate) {
+            item.earliestCreationDate = creationDate;
+        }
+
+        const dueDate = new Date(header.FECHA_PROMETIDA);
+        if (!item.earliestDueDate || dueDate < item.earliestDueDate) {
+            item.earliestDueDate = dueDate;
+        }
+    }
+
+    const suggestions: PurchaseSuggestion[] = [];
+
+    for (const [itemId, data] of requiredItems.entries()) {
+        const stockInfo: StockInfo | undefined = allStock.find((s: StockInfo) => s.itemId === itemId);
+        const currentStock = stockInfo?.totalStock ?? 0;
+        
+        const inTransitStock = erpPoLines
+            .filter((line: any) => line.ARTICULO === itemId && activePoNumbers.has(line.ORDEN_COMPRA))
+            .reduce((sum: any, line: any) => sum + line.CANTIDAD_ORDENADA, 0);
+
+        const existingActiveRequests = allActiveRequests.filter(r => r.itemId === itemId);
+        
+        const shortage = data.totalRequired - currentStock - inTransitStock;
+
+        if (shortage > 0) {
+            const productInfo = allProducts.find((p: any) => p.id === itemId);
+            const involvedClients = Array.from(data.clientIds).map(id => {
+                const customer = allCustomers.find((c: any) => c.id === id);
+                return { id, name: customer?.name || 'Desconocido' };
+            });
+            
+            suggestions.push({
+                itemId,
+                itemDescription: productInfo?.description || 'Artículo no encontrado',
+                itemClassification: productInfo?.classification || 'N/A',
+                totalRequired: data.totalRequired,
+                currentStock,
+                inTransitStock,
+                shortage,
+                sourceOrders: Array.from(data.sourceOrders),
+                involvedClients,
+                erpUsers: Array.from(data.erpUsers),
+                earliestCreationDate: data.earliestCreationDate ? data.earliestCreationDate.toISOString() : null,
+                earliestDueDate: data.earliestDueDate ? data.earliestDueDate.toISOString() : null,
+                existingActiveRequests,
+            });
+        }
+    }
+
+    return suggestions;
+}
+
+
+/**
+ * Adds a note to a purchase request without changing its status.
+ * @param payload - The note details including requestId and notes.
+ * @returns The updated purchase request.
+ */
+export async function addNoteToRequest(payload: { requestId: number; notes: string; updatedBy: string; }): Promise<PurchaseRequest> {
+    const updatedRequest = await addNoteServer(payload);
+    await logInfo(`Note added to request ${updatedRequest.consecutive} by ${payload.updatedBy}.`);
+    return updatedRequest;
+}
+
+/**
+ * Gets the saved preferences for the purchase suggestions page for a specific user.
+ * @param userId The ID of the user.
+ * @returns A promise that resolves to the saved preferences or null.
+ */
+export async function getPurchaseSuggestionsPreferences(userId: number): Promise<Partial<UserPreferences> | null> {
+    return getUserPreferencesServer(userId, 'purchaseSuggestionsPrefs');
+}
+
+/**
+ * Saves the preferences for the purchase suggestions page for a specific user.
+ * @param userId The ID of the user.
+ * @param preferences The preferences object to save.
+ */
+export async function savePurchaseSuggestionsPreferences(userId: number, preferences: Partial<UserPreferences>): Promise<void> {
+    return saveUserPreferencesServer(userId, 'purchaseSuggestionsPrefs', preferences);
+}
+
+
+export async function getAllErpPurchaseOrderHeaders(): Promise<ErpPurchaseOrderHeader[]> {
+    return getAllErpPurchaseOrderHeadersServer();
+}
+
+export async function getAllErpPurchaseOrderLines(): Promise<ErpPurchaseOrderLine[]> {
+    return getAllErpPurchaseOrderLinesServer();
+}
+
+```
+- src/modules/requests/lib/schema.ts:
+```ts
+/**
+ * @fileoverview Defines the expected database schema for the Requests module.
+ * This is used by the central database audit system to verify integrity.
+ */
+
+import type { ExpectedSchema } from '@/modules/core/types';
+
+export const requestSchema: ExpectedSchema = {
+    'request_settings': ['key', 'value'],
+    'purchase_requests': [
+        'id', 'consecutive', 'purchaseOrder', 'requestDate', 'requiredDate', 'arrivalDate',
+        'receivedDate', 'clientId', 'clientName', 'clientTaxId', 'itemId', 'itemDescription',
+        'quantity', 'deliveredQuantity', 'inventory', 'priority', 'purchaseType', 'unitSalePrice',
+        'salePriceCurrency', 'requiresCurrency', 'erpOrderNumber', 'erpOrderLine', 'erpEntryNumber',
+        'manualSupplier', 'route', 'shippingMethod', 'status', 'pendingAction', 'notes',
+        'requestedBy', 'approvedBy', 'receivedInWarehouseBy', 'lastStatusUpdateBy',
+        'lastStatusUpdateNotes', 'reopened', 'previousStatus', 'lastModifiedBy', 'lastModifiedAt',
+        'hasBeenModified'
+    ],
+    'purchase_request_history': ['id', 'requestId', 'timestamp', 'status', 'notes', 'updatedBy'],
+};
+
+```
+- src/modules/warehouse/lib/actions.ts:
+```ts
+/**
+ * @fileoverview Client-side functions for interacting with the warehouse module's server-side DB functions.
+ * This abstraction layer ensures components only call client-safe functions.
+ */
+'use server';
+
+import {
+    getLocations as getLocationsServer,
+    addLocation as addLocationServer,
+    updateLocation as updateLocationServer,
+    deleteLocation as deleteLocationServer,
+    getWarehouseSettings as getWarehouseSettingsServer,
+    saveWarehouseSettings as saveWarehouseSettingsServer,
+    getInventoryForItem as getInventoryForItemServer,
+    logMovement as logMovementServer,
+    updateInventory as updateInventoryServer,
+    getItemLocations as getItemLocationsServer,
+    assignItemToLocation as assignItemToLocationServer,
+    unassignItemFromLocation as unassignItemFromLocationServer,
+    getWarehouseData as getWarehouseDataServer,
+    getMovements as getMovementsServer,
+} from './db';
+import type { WarehouseSettings, WarehouseLocation, WarehouseInventoryItem, MovementLog, ItemLocation } from '../../core/types';
+import { logInfo } from '@/modules/core/lib/logger';
+
+export const getWarehouseSettings = async (): Promise<WarehouseSettings> => getWarehouseSettingsServer();
+export async function saveWarehouseSettings(settings: WarehouseSettings): Promise<void> {
+    await logInfo("Warehouse settings updated.");
+    return saveWarehouseSettingsServer(settings);
+}
+export const getLocations = async (): Promise<WarehouseLocation[]> => getLocationsServer();
+
+export async function addLocation(location: Omit<WarehouseLocation, 'id'>): Promise<WarehouseLocation> {
+    const newLocation = await addLocationServer(location);
+    await logInfo(`New warehouse location created: ${newLocation.name} (${newLocation.code})`);
+    return newLocation;
+}
+export async function updateLocation(location: WarehouseLocation): Promise<WarehouseLocation> {
+    const updatedLocation = await updateLocationServer(location);
+    await logInfo(`Warehouse location updated: ${updatedLocation.name} (${updatedLocation.code})`);
+    return updatedLocation;
+}
+export async function deleteLocation(id: number): Promise<void> {
+    await logInfo(`Warehouse location with ID ${id} deleted.`);
+    return deleteLocationServer(id);
+}
+export const getInventoryForItem = async (itemId: string): Promise<WarehouseInventoryItem[]> => getInventoryForItemServer(itemId);
+export const logMovement = async (movement: Omit<MovementLog, 'id'|'timestamp'>): Promise<void> => logMovementServer(movement);
+export const updateInventory = async(itemId: string, locationId: number, quantityChange: number): Promise<void> => updateInventoryServer(itemId, locationId, quantityChange);
+
+// --- Simple Mode Actions ---
+export const getItemLocations = async (itemId: string): Promise<ItemLocation[]> => getItemLocationsServer(itemId);
+export async function assignItemToLocation(itemId: string, locationId: number): Promise<void> {
+    await logInfo(`Item ${itemId} assigned to location ID ${locationId}.`);
+    return assignItemToLocationServer(itemId, locationId);
+}
+export async function unassignItemFromLocation(itemLocationId: number): Promise<void> {
+    await logInfo(`Item location mapping with ID ${itemLocationId} was removed.`);
+    return unassignItemFromLocationServer(itemLocationId);
+}
+
+// --- Page-specific data loaders ---
+export const getWarehouseData = async () => getWarehouseDataServer();
+export const getMovements = async (itemId?: string): Promise<MovementLog[]> => getMovementsServer(itemId);
+
+```
+- src/modules/warehouse/lib/db.ts:
+```ts
+
+
+/**
+ * @fileoverview Server-side functions for the warehouse database.
+ */
+"use server";
+
+import { connectDb, getAllStock as getAllStockFromMain, getStockSettings as getStockSettingsFromMain } from '../../core/lib/db';
+import type { WarehouseLocation, WarehouseInventoryItem, MovementLog, WarehouseSettings, StockSettings, StockInfo, ItemLocation } from '../../core/types';
+
+const WAREHOUSE_DB_FILE = 'warehouse.db';
+
+// This function is automatically called when the database is first created.
+export async function initializeWarehouseDb(db: import('better-sqlite3').Database) {
+    const schema = `
+        CREATE TABLE IF NOT EXISTS locations (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            code TEXT UNIQUE NOT NULL,
+            type TEXT NOT NULL, -- 'building', 'zone', 'rack', 'shelf', 'bin'
+            parentId INTEGER,
+            FOREIGN KEY (parentId) REFERENCES locations(id) ON DELETE CASCADE
+        );
+
+        CREATE TABLE IF NOT EXISTS inventory (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            itemId TEXT NOT NULL, -- Corresponds to Product['id'] from main DB
+            locationId INTEGER NOT NULL,
+            quantity REAL NOT NULL DEFAULT 0,
+            lastUpdated TEXT NOT NULL,
+            FOREIGN KEY (locationId) REFERENCES locations(id) ON DELETE CASCADE,
+            UNIQUE (itemId, locationId)
+        );
+
+         CREATE TABLE IF NOT EXISTS item_locations (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            itemId TEXT NOT NULL,
+            locationId INTEGER NOT NULL,
+            clientId TEXT,
+            FOREIGN KEY (locationId) REFERENCES locations(id) ON DELETE CASCADE,
+            UNIQUE (itemId, locationId, clientId)
+        );
+
+        CREATE TABLE IF NOT EXISTS movements (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            itemId TEXT NOT NULL,
+            quantity REAL NOT NULL,
+            fromLocationId INTEGER,
+            toLocationId INTEGER,
+            timestamp TEXT NOT NULL,
+            userId INTEGER NOT NULL,
+            notes TEXT,
+            FOREIGN KEY (fromLocationId) REFERENCES locations(id),
+            FOREIGN KEY (toLocationId) REFERENCES locations(id)
+        );
+
+        CREATE TABLE IF NOT EXISTS warehouse_config (
+            key TEXT PRIMARY KEY,
+            value TEXT NOT NULL
+        );
+    `;
+    db.exec(schema);
+
+    // Insert default settings
+    const defaultSettings: WarehouseSettings = {
+        locationLevels: [
+            { type: 'building', name: 'Edificio' },
+            { type: 'zone', name: 'Zona' },
+            { type: 'rack', name: 'Rack' },
+            { type: 'shelf', name: 'Estante' },
+            { type: 'bin', name: 'Casilla' }
+        ],
+        enablePhysicalInventoryTracking: false,
+    };
+    db.prepare(`
+        INSERT OR IGNORE INTO warehouse_config (key, value) VALUES ('settings', ?)
+    `).run(JSON.stringify(defaultSettings));
+    
+    console.log(`Database ${WAREHOUSE_DB_FILE} initialized for Warehouse Management.`);
+    await runWarehouseMigrations(db);
+};
+
+export async function runWarehouseMigrations(db: import('better-sqlite3').Database) {
+    const warehouseConfigTable = db.prepare(`SELECT name FROM sqlite_master WHERE type='table' AND name='warehouse_config'`).get();
+    if (!warehouseConfigTable) {
+        // Table doesn't exist, probably a fresh DB, let initialization handle it
+        return;
+    }
+
+    // Migration to add enablePhysicalInventoryTracking
+    try {
+        const settingsRow = db.prepare(`SELECT value FROM warehouse_config WHERE key = 'settings'`).get() as { value: string } | undefined;
+        if (settingsRow) {
+            const settings = JSON.parse(settingsRow.value);
+            if (typeof settings.enablePhysicalInventoryTracking !== 'boolean') {
+                console.log("MIGRATION (warehouse.db): Adding enablePhysicalInventoryTracking to settings.");
+                settings.enablePhysicalInventoryTracking = false;
+                db.prepare(`UPDATE warehouse_config SET value = ? WHERE key = 'settings'`).run(JSON.stringify(settings));
+            }
+        }
+    } catch (error) {
+        console.error("Error during warehouse settings migration:", error);
+    }
+    
+    const itemLocationsTable = db.prepare(`SELECT name FROM sqlite_master WHERE type='table' AND name='item_locations'`).get();
+    if (!itemLocationsTable) {
+        console.log("MIGRATION (warehouse.db): Creating item_locations table.");
+        db.exec(`
+            CREATE TABLE IF NOT EXISTS item_locations (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                itemId TEXT NOT NULL,
+                locationId INTEGER NOT NULL,
+                clientId TEXT,
+                FOREIGN KEY (locationId) REFERENCES locations(id) ON DELETE CASCADE,
+                UNIQUE (itemId, locationId, clientId)
+            );
+        `);
+    }
+}
+
+export async function getWarehouseSettings(): Promise<WarehouseSettings> {
+    const db = await connectDb(WAREHOUSE_DB_FILE);
+    try {
+        const row = db.prepare(`SELECT value FROM warehouse_config WHERE key = 'settings'`).get() as { value: string } | undefined;
+        if (row) {
+            const settings = JSON.parse(row.value);
+            // Ensure enablePhysicalInventoryTracking exists, default to false if not.
+            if (typeof settings.enablePhysicalInventoryTracking !== 'boolean') {
+                settings.enablePhysicalInventoryTracking = false;
+            }
+            return settings;
+        }
+    } catch (error) {
+        console.error("Error fetching warehouse settings, returning default.", error);
+    }
+    // Return a default object if nothing is found or an error occurs
+    return {
+        locationLevels: [
+            { type: 'building', name: 'Edificio' },
+            { type: 'zone', name: 'Zona' },
+            { type: 'rack', name: 'Rack' },
+            { type: 'shelf', name: 'Estante' },
+            { type: 'bin', name: 'Casilla' }
+        ],
+        enablePhysicalInventoryTracking: false
+    };
+}
+
+export async function saveWarehouseSettings(settings: WarehouseSettings): Promise<void> {
+    const db = await connectDb(WAREHOUSE_DB_FILE);
+    db.prepare(`
+        INSERT OR REPLACE INTO warehouse_config (key, value) VALUES ('settings', ?)
+    `).run(JSON.stringify(settings));
+}
+
+export async function getLocations(): Promise<WarehouseLocation[]> {
+    const db = await connectDb(WAREHOUSE_DB_FILE);
+    return db.prepare('SELECT * FROM locations ORDER BY parentId, name').all() as WarehouseLocation[];
+}
+
+export async function addLocation(location: Omit<WarehouseLocation, 'id'>): Promise<WarehouseLocation> {
+    const db = await connectDb(WAREHOUSE_DB_FILE);
+    const { name, code, type, parentId } = location;
+    const info = db.prepare('INSERT INTO locations (name, code, type, parentId) VALUES (?, ?, ?, ?)').run(name, code, type, parentId ?? null);
+    const newLocation = db.prepare('SELECT * FROM locations WHERE id = ?').get(info.lastInsertRowid) as WarehouseLocation;
+    return newLocation;
+}
+
+export async function updateLocation(location: WarehouseLocation): Promise<WarehouseLocation> {
+    const db = await connectDb(WAREHOUSE_DB_FILE);
+    const { id, name, code, type, parentId } = location;
+    db.prepare('UPDATE locations SET name = ?, code = ?, type = ?, parentId = ? WHERE id = ?').run(name, code, type, parentId ?? null, id);
+    const updatedLocation = db.prepare('SELECT * FROM locations WHERE id = ?').get(id) as WarehouseLocation;
+    return updatedLocation;
+}
+
+export async function deleteLocation(id: number): Promise<void> {
+    const db = await connectDb(WAREHOUSE_DB_FILE);
+    // Note: ON DELETE CASCADE will handle child locations, item_locations and inventory.
+    db.prepare('DELETE FROM locations WHERE id = ?').run(id);
+}
+
+
+export async function getInventoryForItem(itemId: string): Promise<WarehouseInventoryItem[]> {
+    const db = await connectDb(WAREHOUSE_DB_FILE);
+    return db.prepare('SELECT * FROM inventory WHERE itemId = ?').all(itemId) as WarehouseInventoryItem[];
+}
+
+export async function updateInventory(itemId: string, locationId: number, quantityChange: number): Promise<void> {
+    const db = await connectDb(WAREHOUSE_DB_FILE);
+     db.prepare(
+        `INSERT INTO inventory (itemId, locationId, quantity, lastUpdated) 
+         VALUES (?, ?, ?, datetime('now'))
+         ON CONFLICT(itemId, locationId) 
+         DO UPDATE SET quantity = quantity + ?`
+    ).run(itemId, locationId, quantityChange, quantityChange);
+}
+
+export async function logMovement(movement: Omit<MovementLog, 'id' | 'timestamp'>): Promise<void> {
+    const db = await connectDb(WAREHOUSE_DB_FILE);
+    const newMovement = { ...movement, timestamp: new Date().toISOString() };
+    db.prepare(
+        'INSERT INTO movements (itemId, quantity, fromLocationId, toLocationId, timestamp, userId, notes) VALUES (@itemId, @quantity, @fromLocationId, @toLocationId, @timestamp, @userId, @notes)'
+    ).run(newMovement);
+}
+
+export async function getWarehouseData(): Promise<{ locations: WarehouseLocation[], inventory: WarehouseInventoryItem[], stock: StockInfo[], itemLocations: ItemLocation[], warehouseSettings: WarehouseSettings, stockSettings: StockSettings }> {
+    const db = await connectDb(WAREHOUSE_DB_FILE);
+    const locations = db.prepare('SELECT * FROM locations').all() as WarehouseLocation[];
+    const inventory = db.prepare('SELECT * FROM inventory').all() as WarehouseInventoryItem[];
+    const itemLocations = db.prepare('SELECT * FROM item_locations').all() as ItemLocation[];
+    const stock = await getAllStockFromMain();
+    const warehouseSettings = await getWarehouseSettings();
+    const stockSettings = await getStockSettingsFromMain();
+
+    // Sanitize data to ensure they are plain objects for serialization
+    return {
+        locations: locations.map(loc => ({
+            id: Number(loc.id),
+            name: String(loc.name),
+            code: String(loc.code),
+            type: String(loc.type),
+            parentId: loc.parentId ? Number(loc.parentId) : null
+        })),
+        inventory: inventory.map(inv => ({
+            id: Number(inv.id),
+            itemId: String(inv.itemId),
+            locationId: Number(inv.locationId),
+            quantity: Number(inv.quantity),
+            lastUpdated: String(inv.lastUpdated),
+        })),
+        stock: Array.isArray(stock) ? stock.map(s => ({
+            itemId: String(s.itemId),
+            stockByWarehouse: typeof s.stockByWarehouse === 'object' ? {...s.stockByWarehouse} : {},
+            totalStock: Number(s.totalStock)
+        })) : [],
+        itemLocations: itemLocations.map(il => ({
+            id: Number(il.id),
+            itemId: String(il.itemId),
+            locationId: Number(il.locationId),
+            clientId: il.clientId ? String(il.clientId) : null
+        })),
+        warehouseSettings,
+        stockSettings
+    };
+}
+
+export async function getMovements(itemId?: string): Promise<MovementLog[]> {
+    const db = await connectDb(WAREHOUSE_DB_FILE);
+    if (itemId) {
+        return db.prepare('SELECT * FROM movements WHERE itemId = ? ORDER BY timestamp DESC').all(itemId) as MovementLog[];
+    }
+    return db.prepare('SELECT * FROM movements ORDER BY timestamp DESC').all() as MovementLog[];
+}
+
+// --- Simple Mode Functions ---
+export async function getItemLocations(itemId: string): Promise<ItemLocation[]> {
+    const db = await connectDb(WAREHOUSE_DB_FILE);
+    return db.prepare('SELECT * FROM item_locations WHERE itemId = ?').all(itemId) as ItemLocation[];
+}
+
+export async function assignItemToLocation(itemId: string, locationId: number, clientId?: string | null): Promise<void> {
+    const db = await connectDb(WAREHOUSE_DB_FILE);
+    db.prepare('INSERT OR IGNORE INTO item_locations (itemId, locationId, clientId) VALUES (?, ?, ?)').run(itemId, locationId, clientId);
+}
+
+export async function unassignItemFromLocation(itemLocationId: number): Promise<void> {
+    const db = await connectDb(WAREHOUSE_DB_FILE);
+    db.prepare('DELETE FROM item_locations WHERE id = ?').run(itemLocationId);
+}
+
+```
+- src/modules/warehouse/lib/schema.ts:
+```ts
+/**
+ * @fileoverview Defines the expected database schema for the Warehouse module.
+ * This is used by the central database audit system to verify integrity.
+ */
+
+import type { ExpectedSchema } from '@/modules/core/types';
+
+export const warehouseSchema: ExpectedSchema = {
+    'locations': ['id', 'name', 'code', 'type', 'parentId'],
+    'inventory': ['id', 'itemId', 'locationId', 'quantity', 'lastUpdated'],
+    'item_locations': ['id', 'itemId', 'locationId', 'clientId'],
+    'movements': ['id', 'itemId', 'quantity', 'fromLocationId', 'toLocationId', 'timestamp', 'userId', 'notes'],
+    'warehouse_config': ['key', 'value'],
+};
+
+```
+- src/modules/warehouse/page.tsx:
+```tsx
+/**
+ * @fileoverview Main warehouse search page.
+ * This component allows users to search for products or customers and see a consolidated
+ * view of their assigned physical locations (from the warehouse module) and their
+ * stock levels from the ERP system.
+ */
+'use client';
+
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { usePageTitle } from '@/modules/core/hooks/usePageTitle';
+import { useAuthorization } from '@/modules/core/hooks/useAuthorization';
+import { useAuth } from '@/modules/core/hooks/useAuth';
+import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
+import { getWarehouseData } from '@/modules/warehouse/lib/actions';
+import { syncAllData } from '@/modules/core/lib/actions';
+import type { WarehouseLocation, WarehouseInventoryItem, Product, StockInfo, StockSettings, ItemLocation, Customer } from '@/modules/core/types';
+import { Search, MapPin, Package, Building, Waypoints, Box, Layers, Warehouse as WarehouseIcon, RefreshCw, Loader2, Info, User } from 'lucide-react';
+import { useDebounce } from 'use-debounce';
+import { Button } from '@/components/ui/button';
+import { useToast } from '@/modules/core/hooks/use-toast';
+import { logError } from '@/modules/core/lib/logger';
+import { Separator } from '@/components/ui/separator';
+
+type CombinedItem = {
+    product: Product | null;
+    physicalLocations: {
+        path: React.ReactNode;
+        quantity?: number; // Only present in advanced mode
+        clientId?: string;
+    }[];
+    erpStock: StockInfo | null;
+    client?: Customer | null;
+};
+
+const normalizeText = (text: string | null | undefined): string => {
+    if (!text) return "";
+    return text.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+};
+
+export default function WarehousePage() {
+    useAuthorization(['warehouse:access']);
+    const { setTitle } = usePageTitle();
+    const { toast } = useToast();
+    const { companyData, products, customers } = useAuth(); // Get master data from context
+
+    const [isLoading, setIsLoading] = useState(true);
+    const [isRefreshing, setIsRefreshing] = useState(false);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [debouncedSearchTerm] = useDebounce(searchTerm, companyData?.searchDebounceTime ?? 500);
+    
+    const [locations, setLocations] = useState<WarehouseLocation[]>([]);
+    const [inventory, setInventory] = useState<WarehouseInventoryItem[]>([]);
+    const [itemLocations, setItemLocations] = useState<ItemLocation[]>([]);
+    const [stock, setStock] = useState<StockInfo[]>([]);
+    const [stockSettings, setStockSettings] = useState<StockSettings | null>(null);
+    const [warehouseSettings, setWarehouseSettings] = useState<{ enablePhysicalInventoryTracking: boolean } | null>(null);
+
+    const loadData = useCallback(async () => {
+        setIsLoading(true);
+        try {
+            const wData = await getWarehouseData();
+            setLocations(wData.locations);
+            setInventory(wData.inventory);
+            setItemLocations(wData.itemLocations);
+            setStock(wData.stock);
+            setStockSettings(wData.stockSettings);
+            setWarehouseSettings(wData.warehouseSettings);
+        } catch (error) {
+            console.error("Failed to load warehouse data", error);
+            logError("Failed to load warehouse data", { error });
+            toast({ title: "Error de Carga", description: "No se pudieron cargar los datos del almacén.", variant: "destructive"});
+        } finally {
+            setIsLoading(false);
+        }
+    }, [toast]);
+    
+    useEffect(() => {
+        setTitle("Búsqueda en Almacén");
+        loadData();
+    }, [setTitle, loadData]);
+
+    const handleRefresh = async () => {
+        setIsRefreshing(true);
+        try {
+            await syncAllData();
+            toast({
+                title: "Datos Sincronizados",
+                description: `Los datos del ERP se han sincronizado. Recargando vista...`
+            });
+            await loadData();
+        } catch (error: any) {
+            logError("Error during manual data refresh", { error: error.message });
+            toast({
+                title: "Error al Refrescar",
+                description: error.message,
+                variant: "destructive"
+            });
+        } finally {
+            setIsRefreshing(false);
+        }
+    };
+
+    const LocationIcon = ({ type }: { type: WarehouseLocation['type'] }) => {
+        switch (type) {
+            case 'building': return <Building className="h-5 w-5 text-muted-foreground" />;
+            case 'zone': return <Waypoints className="h-5 w-5 text-muted-foreground" />;
+            case 'rack': return <Box className="h-5 w-5 text-muted-foreground" />;
+            case 'shelf': return <Layers className="h-5 w-5 text-muted-foreground" />;
+            case 'bin': return <div className="h-5 w-5 text-muted-foreground font-bold text-center">B</div>;
+            default: return <MapPin className="h-5 w-5 text-muted-foreground" />;
+        }
+    };
+    
+    const renderLocationPath = useCallback((locationId?: number | null) => {
+        if (!locationId) return 'N/A';
+        const path: WarehouseLocation[] = [];
+        let current: WarehouseLocation | undefined = locations.find(l => l.id === locationId);
+        
+        while (current) {
+            path.unshift(current);
+            const parentId = current.parentId;
+            if (parentId) {
+                current = locations.find(l => l.id === parentId);
+            } else {
+                current = undefined;
+            }
+        }
+
+        return (
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground">
+                {path.map((loc, index) => (
+                    <div key={loc.id} className="flex items-center gap-1">
+                        <LocationIcon type={loc.type} />
+                        <span>{loc.name}</span>
+                        {index < path.length - 1 && <span className="hidden sm:inline">/</span>}
+                    </div>
+                ))}
+            </div>
+        );
+    }, [locations]);
+
+    const filteredItems = useMemo(() => {
+        if (!debouncedSearchTerm) return [];
+
+        const searchTerms = normalizeText(debouncedSearchTerm).split(' ').filter(Boolean);
+        
+        const relevantProducts = products.filter(p => {
+            const targetText = normalizeText(`${p.id} ${p.description}`);
+            return searchTerms.every(term => targetText.includes(term));
+        });
+
+        const relevantCustomers = customers.filter(c => {
+            const targetText = normalizeText(`${c.id} ${c.name}`);
+            return searchTerms.every(term => targetText.includes(term));
+        });
+        const relevantCustomerIds = new Set(relevantCustomers.map(c => c.id));
+
+        const groupedByItem: { [key: string]: CombinedItem } = {};
+        
+        for (const product of relevantProducts) {
+            if (!groupedByItem[product.id]) {
+                groupedByItem[product.id] = {
+                    product: product,
+                    physicalLocations: [],
+                    erpStock: stock.find(s => s.itemId === product.id) || null,
+                };
+            }
+        }
+
+        if (warehouseSettings?.enablePhysicalInventoryTracking) {
+             inventory.forEach(item => {
+                if (groupedByItem[item.itemId]) {
+                    groupedByItem[item.itemId].physicalLocations.push({
+                        path: renderLocationPath(item.locationId),
+                        quantity: item.quantity
+                    });
+                }
+            });
+        } else {
+            itemLocations.forEach(itemLoc => {
+                const product = products.find(p => p.id === itemLoc.itemId);
+                
+                if (groupedByItem[itemLoc.itemId]) {
+                    groupedByItem[itemLoc.itemId].physicalLocations.push({
+                        path: renderLocationPath(itemLoc.locationId),
+                        clientId: itemLoc.clientId || undefined
+                    });
+                } 
+                else if (itemLoc.clientId && relevantCustomerIds.has(itemLoc.clientId)) {
+                    if (!groupedByItem[itemLoc.itemId]) {
+                         groupedByItem[itemLoc.itemId] = {
+                            product: product || { id: itemLoc.itemId, description: `Artículo ${itemLoc.itemId}`, active: 'S', cabys: '', classification: '', isBasicGood: 'N', lastEntry: '', notes: '', unit: '' },
+                            physicalLocations: [],
+                            erpStock: stock.find(s => s.itemId === itemLoc.itemId) || null,
+                            client: customers.find(c => c.id === itemLoc.clientId)
+                        };
+                    }
+                    groupedByItem[itemLoc.itemId].physicalLocations.push({
+                        path: renderLocationPath(itemLoc.locationId),
+                        clientId: itemLoc.clientId || undefined
+                    });
+                }
+            });
+        }
+        
+        return Object.values(groupedByItem).sort((a, b) => (a.product?.id || '').localeCompare(b.product?.id || ''));
+
+    }, [debouncedSearchTerm, products, customers, inventory, itemLocations, stock, warehouseSettings, renderLocationPath]);
+
+    if (isLoading || !warehouseSettings) {
+        return (
+            <main className="flex-1 p-4 md:p-6 lg:p-8">
+                 <Card className="max-w-4xl mx-auto">
+                    <CardHeader>
+                        <Skeleton className="h-8 w-64" />
+                        <Skeleton className="h-6 w-full max-w-md mt-2" />
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <Skeleton className="h-12 w-full" />
+                        <Skeleton className="h-40 w-full" />
+                    </CardContent>
+                 </Card>
+            </main>
+        )
+    }
+
+    return (
+        <main className="flex-1 p-4 md:p-6 lg:p-8">
+            <div className="max-w-4xl mx-auto">
+                <Card>
+                    <CardHeader>
+                        <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
+                            <div className="flex items-center gap-4">
+                                <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-cyan-600 text-white">
+                                    <WarehouseIcon className="h-6 w-6" />
+                                </div>
+                                <div>
+                                    <CardTitle className="text-2xl">Búsqueda en Almacén</CardTitle>
+                                    <CardDescription>Busca un artículo o cliente para encontrar su ubicación y existencias.</CardDescription>
+                                </div>
+                            </div>
+                            <Button onClick={handleRefresh} disabled={isRefreshing} className="w-full sm:w-auto">
+                                {isRefreshing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
+                                Refrescar Datos del ERP
+                            </Button>
+                        </div>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                        <div className="relative">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                            <Input
+                                type="search"
+                                placeholder="Escribe el código/descripción del artículo o el código/nombre del cliente..."
+                                className="w-full pl-10 text-lg h-14"
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                            />
+                        </div>
+                         {
+                            !warehouseSettings.enablePhysicalInventoryTracking && (
+                                <div className="flex items-center gap-2 p-3 rounded-lg bg-blue-50 border border-blue-200 text-blue-800">
+                                    <Info className="h-5 w-5"/>
+                                    <p className="text-sm">El modo de control de inventario físico está desactivado. Solo se mostrarán ubicaciones asignadas, no cantidades.</p>
+                                </div>
+                            )
+                        }
+                        
+                        <div className="space-y-4">
+                            {filteredItems.length > 0 ? (
+                                filteredItems.map(item => (
+                                    <Card key={item.product?.id || item.client?.id} className="w-full">
+                                        <CardHeader>
+                                            <CardTitle className="text-xl flex items-center gap-2">
+                                                <Package className="h-6 w-6 text-primary" />
+                                                {item.product?.description || 'Producto no encontrado'}
+                                            </CardTitle>
+                                            <CardDescription>Código: {item.product?.id}</CardDescription>
+                                             {item.client && (
+                                                <div className="text-sm text-muted-foreground flex items-center gap-2 pt-1">
+                                                    <User className="h-4 w-4"/>
+                                                    <span>Inventario de Cliente: <strong>{item.client.name}</strong> ({item.client.id})</span>
+                                                </div>
+                                            )}
+                                        </CardHeader>
+                                        <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+                                            <div>
+                                                <h4 className="font-semibold mb-2">Ubicaciones Físicas Asignadas</h4>
+                                                <div className="space-y-2">
+                                                {item.physicalLocations.length > 0 ? item.physicalLocations.map((loc, index) => (
+                                                    <div key={index} className="flex justify-between items-center p-2 border rounded-md">
+                                                        <span>{loc.path}</span>
+                                                        {loc.quantity !== undefined && (
+                                                            <span className="font-bold text-lg">{loc.quantity.toLocaleString()}</span>
+                                                        )}
+                                                    </div>
+                                                )) : <p className="text-sm text-muted-foreground">Sin ubicaciones asignadas.</p>}
+                                                </div>
+                                            </div>
+                                            <div>
+                                                 <h4 className="font-semibold mb-2">Existencias por Bodega (ERP)</h4>
+                                                 {item.erpStock && stockSettings ? (
+                                                     <div className="space-y-2">
+                                                        {Object.entries(item.erpStock.stockByWarehouse).map(([whId, qty]) => {
+                                                            const warehouse = stockSettings.warehouses.find(w => w.id === whId);
+                                                            return warehouse?.isVisible ? (
+                                                                <div key={whId} className="flex justify-between items-center p-2 border rounded-md">
+                                                                    <span>{warehouse.name} ({whId})</span>
+                                                                    <span className="font-bold text-lg">{qty.toLocaleString()}</span>
+                                                                </div>
+                                                            ) : null;
+                                                        })}
+                                                         <Separator />
+                                                         <div className="flex justify-between items-center p-2 font-bold">
+                                                            <span>Total ERP</span>
+                                                            <span className="text-xl">{item.erpStock.totalStock.toLocaleString()}</span>
+                                                         </div>
+                                                     </div>
+                                                 ) : (
+                                                     <p className="text-sm text-muted-foreground">Sin datos de existencias en el ERP.</p>
+                                                 )}
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+                                ))
+                            ) : debouncedSearchTerm ? (
+                                <div className="text-center py-10 text-muted-foreground">
+                                    <p>No se encontraron resultados para &quot;{debouncedSearchTerm}&quot;.</p>
+                                </div>
+                            ) : (
+                                 <div className="text-center py-10 text-muted-foreground">
+                                    <p>Comienza a escribir para buscar un artículo o cliente.</p>
+                                </div>
+                            )}
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
+        </main>
+    );
+}
+
+```
+- tailwind.config.ts:
+```ts
+import type {Config} from 'tailwindcss';
+
+const config: Config = {
+  darkMode: ['class'],
+  content: [
+    './src/pages/**/*.{js,ts,jsx,tsx,mdx}',
+    './src/components/**/*.{js,ts,jsx,tsx,mdx}',
+    './src/app/**/*.{js,ts,jsx,tsx,mdx}',
+  ],
+  safelist: [
+    'bg-blue-500',
+    'bg-green-500',
+    'bg-orange-500',
+    'bg-cyan-700',
+    'bg-red-600',
+    'bg-indigo-700',
+    'bg-purple-700',
+    'bg-amber-700',
+    'bg-teal-700',
+    'bg-green-700',
+    'bg-slate-600',
+    'bg-yellow-500',
+    'bg-cyan-600',
+    'bg-teal-600',
+    'bg-blue-600',
+    'bg-blue-700',
+    'bg-emerald-600',
+    'bg-gray-500',
+    'bg-gray-600',
+    'bg-gray-700',
+    'bg-red-700',
+    'bg-teal-500',
+    'bg-cyan-500',
+    'bg-orange-400',
+    'bg-orange-600',
+    'bg-indigo-500',
+    'bg-purple-600',
+    'bg-indigo-600',
+    'bg-fuchsia-600',
+    'bg-sky-600',
+  ],
+  theme: {
+    extend: {
+      colors: {
+        background: 'hsl(var(--background))',
+        foreground: 'hsl(var(--foreground))',
+        card: {
+          DEFAULT: 'hsl(var(--card))',
+          foreground: 'hsl(var(--card-foreground))',
+        },
+        popover: {
+          DEFAULT: 'hsl(var(--popover))',
+          foreground: 'hsl(var(--popover-foreground))',
+        },
+        primary: {
+          DEFAULT: 'hsl(var(--primary))',
+          foreground: 'hsl(var(--primary-foreground))',
+        },
+        secondary: {
+          DEFAULT: 'hsl(var(--secondary))',
+          foreground: 'hsl(var(--secondary-foreground))',
+        },
+        muted: {
+          DEFAULT: 'hsl(var(--muted))',
+          foreground: 'hsl(var(--muted-foreground))',
+        },
+        accent: {
+          DEFAULT: 'hsl(var(--accent))',
+          foreground: 'hsl(var(--accent-foreground))',
+        },
+        destructive: {
+          DEFAULT: 'hsl(var(--destructive))',
+          foreground: 'hsl(var(--destructive-foreground))',
+        },
+        border: 'hsl(var(--border))',
+        input: 'hsl(var(--input))',
+        ring: 'hsl(var(--ring))',
+        chart: {
+          '1': 'hsl(var(--chart-1))',
+          '2': 'hsl(var(--chart-2))',
+          '3': 'hsl(var(--chart-3))',
+          '4': 'hsl(var(--chart-4))',
+          '5': 'hsl(var(--chart-5))',
+        },
+        sidebar: {
+          DEFAULT: 'hsl(var(--sidebar-background))',
+          foreground: 'hsl(var(--sidebar-foreground))',
+          primary: 'hsl(var(--sidebar-primary))',
+          'primary-foreground': 'hsl(var(--sidebar-primary-foreground))',
+          accent: 'hsl(var(--sidebar-accent))',
+          'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
+          border: 'hsl(var(--sidebar-border))',
+          ring: 'hsl(var(--sidebar-ring))',
+        },
+      },
+      borderRadius: {
+        lg: 'var(--radius)',
+        md: 'calc(var(--radius) - 2px)',
+        sm: 'calc(var(--radius) - 4px)',
+      },
+      keyframes: {
+        'accordion-down': {
+          from: {
+            height: '0',
+          },
+          to: {
+            height: 'var(--radix-accordion-content-height)',
+          },
+        },
+        'accordion-up': {
+          from: {
+            height: 'var(--radix-accordion-content-height)',
+          },
+          to: {
+            height: '0',
+          },
+        },
+      },
+      animation: {
+        'accordion-down': 'accordion-down 0.2s ease-out',
+        'accordion-up': 'accordion-up 0.2s ease-out',
+      },
+    },
+  },
+  plugins: [require('tailwindcss-animate')],
+};
+
+export default config;
+
+```
+- tsconfig.json:
+```json
+{
+  "compilerOptions": {
+    "target": "ES2017",
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "allowJs": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "module": "esnext",
+    "baseUrl": ".",
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "preserve",
+    "incremental": true,
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ],
+    "paths": {
+      "@/*": ["src/*"]
+    }
+  },
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+  "exclude": ["node_modules"]
+}
+
+```
