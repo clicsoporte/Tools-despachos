@@ -1,4 +1,3 @@
-
 /**
  * @fileoverview This hook has been refactored to be a simple facade.
  * It now imports and re-exports the centralized logic from `usePurchaseSuggestionsLogic`
