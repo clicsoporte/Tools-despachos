@@ -1,4 +1,3 @@
-
 /**
  * @fileoverview Custom hook `useRequests` for managing the state and logic of the Purchase Request page.
  * This hook encapsulates all state and actions for the module, keeping the UI component clean.
@@ -1043,5 +1042,3 @@ export const useRequests = () => {
         isAuthorized
     };
 }
-
-    

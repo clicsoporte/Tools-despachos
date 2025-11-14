@@ -2,6 +2,7 @@
  * @fileoverview Centralized logic hook for Purchase Suggestions.
  * This hook is the single source of truth for analyzing ERP orders,
  * calculating stock shortages, and generating purchase suggestions.
+ * It is designed to be used by multiple components that need this logic.
  */
 'use client';
 
@@ -17,12 +18,8 @@ import { useAuth } from '@/modules/core/hooks/useAuth';
 import { subDays, startOfDay } from 'date-fns';
 import { useDebounce } from 'use-debounce';
 import { exportToExcel } from '@/modules/core/lib/excel-export';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { cn } from '@/lib/utils';
-import { Info } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { ToastAction } from "@/components/ui/toast";
-
 
 export type SortKey = keyof Pick<PurchaseSuggestion, 'earliestCreationDate' | 'earliestDueDate' | 'shortage' | 'totalRequired' | 'currentStock' | 'inTransitStock' | 'erpUsers' | 'sourceOrders' | 'involvedClients'> | 'item';
 export type SortDirection = 'asc' | 'desc';
@@ -183,6 +180,9 @@ export function usePurchaseSuggestionsLogic() {
             const dir = state.sortDirection === 'asc' ? 1 : -1;
             const valA = a[state.sortKey];
             const valB = b[state.sortKey];
+            
+            if (valA === null || valA === undefined) return 1 * dir;
+            if (valB === null || valB === undefined) return -1 * dir;
 
             if(typeof valA === 'string' && typeof valB === 'string') {
                 return valA.localeCompare(valB, 'es') * dir;
@@ -192,6 +192,10 @@ export function usePurchaseSuggestionsLogic() {
             }
              if (valA instanceof Date && valB instanceof Date) {
                 return (valA.getTime() - valB.getTime()) * dir;
+            }
+            // Handle array comparisons by their length
+            if(Array.isArray(valA) && Array.isArray(valB)) {
+                return (valA.length - valB.length) * dir;
             }
             return 0;
         });
@@ -333,7 +337,8 @@ export function usePurchaseSuggestionsLogic() {
         });
     };
     
-    const getColumnContent = (item: PurchaseSuggestion, colId: string): { content: React.ReactNode, className?: string } => {
+    // Returns data, not JSX
+    const getColumnContent = (item: PurchaseSuggestion, colId: string) => {
         const isDuplicate = item.existingActiveRequests.length > 0;
         const totalRequestedInActive = item.existingActiveRequests.reduce((sum, req) => sum + req.quantity, 0);
 
@@ -341,65 +346,30 @@ export function usePurchaseSuggestionsLogic() {
 
         switch (colId) {
             case 'item':
-                return { 
-                    content: (
-                        <div>
-                            <p className="font-medium">{item.itemDescription}</p>
-                            <p className="text-sm text-muted-foreground">{item.itemId}</p>
-                        </div>
-                    ), 
-                    className: baseClassName 
-                };
+                return { type: 'item', data: { id: item.itemId, description: item.itemDescription }, className: baseClassName };
             case 'activeRequests':
-                if (!isDuplicate) return { content: <p className="text-xs text-muted-foreground">Ninguna</p>, className: baseClassName };
-                return { 
-                    content: (
-                        <Tooltip>
-                            <TooltipTrigger asChild>
-                                <span className="inline-flex items-center gap-1 rounded-md bg-amber-200 px-2 py-1 text-xs font-semibold text-amber-800">
-                                    <Info className="h-3 w-3" />
-                                    {totalRequestedInActive.toLocaleString()}
-                                </span>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                                <p className="font-bold">Este artículo ya tiene solicitudes activas:</p>
-                                <ul className="list-disc list-inside mt-1 text-xs">
-                                    {item.existingActiveRequests.map(req => (
-                                        <li key={req.id}>{req.consecutive} ({req.status}) - Cant: {req.quantity} - OC: {req.purchaseOrder} - Por: {req.requestedBy}</li>
-                                    ))}
-                                    <li className="font-semibold mt-1">Total activo: {totalRequestedInActive}</li>
-                                </ul>
-                            </TooltipContent>
-                        </Tooltip>
-                    ), 
-                    className: baseClassName 
-                };
+                if (!isDuplicate) return { type: 'string', data: 'Ninguna', className: baseClassName };
+                return { type: 'activeRequests', data: { total: totalRequestedInActive, requests: item.existingActiveRequests }, className: baseClassName };
             case 'sourceOrders':
-                return { 
-                    content: (
-                        <div className="text-xs text-muted-foreground space-y-0.5">
-                            {item.sourceOrders.map(order => <div key={order}>{order}</div>)}
-                        </div>
-                    ), 
-                    className: baseClassName 
-                };
+                return { type: 'array', data: item.sourceOrders, className: baseClassName };
             case 'clients':
-                return { 
-                    content: (
-                        <div className="text-xs text-muted-foreground space-y-0.5">
-                            {item.involvedClients.map(client => <div key={client.id} className="truncate" title={`${client.name} (${client.id})`}>{client.name}</div>)}
-                        </div>
-                    ), 
-                    className: baseClassName 
-                };
-            case 'erpUsers': return { content: <p className="text-xs text-muted-foreground">{item.erpUsers.join(', ')}</p>, className: baseClassName };
-            case 'creationDate': return { content: item.earliestCreationDate ? new Date(item.earliestCreationDate).toLocaleDateString('es-CR') : 'N/A', className: baseClassName };
-            case 'dueDate': return { content: item.earliestDueDate ? new Date(item.earliestDueDate).toLocaleDateString('es-CR') : 'N/A', className: baseClassName };
-            case 'required': return { content: item.totalRequired.toLocaleString(), className: cn('text-right', baseClassName) };
-            case 'stock': return { content: item.currentStock.toLocaleString(), className: cn('text-right', baseClassName) };
-            case 'inTransit': return { content: item.inTransitStock.toLocaleString(), className: cn('text-right font-semibold text-blue-600', baseClassName) };
-            case 'shortage': return { content: item.shortage.toLocaleString(), className: cn('text-right font-bold text-red-600', baseClassName) };
-            default: return { content: '', className: baseClassName };
+                return { type: 'array', data: item.involvedClients.map(c => c.name), className: baseClassName };
+            case 'erpUsers':
+                return { type: 'string', data: item.erpUsers.join(', '), className: `text-xs text-muted-foreground ${baseClassName}` };
+            case 'creationDate':
+                return { type: 'date', data: item.earliestCreationDate, className: baseClassName };
+            case 'dueDate':
+                return { type: 'date', data: item.earliestDueDate, className: baseClassName };
+            case 'required':
+                return { type: 'number', data: item.totalRequired, className: `text-right ${baseClassName}` };
+            case 'stock':
+                return { type: 'number', data: item.currentStock, className: `text-right ${baseClassName}` };
+            case 'inTransit':
+                return { type: 'number', data: item.inTransitStock, className: `text-right font-semibold text-blue-600 ${baseClassName}` };
+            case 'shortage':
+                return { type: 'number', data: item.shortage, className: `text-right font-bold text-red-600 ${baseClassName}` };
+            default:
+                return { type: 'string', data: '', className: baseClassName };
         }
     };
     
