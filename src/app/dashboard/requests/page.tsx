@@ -103,7 +103,7 @@ export default function PurchaseRequestPage() {
             canEdit, canReopen, canApprove, canOrder,
             canRevertToApproved, canReceiveInWarehouse, canEnterToErp,
             canRequestCancel, canCancelPending, canSendToReview, canGoBackToReview, canGoBackToPending,
-            canRequestUnapproval
+            canRequestUnapproval, canSendToApproval
         } = selectors.getRequestPermissions(request);
 
         const daysRemaining = selectors.getDaysRemaining(request.requiredDate);

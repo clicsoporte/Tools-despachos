@@ -20,7 +20,8 @@ import {
     getUserByName,
     getRolesWithPermission,
     addNote as addNoteServer,
-    updateRequestDetails as updateRequestDetailsServer
+    updateRequestDetails as updateRequestDetailsServer,
+    saveCostAnalysis as saveCostAnalysisServer,
 } from './db';
 import {
     saveUserPreferences as saveUserPreferencesServer,
@@ -28,8 +29,8 @@ import {
     getAllProducts, 
     getAllStock, 
     getAllCustomers,
-    getAllErpPurchaseOrderHeaders as getAllErpPurchaseOrderHeadersServer,
-    getAllErpPurchaseOrderLines as getAllErpPurchaseOrderLinesServer,
+    getAllErpPurchaseOrderHeaders,
+    getAllErpPurchaseOrderLines,
 } from '@/modules/core/lib/db';
 
 
@@ -203,8 +204,8 @@ export async function getRequestSuggestions(dateRange: DateRange): Promise<Purch
         getAllStock(),
         getAllProducts(),
         getAllCustomers(),
-        getAllErpPurchaseOrderHeadersServer(),
-        getAllErpPurchaseOrderLinesServer(),
+        getAllErpPurchaseOrderHeaders(),
+        getAllErpPurchaseOrderLines(),
     ]);
     const allActiveRequests = await getRequests({}).then(res => res.requests.filter(r => ['pending', 'approved', 'ordered', 'purchasing-review', 'pending-approval'].includes(r.status)));
 
@@ -318,4 +319,8 @@ export async function getAllErpPurchaseOrderHeaders(): Promise<ErpPurchaseOrderH
 
 export async function getAllErpPurchaseOrderLines(): Promise<ErpPurchaseOrderLine[]> {
     return getAllErpPurchaseOrderLinesServer();
+}
+
+export async function saveCostAnalysis(requestId: number, cost: number, salePrice: number): Promise<PurchaseRequest> {
+    return saveCostAnalysisServer(requestId, cost, salePrice);
 }
