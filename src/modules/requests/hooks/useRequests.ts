@@ -215,7 +215,7 @@ export const useRequests = () => {
         isLoading: true,
         isRefreshing: false,
         isSubmitting: false,
-        isNewRequestDialogOpen: false,
+        isNewRequestDialogOpen: boolean,
         isEditRequestDialogOpen: false,
         activeRequests: [],
         archivedRequests: [],
@@ -1111,3 +1111,5 @@ export const useRequests = () => {
         isAuthorized
     };
 }
+
+    
