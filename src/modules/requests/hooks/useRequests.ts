@@ -1,5 +1,4 @@
 
-
 /**
  * @fileoverview Custom hook `useRequests` for managing the state and logic of the Purchase Request page.
  * This hook encapsulates all state and actions for the module, keeping the UI component clean.
@@ -17,7 +16,6 @@ import {
     getPurchaseRequests, savePurchaseRequest, updatePurchaseRequest, 
     updatePurchaseRequestStatus, getRequestHistory, getRequestSettings, 
     updatePendingAction, getErpOrderData, addNoteToRequest, updateRequestDetails, 
-    getAllErpPurchaseOrderHeaders, getAllErpPurchaseOrderLines,
     saveCostAnalysis as saveCostAnalysisServer,
 } from '@/modules/requests/lib/actions';
 import type { 
@@ -34,7 +32,7 @@ import { getDaysRemaining as getSimpleDaysRemaining } from '@/modules/core/lib/t
 import { exportToExcel } from '@/modules/core/lib/excel-export';
 import { AlertCircle, Undo2, ChevronsLeft, ChevronsRight } from 'lucide-react';
 import type { RowInput } from 'jspdf-autotable';
-import { getAllProducts as getAllProductsFromDB } from '@/modules/core/lib/db';
+import { getAllProducts as getAllProductsFromDB, getAllErpPurchaseOrderHeaders, getAllErpPurchaseOrderLines } from '@/modules/core/lib/db';
 import { getAllCustomers as getAllCustomersFromDB } from '@/modules/core/lib/db';
 import type { Product, Customer } from '../../core/types';
 import { useSearchParams } from 'next/navigation';
@@ -325,8 +323,8 @@ export const useRequests = () => {
             const allRequests = requestsData.requests.map(sanitizeRequest);
             
             updateState({
-                activeRequests: allRequests.filter((req: PurchaseRequest) => !archivedStatuses.includes(req.status)),
-                archivedRequests: allRequests.filter((req: PurchaseRequest) => archivedStatuses.includes(req.status)),
+                activeRequests: allRequests.filter(req => !archivedStatuses.includes(req.status)),
+                archivedRequests: allRequests.filter(req => archivedStatuses.includes(req.status)),
                 totalArchived: requestsData.totalArchivedCount,
             });
 
@@ -990,6 +988,7 @@ export const useRequests = () => {
                 requestToUpdate: request,
                 analysisCost: request.analysis?.cost?.toString() || '',
                 analysisSalePrice: request.unitSalePrice?.toString() || '',
+                analysisMargin: request.analysis?.margin || 0,
                 isCostAnalysisDialogOpen: true,
             });
         },
