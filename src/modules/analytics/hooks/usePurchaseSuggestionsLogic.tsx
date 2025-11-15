@@ -312,12 +312,7 @@ export function usePurchaseSuggestionsLogic() {
         if (createdCount > 0) {
             toast({
                 title: "Solicitudes Creadas",
-                description: `Se crearon ${createdCount} solicitudes de compra.`,
-                action: (
-                    <ToastAction altText="Ver Solicitudes" onClick={() => router.push('/dashboard/requests')}>
-                        Ver Solicitudes
-                    </ToastAction>
-                ),
+                description: `Se crearon ${createdCount} solicitudes de compra.`
             });
         }
         if (errorCount > 0) {
@@ -358,9 +353,9 @@ export function usePurchaseSuggestionsLogic() {
                     className: baseClassName 
                 };
             case 'sourceOrders':
-                 return { type: 'reactNode', data: <div className="text-xs text-muted-foreground space-y-0.5">{item.sourceOrders.map(order => <div key={order}>{order}</div>)}</div>, className: baseClassName };
+                 return { type: 'array', data: item.sourceOrders, className: baseClassName };
             case 'clients':
-                 return { type: 'reactNode', data: <div className="text-xs text-muted-foreground space-y-0.5">{item.involvedClients.map(client => <div key={client.id} className="truncate" title={`${client.name} (${client.id})`}>{client.name}</div>)}</div>, className: baseClassName };
+                 return { type: 'array', data: item.involvedClients.map(c => c.name), className: baseClassName };
             case 'erpUsers':
                 return { type: 'string', data: item.erpUsers.join(', '), className: `text-xs text-muted-foreground ${baseClassName}` };
             case 'creationDate':
