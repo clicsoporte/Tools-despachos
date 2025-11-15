@@ -504,5 +504,3 @@ export function usePurchaseSuggestionsLogic() {
         isInitialLoading,
     };
 }
-
-    
