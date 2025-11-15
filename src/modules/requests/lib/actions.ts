@@ -25,10 +25,12 @@ import {
 import {
     saveUserPreferences as saveUserPreferencesServer,
     getUserPreferences as getUserPreferencesServer,
+    getAllProducts, 
+    getAllStock, 
+    getAllCustomers,
     getAllErpPurchaseOrderHeaders as getAllErpPurchaseOrderHeadersServer,
     getAllErpPurchaseOrderLines as getAllErpPurchaseOrderLinesServer,
 } from '@/modules/core/lib/db';
-import { getAllProducts, getAllStock, getAllCustomers } from '@/modules/core/lib/db';
 
 
 /**
@@ -168,7 +170,7 @@ export async function updatePendingAction(payload: AdministrativeActionPayload):
     await logInfo(`Administrative action '${payload.action}' initiated for request ${updatedRequest.consecutive} by ${payload.updatedBy}.`);
     
     if (payload.action.includes('request')) {
-         await createNotificationForPermission(
+        await createNotificationForPermission(
             'requests:status:approve', // A suitable admin-level permission
             `El usuario ${payload.updatedBy} solicita cancelar la solicitud ${updatedRequest.consecutive}.`,
             `/dashboard/requests?search=${updatedRequest.consecutive}`,
@@ -201,8 +203,8 @@ export async function getRequestSuggestions(dateRange: DateRange): Promise<Purch
         getAllStock(),
         getAllProducts(),
         getAllCustomers(),
-        getAllErpPurchaseOrderHeaders(),
-        getAllErpPurchaseOrderLines(),
+        getAllErpPurchaseOrderHeadersServer(),
+        getAllErpPurchaseOrderLinesServer(),
     ]);
     const allActiveRequests = await getRequests({}).then(res => res.requests.filter(r => ['pending', 'approved', 'ordered', 'purchasing-review', 'pending-approval'].includes(r.status)));
 

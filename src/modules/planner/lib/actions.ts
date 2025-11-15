@@ -54,12 +54,12 @@ export async function saveProductionOrder(order: Omit<ProductionOrder, 'id' | 'c
     await logInfo(`Production order ${createdOrder.consecutive} created by ${requestedBy}`, { customer: createdOrder.customerName, product: createdOrder.productDescription, quantity: createdOrder.quantity });
 
     await createNotificationForPermission(
-        'planner:status:review',
-        `Nueva orden ${createdOrder.consecutive} para "${createdOrder.customerName}" requiere revisión.`,
+        'planner:status:approve', // This is a good proxy for supervisors/approvers
+        `Nueva orden ${createdOrder.consecutive} para "${createdOrder.customerName}" requiere aprobación.`,
         `/dashboard/planner?search=${createdOrder.consecutive}`,
         createdOrder.id,
         'production-order',
-        'review'
+        'approve'
     );
 
     return createdOrder;

@@ -5,12 +5,12 @@
 'use client';
 
 import React from 'react';
-import { usePurchaseSuggestionsLogic, type SortKey } from '@/modules/analytics/hooks/usePurchaseSuggestionsLogic';
+import { usePurchaseSuggestionsLogic, type SortKey, availableColumns } from '@/modules/analytics/hooks/usePurchaseSuggestionsLogic';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from '@/components/ui/input';
-import { Loader2, CalendarIcon, Search, FileDown, FileSpreadsheet, FilterX, ArrowUp, ArrowDown, ChevronLeft, ChevronRight, Layers, ShoppingCart, Columns3, Save, Info } from 'lucide-react';
+import { Loader2, CalendarIcon, Search, FileSpreadsheet, FilterX, ArrowUp, ArrowDown, ChevronLeft, ChevronRight, Layers, ShoppingCart, Columns3, Save, Info } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
@@ -27,8 +27,8 @@ import Link from 'next/link';
 import { DialogColumnSelector } from '@/components/ui/dialog-column-selector';
 import type { PurchaseSuggestion } from '@/modules/core/types';
 
-// New internal component to render cell content based on type
-const CellContent: React.FC<{ item: PurchaseSuggestion, colId: string, selectors: ReturnType<typeof usePurchaseSuggestionsLogic>['selectors'] }> = ({ item, colId, selectors }) => {
+// This component is now responsible for rendering the complex cell content.
+const CellContent: React.FC<{ item: PurchaseSuggestion; colId: string; selectors: ReturnType<typeof usePurchaseSuggestionsLogic>['selectors'] }> = ({ item, colId, selectors }) => {
     const { data, type, className } = selectors.getColumnContent(item, colId);
 
     if (type === 'reactNode') {
@@ -55,7 +55,7 @@ const CellContent: React.FC<{ item: PurchaseSuggestion, colId: string, selectors
         }
         return <div className={className}>{data}</div>;
     }
-    
+
     if (type === 'item') {
         return (
             <div className={className}>
@@ -65,16 +65,17 @@ const CellContent: React.FC<{ item: PurchaseSuggestion, colId: string, selectors
         );
     }
     
-    if (type === 'date') {
-        return <div className={className}>{data ? new Date(data).toLocaleDateString('es-CR') : 'N/A'}</div>;
+    if (type === 'date' && data) {
+        return <div className={className}>{new Date(data).toLocaleDateString('es-CR')}</div>;
     }
     
     if (type === 'number') {
         return <div className={className}>{(data ?? 0).toLocaleString()}</div>;
     }
     
-    return <div className={className}>{data}</div>;
+    return <div className={className}>{data || 'N/A'}</div>;
 };
+
 
 export default function PurchaseReportPage() {
     const {

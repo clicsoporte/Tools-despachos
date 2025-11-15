@@ -1,4 +1,3 @@
-
 /**
  * @fileoverview Page for proactive purchase suggestions.
  * This component now correctly uses the centralized `usePurchaseSuggestionsLogic` hook
@@ -68,15 +67,15 @@ const CellContent: React.FC<{ item: PurchaseSuggestion; colId: string; selectors
         );
     }
     
-    if (type === 'date') {
-        return <div className={className}>{data ? new Date(data).toLocaleDateString('es-CR') : 'N/A'}</div>;
+    if (type === 'date' && data) {
+        return <div className={className}>{new Date(data).toLocaleDateString('es-CR')}</div>;
     }
     
     if (type === 'number') {
         return <div className={className}>{(data ?? 0).toLocaleString()}</div>;
     }
     
-    return <div className={className}>{data}</div>;
+    return <div className={className}>{data || 'N/A'}</div>;
 };
 
 
@@ -257,9 +256,7 @@ export default function PurchaseSuggestionsPage() {
                                             <TableHead key={col.id} className={cn(col.align === 'right' && 'text-right', col.sortable && 'cursor-pointer hover:bg-muted')} onClick={() => col.sortable && actions.handleSort((col.sortKey || col.id) as SortKey)}>
                                                 <Tooltip><TooltipTrigger className='flex items-center gap-2'>
                                                     {col.label}
-                                                    {sortKey === (col.sortKey || col.id) && (
-                                                        sortDirection === 'asc' ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />
-                                                    )}
+                                                    {renderSortIcon((col.sortKey || col.id) as SortKey)}
                                                 </TooltipTrigger><TooltipContent>{col.tooltip}</TooltipContent></Tooltip>
                                             </TableHead>
                                         ))}
@@ -352,5 +349,3 @@ export default function PurchaseSuggestionsPage() {
         </main>
     );
 }
-
-    

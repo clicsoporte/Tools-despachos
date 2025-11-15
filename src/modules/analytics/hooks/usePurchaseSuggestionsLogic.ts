@@ -179,8 +179,8 @@ export function usePurchaseSuggestionsLogic() {
         // Sorting logic
         filtered.sort((a, b) => {
             const dir = state.sortDirection === 'asc' ? 1 : -1;
-            const valA = a[state.sortKey];
-            const valB = b[state.sortKey];
+            const valA = a[state.sortKey as keyof PurchaseSuggestion];
+            const valB = b[state.sortKey as keyof PurchaseSuggestion];
             
             if (valA === null || valA === undefined) return 1 * dir;
             if (valB === null || valB === undefined) return -1 * dir;
@@ -333,47 +333,6 @@ export function usePurchaseSuggestionsLogic() {
         });
     };
     
-    const getColumnContent = (item: PurchaseSuggestion, colId: string): { type: string, data: any, className?: string } => {
-        const isDuplicate = item.existingActiveRequests.length > 0;
-        const totalRequestedInActive = item.existingActiveRequests.reduce((sum, req) => sum + req.quantity, 0);
-        const baseClassName = isDuplicate ? 'bg-amber-50 dark:bg-amber-900/20' : '';
-
-        switch (colId) {
-            case 'item':
-                return { type: 'item', data: { id: item.itemId, description: item.itemDescription }, className: baseClassName };
-            case 'activeRequests':
-                if (!isDuplicate) return { type: 'reactNode', data: 'Ninguna', className: baseClassName };
-                return { 
-                    type: 'reactNode', 
-                    data: {
-                        total: totalRequestedInActive,
-                        requests: item.existingActiveRequests,
-                    },
-                    className: baseClassName 
-                };
-            case 'sourceOrders':
-                return { type: 'reactNode', data: item.sourceOrders.map(order => React.createElement('div', { key: order }, order)), className: `text-xs text-muted-foreground space-y-0.5 ${baseClassName}` };
-            case 'clients':
-                 return { type: 'reactNode', data: item.involvedClients.map(client => React.createElement('div', { key: client.id, className: 'truncate', title: `${client.name} (${client.id})` }, client.name)), className: `text-xs text-muted-foreground space-y-0.5 ${baseClassName}` };
-            case 'erpUsers':
-                return { type: 'string', data: item.erpUsers.join(', '), className: `text-xs text-muted-foreground ${baseClassName}` };
-            case 'creationDate':
-                return { type: 'date', data: item.earliestCreationDate, className: baseClassName };
-            case 'dueDate':
-                return { type: 'date', data: item.earliestDueDate, className: baseClassName };
-            case 'required':
-                return { type: 'number', data: item.totalRequired, className: `text-right ${baseClassName}` };
-            case 'stock':
-                return { type: 'number', data: item.currentStock, className: `text-right ${baseClassName}` };
-            case 'inTransit':
-                return { type: 'number', data: item.inTransitStock, className: `text-right font-semibold text-blue-600 ${baseClassName}` };
-            case 'shortage':
-                return { type: 'number', data: item.shortage, className: `text-right font-bold text-red-600 ${baseClassName}` };
-            default:
-                return { type: 'string', data: '', className: baseClassName };
-        }
-    };
-    
     const visibleColumnsData = useMemo(() => {
         return state.visibleColumns.map(id => availableColumns.find(col => col.id === id)).filter(Boolean) as (typeof availableColumns)[0][];
     }, [state.visibleColumns]);
@@ -471,7 +430,46 @@ export function usePurchaseSuggestionsLogic() {
         , [products]),
         availableColumns,
         visibleColumnsData,
-        getColumnContent,
+        getColumnContent: (item: PurchaseSuggestion, colId: string): { type: string, data: any, className?: string } => {
+            const isDuplicate = item.existingActiveRequests.length > 0;
+            const totalRequestedInActive = item.existingActiveRequests.reduce((sum, req) => sum + req.quantity, 0);
+            const baseClassName = isDuplicate ? 'bg-amber-50 dark:bg-amber-900/20' : '';
+    
+            switch (colId) {
+                case 'item':
+                    return { type: 'item', data: { id: item.itemId, description: item.itemDescription }, className: baseClassName };
+                case 'activeRequests':
+                    if (!isDuplicate) return { type: 'reactNode', data: 'Ninguna', className: baseClassName };
+                    return { 
+                        type: 'reactNode', 
+                        data: {
+                            total: totalRequestedInActive,
+                            requests: item.existingActiveRequests,
+                        },
+                        className: baseClassName 
+                    };
+                case 'sourceOrders':
+                    return { type: 'reactNode', data: React.createElement('div', { className: 'text-xs text-muted-foreground space-y-0.5' }, item.sourceOrders.map(order => React.createElement('div', { key: order }, order))), className: baseClassName };
+                case 'clients':
+                     return { type: 'reactNode', data: React.createElement('div', { className: 'text-xs text-muted-foreground space-y-0.5' }, item.involvedClients.map(client => React.createElement('div', { key: client.id, className: 'truncate', title: `${client.name} (${client.id})` }, client.name))), className: baseClassName };
+                case 'erpUsers':
+                    return { type: 'string', data: item.erpUsers.join(', '), className: `text-xs text-muted-foreground ${baseClassName}` };
+                case 'creationDate':
+                    return { type: 'date', data: item.earliestCreationDate, className: baseClassName };
+                case 'dueDate':
+                    return { type: 'date', data: item.earliestDueDate, className: baseClassName };
+                case 'required':
+                    return { type: 'number', data: item.totalRequired, className: `text-right ${baseClassName}` };
+                case 'stock':
+                    return { type: 'number', data: item.currentStock, className: `text-right ${baseClassName}` };
+                case 'inTransit':
+                    return { type: 'number', data: item.inTransitStock, className: `text-right font-semibold text-blue-600 ${baseClassName}` };
+                case 'shortage':
+                    return { type: 'number', data: item.shortage, className: `text-right font-bold text-red-600 ${baseClassName}` };
+                default:
+                    return { type: 'string', data: '', className: baseClassName };
+            }
+        },
         getInTransitStock,
     };
 
