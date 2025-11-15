@@ -1,3 +1,4 @@
+
 /**
  * @fileoverview Centralized logic hook for Purchase Suggestions.
  * This hook is the single source of truth for analyzing ERP orders,
@@ -357,9 +358,9 @@ export function usePurchaseSuggestionsLogic() {
                     className: baseClassName 
                 };
             case 'sourceOrders':
-                return { type: 'array', data: item.sourceOrders, className: baseClassName };
+                 return { type: 'reactNode', data: <div className="text-xs text-muted-foreground space-y-0.5">{item.sourceOrders.map(order => <div key={order}>{order}</div>)}</div>, className: baseClassName };
             case 'clients':
-                 return { type: 'reactNode', data: (item.involvedClients.map(client => client.name).join(', ')), className: baseClassName };
+                 return { type: 'reactNode', data: <div className="text-xs text-muted-foreground space-y-0.5">{item.involvedClients.map(client => <div key={client.id} className="truncate" title={`${client.name} (${client.id})`}>{client.name}</div>)}</div>, className: baseClassName };
             case 'erpUsers':
                 return { type: 'string', data: item.erpUsers.join(', '), className: `text-xs text-muted-foreground ${baseClassName}` };
             case 'creationDate':
