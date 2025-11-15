@@ -5,12 +5,12 @@
 'use client';
 
 import React from 'react';
-import { usePurchaseReport, type SortKey } from '@/modules/analytics/hooks/usePurchaseReport';
+import { usePurchaseSuggestionsLogic, type SortKey } from '@/modules/analytics/hooks/usePurchaseSuggestionsLogic';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from '@/components/ui/input';
-import { Loader2, CalendarIcon, Search, FileDown, FileSpreadsheet, FilterX, ArrowUp, ArrowDown, ChevronLeft, ChevronRight, Layers, ShoppingCart, Columns3, Save } from 'lucide-react';
+import { Loader2, CalendarIcon, Search, FileDown, FileSpreadsheet, FilterX, ArrowUp, ArrowDown, ChevronLeft, ChevronRight, Layers, ShoppingCart, Columns3, Save, Info } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
@@ -28,10 +28,31 @@ import { DialogColumnSelector } from '@/components/ui/dialog-column-selector';
 import type { PurchaseSuggestion } from '@/modules/core/types';
 
 // New internal component to render cell content based on type
-const CellContent: React.FC<{ item: PurchaseSuggestion, colId: string, selectors: ReturnType<typeof usePurchaseReport>['selectors'] }> = ({ item, colId, selectors }) => {
+const CellContent: React.FC<{ item: PurchaseSuggestion, colId: string, selectors: ReturnType<typeof usePurchaseSuggestionsLogic>['selectors'] }> = ({ item, colId, selectors }) => {
     const { data, type, className } = selectors.getColumnContent(item, colId);
 
     if (type === 'reactNode') {
+        if (colId === 'activeRequests' && data) {
+            return (
+                 <Tooltip>
+                    <TooltipTrigger asChild>
+                        <span className={cn("inline-flex items-center gap-1 rounded-md bg-amber-200 px-2 py-1 text-xs font-semibold text-amber-800", className)}>
+                            <Info className="h-3 w-3" />
+                            {data.total.toLocaleString()}
+                        </span>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                        <p className="font-bold">Este artículo ya tiene solicitudes activas:</p>
+                        <ul className="list-disc list-inside mt-1 text-xs">
+                            {data.requests.map((req: any) => (
+                                <li key={req.id}>{req.consecutive} ({req.status}) - Cant: {req.quantity}</li>
+                            ))}
+                            <li className="font-semibold mt-1">Total activo: {data.total}</li>
+                        </ul>
+                    </TooltipContent>
+                </Tooltip>
+            );
+        }
         return <div className={className}>{data}</div>;
     }
     
@@ -62,7 +83,7 @@ export default function PurchaseReportPage() {
         selectors,
         isAuthorized,
         isInitialLoading,
-    } = usePurchaseReport();
+    } = usePurchaseSuggestionsLogic();
 
     const { isLoading, dateRange, searchTerm, classificationFilter, sortKey, sortDirection, showOnlyMyOrders, currentPage, rowsPerPage, visibleColumns } = state;
     const { paginatedSuggestions } = selectors;

@@ -1,4 +1,3 @@
-
 /**
  * @fileoverview Redirect component for the old /admin/settings route.
  * This component will now permanently redirect to the user's profile page.
@@ -28,5 +27,3 @@ export default function OldSettingsPage() {
         </div>
     );
 }
-
-    
