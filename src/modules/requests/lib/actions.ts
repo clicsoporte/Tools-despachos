@@ -312,15 +312,6 @@ export async function savePurchaseSuggestionsPreferences(userId: number, prefere
     return saveUserPreferencesServer(userId, 'purchaseSuggestionsPrefs', preferences);
 }
 
-
-export async function getAllErpPurchaseOrderHeaders(): Promise<ErpPurchaseOrderHeader[]> {
-    return getAllErpPurchaseOrderHeadersServer();
-}
-
-export async function getAllErpPurchaseOrderLines(): Promise<ErpPurchaseOrderLine[]> {
-    return getAllErpPurchaseOrderLinesServer();
-}
-
 export async function saveCostAnalysis(requestId: number, cost: number, salePrice: number): Promise<PurchaseRequest> {
     return saveCostAnalysisServer(requestId, cost, salePrice);
 }

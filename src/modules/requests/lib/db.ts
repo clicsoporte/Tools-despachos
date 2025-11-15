@@ -62,7 +62,8 @@ export async function initializeRequestsDb(db: import('better-sqlite3').Database
             lastModifiedAt TEXT,
             hasBeenModified BOOLEAN DEFAULT FALSE,
             sourceOrders TEXT,
-            involvedClients TEXT
+            involvedClients TEXT,
+            analysis TEXT
         );
         CREATE TABLE IF NOT EXISTS purchase_request_history (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -125,6 +126,7 @@ export async function runRequestMigrations(db: import('better-sqlite3').Database
         if (!columns.has('sourceOrders')) db.exec(`ALTER TABLE purchase_requests ADD COLUMN sourceOrders TEXT`);
         if (!columns.has('involvedClients')) db.exec(`ALTER TABLE purchase_requests ADD COLUMN involvedClients TEXT`);
         if (!columns.has('inventoryErp')) db.exec(`ALTER TABLE purchase_requests ADD COLUMN inventoryErp REAL`);
+        if (!columns.has('analysis')) db.exec(`ALTER TABLE purchase_requests ADD COLUMN analysis TEXT`);
         
         const settingsTable = db.prepare(`SELECT name FROM sqlite_master WHERE type='table' AND name='request_settings'`).get();
         if(settingsTable){
@@ -218,26 +220,38 @@ export async function saveSettings(settings: RequestSettings): Promise<void> {
 
 // Helper function to ensure complex fields are in the correct format (array).
 const sanitizeRequest = (request: any): PurchaseRequest => {
-  const sanitized = { ...request };
-  if (sanitized.sourceOrders && typeof sanitized.sourceOrders === 'string') {
+    const sanitized = { ...request };
+
     try {
-      sanitized.sourceOrders = JSON.parse(sanitized.sourceOrders);
+        if (sanitized.sourceOrders && typeof sanitized.sourceOrders === 'string') {
+            sanitized.sourceOrders = JSON.parse(sanitized.sourceOrders);
+        } else if (!Array.isArray(sanitized.sourceOrders)) {
+            sanitized.sourceOrders = [];
+        }
     } catch {
-      sanitized.sourceOrders = [];
+        sanitized.sourceOrders = [];
     }
-  } else if (!Array.isArray(sanitized.sourceOrders)) {
-      sanitized.sourceOrders = [];
-  }
-  
-  if (sanitized.involvedClients && typeof sanitized.involvedClients === 'string') {
+
     try {
-      sanitized.involvedClients = JSON.parse(sanitized.involvedClients);
+        if (sanitized.involvedClients && typeof sanitized.involvedClients === 'string') {
+            sanitized.involvedClients = JSON.parse(sanitized.involvedClients);
+        } else if (!Array.isArray(sanitized.involvedClients)) {
+            sanitized.involvedClients = [];
+        }
     } catch {
-      sanitized.involvedClients = [];
+        sanitized.involvedClients = [];
     }
-  } else if (!Array.isArray(sanitized.involvedClients)) {
-      sanitized.involvedClients = [];
-  }
+    
+    try {
+        if (sanitized.analysis && typeof sanitized.analysis === 'string') {
+            sanitized.analysis = JSON.parse(sanitized.analysis);
+        } else if (typeof sanitized.analysis !== 'object') {
+            sanitized.analysis = null;
+        }
+    } catch {
+        sanitized.analysis = null;
+    }
+
 
   return sanitized as PurchaseRequest;
 };
@@ -627,6 +641,23 @@ export async function addNote(payload: { requestId: number; notes: string; updat
 
     db.prepare('INSERT INTO purchase_request_history (requestId, timestamp, status, updatedBy, notes) VALUES (?, ?, ?, ?, ?)')
       .run(requestId, new Date().toISOString(), currentRequest.status, updatedBy, `Nota agregada: ${notes}`);
+
+    const updatedRequest = db.prepare('SELECT * FROM purchase_requests WHERE id = ?').get(requestId) as any;
+    return sanitizeRequest(updatedRequest);
+}
+
+
+export async function saveCostAnalysis(requestId: number, cost: number, salePrice: number): Promise<PurchaseRequest> {
+    const db = await connectDb(REQUESTS_DB_FILE);
+    
+    if (cost <= 0) {
+        throw new Error('El costo debe ser mayor a cero para calcular el margen.');
+    }
+    
+    const margin = (salePrice - cost) / cost;
+    const analysis = { cost, salePrice, margin };
+
+    db.prepare(`UPDATE purchase_requests SET analysis = ? WHERE id = ?`).run(JSON.stringify(analysis), requestId);
 
     const updatedRequest = db.prepare('SELECT * FROM purchase_requests WHERE id = ?').get(requestId) as any;
     return sanitizeRequest(updatedRequest);
