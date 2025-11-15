@@ -1,4 +1,3 @@
-
 /**
  * @fileoverview Centralized logic hook for Purchase Suggestions.
  * This hook is the single source of truth for analyzing ERP orders,
@@ -313,11 +312,6 @@ export function usePurchaseSuggestionsLogic() {
             toast({
                 title: "Solicitudes Creadas",
                 description: `Se crearon ${createdCount} solicitudes de compra.`,
-                action: (
-                    <ToastAction altText="Ver Solicitudes" onClick={() => router.push('/dashboard/requests')}>
-                        Ver Solicitudes
-                    </ToastAction>
-                ),
             });
         }
         if (errorCount > 0) {
@@ -509,5 +503,3 @@ export function usePurchaseSuggestionsLogic() {
         isInitialLoading,
     };
 }
-
-    
