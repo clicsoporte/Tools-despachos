@@ -318,11 +318,6 @@ export function usePurchaseSuggestionsLogic() {
             toast({
                 title: "Solicitudes Creadas",
                 description: `Se crearon ${createdCount} solicitudes de compra.`,
-                action: (
-                    <ToastAction altText="Ver Solicitudes" onClick={() => router.push('/dashboard/requests')}>
-                        Ver Solicitudes
-                    </ToastAction>
-                ),
             });
         }
         if (errorCount > 0) {
