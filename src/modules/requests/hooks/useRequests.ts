@@ -66,7 +66,7 @@ const emptyRequest: Omit<PurchaseRequest, 'id' | 'consecutive' | 'requestDate' |
     purchaseType: 'single',
     arrivalDate: '',
     pendingAction: 'none',
-    analysis: null,
+    analysis: undefined,
 };
 
 type UIErpOrderLine = {
@@ -192,11 +192,11 @@ const sanitizeRequest = (request: any): PurchaseRequest => {
   try {
       if (sanitized.analysis && typeof sanitized.analysis === 'string') {
           sanitized.analysis = JSON.parse(sanitized.analysis);
-      } else if (typeof sanitized.analysis !== 'object') {
-          sanitized.analysis = null;
+      } else if (typeof sanitized.analysis !== 'object' || sanitized.analysis === null) {
+          sanitized.analysis = undefined;
       }
   } catch {
-      sanitized.analysis = null;
+      sanitized.analysis = undefined;
   }
 
 
@@ -805,7 +805,7 @@ export const useRequests = () => {
                         manualSupplier: '',
                         arrivalDate: '',
                         pendingAction: 'none' as const,
-                        analysis: null,
+                        analysis: undefined,
                     };
                     await savePurchaseRequest(requestPayload, currentUser.name);
                 }
@@ -950,7 +950,7 @@ export const useRequests = () => {
         },
         handleDetailUpdate: async (requestId: number, details: { priority: PurchaseRequestPriority }) => {
             if (!currentUser) return;
-            const updated = await updateRequestDetailsServer({ requestId, ...details, updatedBy: currentUser.name });
+            const updated = await updateRequestDetails({ requestId, ...details, updatedBy: currentUser.name });
             updateState({ 
                 activeRequests: state.activeRequests.map(o => o.id === requestId ? sanitizeRequest(updated) : o),
                 archivedRequests: state.archivedRequests.map(o => o.id === requestId ? sanitizeRequest(updated) : o)
