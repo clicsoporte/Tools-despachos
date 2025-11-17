@@ -1,4 +1,3 @@
-
 /**
  * @fileoverview Client-side functions for interacting with the request module's server-side DB functions.
  * This abstraction layer ensures components only call client-safe functions.
@@ -22,7 +21,9 @@ import {
     getRolesWithPermission,
     addNote as addNoteServer,
     updateRequestDetails as updateRequestDetailsServer,
-    saveCostAnalysis as saveCostAnalysisServer
+    saveCostAnalysis as saveCostAnalysisServer,
+    getAllErpPurchaseOrderHeaders as getAllErpPurchaseOrderHeadersDb,
+    getAllErpPurchaseOrderLines as getAllErpPurchaseOrderLinesDb,
 } from './db';
 import {
     saveUserPreferences as saveUserPreferencesServer,
@@ -30,8 +31,6 @@ import {
     getAllProducts, 
     getAllStock, 
     getAllCustomers,
-    getAllErpPurchaseOrderHeaders as getAllErpPurchaseOrderHeadersDb,
-    getAllErpPurchaseOrderLines as getAllErpPurchaseOrderLinesDb,
 } from '@/modules/core/lib/db';
 
 

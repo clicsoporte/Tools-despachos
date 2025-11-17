@@ -245,11 +245,11 @@ const sanitizeRequest = (request: any): PurchaseRequest => {
     try {
         if (sanitized.analysis && typeof sanitized.analysis === 'string') {
             sanitized.analysis = JSON.parse(sanitized.analysis);
-        } else if (typeof sanitized.analysis !== 'object') {
-            sanitized.analysis = null;
+        } else if (typeof sanitized.analysis !== 'object' || sanitized.analysis === null) {
+            sanitized.analysis = undefined;
         }
     } catch {
-        sanitized.analysis = null;
+        sanitized.analysis = undefined;
     }
 
 
@@ -337,6 +337,7 @@ export async function addRequest(request: Omit<PurchaseRequest, 'id' | 'consecut
         clientTaxId: newRequest.clientTaxId || null,
         sourceOrders: JSON.stringify(newRequest.sourceOrders || []),
         involvedClients: JSON.stringify(newRequest.involvedClients || []),
+        analysis: newRequest.analysis ? JSON.stringify(newRequest.analysis) : null,
     };
 
     try {
@@ -347,13 +348,13 @@ export async function addRequest(request: Omit<PurchaseRequest, 'id' | 'consecut
                     itemId, itemDescription, quantity, unitSalePrice, salePriceCurrency, requiresCurrency,
                     erpOrderNumber, erpOrderLine, manualSupplier, route, shippingMethod, purchaseOrder,
                     status, pendingAction, notes, requestedBy, reopened, inventory, inventoryErp, priority, purchaseType, arrivalDate,
-                    sourceOrders, involvedClients
+                    sourceOrders, involvedClients, analysis
                 ) VALUES (
                     @consecutive, @requestDate, @requiredDate, @clientId, @clientName, @clientTaxId,
                     @itemId, @itemDescription, @quantity, @unitSalePrice, @salePriceCurrency, @requiresCurrency,
                     @erpOrderNumber, @erpOrderLine, @manualSupplier, @route, @shippingMethod, @purchaseOrder,
                     @status, @pendingAction, @notes, @requestedBy, @reopened, @inventory, @inventoryErp, @priority, @purchaseType, @arrivalDate,
-                    @sourceOrders, @involvedClients
+                    @sourceOrders, @involvedClients, @analysis
                 )
             `);
             
@@ -419,7 +420,8 @@ export async function updateRequest(payload: UpdatePurchaseRequestPayload): Prom
                 lastModifiedAt = @lastModifiedAt,
                 hasBeenModified = @hasBeenModified,
                 sourceOrders = @sourceOrders,
-                involvedClients = @involvedClients
+                involvedClients = @involvedClients,
+                analysis = @analysis
             WHERE id = @requestId
         `).run({ 
             requestId, 
@@ -431,6 +433,7 @@ export async function updateRequest(payload: UpdatePurchaseRequestPayload): Prom
             hasBeenModified: hasBeenModified ? 1 : 0,
             sourceOrders: JSON.stringify(dataToUpdate.sourceOrders || []),
             involvedClients: JSON.stringify(dataToUpdate.involvedClients || []),
+            analysis: dataToUpdate.analysis ? JSON.stringify(dataToUpdate.analysis) : null,
         });
 
         if (hasBeenModified) {
@@ -657,7 +660,7 @@ export async function saveCostAnalysis(requestId: number, cost: number, salePric
     const margin = (salePrice - cost) / cost;
     const analysis = { cost, salePrice, margin };
 
-    db.prepare(`UPDATE purchase_requests SET analysis = ? WHERE id = ?`).run(JSON.stringify(analysis), requestId);
+    db.prepare(`UPDATE purchase_requests SET analysis = ?, unitSalePrice = ? WHERE id = ?`).run(JSON.stringify(analysis), salePrice, requestId);
 
     const updatedRequest = db.prepare('SELECT * FROM purchase_requests WHERE id = ?').get(requestId) as any;
     return sanitizeRequest(updatedRequest);

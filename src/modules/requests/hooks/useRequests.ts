@@ -15,7 +15,7 @@ import {
     getPurchaseRequests, savePurchaseRequest, updatePurchaseRequest, 
     updatePurchaseRequestStatus, getRequestHistory, getRequestSettings, 
     updatePendingAction, getErpOrderData, addNoteToRequest, updateRequestDetails, 
-    getAllErpPurchaseOrderHeaders, getAllErpPurchaseOrderLines, saveCostAnalysis as saveCostAnalysisServer
+    getAllErpPurchaseOrderHeaders, getAllErpPurchaseOrderLines, saveCostAnalysis
 } from '@/modules/requests/lib/actions';
 import type { 
     PurchaseRequest, PurchaseRequestStatus, PurchaseRequestPriority, 
@@ -29,7 +29,7 @@ import { useDebounce } from 'use-debounce';
 import { generateDocument } from '@/modules/core/lib/pdf-generator';
 import { getDaysRemaining as getSimpleDaysRemaining } from '@/modules/core/lib/time-utils';
 import { exportToExcel } from '@/modules/core/lib/excel-export';
-import { AlertCircle, Undo2, ChevronsLeft, ChevronsRight } from 'lucide-react';
+import { AlertTriangle, Undo2, ChevronsLeft, ChevronsRight } from 'lucide-react';
 import type { RowInput } from 'jspdf-autotable';
 import { getAllProducts as getAllProductsFromDB } from '@/modules/core/lib/db';
 import { getAllCustomers as getAllCustomersFromDB } from '@/modules/core/lib/db';
@@ -499,7 +499,7 @@ export const useRequests = () => {
                 throw new Error("El costo y el precio de venta deben ser números válidos.");
             }
 
-            const updatedRequest = await saveCostAnalysisServer(state.requestToUpdate.id, cost, salePrice);
+            const updatedRequest = await saveCostAnalysis(state.requestToUpdate.id, cost, salePrice);
             updateState({
                 activeRequests: state.activeRequests.map(r => r.id === updatedRequest.id ? sanitizeRequest(updatedRequest) : r),
                 isCostAnalysisDialogOpen: false,
