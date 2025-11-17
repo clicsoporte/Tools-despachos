@@ -1,7 +1,7 @@
 
 "use client";
 
-import { Button } from "../../../../components/ui/button";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -9,7 +9,7 @@ import {
   CardHeader,
   CardTitle,
   CardFooter
-} from "../../../../components/ui/card";
+} from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -19,7 +19,7 @@ import {
   DialogTitle,
   DialogTrigger,
   DialogClose
-} from "../../../../components/ui/dialog";
+} from "@/components/ui/dialog";
 import {
     AlertDialog,
     AlertDialogAction,
@@ -30,18 +30,18 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
     AlertDialogTrigger,
-} from "../../../../components/ui/alert-dialog";
-import { Input } from "../../../../components/ui/input";
-import { Label } from "../../../../components/ui/label";
-import { useToast } from "../../../../modules/core/hooks/use-toast";
+} from "@/components/ui/alert-dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useToast } from "@/modules/core/hooks/use-toast";
 import { useState, useEffect, useCallback } from "react";
-import type { ApiSettings, ExemptionLaw } from "../../../../modules/core/types";
-import { logInfo, logError, logWarn } from "../../../../modules/core/lib/logger";
-import { getApiSettings, saveApiSettings, getExemptionLaws, saveExemptionLaws } from "../../../../modules/core/lib/db";
-import { usePageTitle } from "../../../../modules/core/hooks/usePageTitle";
-import { useAuthorization } from "../../../../modules/core/hooks/useAuthorization";
+import type { ApiSettings, ExemptionLaw } from "@/modules/core/types";
+import { logInfo, logError, logWarn } from "@/modules/core/lib/logger";
+import { getApiSettings, saveApiSettings, getExemptionLaws, saveExemptionLaws } from "@/modules/core/lib/db";
+import { usePageTitle } from "@/modules/core/hooks/usePageTitle";
+import { useAuthorization } from "@/modules/core/hooks/useAuthorization";
 import { PlusCircle, Trash2 } from "lucide-react";
-import { Skeleton } from "../../../../components/ui/skeleton";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const initialApiSettings: ApiSettings = {
     exchangeRateApi: "https://api.hacienda.go.cr/indicadores/tc/dolar",

@@ -16,5 +16,3 @@ export default function ImportLayout({
     // This is necessary so that the import page can set its own title.
     return <>{children}</>;
 }
-
-    

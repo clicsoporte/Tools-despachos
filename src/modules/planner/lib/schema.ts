@@ -1,3 +1,4 @@
+
 /**
  * @fileoverview Defines the expected database schema for the Planner module.
  * This is used by the central database audit system to verify integrity.

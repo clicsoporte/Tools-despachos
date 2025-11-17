@@ -1,14 +1,15 @@
+
 /**
  * @fileoverview The main dashboard page, which greets the user and displays available tools.
  */
 'use client';
 
-import { mainTools, analyticsTools, adminTools } from "../../modules/core/lib/data";
-import { ToolCard } from "../../components/dashboard/tool-card";
+import { mainTools, analyticsTools, adminTools } from "@/modules/core/lib/data";
+import { ToolCard } from "@/components/dashboard/tool-card";
 import { useEffect, useMemo } from "react";
-import type { Tool } from "../../modules/core/types";
-import { Skeleton } from "../../components/ui/skeleton";
-import { usePageTitle } from "../../modules/core/hooks/usePageTitle";
+import type { Tool } from "@/modules/core/types";
+import { Skeleton } from "@/components/ui/skeleton";
+import { usePageTitle } from "@/modules/core/hooks/usePageTitle";
 import { useAuth } from "@/modules/core/hooks/useAuth";
 import { BarChartBig, Wrench } from "lucide-react";
 

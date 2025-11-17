@@ -1,3 +1,4 @@
+
 /**
  * @fileoverview Server Actions for the Hacienda module.
  * These server-only functions are responsible for securely interacting
@@ -7,7 +8,7 @@
 
 import { logError } from '@/modules/core/lib/logger';
 import { getApiSettings, getCabysCatalog } from '@/modules/core/lib/db';
-import type { HaciendaContributorInfo, HaciendaExemptionApiResponse, EnrichedExemptionInfo } from '../../core/types';
+import type { HaciendaContributorInfo, HaciendaExemptionApiResponse, EnrichedExemptionInfo } from '@/modules/core/types';
 
 // In-memory cache for CABYS data to avoid repeated DB queries.
 let cabysCache: Map<string, { description: string, taxRate: number }> | null = null;

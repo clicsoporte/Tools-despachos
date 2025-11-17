@@ -1,13 +1,14 @@
+
 /**
  * @fileoverview Server Actions related to user management, like creation.
  * Separated from auth.ts to avoid circular dependencies and keep logic clean.
  */
 "use server";
 
-import { connectDb, getUserCount } from "./db";
-import type { User } from "../types";
+import { connectDb, getUserCount } from "@/modules/core/lib/db";
+import type { User } from "@/modules/core/types";
 import bcrypt from 'bcryptjs';
-import { logInfo, logError } from './logger';
+import { logInfo, logError } from '@/modules/core/lib/logger';
 
 const SALT_ROUNDS = 10;
 const DB_FILE = 'intratool.db';

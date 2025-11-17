@@ -1,3 +1,4 @@
+
 /**
  * @fileoverview Server Actions specifically for handling user suggestions.
  * This file isolates the database logic for suggestions to prevent bundling issues.
@@ -10,8 +11,8 @@ import {
     deleteSuggestion as dbDeleteSuggestion, 
     getUnreadSuggestions as dbGetUnreadSuggestions,
     getUnreadSuggestionsCount as dbGetUnreadSuggestionsCount,
-} from './db';
-import type { Suggestion } from '../types';
+} from '@/modules/core/lib/db';
+import type { Suggestion } from '@/modules/core/types';
 
 /**
  * Retrieves all suggestions from the database.

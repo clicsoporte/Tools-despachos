@@ -1,3 +1,4 @@
+
 /**
  * @fileoverview This file contains server-side functions specifically for reading
  * configuration from the database. It is separated to avoid circular dependencies.
@@ -5,8 +6,8 @@
  */
 "use server";
 
-import { connectDb } from './db';
-import type { SqlConfig } from '../types';
+import { connectDb } from '@/modules/core/lib/db';
+import type { SqlConfig } from '@/modules/core/types';
 
 /**
  * Retrieves the SQL Server connection configuration from the database.

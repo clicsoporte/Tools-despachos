@@ -1,3 +1,4 @@
+
 /**
  * @fileoverview Server Actions for mutating (adding, updating) suggestions.
  * This file is separated to isolate functions that use `revalidatePath`, which
@@ -6,9 +7,9 @@
 "use server";
 
 import { revalidatePath } from 'next/cache';
-import { logInfo, logError } from './logger';
-import { connectDb } from './db';
-import { createNotificationForPermission } from './notifications-actions';
+import { logInfo, logError } from '@/modules/core/lib/logger';
+import { connectDb } from '@/modules/core/lib/db';
+import { createNotificationForPermission } from '@/modules/core/lib/notifications-actions';
 
 /**
  * Inserts a new suggestion into the database.

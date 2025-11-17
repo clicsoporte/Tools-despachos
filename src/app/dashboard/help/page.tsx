@@ -1,20 +1,21 @@
+
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
-import { usePageTitle } from "../../../modules/core/hooks/usePageTitle";
+import { usePageTitle } from "@/modules/core/hooks/usePageTitle";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "../../../components/ui/card";
+} from "@/components/ui/card";
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from "../../../components/ui/accordion";
+} from "@/components/ui/accordion";
 import {
   Code,
   FileUp,
@@ -83,7 +84,7 @@ import {
   UserCheck,
   ShoppingBag,
 } from "lucide-react";
-import { Skeleton } from "../../../components/ui/skeleton";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useAuth } from "@/modules/core/hooks/useAuth";
 import { Badge } from "@/components/ui/badge";
@@ -564,7 +565,7 @@ export default function HelpPage() {
                             <li>**Ordena los resultados:** Haz clic en el encabezado de cualquier columna (ej: &quot;Próxima Entrega&quot; o &quot;Faltante Total&quot;) para ordenar la tabla según ese criterio. Una flecha te indicará el orden actual.</li>
                             <li>Usa los filtros de búsqueda y de clasificación (que ahora permite **selección múltiple**) para refinar la lista.</li>
                             <li>
-                                <strong>Crear Solicitudes:</strong> Marca los artículos que quieres comprar y haz clic en **&quot;Crear Solicitudes&quot;**. El sistema creará las solicitudes automáticamente en segundo plano, dejándolas &quot;Pendientes&quot; para que Compras complete los detalles (como el precio).
+                                <strong>Crear Solicitudes:</strong> Marca los artículos que quieres comprar y haz clic en **&quot;Crear Solicitudes&quot;**. El sistema creará las solicitudes automáticamente en segundo plano, dejándolas &quot;Pendientes&quot; para que Compras complete la información faltante, como el precio.
                             </li>
                              <li>
                                 <strong>Alerta de Duplicados (<Info className="inline h-4 w-4 text-amber-500"/>):</strong> Si intentas crear una solicitud para un artículo que ya tiene una solicitud activa, el sistema te mostrará una **alerta con detalles**, incluyendo el número de la solicitud existente y quién la creó. Podrás decidir si quieres crear el duplicado o no.
@@ -674,7 +675,7 @@ export default function HelpPage() {
                         </ul>
                     </li>
                     <li>
-                        <strong>Búsquedas Individuales:</strong> También puedes usar las pestañas &quot;Situación Tributaria&quot; y &quot;Exoneraciones&quot; para hacer consultas directas a Hacienda ingresando una cédula o un número de autorización, respectivamente.
+                        <strong>Búsquedas Individuales:</strong> También puedes usar las pestañas &quot;Situación Tributaria&quot; y &quot;Exoneraciones&quot; para hacer consultas directas a Hacienda ingresando una cédula o un número de autorización, respectively.
                     </li>
                 </ul>
             </div>

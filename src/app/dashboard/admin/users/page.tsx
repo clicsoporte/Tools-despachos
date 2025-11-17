@@ -1,3 +1,4 @@
+
 /**
  * @fileoverview Admin page for user management.
  * Allows admins to view, create, edit, and delete users.
@@ -5,14 +6,14 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Button, buttonVariants } from "../../../../components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "../../../../components/ui/card";
+} from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -20,7 +21,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "../../../../components/ui/table";
+} from "@/components/ui/table";
 import {
     AlertDialog,
     AlertDialogAction,
@@ -30,7 +31,7 @@ import {
     AlertDialogFooter,
     AlertDialogHeader,
     AlertDialogTitle,
-} from "../../../../components/ui/alert-dialog";
+} from "@/components/ui/alert-dialog";
 import {
     Dialog,
     DialogContent,
@@ -40,29 +41,29 @@ import {
     DialogTitle,
     DialogTrigger,
     DialogClose
-  } from "../../../../components/ui/dialog";
+  } from "@/components/ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuTrigger,
-} from "../../../../components/ui/dropdown-menu";
-import type { User, Role } from "../../../../modules/core/types";
-import { Badge } from "../../../../components/ui/badge";
+} from "@/components/ui/dropdown-menu";
+import type { User, Role } from "@/modules/core/types";
+import { Badge } from "@/components/ui/badge";
 import { MoreHorizontal, PlusCircle } from "lucide-react";
-import { useToast } from "../../../../modules/core/hooks/use-toast";
-import { logInfo, logWarn, logError } from "../../../../modules/core/lib/logger";
-import { Input } from "../../../../components/ui/input";
-import { Label } from "../../../../components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../../../components/ui/select";
-import { getAllUsers, saveAllUsers, addUser as addUserAction } from "../../../../modules/core/lib/auth-client";
-import { getAllRoles } from "../../../../modules/core/lib/db";
-import { Separator } from "../../../../components/ui/separator";
-import { usePageTitle } from "../../../../modules/core/hooks/usePageTitle";
-import { Skeleton } from "../../../../components/ui/skeleton";
-import { Avatar, AvatarImage, AvatarFallback } from "../../../../components/ui/avatar";
-import { useAuthorization } from "../../../../modules/core/hooks/useAuthorization";
+import { useToast } from "@/modules/core/hooks/use-toast";
+import { logInfo, logWarn, logError } from "@/modules/core/lib/logger";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { getAllUsers, saveAllUsers, addUser as addUserAction } from "@/modules/core/lib/auth-client";
+import { getAllRoles } from "@/modules/core/lib/db";
+import { Separator } from "@/components/ui/separator";
+import { usePageTitle } from "@/modules/core/hooks/usePageTitle";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { useAuthorization } from "@/modules/core/hooks/useAuthorization";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Checkbox } from "@/components/ui/checkbox";
 

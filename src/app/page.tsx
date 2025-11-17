@@ -1,3 +1,4 @@
+
 /**
  * @fileoverview The main entry point of the application.
  * This component acts as a router, determining whether to show

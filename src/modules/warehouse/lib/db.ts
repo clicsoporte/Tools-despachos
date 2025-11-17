@@ -1,12 +1,11 @@
 
-
 /**
  * @fileoverview Server-side functions for the warehouse database.
  */
 "use server";
 
-import { connectDb, getAllStock as getAllStockFromMain, getStockSettings as getStockSettingsFromMain } from '../../core/lib/db';
-import type { WarehouseLocation, WarehouseInventoryItem, MovementLog, WarehouseSettings, StockSettings, StockInfo, ItemLocation } from '../../core/types';
+import { connectDb, getAllStock as getAllStockFromMain, getStockSettings as getStockSettingsFromMain } from '@/modules/core/lib/db';
+import type { WarehouseLocation, WarehouseInventoryItem, MovementLog, WarehouseSettings, StockSettings, StockInfo, ItemLocation } from '@/modules/core/types';
 
 const WAREHOUSE_DB_FILE = 'warehouse.db';
 

@@ -1,7 +1,8 @@
+
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Button } from "../../../../components/ui/button";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -9,7 +10,7 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "../../../../components/ui/card";
+} from "@/components/ui/card";
 import {
     Dialog,
     DialogContent,
@@ -19,7 +20,7 @@ import {
     DialogTitle,
     DialogTrigger,
     DialogClose
-  } from "../../../../components/ui/dialog";
+  } from "@/components/ui/dialog";
 import {
     AlertDialog,
     AlertDialogAction,
@@ -30,26 +31,26 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
     AlertDialogTrigger,
-} from "../../../../components/ui/alert-dialog";
-import { Checkbox } from "../../../../components/ui/checkbox";
-import { Label } from "../../../../components/ui/label";
-import { Input } from "../../../../components/ui/input";
-import { Badge } from "../../../../components/ui/badge";
-import { useToast } from "../../../../modules/core/hooks/use-toast";
-import { logInfo, logWarn } from "../../../../modules/core/lib/logger";
-import type { Role } from "../../../../modules/core/types";
+} from "@/components/ui/alert-dialog";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { useToast } from "@/modules/core/hooks/use-toast";
+import { logInfo, logWarn } from "@/modules/core/lib/logger";
+import type { Role } from "@/modules/core/types";
 import { PlusCircle, Trash2, RefreshCw, Copy, FileText, Factory } from "lucide-react";
-import { getAllRoles, saveAllRoles, resetDefaultRoles } from "../../../../modules/core/lib/db";
-import { usePageTitle } from "../../../../modules/core/hooks/usePageTitle";
-import { Skeleton } from "../../../../components/ui/skeleton";
-import { useAuthorization } from "../../../../modules/core/hooks/useAuthorization";
+import { getAllRoles, saveAllRoles, resetDefaultRoles } from "@/modules/core/lib/db";
+import { usePageTitle } from "@/modules/core/hooks/usePageTitle";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useAuthorization } from "@/modules/core/hooks/useAuthorization";
 import {
     Accordion,
     AccordionContent,
     AccordionItem,
     AccordionTrigger,
-} from "../../../../components/ui/accordion";
-import { ScrollArea } from "../../../../components/ui/scroll-area";
+} from "@/components/ui/accordion";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 const permissionGroups = {
     "Acceso General": ["dashboard:access"],

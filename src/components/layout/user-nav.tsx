@@ -5,8 +5,8 @@ import {
   Avatar,
   AvatarFallback,
   AvatarImage,
-} from "../ui/avatar";
-import { Button } from "../ui/button";
+} from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -15,12 +15,12 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "../ui/dropdown-menu";
-import type { User } from "../../modules/core/types";
+} from "@/components/ui/dropdown-menu";
+import type { User } from "@/modules/core/types";
 import Link from "next/link";
 import { LogOut, User as UserIcon } from "lucide-react";
 import { useState, useEffect } from "react";
-import { Skeleton } from "../ui/skeleton";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/modules/core/hooks/useAuth";
 
 interface UserNavProps {

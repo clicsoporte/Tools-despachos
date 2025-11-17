@@ -1,3 +1,4 @@
+
 /**
  * @fileoverview Sidebar component for the main application layout.
  * It handles navigation, displays user and company information, and adapts
@@ -17,7 +18,7 @@ import {
   SidebarMenuButton,
   SidebarFooter,
   useSidebar,
-} from "../ui/sidebar";
+} from "@/components/ui/sidebar";
 import {
   Settings,
   Network,
@@ -35,10 +36,10 @@ import {
   BarChartBig,
   Calculator,
 } from "lucide-react";
-import type { Tool } from "../../modules/core/types";
+import type { Tool } from "@/modules/core/types";
 import { UserNav } from "./user-nav";
-import { Button } from "../ui/button";
-import { Skeleton } from "../ui/skeleton";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/modules/core/hooks/useAuth";
 
 /**

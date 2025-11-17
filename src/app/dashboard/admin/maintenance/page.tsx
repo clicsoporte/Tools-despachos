@@ -1,3 +1,4 @@
+
 /**
  * @fileoverview System maintenance page for administrators.
  * This page provides critical, high-risk functionalities such as database
@@ -7,7 +8,7 @@
 "use client";
 
 import { useState, useCallback, useEffect } from 'react';
-import { Button } from "../../../../components/ui/button";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -15,26 +16,26 @@ import {
   CardHeader,
   CardTitle,
   CardFooter
-} from "../../../../components/ui/card";
+} from "@/components/ui/card";
 import {
     Select,
     SelectContent,
     SelectItem,
     SelectTrigger,
     SelectValue,
-  } from "../../../../components/ui/select"
-import { useToast } from "../../../../modules/core/hooks/use-toast";
-import { logError, logInfo, logWarn } from "../../../../modules/core/lib/logger";
+  } from "@/components/ui/select"
+import { useToast } from "@/modules/core/hooks/use-toast";
+import { logError, logInfo, logWarn } from "@/modules/core/lib/logger";
 import { UploadCloud, RotateCcw, Loader2, Save, LifeBuoy, Trash2 as TrashIcon, Download, Skull, AlertTriangle, FileUp, ShieldCheck, CheckCircle } from "lucide-react";
 import { useDropzone } from 'react-dropzone';
-import { usePageTitle } from "../../../../modules/core/hooks/usePageTitle";
-import { Checkbox } from '../../../../components/ui/checkbox';
-import { Label } from '../../../../components/ui/label';
-import { Input } from '../../../../components/ui/input';
-import { restoreAllFromUpdateBackup, listAllUpdateBackups, deleteOldUpdateBackups, restoreDatabase, backupAllForUpdate, factoryReset, getDbModules, getCurrentVersion, runDatabaseAudit } from '../../../../modules/core/lib/db';
-import type { UpdateBackupInfo, DatabaseModule, AuditResult } from '../../../../modules/core/types';
-import { useAuthorization } from "../../../../modules/core/hooks/useAuthorization";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle as AlertDialogTitleComponent, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { usePageTitle } from "@/modules/core/hooks/usePageTitle";
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { restoreAllFromUpdateBackup, listAllUpdateBackups, deleteOldUpdateBackups, restoreDatabase, backupAllForUpdate, factoryReset, getDbModules, getCurrentVersion, runDatabaseAudit } from '@/modules/core/lib/db';
+import type { UpdateBackupInfo, DatabaseModule, AuditResult } from '@/modules/core/types';
+import { useAuthorization } from "@/modules/core/hooks/useAuthorization";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from '@/components/ui/dialog';
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -397,7 +398,7 @@ export default function MaintenancePage() {
                                             </AlertDialogTrigger>
                                             <AlertDialogContent>
                                                 <AlertDialogHeader>
-                                                    <AlertDialogTitleComponent>¿Confirmar Restauración del Sistema?</AlertDialogTitleComponent>
+                                                    <AlertDialogTitle>¿Confirmar Restauración del Sistema?</AlertDialogTitle>
                                                     <AlertDialogDescription>
                                                         Esta acción reemplazará **TODAS** las bases de datos actuales con las del backup seleccionado. El servidor se reiniciará automáticamente.
                                                     </AlertDialogDescription>
@@ -441,7 +442,7 @@ export default function MaintenancePage() {
                                             </AlertDialogTrigger>
                                             <AlertDialogContent>
                                                 <AlertDialogHeader>
-                                                    <AlertDialogTitleComponent>¿Limpiar Backups Antiguos?</AlertDialogTitleComponent>
+                                                    <AlertDialogTitle>¿Limpiar Backups Antiguos?</AlertDialogTitle>
                                                     <AlertDialogDescription>
                                                         Se eliminarán todos los puntos de restauración excepto el más reciente. Esta acción no se puede deshacer.
                                                     </AlertDialogDescription>
@@ -519,7 +520,7 @@ export default function MaintenancePage() {
                                     <div className="space-y-4 rounded-lg border p-4">
                                         <h3 className="font-semibold">Restaurar Módulo Individual desde Archivo</h3>
                                         <p className="text-sm text-muted-foreground">Reemplaza la base de datos de un módulo específico con un archivo .db que subas desde tu computadora.</p>
-                                        <Dialog open={isSingleRestoreOpen} onOpenChange={open => {
+                                        <Dialog open={isSingleRestoreOpen} onOpenChange={(open: boolean) => {
                                             if (!open) { setSingleRestoreStep(0); setSingleRestoreConfirmationText(''); setModuleToRestore(''); setFileToRestore(null); }
                                             setIsSingleRestoreOpen(open);
                                         }}>
@@ -569,11 +570,11 @@ export default function MaintenancePage() {
                                         <p className="text-sm text-muted-foreground">Borra todos los datos de un módulo y lo devuelve a su estado inicial. Útil si un módulo está corrupto.</p>
                                         <div className='flex flex-wrap gap-4 items-end'>
                                             <div className="flex-1 min-w-[200px] space-y-2"><Label htmlFor="reset-module-select">Módulo a Resetear</Label><Select value={moduleToReset} onValueChange={setModuleToReset}><SelectTrigger id="reset-module-select"><SelectValue placeholder="Seleccionar..." /></SelectTrigger><SelectContent>{dbModules.map(m => (<SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>))}</SelectContent></Select></div>
-                                            <AlertDialog open={isResetConfirmOpen} onOpenChange={(open) => { setResetConfirmOpen(open); if(!open) { setResetStep(0); setResetConfirmationText(''); }}}>
+                                            <AlertDialog open={isResetConfirmOpen} onOpenChange={(open: boolean) => { setResetConfirmOpen(open); if(!open) { setResetStep(0); setResetConfirmationText(''); }}}>
                                                 <AlertDialogTrigger asChild><Button variant="destructive" disabled={isProcessing || !moduleToReset}><TrashIcon className="mr-2 h-4 w-4" />Resetear Módulo</Button></AlertDialogTrigger>
                                                 <AlertDialogContent>
                                                     <AlertDialogHeader>
-                                                        <AlertDialogTitleComponent className="flex items-center gap-2"><AlertTriangle/>Confirmación Final Requerida</AlertDialogTitleComponent>
+                                                        <AlertDialogTitle className="flex items-center gap-2"><AlertTriangle/>Confirmación Final Requerida</AlertDialogTitle>
                                                         <AlertDialogDescription>Esta acción borrará **TODA** la información del módulo &quot;{dbModules.find(m => m.id === moduleToReset)?.name || ''}&quot;. La aplicación se reiniciará.</AlertDialogDescription>
                                                     </AlertDialogHeader>
                                                     <div className="py-4 space-y-4">
@@ -591,11 +592,11 @@ export default function MaintenancePage() {
                                      <div className="space-y-4 rounded-lg border p-4">
                                         <h3 className="font-semibold">Resetear Todo el Sistema</h3>
                                         <p className="text-sm text-muted-foreground">Devuelve la aplicación completa a su estado de fábrica. Se borrarán todos los usuarios, configuraciones y datos. Es una acción irreversible.</p>
-                                        <AlertDialog open={isFullResetConfirmOpen} onOpenChange={(open) => { setFullResetConfirmOpen(open); if(!open) { setFullResetStep(0); setFullResetConfirmationText(''); }}}>
+                                        <AlertDialog open={isFullResetConfirmOpen} onOpenChange={(open: boolean) => { setFullResetConfirmOpen(open); if(!open) { setFullResetStep(0); setFullResetConfirmationText(''); }}}>
                                             <AlertDialogTrigger asChild><Button variant="destructive" className='w-full'><Skull className="mr-2 h-4 w-4" />Resetear Sistema de Fábrica</Button></AlertDialogTrigger>
                                             <AlertDialogContent>
                                                 <AlertDialogHeader>
-                                                    <AlertDialogTitleComponent className="flex items-center gap-2"><AlertTriangle/>¡ACCIÓN IRREVERSIBLE!</AlertDialogTitleComponent>
+                                                    <AlertDialogTitle className="flex items-center gap-2"><AlertTriangle/>¡ACCIÓN IRREVERSIBLE!</AlertDialogTitle>
                                                     <AlertDialogDescription>Se borrarán **TODAS LAS BASES DE DATOS** y se perderá toda la información. La aplicación se reiniciará.</AlertDialogDescription>
                                                 </AlertDialogHeader>
                                                 <div className="py-4 space-y-4">

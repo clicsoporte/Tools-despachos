@@ -1,3 +1,4 @@
+
 /**
  * @fileoverview This file defines the core TypeScript types used throughout the application.
  * Using centralized types helps ensure data consistency and provides autocompletion benefits.
@@ -235,7 +236,7 @@ export type ExemptionLaw = {
 
 // --- Production Planner Types ---
 
-export type ProductionOrderStatus = 'pending' | 'approved' | 'in-queue' | 'in-progress' | 'on-hold' | 'in-maintenance' | 'completed' | 'received-in-warehouse' | 'canceled' | 'custom-1' | 'custom-2' | 'custom-3' | 'custom-4';
+export type ProductionOrderStatus = 'pending' | 'pending-review' | 'pending-approval' | 'approved' | 'in-queue' | 'in-progress' | 'on-hold' | 'in-maintenance' | 'completed' | 'received-in-warehouse' | 'canceled' | 'custom-1' | 'custom-2' | 'custom-3' | 'custom-4';
 export type AdministrativeAction = 'unapproval-request' | 'cancellation-request' | 'none';
 export type ProductionOrderPriority = 'low' | 'medium' | 'high' | 'urgent';
 
@@ -398,6 +399,11 @@ export type PurchaseRequest = {
   hasBeenModified?: boolean;
   sourceOrders?: string[];
   involvedClients?: { id: string; name: string }[];
+  analysis?: {
+      cost: number;
+      salePrice: number;
+      margin: number;
+  } | null;
 };
 
 export type UpdatePurchaseRequestPayload = Partial<Omit<PurchaseRequest, 'id' | 'consecutive' | 'requestDate' | 'status' | 'reopened' | 'requestedBy' | 'deliveredQuantity' | 'receivedInWarehouseBy' | 'receivedDate' | 'previousStatus' | 'lastModifiedAt' | 'lastModifiedBy' | 'hasBeenModified' | 'approvedBy' | 'lastStatusUpdateBy' | 'lastStatusUpdateNotes'>> & {
@@ -438,9 +444,9 @@ export type UpdateRequestStatusPayload = {
     reopen: boolean;
     manualSupplier?: string;
     erpOrderNumber?: string;
-    erpEntryNumber?: string;
     deliveredQuantity?: number;
     arrivalDate?: string;
+    erpEntryNumber?: string;
 };
 
 export type RejectCancellationPayload = {
@@ -600,6 +606,14 @@ export type ImportQuery = {
     query: string;
 }
 
+export type SqlConfig = {
+    host?: string;
+    port?: number;
+    user?: string;
+    password?: string;
+    database?: string;
+};
+
 export type { DateRange };
 
 export type PlannerNotePayload = {
@@ -694,7 +708,7 @@ export type ErpOrderLine = {
 export type ErpPurchaseOrderHeader = {
     ORDEN_COMPRA: string;
     PROVEEDOR: string;
-    FECHA_HORA: string;
+    FECHA_HORA: string | Date;
     ESTADO: string; // 'A' = Activa/Abierta, 'R' = Recibida/Cerrada, 'N' = Anulada
     CreatedBy?: string;
 };
@@ -720,7 +734,15 @@ export interface PurchaseSuggestion {
     erpUsers: string[];
     earliestCreationDate: string | null;
     earliestDueDate: string | null;
-    existingActiveRequests: { id: number; consecutive: string, status: string, quantity: number, purchaseOrder?: string, erpOrderNumber?: string }[];
+    existingActiveRequests: { 
+        id: number; 
+        consecutive: string; 
+        status: string; 
+        quantity: number; 
+        purchaseOrder?: string; 
+        erpOrderNumber?: string;
+        requestedBy: string;
+    }[];
 }
 
 export type ProductionReportData = {

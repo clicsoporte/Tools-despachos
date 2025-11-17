@@ -1,3 +1,4 @@
+
 /**
  * @fileoverview This file defines a custom hook and provider for managing the page title.
  * This allows any child component to set the title that is displayed in the main Header component,

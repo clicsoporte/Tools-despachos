@@ -1,7 +1,8 @@
+
 "use client";
 
 import { useState, useEffect } from "react";
-import { Button } from "../../../../components/ui/button";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -9,16 +10,16 @@ import {
   CardHeader,
   CardTitle,
   CardFooter
-} from "../../../../components/ui/card";
-import { Input } from "../../../../components/ui/input";
-import { Label } from "../../../../components/ui/label";
-import { useToast } from "../../../../modules/core/hooks/use-toast";
-import type { Company } from "../../../../modules/core/types";
-import { Skeleton } from "../../../../components/ui/skeleton";
-import { logInfo } from "../../../../modules/core/lib/logger";
-import { getCompanySettings, saveCompanySettings } from "../../../../modules/core/lib/db";
-import { usePageTitle } from "../../../../modules/core/hooks/usePageTitle";
-import { useAuthorization } from "../../../../modules/core/hooks/useAuthorization";
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useToast } from "@/modules/core/hooks/use-toast";
+import type { Company } from "@/modules/core/types";
+import { Skeleton } from "@/components/ui/skeleton";
+import { logInfo } from "@/modules/core/lib/logger";
+import { getCompanySettings, saveCompanySettings } from "@/modules/core/lib/db";
+import { usePageTitle } from "@/modules/core/hooks/usePageTitle";
+import { useAuthorization } from "@/modules/core/hooks/useAuthorization";
 import { useAuth } from "@/modules/core/hooks/useAuth";
 import { Switch } from "@/components/ui/switch";
 import { useRouter } from "next/navigation";

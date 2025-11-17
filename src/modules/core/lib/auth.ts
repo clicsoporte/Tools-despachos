@@ -1,3 +1,4 @@
+
 /**
  * @fileoverview Server-side authentication and user management functions.
  * These functions interact directly with the database to handle user data.
@@ -8,7 +9,7 @@
 
 import { connectDb, getAllRoles, getCompanySettings, getAllCustomers, getAllProducts, getAllStock, getAllExemptions, getExemptionLaws, getDbModules, getUnreadSuggestions } from './db';
 import { sendEmail, getEmailSettings as getEmailSettingsFromDb } from './email-service';
-import type { User, ExchangeRateApiResponse, EmailSettings } from '../types';
+import type { User, ExchangeRateApiResponse, EmailSettings } from '@/modules/core/types';
 import bcrypt from 'bcryptjs';
 import { logInfo, logWarn, logError } from './logger';
 import { headers } from 'next/headers';

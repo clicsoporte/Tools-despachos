@@ -4,10 +4,10 @@
  * It dynamically displays a grid of available administration tools.
  */
 'use client';
-import { adminTools, adminPermissions } from "../../../modules/core/lib/data";
-import { ToolCard } from "../../../components/dashboard/tool-card";
+import { adminTools, adminPermissions } from "@/modules/core/lib/data";
+import { ToolCard } from "@/components/dashboard/tool-card";
 import { useEffect, useMemo } from "react";
-import { usePageTitle } from "../../../modules/core/hooks/usePageTitle";
+import { usePageTitle } from "@/modules/core/hooks/usePageTitle";
 import { useAuthorization } from "@/modules/core/hooks/useAuthorization";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/modules/core/hooks/useAuth";

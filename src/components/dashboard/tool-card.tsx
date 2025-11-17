@@ -1,3 +1,4 @@
+
 /**
  * @fileoverview A reusable component for displaying a "tool" card on the dashboard.
  * Each card acts as a link to a specific feature or section of the application.
@@ -5,9 +6,9 @@
  */
 
 import Link from "next/link";
-import { Card, CardHeader, CardTitle, CardDescription } from "../ui/card";
-import type { Tool } from "../../modules/core/types";
-import { cn } from "../../lib/utils";
+import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import type { Tool } from "@/modules/core/types";
+import { cn } from "@/lib/utils";
 
 interface ToolCardProps {
   tool: Tool;

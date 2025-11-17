@@ -1,3 +1,4 @@
+
 /**
  * @fileoverview Page for the read-only Purchase Report.
  * This component visualizes purchase suggestions without offering creation actions.
@@ -5,12 +6,12 @@
 'use client';
 
 import React from 'react';
-import { usePurchaseSuggestionsLogic, type SortKey, availableColumns } from '@/modules/analytics/hooks/usePurchaseSuggestionsLogic';
+import { usePurchaseSuggestionsLogic, type SortKey } from '@/modules/analytics/hooks/usePurchaseSuggestionsLogic';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from '@/components/ui/input';
-import { Loader2, CalendarIcon, Search, FileSpreadsheet, FilterX, ArrowUp, ArrowDown, ChevronLeft, ChevronRight, Layers, ShoppingCart, Columns3, Save, Info } from 'lucide-react';
+import { Loader2, CalendarIcon, Search, FileSpreadsheet, FilterX, ArrowUp, ArrowDown, ChevronLeft, ChevronRight, Layers, ShoppingCart, Save, Info } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';

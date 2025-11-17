@@ -1,3 +1,4 @@
+
 /**
  * @fileoverview This file contains client-side functions for interacting with server-side authentication logic.
  * This abstraction layer prevents direct DB access from the client and ensures that server-side
@@ -15,7 +16,7 @@ import {
     logout as logoutServer,
     getInitialAuthData as getInitialAuthDataServer,
     sendPasswordRecoveryEmail as sendRecoveryEmailServer,
-} from './auth';
+} from '@/modules/core/lib/auth';
 
 const CURRENT_USER_ID_KEY = 'currentUserId';
 
@@ -73,7 +74,7 @@ export async function getAllUsers(): Promise<User[]> {
  * @param userData - The new user's data.
  * @returns The created user object.
  */
-export async function addUser(userData: Omit<User, 'id' | 'password' | 'avatar' | 'recentActivity' | 'securityQuestion' | 'securityAnswer'> & { password: string, forcePasswordChange: boolean }): Promise<User> {
+export async function addUser(userData: Omit<User, 'id' | 'avatar' | 'recentActivity' | 'securityQuestion' | 'securityAnswer'> & { password: string, forcePasswordChange: boolean }): Promise<User> {
     return addUserServer(userData);
 }
 

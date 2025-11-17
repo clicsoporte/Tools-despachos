@@ -1,3 +1,4 @@
+
 /**
  * @fileoverview Main layout for the authenticated dashboard section of the application.
  * It handles session verification, ensuring only logged-in users can access this area.
@@ -6,10 +7,10 @@
  */
 'use client';
 
-import { AppSidebar } from "../../components/layout/sidebar";
-import { Header } from "../../components/layout/header";
-import { SidebarInset, SidebarProvider } from "../../components/ui/sidebar";
-import { usePageTitle, PageTitleProvider } from "../../modules/core/hooks/usePageTitle";
+import { AppSidebar } from "@/components/layout/sidebar";
+import { Header } from "@/components/layout/header";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+import { usePageTitle, PageTitleProvider } from "@/modules/core/hooks/usePageTitle";
 import { useAuth } from "@/modules/core/hooks/useAuth";
 import { useEffect } from "react";
 import { Loader2 } from "lucide-react";

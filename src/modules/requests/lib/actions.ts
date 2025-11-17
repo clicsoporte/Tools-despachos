@@ -1,3 +1,4 @@
+
 /**
  * @fileoverview Client-side functions for interacting with the request module's server-side DB functions.
  * This abstraction layer ensures components only call client-safe functions.
@@ -21,7 +22,7 @@ import {
     getRolesWithPermission,
     addNote as addNoteServer,
     updateRequestDetails as updateRequestDetailsServer,
-    saveCostAnalysis as saveCostAnalysisServer,
+    saveCostAnalysis as saveCostAnalysisServer
 } from './db';
 import {
     saveUserPreferences as saveUserPreferencesServer,
@@ -274,7 +275,15 @@ export async function getRequestSuggestions(dateRange: DateRange): Promise<Purch
                 erpUsers: Array.from(data.erpUsers),
                 earliestCreationDate: data.earliestCreationDate ? data.earliestCreationDate.toISOString() : null,
                 earliestDueDate: data.earliestDueDate ? data.earliestDueDate.toISOString() : null,
-                existingActiveRequests,
+                existingActiveRequests: existingActiveRequests.map(r => ({
+                    id: r.id,
+                    consecutive: r.consecutive,
+                    status: r.status,
+                    quantity: r.quantity,
+                    purchaseOrder: r.purchaseOrder,
+                    erpOrderNumber: r.erpOrderNumber,
+                    requestedBy: r.requestedBy,
+                })),
             });
         }
     }
@@ -313,8 +322,15 @@ export async function savePurchaseSuggestionsPreferences(userId: number, prefere
 }
 
 export async function saveCostAnalysis(requestId: number, cost: number, salePrice: number): Promise<PurchaseRequest> {
-    return saveCostAnalysisServer(requestId, cost, salePrice);
+    const updatedRequest = await saveCostAnalysisServer(requestId, cost, salePrice);
+    await logInfo(`Cost analysis saved for request ${updatedRequest.consecutive}`, { requestId, cost, salePrice });
+    return updatedRequest;
 }
 
-export const getAllErpPurchaseOrderHeaders = async (): Promise<ErpPurchaseOrderHeader[]> => getAllErpPurchaseOrderHeadersDb();
-export const getAllErpPurchaseOrderLines = async (): Promise<ErpPurchaseOrderLine[]> => getAllErpPurchaseOrderLinesDb();
+export async function getAllErpPurchaseOrderHeaders(): Promise<ErpPurchaseOrderHeader[]> {
+    return getAllErpPurchaseOrderHeadersDb();
+}
+
+export async function getAllErpPurchaseOrderLines(): Promise<ErpPurchaseOrderLine[]> {
+    return getAllErpPurchaseOrderLinesDb();
+}

@@ -1,3 +1,4 @@
+
 /**
  * @fileoverview Server-side functions for the cost assistant database.
  * This file handles all direct interactions with the `cost_assistant.db` SQLite database,
@@ -5,9 +6,8 @@
  */
 "use server";
 
-import { connectDb } from '../../core/lib/db';
-import type { CostAnalysisDraft, CostAssistantSettings, ExpectedSchema } from '@/modules/core/types';
-import { costAssistantSchema } from './schema';
+import { connectDb } from '@/modules/core/lib/db';
+import type { CostAnalysisDraft, CostAssistantSettings } from '@/modules/core/types';
 
 const COST_ASSISTANT_DB_FILE = 'cost_assistant.db';
 

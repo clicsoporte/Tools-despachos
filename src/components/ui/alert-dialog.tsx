@@ -1,3 +1,4 @@
+
 /**
  * @fileoverview Alert Dialog component.
  * A modal dialog that interrupts the user with important content and expects a response.
@@ -10,8 +11,8 @@
 import * as React from "react"
 import * as AlertDialogPrimitive from "@radix-ui/react-alert-dialog"
 
-import { cn } from "../../lib/utils"
-import { buttonVariants } from "./button"
+import { cn } from "@/lib/utils"
+import { buttonVariants } from "@/components/ui/button"
 
 const AlertDialog = AlertDialogPrimitive.Root
 

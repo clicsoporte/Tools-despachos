@@ -1,3 +1,4 @@
+
 /**
  * @fileoverview Custom hook to handle authorization for specific pages or components.
  * It checks if the current user's role includes at least one of the required permissions.
@@ -7,7 +8,7 @@
 
 import { useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from './useAuth';
+import { useAuth } from '@/modules/core/hooks/useAuth';
 
 type UseAuthorizationReturn = {
   isAuthorized: boolean | null;

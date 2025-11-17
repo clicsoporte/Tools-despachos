@@ -1,3 +1,4 @@
+
 /**
  * @fileoverview Centralized logging functions that interact with the database logger.
  * These server-side functions abstract away the direct database calls, providing a clean API
@@ -5,7 +6,7 @@
  */
 "use server";
 
-import { addLog as dbAddLog, getLogs as dbGetLogs, clearLogs as dbClearLogs } from './db';
+import { addLog as dbAddLog, getLogs as dbGetLogs, clearLogs as dbClearLogs } from '@/modules/core/lib/db';
 import type { LogEntry, DateRange } from "@/modules/core/types";
 
 /**

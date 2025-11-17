@@ -1,3 +1,4 @@
+
 /**
  * @fileoverview The main header component for the application's authenticated layout.
  * It displays the current page title, global actions (sync, suggestions, exchange rate),
@@ -6,7 +7,7 @@
 "use client";
 
 import { useState } from "react";
-import { SidebarTrigger } from "../ui/sidebar";
+import { SidebarTrigger } from "@/components/ui/sidebar";
 import { UserNav } from "./user-nav";
 import { NotificationBell } from "./notification-bell";
 import { useAuth } from "@/modules/core/hooks/useAuth";
@@ -17,10 +18,10 @@ import { syncAllData } from "@/modules/core/lib/actions";
 import { addSuggestion } from "@/modules/core/lib/suggestions-mutations";
 import { format, parseISO } from 'date-fns';
 import { cn } from "@/lib/utils";
-import { Button } from "../ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "../ui/dialog";
-import { Label } from "../ui/label";
-import { Textarea } from "../ui/textarea";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Loader2, RefreshCw, Clock, DollarSign, Send, MessageSquare, PanelLeft } from "lucide-react";
 
 interface HeaderProps {

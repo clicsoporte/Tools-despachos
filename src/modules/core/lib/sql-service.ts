@@ -1,3 +1,4 @@
+
 /**
  * @fileoverview Service for securely connecting to and querying an MSSQL database.
  * This file handles the connection pooling and ensures that only read-only
@@ -7,8 +8,8 @@
 'use server';
 
 import sql from 'mssql';
-import { logError } from './logger';
-import { getSqlConfig } from './config-db';
+import { logError } from '@/modules/core/lib/logger';
+import { getSqlConfig } from '@/modules/core/lib/config-db';
 
 let pool: sql.ConnectionPool | null = null;
 let isConnecting = false;

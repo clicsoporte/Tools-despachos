@@ -1,3 +1,4 @@
+
 /**
  * @fileoverview User profile settings page.
  * Allows the currently logged-in user to update their personal information,
@@ -6,7 +7,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Button } from "../../../components/ui/button";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -14,18 +15,18 @@ import {
   CardHeader,
   CardTitle,
   CardFooter,
-} from "../../../components/ui/card";
-import { Input } from "../../../components/ui/input";
-import { Label } from "../../../components/ui/label";
-import { useToast } from "../../../modules/core/hooks/use-toast";
-import type { User } from "../../../modules/core/types";
-import { Skeleton } from "../../../components/ui/skeleton";
-import { logInfo, logError } from "../../../modules/core/lib/logger";
-import { Separator } from "../../../components/ui/separator";
-import { getAllUsers, saveAllUsers, comparePasswords } from "../../../modules/core/lib/auth-client";
-import { usePageTitle } from "../../../modules/core/hooks/usePageTitle";
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useToast } from "@/modules/core/hooks/use-toast";
+import type { User } from "@/modules/core/types";
+import { Skeleton } from "@/components/ui/skeleton";
+import { logInfo, logError } from "@/modules/core/lib/logger";
+import { Separator } from "@/components/ui/separator";
+import { getAllUsers, saveAllUsers, comparePasswords } from "@/modules/core/lib/auth-client";
+import { usePageTitle } from "@/modules/core/hooks/usePageTitle";
 import { useDropzone } from "react-dropzone";
-import { Avatar, AvatarImage, AvatarFallback } from "../../../components/ui/avatar";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Camera } from "lucide-react";
 import { useAuth } from "@/modules/core/hooks/useAuth";
 
