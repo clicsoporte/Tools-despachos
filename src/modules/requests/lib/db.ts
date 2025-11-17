@@ -3,7 +3,7 @@
  */
 "use server";
 
-import { connectDb, getImportQueries as getImportQueriesFromMain, getAllRoles as getAllRolesFromMain } from '../../core/lib/db';
+import { connectDb, getAllRoles as getAllRolesFromMain } from '../../core/lib/db';
 import { getAllUsers as getAllUsersFromMain } from '../../core/lib/auth';
 import { logInfo, logError, logWarn } from '../../core/lib/logger';
 import type { PurchaseRequest, RequestSettings, UpdateRequestStatusPayload, PurchaseRequestHistoryEntry, UpdatePurchaseRequestPayload, RejectCancellationPayload, PurchaseRequestStatus, DateRange, AdministrativeAction, AdministrativeActionPayload, StockInfo, ErpOrderHeader, ErpOrderLine, User, PurchaseSuggestion, PurchaseRequestPriority, ErpPurchaseOrderHeader, ErpPurchaseOrderLine } from '../../core/types';
@@ -13,6 +13,43 @@ import { executeQuery } from '@/modules/core/lib/sql-service';
 import { getAllProducts, getAllStock, getAllCustomers } from '@/modules/core/lib/db';
 
 const REQUESTS_DB_FILE = 'requests.db';
+
+// Helper function to ensure complex fields are in the correct format (array).
+const sanitizeRequest = (request: any): PurchaseRequest => {
+  const sanitized = { ...request };
+  if (sanitized.sourceOrders && typeof sanitized.sourceOrders === 'string') {
+    try {
+      sanitized.sourceOrders = JSON.parse(sanitized.sourceOrders);
+    } catch {
+      sanitized.sourceOrders = [];
+    }
+  } else if (!Array.isArray(sanitized.sourceOrders)) {
+      sanitized.sourceOrders = [];
+  }
+  
+  if (sanitized.involvedClients && typeof sanitized.involvedClients === 'string') {
+    try {
+      sanitized.involvedClients = JSON.parse(sanitized.involvedClients);
+    } catch {
+      sanitized.involvedClients = [];
+    }
+  } else if (!Array.isArray(sanitized.involvedClients)) {
+      sanitized.involvedClients = [];
+  }
+
+  try {
+      if (sanitized.analysis && typeof sanitized.analysis === 'string') {
+          sanitized.analysis = JSON.parse(sanitized.analysis);
+      } else if (typeof sanitized.analysis !== 'object') { // Allow null, but not other non-object types
+          sanitized.analysis = undefined;
+      }
+  } catch {
+      sanitized.analysis = undefined;
+  }
+
+  return sanitized as PurchaseRequest;
+};
+
 
 export async function initializeRequestsDb(db: import('better-sqlite3').Database) {
     const schema = `
@@ -258,7 +295,7 @@ export async function getRequests(options: {
     
     const allRequestsRaw = db.prepare(`SELECT * FROM purchase_requests ORDER BY requestDate DESC`).all() as any[];
     const allRequests = allRequestsRaw.map(sanitizeRequest);
-    const totalArchivedCount = allRequests.filter(r => archivedStatuses.includes(`'${r.status}'`)).length;
+    const totalArchivedCount = allRequests.filter((r: PurchaseRequest) => archivedStatuses.includes(`'${r.status}'`)).length;
 
     return { requests: allRequests, totalArchivedCount };
 }
@@ -587,7 +624,7 @@ export async function updateRequestDetails(payload: { requestId: number; priorit
 
 export async function getUserByName(name: string): Promise<User | null> {
     const users = await getAllUsersFromMain();
-    return users.find(u => u.name === name) || null;
+    return users.find((u: User) => u.name === name) || null;
 }
 
 export async function getRolesWithPermission(permission: string): Promise<string[]> {
