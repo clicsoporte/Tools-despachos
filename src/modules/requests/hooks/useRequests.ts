@@ -1,4 +1,3 @@
-
 /**
  * @fileoverview Custom hook `useRequests` for managing the state and logic of the Purchase Request page.
  * This hook encapsulates all state and actions for the module, keeping the UI component clean.
@@ -165,7 +164,6 @@ type State = {
     isCostAnalysisDialogOpen: boolean;
     analysisCost: string;
     analysisSalePrice: string;
-    analysisMargin: number;
 };
 
 // Helper function to ensure complex fields are in the correct format (array).
@@ -273,14 +271,13 @@ export const useRequests = () => {
         isCostAnalysisDialogOpen: false,
         analysisCost: '',
         analysisSalePrice: '',
-        analysisMargin: 0,
     });
     
     const [debouncedSearchTerm] = useDebounce(state.searchTerm, state.companyData?.searchDebounceTime ?? 500);
     const [debouncedClientSearch] = useDebounce(state.clientSearchTerm, state.companyData?.searchDebounceTime ?? 500);
     const [debouncedItemSearch] = useDebounce(state.itemSearchTerm, state.companyData?.searchDebounceTime ?? 500);
     
-    const updateState = useCallback((newState: Partial<State>) => {
+    const updateState = useCallback((newState: Partial<Omit<State, 'analysisMargin'>>) => {
         setState(prevState => ({ ...prevState, ...newState }));
     }, []);
 
@@ -514,16 +511,14 @@ export const useRequests = () => {
         }
     };
 
-    useEffect(() => {
+    const analysisMargin = useMemo(() => {
         const cost = parseFloat(state.analysisCost);
         const salePrice = parseFloat(state.analysisSalePrice);
         if (!isNaN(cost) && !isNaN(salePrice) && cost > 0) {
-            const margin = (salePrice - cost) / cost;
-            updateState({ analysisMargin: margin });
-        } else {
-            updateState({ analysisMargin: 0 });
+            return ((salePrice - cost) / cost) * 100;
         }
-    }, [state.analysisCost, state.analysisSalePrice, updateState]);
+        return 0;
+    }, [state.analysisCost, state.analysisSalePrice]);
     
     const actions = {
         loadInitialData,
@@ -951,7 +946,7 @@ export const useRequests = () => {
         },
         handleDetailUpdate: async (requestId: number, details: { priority: PurchaseRequestPriority }) => {
             if (!currentUser) return;
-            const updated = await updateRequestDetails({ requestId, ...details, updatedBy: currentUser.name });
+            const updated = await updateRequestDetailsServer({ requestId, ...details, updatedBy: currentUser.name });
             updateState({ 
                 activeRequests: state.activeRequests.map(o => o.id === requestId ? sanitizeRequest(updated) : o),
                 archivedRequests: state.archivedRequests.map(o => o.id === requestId ? sanitizeRequest(updated) : o)
@@ -991,7 +986,6 @@ export const useRequests = () => {
                 requestToUpdate: request,
                 analysisCost: request.analysis?.cost?.toString() || '',
                 analysisSalePrice: request.unitSalePrice?.toString() || '',
-                analysisMargin: request.analysis?.margin || 0,
                 isCostAnalysisDialogOpen: true,
             });
         },
@@ -1107,7 +1101,7 @@ export const useRequests = () => {
     };
 
     return {
-        state,
+        state: { ...state, analysisMargin },
         actions,
         selectors,
         isAuthorized
