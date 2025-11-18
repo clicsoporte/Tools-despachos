@@ -303,6 +303,7 @@ export function usePurchaseSuggestionsLogic() {
                     sourceOrders: item.sourceOrders,
                     involvedClients: item.involvedClients,
                     pendingAction: 'none' as const,
+                    analysis: undefined
                 };
                 await savePurchaseRequest(requestPayload, currentUser.name);
                 createdCount++;
@@ -318,7 +319,7 @@ export function usePurchaseSuggestionsLogic() {
             toast({
                 title: "Solicitudes Creadas",
                 description: `Se crearon ${createdCount} solicitudes de compra.`,
-                action: <ToastAction altText="Ir a Compras" onClick={() => router.push('/dashboard/requests')}>Ir a Compras</ToastAction>
+                action: (<ToastAction altText="Ir a Compras" onClick={() => router.push('/dashboard/requests')}>Ir a Compras</ToastAction>),
             });
         }
         if (errorCount > 0) {
