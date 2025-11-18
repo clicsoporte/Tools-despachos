@@ -1,3 +1,4 @@
+
 /**
  * @fileoverview Custom hook `useRequests` for managing the state and logic of the Purchase Request page.
  * This hook encapsulates all state and actions for the module, keeping the UI component clean.
@@ -30,7 +31,7 @@ import { useDebounce } from 'use-debounce';
 import { generateDocument } from '@/modules/core/lib/pdf-generator';
 import { getDaysRemaining as getSimpleDaysRemaining } from '@/modules/core/lib/time-utils';
 import { exportToExcel } from '@/modules/core/lib/excel-export';
-import { AlertTriangle, Undo2, ChevronsLeft, ChevronsRight } from 'lucide-react';
+import { AlertTriangle, Undo2, ChevronsLeft, ChevronsRight, Send, ShoppingBag } from 'lucide-react';
 import type { RowInput } from 'jspdf-autotable';
 import { getAllProducts as getAllProductsFromDB } from '@/modules/core/lib/db';
 import { getAllCustomers as getAllCustomersFromDB } from '@/modules/core/lib/db';
@@ -277,9 +278,18 @@ export const useRequests = () => {
     const [debouncedClientSearch] = useDebounce(state.clientSearchTerm, state.companyData?.searchDebounceTime ?? 500);
     const [debouncedItemSearch] = useDebounce(state.itemSearchTerm, state.companyData?.searchDebounceTime ?? 500);
     
-    const updateState = useCallback((newState: Partial<Omit<State, 'analysisMargin'>>) => {
+    const updateState = useCallback((newState: Partial<State>) => {
         setState(prevState => ({ ...prevState, ...newState }));
     }, []);
+
+    const analysisMargin = useMemo(() => {
+        const cost = parseFloat(state.analysisCost);
+        const salePrice = parseFloat(state.analysisSalePrice);
+        if (!isNaN(cost) && !isNaN(salePrice) && cost > 0) {
+            return ((salePrice - cost) / cost) * 100;
+        }
+        return 0;
+    }, [state.analysisCost, state.analysisSalePrice]);
 
     const loadInitialData = useCallback(async (isRefresh = false) => {
         let isMounted = true;
@@ -510,15 +520,6 @@ export const useRequests = () => {
             updateState({ isSubmitting: false });
         }
     };
-
-    const analysisMargin = useMemo(() => {
-        const cost = parseFloat(state.analysisCost);
-        const salePrice = parseFloat(state.analysisSalePrice);
-        if (!isNaN(cost) && !isNaN(salePrice) && cost > 0) {
-            return ((salePrice - cost) / cost) * 100;
-        }
-        return 0;
-    }, [state.analysisCost, state.analysisSalePrice]);
     
     const actions = {
         loadInitialData,
@@ -1107,3 +1108,5 @@ export const useRequests = () => {
         isAuthorized
     };
 }
+
+    
