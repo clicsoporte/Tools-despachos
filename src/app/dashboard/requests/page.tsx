@@ -1,3 +1,4 @@
+
 // This file was restored to its stable version.
 // The previous content was causing compilation issues.
 'use client';
@@ -73,6 +74,8 @@ export default function PurchaseRequestPage() {
         isTransitsDialogOpen,
         activeTransits,
         isCostAnalysisDialogOpen,
+        analysisCost,
+        analysisSalePrice,
     } = state;
 
 
@@ -100,7 +103,8 @@ export default function PurchaseRequestPage() {
             canEdit, canReopen, canApprove, canOrder,
             canRevertToApproved, canReceiveInWarehouse, canEnterToErp,
             canRequestCancel, canCancelPending, canSendToReview, canGoBackToReview, canGoBackToPending,
-            canRequestUnapproval
+            canRequestUnapproval,
+            canSendToApproval,
         } = selectors.getRequestPermissions(request);
 
         const daysRemaining = selectors.getDaysRemaining(request.requiredDate);
