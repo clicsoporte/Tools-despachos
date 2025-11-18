@@ -1,3 +1,4 @@
+
 /**
  * @fileoverview Custom hook `useRequests` for managing the state and logic of the Purchase Request page.
  * This hook encapsulates all state and actions for the module, keeping the UI component clean.
@@ -15,8 +16,9 @@ import {
     getPurchaseRequests, savePurchaseRequest, updatePurchaseRequest, 
     updatePurchaseRequestStatus, getRequestHistory, getRequestSettings, 
     updatePendingAction, getErpOrderData, addNoteToRequest, updateRequestDetails, 
-    getAllErpPurchaseOrderHeaders, getAllErpPurchaseOrderLines, saveCostAnalysis
+    saveCostAnalysis
 } from '@/modules/requests/lib/actions';
+import { getAllErpPurchaseOrderHeaders, getAllErpPurchaseOrderLines } from '@/modules/core/lib/db';
 import type { 
     PurchaseRequest, PurchaseRequestStatus, PurchaseRequestPriority, 
     PurchaseRequestHistoryEntry, RequestSettings, Company, DateRange, 
@@ -949,7 +951,7 @@ export const useRequests = () => {
         },
         handleDetailUpdate: async (requestId: number, details: { priority: PurchaseRequestPriority }) => {
             if (!currentUser) return;
-            const updated = await updateRequestDetailsServer({ requestId, ...details, updatedBy: currentUser.name });
+            const updated = await updateRequestDetails({ requestId, ...details, updatedBy: currentUser.name });
             updateState({ 
                 activeRequests: state.activeRequests.map(o => o.id === requestId ? sanitizeRequest(updated) : o),
                 archivedRequests: state.archivedRequests.map(o => o.id === requestId ? sanitizeRequest(updated) : o)
