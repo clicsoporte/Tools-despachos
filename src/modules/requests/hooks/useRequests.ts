@@ -17,11 +17,10 @@ import {
     updatePendingAction, getErpOrderData, addNoteToRequest, updateRequestDetails, 
     saveCostAnalysis as saveCostAnalysisAction
 } from '@/modules/requests/lib/actions';
-import { getAllErpPurchaseOrderHeaders, getAllErpPurchaseOrderLines } from '@/modules/core/lib/db';
 import type { 
     PurchaseRequest, PurchaseRequestStatus, PurchaseRequestPriority, 
     PurchaseRequestHistoryEntry, RequestSettings, Company, DateRange, 
-    AdministrativeAction, AdministrativeActionPayload, StockInfo, ErpOrderHeader, ErpOrderLine, User, RequestNotePayload, ErpPurchaseOrderHeader as ErpPOHeader, ErpPurchaseOrderLine as ErpPOLine
+    AdministrativeAction, AdministrativeActionPayload, StockInfo, ErpOrderHeader, ErpOrderLine, User, RequestNotePayload, ErpPurchaseOrderHeader as ErpPOHeader
 } from '../../core/types';
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -154,7 +153,6 @@ type State = {
     isAddNoteDialogOpen: boolean;
     notePayload: RequestNotePayload | null;
     erpPoHeaders: ErpPOHeader[];
-    erpPoLines: ErpPOLine[];
     isTransitsDialogOpen: boolean;
     activeTransits: { itemId: string; itemDescription: string; transits: any[] } | null;
     isCostAnalysisDialogOpen: boolean;
@@ -259,7 +257,6 @@ export const useRequests = () => {
         isAddNoteDialogOpen: false,
         notePayload: null,
         erpPoHeaders: [],
-        erpPoLines: [],
         isTransitsDialogOpen: false,
         activeTransits: null,
         isCostAnalysisDialogOpen: false,
@@ -285,14 +282,13 @@ export const useRequests = () => {
         }
 
         try {
-             const [settingsData, requestsData, poHeaders, poLines] = await Promise.all([
+             const [settingsData, requestsData, poHeaders] = await Promise.all([
                 getRequestSettings(),
                 getPurchaseRequests({
                     page: state.viewingArchived ? state.archivedPage : undefined,
                     pageSize: state.viewingArchived ? state.pageSize : undefined,
                 }),
                 getAllErpPurchaseOrderHeaders(),
-                getAllErpPurchaseOrderLines(),
             ]);
             
             if (!isMounted) return;
@@ -300,7 +296,6 @@ export const useRequests = () => {
             updateState({ 
                 requestSettings: settingsData, 
                 erpPoHeaders: poHeaders,
-                erpPoLines: poLines
             });
             
             const useWarehouse = settingsData.useWarehouseReception;
@@ -689,9 +684,6 @@ export const useRequests = () => {
             }
         },
         processSingleErpOrder: async (header: ErpOrderHeader) => {
-            const client = customers.find(c => c.id === header.CLIENTE);
-            const enrichedHeader = { ...header, CLIENTE_NOMBRE: client?.name || 'Cliente no encontrado' };
-            
             const { lines, inventory } = await getErpOrderData(header.PEDIDO);
 
             const enrichedLines: UIErpOrderLine[] = lines.map(line => {
@@ -709,7 +701,7 @@ export const useRequests = () => {
             }).sort((a, b) => (a.selected === b.selected) ? 0 : a.selected ? -1 : 1);
 
             updateState({
-                selectedErpOrderHeader: enrichedHeader,
+                selectedErpOrderHeader: { ...header, CLIENTE_NOMBRE: customers.find(c => c.id === header.CLIENTE)?.name || 'Cliente no encontrado' },
                 erpOrderLines: enrichedLines,
                 isErpOrderModalOpen: false,
                 isErpItemsModalOpen: true,
@@ -939,15 +931,14 @@ export const useRequests = () => {
         },
         handleOpenTransits: (request: PurchaseRequest) => {
             const activePoNumbers = new Set(state.erpPoHeaders.filter(h => h.ESTADO === 'A').map(h => h.ORDEN_COMPRA));
-            const transitsForProduct = state.erpPoLines
-                .filter(line => line.ARTICULO === request.itemId && activePoNumbers.has(line.ORDEN_COMPRA))
-                .map(line => {
-                    const header = state.erpPoHeaders.find(h => h.ORDEN_COMPRA === line.ORDEN_COMPRA);
-                    return {
-                        ...header,
-                        quantity: line.CANTIDAD_ORDENADA,
-                        supplierName: 'Desconocido' // This needs to be fetched from suppliers table
-                    };
+            const transitsForProduct = state.erpPoHeaders
+                .filter(header => activePoNumbers.has(header.ORDEN_COMPRA))
+                .flatMap(header => {
+                    const line = state.erpPoLines.find(l => l.ORDEN_COMPRA === header.ORDEN_COMPRA && l.ARTICULO === request.itemId);
+                    if (line) {
+                        return [{ ...header, quantity: line.CANTIDAD_ORDENADA, supplierName: 'Desconocido' }];
+                    }
+                    return [];
                 });
             
             updateState({ 
@@ -1072,23 +1063,27 @@ export const useRequests = () => {
         }, [state.erpOrderLines, state.showOnlyShortageItems]),
         getInTransitStock: useCallback((itemId: string): number => {
             const activePoNumbers = new Set(state.erpPoHeaders.filter(h => h.ESTADO === 'A').map(h => h.ORDEN_COMPRA));
-            return state.erpPoLines
-                .filter(line => line.ARTICULO === itemId && activePoNumbers.has(line.ORDEN_COMPRA))
-                .reduce((sum, line) => sum + line.CANTIDAD_ORDENADA, 0);
-        }, [state.erpPoHeaders, state.erpPoLines]),
+            return state.erpPoHeaders
+                .filter(header => activePoNumbers.has(header.ORDEN_COMPRA))
+                .flatMap(header => {
+                    const lines = state.erpOrderLines.filter(l => l.ORDEN_COMPRA === header.ORDEN_COMPRA && l.ARTICULO === itemId);
+                    return lines.map(l => l.CANTIDAD_ORDENADA);
+                })
+                .reduce((sum, qty) => sum + qty, 0);
+        }, [state.erpPoHeaders, state.erpOrderLines]),
         costAnalysis: useMemo(() => {
             const cost = parseFloat(state.analysisCost);
             const salePrice = parseFloat(state.analysisSalePrice);
             let margin = 0;
             if (!isNaN(cost) && !isNaN(salePrice) && cost > 0) {
-                margin = ((salePrice - cost) / cost);
+                margin = ((salePrice - cost) / cost) * 100;
             }
             return { cost: state.analysisCost, salePrice: state.analysisSalePrice, margin };
         }, [state.analysisCost, state.analysisSalePrice]),
     };
 
     return {
-        state,
+        state: { ...state, ...selectors },
         actions,
         selectors,
         isAuthorized

@@ -4,7 +4,7 @@
  */
 'use client';
 
-import type { PurchaseRequest, UpdateRequestStatusPayload, PurchaseRequestHistoryEntry, RequestSettings, UpdatePurchaseRequestPayload, RejectCancellationPayload, DateRange, AdministrativeAction, AdministrativeActionPayload, StockInfo, ErpOrderHeader, ErpOrderLine, User, RequestNotePayload, UserPreferences, PurchaseSuggestion, PurchaseRequestPriority, ErpPurchaseOrderHeader, ErpPurchaseOrderLine } from '../../core/types';
+import type { PurchaseRequest, UpdateRequestStatusPayload, PurchaseRequestHistoryEntry, RequestSettings, UpdatePurchaseRequestPayload, RejectCancellationPayload, DateRange, AdministrativeAction, AdministrativeActionPayload, StockInfo, ErpOrderHeader, ErpOrderLine, User, RequestNotePayload, UserPreferences, PurchaseSuggestion, PurchaseRequestPriority, ErpPurchaseOrderHeader as ErpPOHeader } from '../../core/types';
 import { logInfo, logError } from '@/modules/core/lib/logger';
 import { createNotificationForPermission, createNotification } from '@/modules/core/lib/notifications-actions';
 import { 
@@ -324,12 +324,4 @@ export async function saveCostAnalysis(requestId: number, cost: number, salePric
     const updatedRequest = await saveCostAnalysisServer(requestId, cost, salePrice);
     await logInfo(`Cost analysis saved for request ${updatedRequest.consecutive}`, { requestId, cost, salePrice });
     return updatedRequest;
-}
-
-export async function getAllErpPurchaseOrderHeaders(): Promise<ErpPurchaseOrderHeader[]> {
-    return getAllErpPurchaseOrderHeadersDb();
-}
-
-export async function getAllErpPurchaseOrderLines(): Promise<ErpPurchaseOrderLine[]> {
-    return getAllErpPurchaseOrderLinesDb();
 }
