@@ -33,6 +33,7 @@ import { AlertTriangle, Undo2, ChevronsLeft, ChevronsRight, Send, ShoppingBag } 
 import type { RowInput } from 'jspdf-autotable';
 import type { Product, Customer } from '../../core/types';
 import { useSearchParams } from 'next/navigation';
+import { getAllErpPurchaseOrderHeaders, getAllErpPurchaseOrderLines } from '@/modules/core/lib/db';
 
 
 const normalizeText = (text: string | null | undefined): string => {
@@ -153,6 +154,7 @@ type State = {
     isAddNoteDialogOpen: boolean;
     notePayload: RequestNotePayload | null;
     erpPoHeaders: ErpPOHeader[];
+    erpPoLines: ErpPurchaseOrderLine[];
     isTransitsDialogOpen: boolean;
     activeTransits: { itemId: string; itemDescription: string; transits: any[] } | null;
     isCostAnalysisDialogOpen: boolean;
@@ -257,6 +259,7 @@ export const useRequests = () => {
         isAddNoteDialogOpen: false,
         notePayload: null,
         erpPoHeaders: [],
+        erpPoLines: [],
         isTransitsDialogOpen: false,
         activeTransits: null,
         isCostAnalysisDialogOpen: false,
@@ -282,13 +285,14 @@ export const useRequests = () => {
         }
 
         try {
-             const [settingsData, requestsData, poHeaders] = await Promise.all([
+             const [settingsData, requestsData, poHeaders, poLines] = await Promise.all([
                 getRequestSettings(),
                 getPurchaseRequests({
                     page: state.viewingArchived ? state.archivedPage : undefined,
                     pageSize: state.viewingArchived ? state.pageSize : undefined,
                 }),
                 getAllErpPurchaseOrderHeaders(),
+                getAllErpPurchaseOrderLines(),
             ]);
             
             if (!isMounted) return;
@@ -296,6 +300,7 @@ export const useRequests = () => {
             updateState({ 
                 requestSettings: settingsData, 
                 erpPoHeaders: poHeaders,
+                erpPoLines: poLines,
             });
             
             const useWarehouse = settingsData.useWarehouseReception;
@@ -307,8 +312,8 @@ export const useRequests = () => {
             const allRequests = requestsData.requests.map(sanitizeRequest);
             
             updateState({
-                activeRequests: allRequests.filter(req => !archivedStatuses.includes(req.status)),
-                archivedRequests: allRequests.filter(req => archivedStatuses.includes(req.status)),
+                activeRequests: allRequests.filter((req: PurchaseRequest) => !archivedStatuses.includes(req.status)),
+                archivedRequests: allRequests.filter((req: PurchaseRequest) => archivedStatuses.includes(req.status)),
                 totalArchived: requestsData.totalArchivedCount,
             });
 
@@ -684,6 +689,9 @@ export const useRequests = () => {
             }
         },
         processSingleErpOrder: async (header: ErpOrderHeader) => {
+            const client = customers.find(c => c.id === header.CLIENTE);
+            const enrichedHeader = { ...header, CLIENTE_NOMBRE: client?.name || 'Cliente no encontrado' };
+            
             const { lines, inventory } = await getErpOrderData(header.PEDIDO);
 
             const enrichedLines: UIErpOrderLine[] = lines.map(line => {
@@ -701,7 +709,7 @@ export const useRequests = () => {
             }).sort((a, b) => (a.selected === b.selected) ? 0 : a.selected ? -1 : 1);
 
             updateState({
-                selectedErpOrderHeader: { ...header, CLIENTE_NOMBRE: customers.find(c => c.id === header.CLIENTE)?.name || 'Cliente no encontrado' },
+                selectedErpOrderHeader: enrichedHeader,
                 erpOrderLines: enrichedLines,
                 isErpOrderModalOpen: false,
                 isErpItemsModalOpen: true,
@@ -931,14 +939,15 @@ export const useRequests = () => {
         },
         handleOpenTransits: (request: PurchaseRequest) => {
             const activePoNumbers = new Set(state.erpPoHeaders.filter(h => h.ESTADO === 'A').map(h => h.ORDEN_COMPRA));
-            const transitsForProduct = state.erpPoHeaders
-                .filter(header => activePoNumbers.has(header.ORDEN_COMPRA))
-                .flatMap(header => {
-                    const line = state.erpPoLines.find(l => l.ORDEN_COMPRA === header.ORDEN_COMPRA && l.ARTICULO === request.itemId);
-                    if (line) {
-                        return [{ ...header, quantity: line.CANTIDAD_ORDENADA, supplierName: 'Desconocido' }];
-                    }
-                    return [];
+            const transitsForProduct = state.erpPoLines
+                .filter(line => line.ARTICULO === request.itemId && activePoNumbers.has(line.ORDEN_COMPRA))
+                .map(line => {
+                    const header = state.erpPoHeaders.find(h => h.ORDEN_COMPRA === line.ORDEN_COMPRA);
+                    return {
+                        ...header,
+                        quantity: line.CANTIDAD_ORDENADA,
+                        supplierName: 'Desconocido' // This needs to be fetched from suppliers table
+                    };
                 });
             
             updateState({ 
@@ -1020,26 +1029,26 @@ export const useRequests = () => {
         clientOptions: useMemo(() => {
             if (debouncedClientSearch.length < 2) return [];
             const searchTerms = normalizeText(debouncedClientSearch).split(' ').filter(Boolean);
-            return customers.filter(c => {
+            return state.customers.filter(c => {
                 const targetText = normalizeText(`${c.id} ${c.name} ${c.taxId}`);
                 return searchTerms.every(term => targetText.includes(term));
             }).map(c => ({ value: c.id, label: `[${c.id}] ${c.name} (${c.taxId})` }));
-        }, [customers, debouncedClientSearch]),
+        }, [state.customers, debouncedClientSearch]),
         itemOptions: useMemo(() => {
             if (debouncedItemSearch.length < 2) return [];
             const searchTerms = normalizeText(debouncedItemSearch).split(' ').filter(Boolean);
-            return products.filter(p => {
+            return state.products.filter(p => {
                 const targetText = normalizeText(`${p.id} ${p.description}`);
                 return searchTerms.every(term => targetText.includes(term));
             }).map(p => ({ value: p.id, label: `[${p.id}] - ${p.description}` }));
-        }, [products, debouncedItemSearch]),
-        classifications: useMemo(() => Array.from(new Set(products.map(p => p.classification).filter(Boolean))), [products]),
+        }, [state.products, debouncedItemSearch]),
+        classifications: useMemo(() => Array.from(new Set(state.products.map(p => p.classification).filter(Boolean))), [state.products]),
         filteredRequests: useMemo(() => {
             let requestsToFilter = state.viewingArchived ? state.archivedRequests : state.activeRequests;
             
             const searchTerms = normalizeText(debouncedSearchTerm).split(' ').filter(Boolean);
             return requestsToFilter.filter(request => {
-                const product = products.find(p => p.id === request.itemId);
+                const product = state.products.find(p => p.id === request.itemId);
                 const targetText = normalizeText(`${request.consecutive} ${request.clientName} ${request.itemDescription} ${request.purchaseOrder || ''} ${request.erpOrderNumber || ''}`);
                 
                 const searchMatch = debouncedSearchTerm ? searchTerms.every(term => targetText.includes(term)) : true;
@@ -1050,7 +1059,7 @@ export const useRequests = () => {
 
                 return searchMatch && statusMatch && classificationMatch && dateMatch && myRequestsMatch;
             });
-        }, [state.viewingArchived, state.activeRequests, state.archivedRequests, debouncedSearchTerm, state.statusFilter, state.classificationFilter, products, state.dateFilter, state.showOnlyMyRequests, currentUser?.name, currentUser?.erpAlias]),
+        }, [state.viewingArchived, state.activeRequests, state.archivedRequests, debouncedSearchTerm, state.statusFilter, state.classificationFilter, state.products, state.dateFilter, state.showOnlyMyRequests, currentUser?.name, currentUser?.erpAlias]),
         stockLevels: authStockLevels,
         visibleErpOrderLines: useMemo(() => {
             if (!state.showOnlyShortageItems) {
@@ -1063,14 +1072,10 @@ export const useRequests = () => {
         }, [state.erpOrderLines, state.showOnlyShortageItems]),
         getInTransitStock: useCallback((itemId: string): number => {
             const activePoNumbers = new Set(state.erpPoHeaders.filter(h => h.ESTADO === 'A').map(h => h.ORDEN_COMPRA));
-            return state.erpPoHeaders
-                .filter(header => activePoNumbers.has(header.ORDEN_COMPRA))
-                .flatMap(header => {
-                    const lines = state.erpOrderLines.filter(l => l.ORDEN_COMPRA === header.ORDEN_COMPRA && l.ARTICULO === itemId);
-                    return lines.map(l => l.CANTIDAD_ORDENADA);
-                })
-                .reduce((sum, qty) => sum + qty, 0);
-        }, [state.erpPoHeaders, state.erpOrderLines]),
+            return state.erpPoLines
+                .filter(line => line.ARTICULO === itemId && activePoNumbers.has(line.ORDEN_COMPRA))
+                .reduce((sum, line) => sum + line.CANTIDAD_ORDENADA, 0);
+        }, [state.erpPoHeaders, state.erpPoLines]),
         costAnalysis: useMemo(() => {
             const cost = parseFloat(state.analysisCost);
             const salePrice = parseFloat(state.analysisSalePrice);
@@ -1083,7 +1088,7 @@ export const useRequests = () => {
     };
 
     return {
-        state: { ...state, ...selectors },
+        state,
         actions,
         selectors,
         isAuthorized

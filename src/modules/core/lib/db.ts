@@ -459,7 +459,7 @@ export async function saveCompanySettings(settings: Company): Promise<void> {
     const db = await connectDb();
 
     const transaction = db.transaction((settingsToSave) => {
-        const currentSettings = db.prepare('SELECT * FROM company_settings WHERE id = 1').get();
+        const currentSettings = db.prepare('SELECT * FROM company_settings WHERE id = 1').get() as Company | undefined;
         const finalSettings = { ...currentSettings, ...settingsToSave };
 
         // Ensure boolean is saved as number
@@ -815,13 +815,13 @@ export async function getAllQuoteDrafts(userId: number): Promise<QuoteDraft[]> {
 export async function saveQuoteDraft(draft: QuoteDraft): Promise<void> {
     const db = await connectDb();
     
-    const transaction = db.transaction((draftToSave) => {
+    const transaction = db.transaction(() => {
         const stmt = db.prepare('INSERT OR REPLACE INTO quote_drafts (id, createdAt, userId, customerId, customerDetails, lines, totals, notes, currency, exchangeRate, purchaseOrderNumber, deliveryAddress, deliveryDate, sellerName, sellerType, quoteDate, validUntilDate, paymentTerms, creditDays) VALUES (@id, @createdAt, @userId, @customerId, @customerDetails, @lines, @totals, @notes, @currency, @exchangeRate, @purchaseOrderNumber, @deliveryAddress, @deliveryDate, @sellerName, @sellerType, @quoteDate, @validUntilDate, @paymentTerms, @creditDays)');
         
         stmt.run({
-            ...draftToSave,
-            lines: JSON.stringify(draftToSave.lines),
-            totals: JSON.stringify(draftToSave.totals),
+            ...draft,
+            lines: JSON.stringify(draft.lines),
+            totals: JSON.stringify(draft.totals),
         });
 
         // Increment the next quote number atomically
@@ -831,7 +831,7 @@ export async function saveQuoteDraft(draft: QuoteDraft): Promise<void> {
     });
 
     try {
-        transaction(draft);
+        transaction();
     } catch (error) {
         console.error("Failed to save quote draft:", error);
         throw error;
@@ -1008,7 +1008,7 @@ export async function importData(type: ImportQuery['type']): Promise<{ count: nu
     if (companySettings.importMode === 'sql') {
         return importDataFromSql(type);
     } else {
-        if (['erp_order_headers', 'erp_order_lines'].includes(type)) {
+        if (['erp_order_headers', 'erp_order_lines', 'erp_purchase_order_headers', 'erp_purchase_order_lines'].includes(type)) {
             return { count: 0, source: 'file (skipped)' };
         }
         return importDataFromFile(type as 'customers' | 'products' | 'exemptions' | 'stock' | 'locations' | 'cabys' | 'suppliers' | 'erp_purchase_order_headers' | 'erp_purchase_order_lines');
@@ -1559,21 +1559,3 @@ export async function runDatabaseAudit(userName: string): Promise<AuditResult[]>
 
 // --- Planner-specific functions moved from core ---
 export { confirmPlannerModification };
-const defaultQueries: { [key in ImportQuery['type']]?: string } = {
-    customers: "SELECT [CLIENTE], [NOMBRE], [DIRECCION], [TELEFONO1], [CONTRIBUYENTE], [MONEDA], [LIMITE_CREDITO], [CONDICION_PAGO], [VENDEDOR], [ACTIVO], [E_MAIL], [EMAIL_DOC_ELECTRONICO] FROM [GAREND].[CLIENTE]",
-    products: "SELECT [ARTICULO], [DESCRIPCION], [CLASIFICACION_2], [ULTIMO_INGRESO], [ACTIVO], [NOTAS], [UNIDAD_VENTA], [CANASTA_BASICA], [CODIGO_HACIENDA] FROM [GAREND].[ARTICULO]",
-    exemptions: "SELECT [CODIGO], [DESCRIPCION], [CLIENTE], [NUM_AUTOR], [FECHA_RIGE], [FECHA_VENCE], [PORCENTAJE], [TIPO_DOC], [NOMBRE_INSTITUCION], [CODIGO_INSTITUCION] FROM [GAREND].[EXENCION]",
-    stock: "SELECT [ARTICULO], [BODEGA], [CANT_DISPONIBLE] FROM [GAREND].[EXISTENCIA_BODEGA]",
-    locations: "SELECT [CODIGO], [P. HORIZONTAL], [P. VERTICAL], [RACK], [CLIENTE], [DESCRIPCION] FROM [GAREND].[UBICACION]",
-    suppliers: "SELECT [PROVEEDOR], [NOMBRE], [ALIAS], [E_MAIL], [TELEFONO1] FROM [GAREND].[PROVEEDOR]",
-    erp_order_headers: "SELECT T0.[PEDIDO], T0.[ESTADO], T0.[CLIENTE], T0.[FECHA_PEDIDO], T0.[FECHA_PROMETIDA], T0.[ORDEN_COMPRA], T0.[TOTAL_UNIDADES], T0.[MONEDA_PEDIDO], T0.[USUARIO] FROM [GAREND].[PEDIDO] AS T0 WHERE T0.[FECHA_PEDIDO] >= DATEADD(day, -60, GETDATE()) AND T0.[ESTADO] NOT IN ('F', 'C') ORDER BY T0.[FECHA_PEDIDO] DESC",
-    erp_order_lines: "SELECT T1.[PEDIDO], T1.[PEDIDO_LINEA], T1.[ARTICULO], T1.[CANTIDAD_PEDIDA], T1.[PRECIO_UNITARIO] FROM [GAREND].[PEDIDO_LINEA] AS T1 INNER JOIN [GAREND].[PEDIDO] AS T0 ON T1.PEDIDO = T0.PEDIDO WHERE T0.FECHA_PEDIDO >= DATEADD(day, -60, GETDATE()) AND T1.[ESTADO] NOT IN ('F', 'C')",
-    erp_purchase_order_headers: "SELECT [ORDEN_COMPRA], [PROVEEDOR], [FECHA_HORA], [ESTADO], [CreatedBy] FROM [SOFTLAND].[GAREND].[ORDEN_COMPRA]",
-    erp_purchase_order_lines: "SELECT [ORDEN_COMPRA], [ARTICULO], [CANTIDAD_ORDENADA] FROM [SOFTLAND].[GAREND].[ORDEN_COMPRA_LINEA]",
-    cabys: "SELECT DISTINCT [CODIGO_HACIENDA] as CODIGO, [DESCRIPCION_HACIENDA] as DESCRIPCION, [IMPUESTO] FROM [GAREND].[ARTICULO] WHERE [CODIGO_HACIENDA] IS NOT NULL",
-};
-
-    
-
-    
-

@@ -8,6 +8,7 @@ import { getAllUsers as getAllUsersFromMain } from '../../core/lib/auth';
 import type { ProductionOrder, PlannerSettings, UpdateStatusPayload, UpdateOrderDetailsPayload, ProductionOrderHistoryEntry, RejectCancellationPayload, ProductionOrderStatus, UpdateProductionOrderPayload, CustomStatus, DateRange, PlannerNotePayload, AdministrativeActionPayload, User, PlannerShift } from '../../core/types';
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { logError } from '../../core/lib/logger';
 
 const PLANNER_DB_FILE = 'planner.db';
 
@@ -681,4 +682,3 @@ export async function getCompletedOrdersByDateRange(dateRange: DateRange): Promi
 
     return filteredOrders;
 }
-
