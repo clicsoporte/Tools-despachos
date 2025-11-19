@@ -17,10 +17,11 @@ import {
     updatePendingAction, getErpOrderData, addNoteToRequest, updateRequestDetails, 
     saveCostAnalysis as saveCostAnalysisAction
 } from '@/modules/requests/lib/actions';
+import { getAllErpPurchaseOrderHeaders, getAllErpPurchaseOrderLines } from '@/modules/core/lib/db';
 import type { 
     PurchaseRequest, PurchaseRequestStatus, PurchaseRequestPriority, 
     PurchaseRequestHistoryEntry, RequestSettings, Company, DateRange, 
-    AdministrativeAction, AdministrativeActionPayload, StockInfo, ErpOrderHeader, ErpOrderLine, User, RequestNotePayload, ErpPurchaseOrderHeader, ErpPurchaseOrderLine
+    AdministrativeAction, AdministrativeActionPayload, StockInfo, ErpOrderHeader, ErpOrderLine, User, RequestNotePayload, ErpPurchaseOrderHeader
 } from '../../core/types';
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -31,7 +32,6 @@ import { getDaysRemaining as getSimpleDaysRemaining } from '@/modules/core/lib/t
 import { exportToExcel } from '@/modules/core/lib/excel-export';
 import { AlertTriangle, Undo2, ChevronsLeft, ChevronsRight, Send, ShoppingBag } from 'lucide-react';
 import type { RowInput } from 'jspdf-autotable';
-import type { Product, Customer } from '../../core/types';
 import { useSearchParams } from 'next/navigation';
 
 
@@ -311,8 +311,8 @@ export const useRequests = () => {
             const allRequests = requestsData.requests.map(sanitizeRequest);
             
             updateState({
-                activeRequests: allRequests.filter((req: PurchaseRequest) => !archivedStatuses.includes(req.status)),
-                archivedRequests: allRequests.filter((req: PurchaseRequest) => archivedStatuses.includes(req.status)),
+                activeRequests: allRequests.filter(req => !archivedStatuses.includes(req.status)),
+                archivedRequests: allRequests.filter(req => archivedStatuses.includes(req.status)),
                 totalArchived: requestsData.totalArchivedCount,
             });
 
