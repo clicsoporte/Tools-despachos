@@ -21,7 +21,7 @@ import { getAllErpPurchaseOrderHeaders, getAllErpPurchaseOrderLines } from '@/mo
 import type { 
     PurchaseRequest, PurchaseRequestStatus, PurchaseRequestPriority, 
     PurchaseRequestHistoryEntry, RequestSettings, Company, DateRange, 
-    AdministrativeAction, AdministrativeActionPayload, StockInfo, ErpOrderHeader, ErpOrderLine, User, RequestNotePayload, ErpPurchaseOrderHeader as ErpPOHeader, Product, Customer, ErpPurchaseOrderLine
+    AdministrativeAction, AdministrativeActionPayload, StockInfo, ErpOrderHeader, ErpOrderLine, User, RequestNotePayload, ErpPurchaseOrderHeader, Product, Customer, ErpPurchaseOrderLine as ErpPOLine // Renamed to avoid conflict
 } from '../../core/types';
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -32,6 +32,8 @@ import { getDaysRemaining as getSimpleDaysRemaining } from '@/modules/core/lib/t
 import { exportToExcel } from '@/modules/core/lib/excel-export';
 import { AlertTriangle, Undo2, ChevronsLeft, ChevronsRight, Send, ShoppingBag } from 'lucide-react';
 import type { RowInput } from 'jspdf-autotable';
+import { getAllProducts as getAllProductsFromDB } from '@/modules/core/lib/db';
+import { getAllCustomers as getAllCustomersFromDB } from '@/modules/core/lib/db';
 import { useSearchParams } from 'next/navigation';
 
 
@@ -152,8 +154,10 @@ type State = {
     contextInfoData: PurchaseRequest | null;
     isAddNoteDialogOpen: boolean;
     notePayload: RequestNotePayload | null;
-    erpPoHeaders: ErpPOHeader[];
-    erpPoLines: ErpPurchaseOrderLine[];
+    products: Product[];
+    customers: Customer[];
+    erpPoHeaders: ErpPurchaseOrderHeader[];
+    erpPoLines: ErpPOLine[];
     isTransitsDialogOpen: boolean;
     activeTransits: { itemId: string; itemDescription: string; transits: any[] } | null;
     isCostAnalysisDialogOpen: boolean;
@@ -202,7 +206,7 @@ export const useRequests = () => {
     const { isAuthorized, hasPermission } = useAuthorization(['requests:read']);
     const { setTitle } = usePageTitle();
     const { toast } = useToast();
-    const { user: currentUser, products, customers, stockLevels: authStockLevels, companyData: authCompanyData, isReady: isAuthReady } = useAuth();
+    const { user: currentUser, stockLevels: authStockLevels, companyData: authCompanyData, isReady: isAuthReady, products: authProducts, customers: authCustomers } = useAuth();
     const searchParams = useSearchParams();
     
     const [state, setState] = useState<State>({
@@ -257,6 +261,8 @@ export const useRequests = () => {
         contextInfoData: null,
         isAddNoteDialogOpen: false,
         notePayload: null,
+        products: [],
+        customers: [],
         erpPoHeaders: [],
         erpPoLines: [],
         isTransitsDialogOpen: false,
@@ -266,9 +272,9 @@ export const useRequests = () => {
         analysisSalePrice: '',
     });
     
-    const [debouncedSearchTerm] = useDebounce(state.searchTerm, authCompanyData?.searchDebounceTime ?? 500);
-    const [debouncedClientSearch] = useDebounce(state.clientSearchTerm, authCompanyData?.searchDebounceTime ?? 500);
-    const [debouncedItemSearch] = useDebounce(state.itemSearchTerm, authCompanyData?.searchDebounceTime ?? 500);
+    const [debouncedSearchTerm] = useDebounce(state.searchTerm, state.companyData?.searchDebounceTime ?? 500);
+    const [debouncedClientSearch] = useDebounce(state.clientSearchTerm, state.companyData?.searchDebounceTime ?? 500);
+    const [debouncedItemSearch] = useDebounce(state.itemSearchTerm, state.companyData?.searchDebounceTime ?? 500);
     
     const updateState = useCallback((newState: Partial<State>) => {
         setState(prevState => ({ ...prevState, ...newState }));
@@ -298,8 +304,10 @@ export const useRequests = () => {
 
             updateState({ 
                 requestSettings: settingsData, 
+                products: authProducts, 
+                customers: authCustomers,
                 erpPoHeaders: poHeaders,
-                erpPoLines: poLines,
+                erpPoLines: poLines
             });
             
             const useWarehouse = settingsData.useWarehouseReception;
@@ -327,7 +335,7 @@ export const useRequests = () => {
             }
         }
          return () => { isMounted = false; };
-    }, [toast, state.viewingArchived, state.pageSize, updateState, state.archivedPage]);
+    }, [toast, state.viewingArchived, state.pageSize, updateState, state.archivedPage, authProducts, authCustomers]);
     
     useEffect(() => {
         setTitle("Solicitud de Compra");
@@ -345,11 +353,11 @@ export const useRequests = () => {
 
     // Effect to pre-fill form from URL parameters
     useEffect(() => {
-        if (isAuthReady && customers.length > 0 && products.length > 0) {
+        if (isAuthReady && state.customers.length > 0 && state.products.length > 0) {
             const itemId = searchParams.get('itemId');
             if (itemId) {
-                const product = products.find(p => p.id === itemId);
-                const customer = customers.find(c => c.id === searchParams.get('clientId'));
+                const product = state.products.find(p => p.id === itemId);
+                const customer = state.customers.find(c => c.id === searchParams.get('clientId'));
 
                 if (product) {
                     const newRequestData: Partial<typeof emptyRequest> = {
@@ -369,7 +377,7 @@ export const useRequests = () => {
                 }
             }
         }
-    }, [isAuthReady, searchParams, customers, products, updateState]);
+    }, [isAuthReady, searchParams, state.customers, state.products, updateState]);
 
     useEffect(() => {
         updateState({ companyData: authCompanyData });
@@ -479,30 +487,6 @@ export const useRequests = () => {
         loadInitialData,
         handleStatusUpdate: executeStatusUpdate,
         handleAdminAction,
-        handleSaveCostAnalysis: async () => {
-            if (!state.requestToUpdate) return;
-            updateState({ isSubmitting: true });
-            try {
-                const cost = parseFloat(state.analysisCost);
-                const salePrice = parseFloat(state.analysisSalePrice);
-
-                if (isNaN(cost) || isNaN(salePrice)) {
-                    throw new Error("El costo y el precio de venta deben ser números válidos.");
-                }
-
-                const updatedRequest = await saveCostAnalysisAction(state.requestToUpdate.id, cost, salePrice);
-                updateState({
-                    activeRequests: state.activeRequests.map(r => r.id === updatedRequest.id ? sanitizeRequest(updatedRequest) : r),
-                    isCostAnalysisDialogOpen: false,
-                });
-                toast({ title: "Análisis Guardado" });
-            } catch (error: any) {
-                logError("Failed to save cost analysis", { error: error.message });
-                toast({ title: "Error", description: error.message, variant: "destructive" });
-            } finally {
-                updateState({ isSubmitting: false });
-            }
-        },
         handleCreateRequest: async () => {
             if (!currentUser) return;
             
@@ -619,7 +603,7 @@ export const useRequests = () => {
         },
         handleSelectItem: (value: string) => {
             updateState({ isItemSearchOpen: false });
-            const product = products.find(p => p.id === value);
+            const product = state.products.find(p => p.id === value);
             if (product) {
                 const stock = authStockLevels.find(s => s.itemId === product.id)?.totalStock ?? 0;
                 const dataToUpdate = { 
@@ -641,7 +625,7 @@ export const useRequests = () => {
         },
         handleSelectClient: (value: string) => {
             updateState({ isClientSearchOpen: false });
-            const client = customers.find(c => c.id === value);
+            const client = state.customers.find(c => c.id === value);
             if (client) {
                 const dataToUpdate = { clientId: client.id, clientName: client.name, clientTaxId: client.taxId };
                 if (state.requestToEdit) {
@@ -664,7 +648,7 @@ export const useRequests = () => {
                 const { headers } = await getErpOrderData(state.erpOrderNumber);
                 
                 const enrichedHeaders = headers.map(h => {
-                    const client = customers.find(c => c.id === h.CLIENTE);
+                    const client = state.customers.find(c => c.id === h.CLIENTE);
                     return { ...h, CLIENTE_NOMBRE: client?.name || 'Cliente no encontrado' };
                 }).sort((a, b) => {
                     if (a.PEDIDO === state.erpOrderNumber) return -1;
@@ -688,13 +672,13 @@ export const useRequests = () => {
             }
         },
         processSingleErpOrder: async (header: ErpOrderHeader) => {
-            const client = customers.find(c => c.id === header.CLIENTE);
+            const client = state.customers.find(c => c.id === header.CLIENTE);
             const enrichedHeader = { ...header, CLIENTE_NOMBRE: client?.name || 'Cliente no encontrado' };
             
             const { lines, inventory } = await getErpOrderData(header.PEDIDO);
 
             const enrichedLines: UIErpOrderLine[] = lines.map(line => {
-                const product = products.find(p => p.id === line.ARTICULO) || {id: line.ARTICULO, description: `Artículo ${line.ARTICULO} no encontrado`, active: 'N', cabys: '', classification: '', isBasicGood: 'N', lastEntry: '', notes: '', unit: ''};
+                const product = state.products.find(p => p.id === line.ARTICULO) || {id: line.ARTICULO, description: `Artículo ${line.ARTICULO} no encontrado`, active: 'N', cabys: '', classification: '', isBasicGood: 'N', lastEntry: '', notes: '', unit: ''};
                 const stock = inventory.find(s => s.itemId === line.ARTICULO) || null;
                 const needsBuying = stock ? line.CANTIDAD_PEDIDA > stock.totalStock : true;
                 return {
@@ -762,7 +746,7 @@ export const useRequests = () => {
                         requiredDate: new Date(erpHeader.FECHA_PROMETIDA).toISOString().split('T')[0],
                         clientId: erpHeader.CLIENTE,
                         clientName: erpHeader.CLIENTE_NOMBRE || '',
-                        clientTaxId: customers.find(c => c.id === erpHeader.CLIENTE)?.taxId || '',
+                        clientTaxId: state.customers.find(c => c.id === erpHeader.CLIENTE)?.taxId || '',
                         itemId: line.ARTICULO,
                         itemDescription: line.product.description,
                         quantity: parseFloat(line.displayQuantity) || 0,
@@ -1028,26 +1012,26 @@ export const useRequests = () => {
         clientOptions: useMemo(() => {
             if (debouncedClientSearch.length < 2) return [];
             const searchTerms = normalizeText(debouncedClientSearch).split(' ').filter(Boolean);
-            return customers.filter(c => {
+            return state.customers.filter(c => {
                 const targetText = normalizeText(`${c.id} ${c.name} ${c.taxId}`);
                 return searchTerms.every(term => targetText.includes(term));
             }).map(c => ({ value: c.id, label: `[${c.id}] ${c.name} (${c.taxId})` }));
-        }, [customers, debouncedClientSearch]),
+        }, [state.customers, debouncedClientSearch]),
         itemOptions: useMemo(() => {
             if (debouncedItemSearch.length < 2) return [];
             const searchTerms = normalizeText(debouncedItemSearch).split(' ').filter(Boolean);
-            return products.filter(p => {
+            return state.products.filter(p => {
                 const targetText = normalizeText(`${p.id} ${p.description}`);
                 return searchTerms.every(term => targetText.includes(term));
             }).map(p => ({ value: p.id, label: `[${p.id}] - ${p.description}` }));
-        }, [products, debouncedItemSearch]),
-        classifications: useMemo(() => Array.from(new Set(products.map(p => p.classification).filter(Boolean))), [products]),
+        }, [state.products, debouncedItemSearch]),
+        classifications: useMemo(() => Array.from(new Set(state.products.map(p => p.classification).filter(Boolean))), [state.products]),
         filteredRequests: useMemo(() => {
             let requestsToFilter = state.viewingArchived ? state.archivedRequests : state.activeRequests;
             
             const searchTerms = normalizeText(debouncedSearchTerm).split(' ').filter(Boolean);
             return requestsToFilter.filter(request => {
-                const product = products.find(p => p.id === request.itemId);
+                const product = state.products.find(p => p.id === request.itemId);
                 const targetText = normalizeText(`${request.consecutive} ${request.clientName} ${request.itemDescription} ${request.purchaseOrder || ''} ${request.erpOrderNumber || ''}`);
                 
                 const searchMatch = debouncedSearchTerm ? searchTerms.every(term => targetText.includes(term)) : true;
@@ -1058,7 +1042,7 @@ export const useRequests = () => {
 
                 return searchMatch && statusMatch && classificationMatch && dateMatch && myRequestsMatch;
             });
-        }, [state.viewingArchived, state.activeRequests, state.archivedRequests, debouncedSearchTerm, state.statusFilter, state.classificationFilter, products, state.dateFilter, state.showOnlyMyRequests, currentUser?.name, currentUser?.erpAlias]),
+        }, [state.viewingArchived, state.activeRequests, state.archivedRequests, debouncedSearchTerm, state.statusFilter, state.classificationFilter, state.products, state.dateFilter, state.showOnlyMyRequests, currentUser?.name, currentUser?.erpAlias]),
         stockLevels: authStockLevels,
         visibleErpOrderLines: useMemo(() => {
             if (!state.showOnlyShortageItems) {
