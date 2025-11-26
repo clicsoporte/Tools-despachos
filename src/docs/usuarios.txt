@@ -1,0 +1,1028 @@
+# Arquitectura y Código de Ejemplo para Módulo "Gestión de Usuarios"
+# Este archivo contiene todos los componentes de código necesarios para replicar la funcionalidad de Gestión de Usuarios.
+# Está diseñado para ser interpretado por una IA o un desarrollador para reconstruir el módulo.
+
+# ==============================================================================
+# COMPONENTE 1: La Interfaz de Usuario (La Vista)
+# Origen: src/app/dashboard/admin/users/page.tsx
+# Propósito: Renderiza la tabla de usuarios, los diálogos para crear/editar y los botones de acción.
+# ==============================================================================
+
+"use client";
+
+import { useState, useEffect } from "react";
+import { Button, buttonVariants } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+    DialogClose
+  } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import type { User, Role } from "@/modules/core/types";
+import { Badge } from "@/components/ui/badge";
+import { MoreHorizontal, PlusCircle } from "lucide-react";
+import { useToast } from "@/modules/core/hooks/use-toast";
+import { logInfo, logWarn, logError } from "@/modules/core/lib/logger";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { getAllUsers, saveAllUsers, addUser as addUserAction } from "@/modules/core/lib/auth-client";
+import { getAllRoles } from "@/modules/core/lib/db";
+import { Separator } from "@/components/ui/separator";
+import { usePageTitle } from "@/modules/core/hooks/usePageTitle";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { useAuthorization } from "@/modules/core/hooks/useAuthorization";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Checkbox } from "@/components/ui/checkbox";
+
+type NewUserForm = Omit<User, 'id' | 'avatar' | 'recentActivity' | 'securityQuestion' | 'securityAnswer'> & {
+    password: string;
+    forcePasswordChange: boolean;
+};
+
+// Initial state for the "Add User" form.
+const emptyUser: NewUserForm = {
+    name: "",
+    email: "",
+    password: "",
+    role: "viewer", // Default role for new users
+    phone: "",
+    whatsapp: "",
+    erpAlias: "",
+    forcePasswordChange: true,
+}
+
+const getInitials = (name: string) => {
+    if (!name) return "";
+    return name.split(" ").map((n) => n[0]).join("").substring(0, 2).toUpperCase();
+};
+
+
+/**
+ * Renders the user management page.
+ * Handles fetching users and roles, and provides UI for all CRUD operations.
+ */
+export default function UsersPage() {
+    const { isAuthorized } = useAuthorization(['users:create', 'users:read', 'users:update', 'users:delete']);
+    const { toast } = useToast();
+    const [users, setUsers] = useState<User[]>([]);
+    const [roles, setRoles] = useState<Role[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const { setTitle } = usePageTitle();
+
+    // State for dialogs and forms
+    const [isAddUserDialogOpen, setAddUserDialogOpen] = useState(false);
+    const [isEditDialogOpen, setEditDialogOpen] = useState(false);
+    const [isDeleteAlertOpen, setDeleteAlertOpen] = useState(false);
+    
+    const [newUser, setNewUser] = useState<NewUserForm>(emptyUser);
+    const [currentUserToEdit, setCurrentUserToEdit] = useState<User | null>(null);
+    const [userToDelete, setUserToDelete] = useState<User | null>(null);
+    
+    const [newPassword, setNewPassword] = useState("");
+
+    const fetchAllData = async () => {
+        try {
+            setIsLoading(true);
+            const [usersData, rolesData] = await Promise.all([
+                getAllUsers(),
+                getAllRoles()
+            ]);
+
+            const roleIds = new Set(rolesData.map(r => r.id));
+            const sanitizedUsers = usersData.map(user => {
+                if (!roleIds.has(user.role)) {
+                    logWarn(`User '${user.name}' has an invalid role '${user.role}'. Defaulting to 'viewer'.`);
+                    return { ...user, role: 'viewer' };
+                }
+                return user;
+            });
+
+            setUsers(sanitizedUsers);
+            setRoles(rolesData);
+        } catch (error) {
+            console.error("Failed to fetch user data:", error);
+            toast({
+                title: "Error al Cargar Datos",
+                description: "No se pudieron obtener los usuarios y roles del sistema.",
+                variant: "destructive",
+            });
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        setTitle("Gestión de Usuarios");
+        if (isAuthorized) {
+            fetchAllData();
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isAuthorized]);
+
+    /**
+     * Persists the current state of users to the database.
+     * @param updatedUsers - The full list of users to save.
+     */
+    const handleSaveToDb = async (updatedUsers: User[]) => {
+        try {
+            await saveAllUsers(updatedUsers);
+            setUsers(updatedUsers); // Update local state to match DB
+        } catch (error) {
+            logError("Failed to save users to DB", { error });
+            toast({ title: "Error", description: "No se pudieron guardar los cambios en la base de datos.", variant: "destructive" });
+        }
+    }
+    
+    /**
+     * Handles the creation of a new user.
+     */
+    const handleAddUser = async () => {
+        if(!newUser.name || !newUser.email || !newUser.password) {
+            toast({ title: "Campos Requeridos", description: "Nombre, correo y contraseña son obligatorios.", variant: "destructive" });
+            return;
+        }
+        if (users.some(u => u.email === newUser.email)) {
+            toast({ title: "Correo Duplicado", description: "Ya existe un usuario con este correo electrónico.", variant: "destructive" });
+            return;
+        }
+        if (newUser.password.length < 6) {
+            toast({ title: "Contraseña Débil", description: "La contraseña debe tener al menos 6 caracteres.", variant: "destructive"});
+            return;
+        }
+        
+        try {
+            const addedUser = await addUserAction(newUser);
+            setUsers(prevUsers => [...prevUsers, addedUser]);
+
+            toast({ title: "Usuario Añadido", description: `${addedUser.name} ha sido añadido al sistema.` });
+            await logInfo("New user added", { user: addedUser.name, role: addedUser.role });
+            setNewUser(emptyUser);
+            setAddUserDialogOpen(false);
+            
+        } catch(error: any) {
+             logError("Failed to add user", { error: error.message });
+             toast({ title: "Error", description: `No se pudo añadir el usuario a la base de datos: ${error.message}`, variant: "destructive" });
+        }
+    }
+
+    /**
+     * Handles the update of an existing user's information.
+     */
+    const handleEditUser = async () => {
+        if (!currentUserToEdit) return;
+
+        let userToUpdate = { ...currentUserToEdit };
+
+        // Handle password change if a new one is provided
+        if (newPassword) {
+            if (newPassword.length < 6) {
+                toast({ title: "Contraseña Débil", description: "La nueva contraseña debe tener al menos 6 caracteres.", variant: "destructive" });
+                return;
+            }
+            userToUpdate.password = newPassword;
+            toast({ title: "Contraseña Actualizada", description: `La contraseña para ${userToUpdate.name} ha sido cambiada.` });
+            await logInfo("User password updated by admin", { user: userToUpdate.name });
+        }
+
+        const updatedUsers = users.map(user => user.id === userToUpdate.id ? userToUpdate : user);
+        await handleSaveToDb(updatedUsers);
+        
+        toast({ title: "Usuario Actualizado", description: `Los datos de ${currentUserToEdit.name} han sido actualizados.` });
+        await logInfo("User profile updated", { user: currentUserToEdit.name });
+
+        // Reset form and close dialog
+        setEditDialogOpen(false);
+        setCurrentUserToEdit(null);
+        setNewPassword("");
+    }
+    
+    /**
+     * Handles the deletion of a user.
+     */
+    const handleDeleteUser = async () => {
+        if (!userToDelete) return;
+        if (userToDelete.id === 1) { // Assuming user with ID 1 is the primary admin
+            toast({ title: "Acción no permitida", description: "No se puede eliminar al administrador principal.", variant: "destructive"});
+            return;
+        }
+        const updatedUsers = users.filter(user => user.id !== userToDelete.id);
+        await handleSaveToDb(updatedUsers);
+        toast({ title: "Usuario Eliminado", description: `${userToDelete.name} ha sido eliminado.`, variant: "destructive" });
+        await logWarn("User deleted", { user: userToDelete.name });
+        
+        setDeleteAlertOpen(false);
+        setUserToDelete(null);
+    }
+
+    const openEditDialog = (user: User) => {
+        // Deep copy to avoid modifying state directly while editing
+        setCurrentUserToEdit(JSON.parse(JSON.stringify(user))); 
+        setNewPassword(""); // Clear password field on open
+        setEditDialogOpen(true);
+    }
+
+    const openDeleteAlert = (user: User) => {
+        setUserToDelete(user);
+        setDeleteAlertOpen(true);
+    }
+
+    if (isAuthorized === null) {
+        return null;
+    }
+
+    if (isLoading) {
+        return (
+             <main className="flex-1 p-4 md:p-6 lg:p-8">
+                <Card>
+                    <CardHeader>
+                        <Skeleton className="h-8 w-64"/>
+                        <Skeleton className="h-4 w-96 mt-2"/>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="space-y-2">
+                           <Skeleton className="h-12 w-full"/>
+                           <Skeleton className="h-12 w-full"/>
+                           <Skeleton className="h-12 w-full"/>
+                        </div>
+                    </CardContent>
+                </Card>
+            </main>
+        )
+    }
+
+
+  return (
+    <>
+      <main className="flex-1 p-4 md:p-6 lg:p-8">
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+                <div>
+                    <CardTitle>Usuarios del Sistema</CardTitle>
+                    <CardDescription>
+                    Añade, edita y gestiona los usuarios y sus roles de acceso.
+                    </CardDescription>
+                </div>
+                <Dialog open={isAddUserDialogOpen} onOpenChange={setAddUserDialogOpen}>
+                    <DialogTrigger asChild>
+                        <Button>
+                            <PlusCircle className="mr-2 h-4 w-4" />
+                            Añadir Usuario
+                        </Button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-md">
+                        <DialogHeader>
+                            <DialogTitle>Añadir Nuevo Usuario</DialogTitle>
+                            <DialogDescription>
+                                Completa los detalles para crear un nuevo usuario.
+                            </DialogDescription>
+                        </DialogHeader>
+                        <ScrollArea className="max-h-[60vh]">
+                            <div className="space-y-4 py-4 px-2">
+                                <div className="space-y-2">
+                                    <Label htmlFor="name">Nombre</Label>
+                                    <Input id="name" value={newUser.name} onChange={e => setNewUser({...newUser, name: e.target.value})} />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="email">Correo</Label>
+                                    <Input id="email" type="email" value={newUser.email} onChange={e => setNewUser({...newUser, email: e.target.value})} />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="erpAlias">Alias de Usuario (ERP)</Label>
+                                    <Input id="erpAlias" value={newUser.erpAlias || ''} onChange={e => setNewUser({...newUser, erpAlias: e.target.value})} />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="password">Contraseña</Label>
+                                    <Input id="password" type="password" value={newUser.password || ''} onChange={e => setNewUser({...newUser, password: e.target.value})} />
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                    <Checkbox 
+                                        id="force-password-change"
+                                        checked={newUser.forcePasswordChange}
+                                        onCheckedChange={checked => setNewUser({...newUser, forcePasswordChange: !!checked})}
+                                    />
+                                    <Label htmlFor="force-password-change" className="font-normal">
+                                        Forzar cambio de contraseña en el próximo inicio de sesión
+                                    </Label>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="role">Rol</Label>
+                                    <Select value={newUser.role} onValueChange={(value) => setNewUser({...newUser, role: value as User["role"]})}>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Selecciona un rol" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {roles.map(role => (
+                                                <SelectItem key={role.id} value={role.id}>{role.name}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            </div>
+                        </ScrollArea>
+                        <DialogFooter>
+                            <DialogClose asChild><Button variant="ghost">Cancelar</Button></DialogClose>
+                            <Button onClick={handleAddUser}>Guardar Usuario</Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="rounded-lg border">
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                        <TableHead className="w-1/3">Nombre</TableHead>
+                        <TableHead className="w-1/3 hidden sm:table-cell">Correo Electrónico</TableHead>
+                        <TableHead className="w-1/4 hidden md:table-cell">Rol</TableHead>
+                        <TableHead>
+                            <span className="sr-only">Acciones</span>
+                        </TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {users.map((user) => {
+                            const userRole = roles.find(r => r.id === user.role);
+                            return (
+                                <TableRow key={user.id}>
+                                    <TableCell className="font-medium flex items-center gap-3">
+                                        <Avatar className="h-9 w-9">
+                                            <AvatarImage src={user.avatar} alt={user.name} />
+                                            <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
+                                        </Avatar>
+                                        <div className="flex flex-col">
+                                            <span>{user.name}</span>
+                                            <span className="text-muted-foreground text-xs sm:hidden">{user.email}</span>
+                                        </div>
+                                    </TableCell>
+                                    <TableCell className="hidden sm:table-cell">{user.email}</TableCell>
+                                    <TableCell className="hidden md:table-cell">
+                                    {userRole ? (
+                                        <Badge variant={userRole.id === 'admin' ? 'default' : 'secondary'}>
+                                            {userRole.name}
+                                        </Badge>
+                                    ) : (
+                                        <Badge variant="destructive">Rol Inválido</Badge>
+                                    )}
+                                    </TableCell>
+                                    <TableCell>
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                        <Button aria-haspopup="true" size="icon" variant="ghost">
+                                            <MoreHorizontal className="h-4 w-4" />
+                                            <span className="sr-only">Toggle menu</span>
+                                        </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="end">
+                                        <DropdownMenuLabel>Acciones</DropdownMenuLabel>
+                                        <DropdownMenuItem onSelect={() => openEditDialog(user)}>Editar</DropdownMenuItem>
+                                        <DropdownMenuItem onSelect={() => openDeleteAlert(user)} className="text-red-600">
+                                            Eliminar
+                                        </DropdownMenuItem>
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
+                                    </TableCell>
+                                </TableRow>
+                            )
+                        })}
+                    </TableBody>
+                </Table>
+            </div>
+          </CardContent>
+        </Card>
+      </main>
+
+       {/* Edit User Dialog */}
+       <Dialog open={isEditDialogOpen} onOpenChange={setEditDialogOpen}>
+            <DialogContent className="sm:max-w-xl">
+                <DialogHeader>
+                    <DialogTitle>Editar Usuario</DialogTitle>
+                    <DialogDescription>
+                        Actualiza los detalles del usuario. Haz clic en guardar cuando termines.
+                    </DialogDescription>
+                </DialogHeader>
+                {currentUserToEdit && (
+                    <ScrollArea className="max-h-[70vh]">
+                        <div className="space-y-4 py-4 px-2">
+                            <div className="space-y-2">
+                                <Label htmlFor="edit-name">Nombre</Label>
+                                <Input id="edit-name" value={currentUserToEdit.name} onChange={e => setCurrentUserToEdit({...currentUserToEdit, name: e.target.value})} />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="edit-email">Correo Electrónico</Label>
+                                <Input id="edit-email" type="email" value={currentUserToEdit.email} onChange={e => setCurrentUserToEdit({...currentUserToEdit, email: e.target.value})} />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="edit-erpAlias">Alias de Usuario (ERP)</Label>
+                                <Input id="edit-erpAlias" value={currentUserToEdit.erpAlias || ''} onChange={e => setCurrentUserToEdit({...currentUserToEdit, erpAlias: e.target.value})} />
+                            </div>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="edit-phone">Teléfono</Label>
+                                    <Input id="edit-phone" value={currentUserToEdit.phone || ''} onChange={e => setCurrentUserToEdit({...currentUserToEdit, phone: e.target.value})} />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="edit-whatsapp">WhatsApp</Label>
+                                    <Input id="edit-whatsapp" value={currentUserToEdit.whatsapp || ''} onChange={e => setCurrentUserToEdit({...currentUserToEdit, whatsapp: e.target.value})} />
+                                </div>
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="edit-role">Rol</Label>
+                                <Select value={currentUserToEdit.role} onValueChange={(value) => setCurrentUserToEdit({...currentUserToEdit, role: value as User["role"]})}>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Selecciona un rol" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {roles.map(role => (
+                                            <SelectItem key={role.id} value={role.id}>{role.name}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <Separator className="my-6" />
+                            <div className="space-y-2">
+                                <Label htmlFor="edit-password">Nueva Contraseña</Label>
+                                <Input 
+                                    id="edit-password" 
+                                    type="password" 
+                                    value={newPassword}
+                                    onChange={e => setNewPassword(e.target.value)} 
+                                    placeholder="Dejar en blanco para no cambiar"
+                                />
+                            </div>
+                            <p className="text-xs text-muted-foreground text-center">
+                                Solo complete el campo de contraseña si desea cambiarla.
+                            </p>
+                        </div>
+                    </ScrollArea>
+                )}
+                <DialogFooter>
+                    <DialogClose asChild><Button variant="ghost">Cancelar</Button></DialogClose>
+                    <Button onClick={handleEditUser}>Guardar Cambios</Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+        
+        {/* Delete User Alert Dialog */}
+        <AlertDialog open={isDeleteAlertOpen} onOpenChange={setDeleteAlertOpen}>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>¿Estás absolutamente seguro?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        Esta acción no se puede deshacer. Esto eliminará permanentemente al usuario {userToDelete?.name} y sus datos del sistema.
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogCancel onClick={() => setUserToDelete(null)}>Cancelar</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleDeleteUser} className={buttonVariants({ variant: "destructive" })}>Sí, eliminar usuario</AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
+    </>
+  );
+}
+
+
+# ==============================================================================
+# COMPONENTE 2: Lógica de Autenticación (Cliente y Servidor)
+# Origen: src/modules/core/lib/auth-client.ts y src/modules/core/lib/auth.ts
+# Propósito: `auth-client.ts` es la capa segura que los componentes de UI llaman.
+#            `auth.ts` contiene la lógica del servidor que realmente interactúa
+#            con la base de datos y maneja las contraseñas.
+# ==============================================================================
+
+// --- Contenido de src/modules/core/lib/auth-client.ts ---
+
+'use client';
+
+import type { User } from '@/modules/core/types';
+import { 
+    getAllUsers as getAllUsersServer, 
+    login as loginServer, 
+    saveAllUsers as saveAllUsersServer, 
+    comparePasswords as comparePasswordsServer, 
+    addUser as addUserServer, 
+    logout as logoutServer,
+    getInitialAuthData as getInitialAuthDataServer,
+    sendPasswordRecoveryEmail as sendRecoveryEmailServer,
+} from '@/modules/core/lib/auth';
+
+const CURRENT_USER_ID_KEY = 'currentUserId';
+
+export async function login(email: string, password: string, clientInfo: { ip: string; host: string; }): Promise<{ user: User | null, forcePasswordChange: boolean }> {
+    const result = await loginServer(email, password, clientInfo);
+    if (result.user) {
+        sessionStorage.setItem(CURRENT_USER_ID_KEY, String(result.user.id));
+    }
+    return result;
+}
+
+export async function logout() {
+    const userId = sessionStorage.getItem(CURRENT_USER_ID_KEY);
+    if (userId) {
+        await logoutServer(Number(userId));
+    }
+    sessionStorage.removeItem(CURRENT_USER_ID_KEY);
+}
+
+export async function getCurrentUser(): Promise<User | null> {
+    const currentUserId = sessionStorage.getItem(CURRENT_USER_ID_KEY);
+    if (!currentUserId) return null;
+
+    const allUsers = await getAllUsersServer();
+    if (!allUsers) return null; // Safe guard against undefined return
+    const user = allUsers.find(u => u.id === Number(currentUserId));
+    return user || null;
+}
+
+export async function getAllUsers(): Promise<User[]> {
+    return getAllUsersServer();
+}
+
+export async function addUser(userData: Omit<User, 'id' | 'avatar' | 'recentActivity' | 'securityQuestion' | 'securityAnswer'> & { password: string, forcePasswordChange: boolean }): Promise<User> {
+    return addUserServer(userData);
+}
+
+export async function saveAllUsers(users: User[]): Promise<void> {
+    return saveAllUsersServer(users);
+}
+
+export async function comparePasswords(userId: number, password: string, clientInfo?: { ip: string, host: string }): Promise<boolean> {
+    return await comparePasswordsServer(userId, password, clientInfo);
+}
+
+export async function getInitialAuthData() {
+    return await getInitialAuthDataServer();
+}
+
+export async function sendRecoveryEmail(email: string, clientInfo: { ip: string, host: string; }): Promise<void> {
+    return await sendRecoveryEmailServer(email, clientInfo);
+}
+
+// --- Contenido de src/modules/core/lib/auth.ts ---
+
+"use server";
+
+import { connectDb, getAllRoles, getCompanySettings, getAllCustomers, getAllProducts, getAllStock, getAllExemptions, getExemptionLaws, getDbModules, getUnreadSuggestions } from './db';
+import { sendEmail, getEmailSettings as getEmailSettingsFromDb } from './email-service';
+import type { User, ExchangeRateApiResponse, EmailSettings } from '@/modules/core/types';
+import bcrypt from 'bcryptjs';
+import { logInfo, logWarn, logError } from './logger';
+import { headers } from 'next/headers';
+import { getExchangeRate, getEmailSettings } from './api-actions';
+import { NewUserSchema, UserSchema } from './auth-schemas';
+
+const SALT_ROUNDS = 10;
+
+export async function login(email: string, passwordProvided: string, clientInfo: { ip: string; host: string; }): Promise<{ user: User | null, forcePasswordChange: boolean }> {
+  const db = await connectDb();
+  const logMeta = { email, ...clientInfo };
+  try {
+    const stmt = db.prepare('SELECT * FROM users WHERE email = ?');
+    const user: User | undefined = stmt.get(email) as User | undefined;
+
+    if (user && user.password) {
+      const isMatch = await bcrypt.compare(passwordProvided, user.password);
+      if (isMatch) {
+        const { password, ...userWithoutPassword } = user;
+        await logInfo(`User '${user.name}' logged in successfully.`, logMeta);
+        return { user: userWithoutPassword as User, forcePasswordChange: !!user.forcePasswordChange };
+      }
+    }
+    await logWarn(`Failed login attempt for email: ${email}`, logMeta);
+    return { user: null, forcePasswordChange: false };
+  } catch (error: any) {
+    console.error("Login error:", error);
+    await logError(`Login process failed for email: ${email}`, { error: error.message, ...logMeta});
+    return { user: null, forcePasswordChange: false };
+  }
+}
+
+export async function logout(userId: number): Promise<void> {
+    const db = await connectDb();
+    const user = db.prepare('SELECT name FROM users WHERE id = ?').get(userId) as { name: string } | undefined;
+    if (user) {
+        await logInfo(`User '${user.name}' logged out.`, { userId });
+    }
+}
+
+async function getAllUsersWithPasswords(): Promise<User[]> {
+    const db = await connectDb();
+    try {
+        const stmt = db.prepare('SELECT * FROM users ORDER BY name');
+        return stmt.all() as User[];
+    } catch (error) {
+        console.error("Failed to get all users:", error);
+        return [];
+    }
+}
+
+export async function getAllUsers(): Promise<User[]> {
+    const users = await getAllUsersWithPasswords();
+    return users.map(u => {
+        const { password, ...userWithoutPassword } = u;
+        return userWithoutPassword;
+    }) as User[];
+}
+
+export async function getAllUsersForReport(): Promise<User[]> {
+    const db = await connectDb();
+    try {
+        const stmt = db.prepare('SELECT * FROM users ORDER BY name');
+        const users = stmt.all() as User[];
+        return users.map(u => {
+            const { password, ...userWithoutPassword } = u;
+            return userWithoutPassword;
+        }) as User[];
+    } catch (error: any) {
+        await logError("getAllUsersForReport", { error: error.message });
+        return [];
+    }
+}
+
+export async function addUser(userData: Omit<User, 'id' | 'avatar' | 'recentActivity' | 'securityQuestion' | 'securityAnswer'> & { password: string, forcePasswordChange: boolean }): Promise<User> {
+  const db = await connectDb();
+
+  const validationResult = NewUserSchema.safeParse(userData);
+  if (!validationResult.success) {
+      throw new Error(`Validation failed: ${validationResult.error.errors.map(e => e.message).join(', ')}`);
+  }
+  
+  const hashedPassword = bcrypt.hashSync(validationResult.data.password, SALT_ROUNDS);
+
+  const highestIdResult = db.prepare('SELECT MAX(id) as maxId FROM users').get() as { maxId: number | null };
+  const nextId = (highestIdResult.maxId || 0) + 1;
+
+  const userToCreate: User = {
+    id: nextId,
+    name: validationResult.data.name,
+    email: validationResult.data.email,
+    password: hashedPassword,
+    role: validationResult.data.role,
+    avatar: "",
+    recentActivity: "Usuario recién creado.",
+    phone: validationResult.data.phone || "",
+    whatsapp: validationResult.data.whatsapp || "",
+    erpAlias: validationResult.data.erpAlias || "",
+    forcePasswordChange: validationResult.data.forcePasswordChange,
+  };
+  
+  const stmt = db.prepare(
+    `INSERT INTO users (id, name, email, password, phone, whatsapp, erpAlias, avatar, role, recentActivity, securityQuestion, securityAnswer, forcePasswordChange) 
+     VALUES (@id, @name, @email, @password, @phone, @whatsapp, @erpAlias, @avatar, @role, @recentActivity, @securityQuestion, @securityAnswer, @forcePasswordChange)`
+  );
+  
+  stmt.run({
+    ...userToCreate,
+    phone: userToCreate.phone || null,
+    whatsapp: userToCreate.whatsapp || null,
+    erpAlias: userToCreate.erpAlias || null,
+    securityQuestion: userToCreate.securityQuestion || null,
+    securityAnswer: userToCreate.securityAnswer || null,
+    forcePasswordChange: userToCreate.forcePasswordChange ? 1 : 0,
+  });
+
+  const { password, ...userWithoutPassword } = userToCreate;
+  await logInfo(`Admin added a new user: ${userToCreate.name}`, { role: userToCreate.role });
+  return userWithoutPassword as User;
+}
+
+export async function saveAllUsers(users: User[]): Promise<void> {
+   const db = await connectDb();
+   const upsert = db.prepare(`
+    INSERT INTO users (id, name, email, password, phone, whatsapp, erpAlias, avatar, role, recentActivity, securityQuestion, securityAnswer, forcePasswordChange) 
+    VALUES (@id, @name, @email, @password, @phone, @whatsapp, @erpAlias, @avatar, @role, @recentActivity, @securityQuestion, @securityAnswer, @forcePasswordChange)
+    ON CONFLICT(id) DO UPDATE SET
+        name = excluded.name,
+        email = excluded.email,
+        password = excluded.password,
+        phone = excluded.phone,
+        whatsapp = excluded.whatsapp,
+        erpAlias = excluded.erpAlias,
+        avatar = excluded.avatar,
+        role = excluded.role,
+        recentActivity = excluded.recentActivity,
+        securityQuestion = excluded.securityQuestion,
+        securityAnswer = excluded.securityAnswer,
+        forcePasswordChange = excluded.forcePasswordChange
+   `);
+
+    const transaction = db.transaction((usersToSave: User[]) => {
+        const existingUsersMap = new Map<number, { pass: string | undefined; force: boolean | number | undefined }>(
+            (db.prepare('SELECT id, password, forcePasswordChange FROM users').all() as User[]).map(u => [u.id, { pass: u.password, force: u.forcePasswordChange }])
+        );
+
+        for (const user of usersToSave) {
+          const validationResult = UserSchema.safeParse(user);
+          if (!validationResult.success) {
+              logError(`Skipping user save due to validation error for user ID ${user.id}`, { errors: validationResult.error.flatten() });
+              continue; // Skip this invalid user and continue with the next
+          }
+
+          const validatedUser = validationResult.data;
+          let passwordToSave = validatedUser.password;
+          const existingUserData = existingUsersMap.get(validatedUser.id);
+          
+          if (passwordToSave && passwordToSave !== existingUserData?.pass) {
+              if (!passwordToSave.startsWith('$2a$')) { // Basic check if it's not already a hash
+                  passwordToSave = bcrypt.hashSync(passwordToSave, SALT_ROUNDS);
+              }
+          } else {
+             passwordToSave = existingUserData?.pass;
+          }
+
+          const userToInsert = {
+            ...validatedUser,
+            password: passwordToSave,
+            phone: validatedUser.phone || null,
+            whatsapp: validatedUser.whatsapp || null,
+            erpAlias: validatedUser.erpAlias || null,
+            securityQuestion: validatedUser.securityQuestion || null,
+            securityAnswer: validatedUser.securityAnswer || null,
+            forcePasswordChange: validatedUser.forcePasswordChange ? 1 : 0,
+          };
+          upsert.run(userToInsert);
+        }
+    });
+
+    try {
+        transaction(users);
+        await logInfo(`${users.length} user records were processed for saving.`);
+    } catch (error) {
+        await logError("Failed to save all users (saveAllUsers)", { error: (error as Error).message });
+        throw new Error("Database transaction failed to save users.");
+    }
+}
+
+export async function comparePasswords(userId: number, password: string, clientInfo?: { ip: string, host: string }): Promise<boolean> {
+    const db = await connectDb();
+    const user = db.prepare('SELECT password FROM users WHERE id = ?').get(userId) as User | undefined;
+
+    if (!user || !user.password) {
+        return false;
+    }
+    
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      await logWarn('Password comparison failed during settings update/recovery.', clientInfo);
+    }
+    return isMatch;
+}
+
+export async function getInitialAuthData() {
+    const dbModules = await getDbModules();
+    for (const dbModule of dbModules) {
+        await connectDb(dbModule.dbFile);
+    }
+    
+    const [
+        roles,
+        companySettings,
+        customers,
+        products,
+        stock,
+        exemptions,
+        exemptionLaws,
+        exchangeRate,
+        unreadSuggestions
+    ] = await Promise.all([
+        getAllRoles(),
+        getCompanySettings(),
+        getAllCustomers(),
+        getAllProducts(),
+        getAllStock(),
+        getAllExemptions(),
+        getExemptionLaws(),
+        getExchangeRate(),
+        getUnreadSuggestions()
+    ]);
+    
+    let rateData: { rate: number | null; date: string | null } = { rate: null, date: null };
+    const exchangeRateResponse = exchangeRate as ExchangeRateApiResponse;
+    if (exchangeRateResponse?.venta?.valor) {
+        rateData.rate = exchangeRateResponse.venta.valor;
+        rateData.date = new Date(exchangeRateResponse.venta.fecha).toLocaleDateString('es-CR', { day: '2-digit', month: '2-digit', year: '2-digit' });
+    }
+
+    return {
+        roles,
+        companySettings,
+        customers,
+        products,
+        stock,
+        exemptions,
+        exemptionLaws,
+        exchangeRate: rateData,
+        unreadSuggestions
+    };
+}
+
+export async function sendPasswordRecoveryEmail(email: string, clientInfo: { ip: string; host: string; }): Promise<void> {
+    const db = await connectDb();
+    const logMeta = { email, ...clientInfo };
+
+    const user = db.prepare('SELECT * FROM users WHERE email = ?').get(email) as User | undefined;
+    if (!user) {
+        await logWarn('Password recovery requested for non-existent email.', logMeta);
+        return;
+    }
+
+    const tempPassword = Math.random().toString(36).slice(-8);
+    const hashedPassword = await bcrypt.hash(tempPassword, SALT_ROUNDS);
+
+    db.prepare('UPDATE users SET password = ?, forcePasswordChange = 1 WHERE id = ?')
+      .run(hashedPassword, user.id);
+
+    try {
+        const emailSettings = await getEmailSettingsFromDb();
+        if (!emailSettings.smtpHost) {
+            throw new Error("La configuración de SMTP no está establecida. No se puede enviar el correo.");
+        }
+        
+        const emailBody = (emailSettings.recoveryEmailBody || '')
+            .replace('[NOMBRE_USUARIO]', user.name)
+            .replace('[CLAVE_TEMPORAL]', tempPassword);
+            
+        await sendEmail({
+            to: user.email,
+            subject: emailSettings.recoveryEmailSubject || 'Recuperación de Contraseña',
+            html: emailBody
+        });
+
+        await logInfo(`Password recovery email sent successfully to ${user.name}.`, logMeta);
+    } catch (error: any) {
+        await logError('Failed to send password recovery email.', { ...logMeta, error: error.message });
+        throw new Error("No se pudo enviar el correo de recuperación. Revisa la configuración de SMTP.");
+    }
+}
+
+
+# ==============================================================================
+# COMPONENTE 3: El Contrato de Datos (Los Tipos)
+# Origen: src/modules/core/types/index.ts (sección relevante) y auth-schemas.ts
+# Propósito: Define la estructura de los datos para TypeScript y Zod.
+# ==============================================================================
+
+// --- Contenido de src/modules/core/types/index.ts ---
+
+/**
+ * Represents a user account in the system.
+ */
+export type User = {
+  id: number;
+  name: string;
+  email: string;
+  password?: string; // Hashed password from DB, or plaintext only when updating.
+  phone: string;
+  whatsapp: string;
+  avatar: string;
+  role: string; // Corresponds to a Role ID
+  erpAlias?: string; // User's username in the external ERP system
+  recentActivity: string;
+  securityQuestion?: string;
+  securityAnswer?: string;
+  forcePasswordChange?: boolean | number;
+};
+
+/**
+ * Defines a user role and its associated permissions.
+ */
+export type Role = {
+  id: string;
+  name: string;
+  permissions: string[];
+};
+
+// --- Contenido de src/modules/core/lib/auth-schemas.ts ---
+
+import { z } from 'zod';
+
+export const UserSchema = z.object({
+  id: z.number().int(),
+  name: z.string().min(2, { message: "El nombre es requerido." }),
+  email: z.string().email({ message: "El formato del correo no es válido." }),
+  password: z.string().optional(),
+  phone: z.string().optional().nullable(),
+  whatsapp: z.string().optional().nullable(),
+  avatar: z.string().optional().nullable(),
+  role: z.string(),
+  erpAlias: z.string().optional().nullable(),
+  recentActivity: z.string().optional().nullable(),
+  securityQuestion: z.string().optional().nullable(),
+  securityAnswer: z.string().optional().nullable(),
+  forcePasswordChange: z.union([z.boolean(), z.number()]).optional(),
+});
+
+export const NewUserSchema = z.object({
+    name: z.string().min(2, { message: "El nombre es requerido." }),
+    email: z.string().email({ message: "El formato del correo no es válido." }),
+    password: z.string().min(6, { message: "La contraseña debe tener al menos 6 caracteres." }),
+    role: z.string(),
+    phone: z.string().optional(),
+    whatsapp: z.string().optional(),
+    erpAlias: z.string().optional(),
+    forcePasswordChange: z.boolean(),
+});
+
+
+# ==============================================================================
+# COMPONENTE 4: Las Funciones de Base de Datos (El Almacén)
+# Origen: src/modules/core/lib/db.ts (secciones relevantes)
+# Propósito: Contiene el código SQL que interactúa directamente con la base de datos.
+# ==============================================================================
+
+// --- 1. Definición de las Tablas (dentro de la función de inicialización de la DB) ---
+
+// CREATE TABLE IF NOT EXISTS users (
+//     id INTEGER PRIMARY KEY,
+//     name TEXT NOT NULL,
+//     email TEXT UNIQUE NOT NULL,
+//     password TEXT NOT NULL,
+//     phone TEXT,
+//     whatsapp TEXT,
+//     erpAlias TEXT,
+//     avatar TEXT,
+//     role TEXT,
+//     recentActivity TEXT,
+//     securityQuestion TEXT,
+//     securityAnswer TEXT,
+//     forcePasswordChange BOOLEAN DEFAULT FALSE
+// );
+// CREATE TABLE IF NOT EXISTS roles (
+//     id TEXT PRIMARY KEY,
+//     name TEXT NOT NULL,
+//     permissions TEXT NOT NULL
+// );
+
+
+// --- 2. Funciones de Acceso a Datos ---
+
+export async function getAllRoles(): Promise<Role[]> {
+    const db = await connectDb();
+    try {
+        const roles = db.prepare('SELECT * FROM roles').all() as any[];
+        return roles.map(role => ({ ...role, permissions: JSON.parse(role.permissions) }));
+    } catch (error) {
+        console.error("Failed to get all roles:", error);
+        return [];
+    }
+}
+
+export async function saveAllRoles(roles: Role[]): Promise<void> {
+    const db = await connectDb();
+    const insert = db.prepare('INSERT INTO roles (id, name, permissions) VALUES (@id, @name, @permissions)');
+    const transaction = db.transaction((rolesToSave) => {
+        db.prepare('DELETE FROM roles').run();
+        for(const role of rolesToSave) {
+            insert.run({ ...role, permissions: JSON.stringify(role.permissions) });
+        }
+    });
+    try {
+        transaction(roles);
+    } catch (error) {
+        console.error("Failed to save all roles:", error);
+    }
+}
+
+// NOTA: Las funciones para guardar y obtener usuarios ya están incluidas
+// en el Componente 2 (`auth.ts`), ya que están estrechamente ligadas a la
+// lógica de negocio (hashing de contraseñas, etc.).
