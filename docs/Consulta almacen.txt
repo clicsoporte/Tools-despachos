@@ -1,13 +1,29 @@
-
 ======================================================================
-  ARQUITECTURA PROPUESTA: MÓDULO DE CONSULTA DE ALMACÉN (v2)
+  ARQUITECTURA PROPUESTA: MÓDULO DE CONSULTA DE ALMACÉN (v3)
 ======================================================================
 
-Este documento contiene todo el código necesario para refactorizar el módulo
-de "Consulta Almacén" a un sistema jerárquico (estilo árbol), optimizado
-para dispositivos móviles.
+Este documento contiene una guía de diseño completa y el código necesario
+para refactorizar el módulo de "Consulta Almacén" a un sistema jerárquico
+(estilo árbol), optimizado para dispositivos móviles y con una arquitectura
+más robusta inspirada en patrones de sistemas empresariales.
 
-**NOTA DE ARQUITECTURA DE DATOS:** La consulta SQL para la importación de artículos desde el ERP ya incluye el campo de la unidad de medida (ej: 'UND', 'KG', 'M'). La nueva arquitectura debe estar preparada para utilizar este dato, aunque la implementación inicial se centre en la visualización.
+**NOTA DE ARQUITECTURA DE DATOS (v2.1):** La consulta SQL para la importación
+de artículos desde el ERP ya incluye el campo de la unidad de medida
+(ej: 'UND', 'KG', 'M'). La nueva arquitectura debe estar preparada para
+utilizar este dato.
+
+**NUEVAS IDEAS ARQUITECTÓNICAS (v3):**
+
+1.  **Sistema de Eventos (Inspirado en `event/`):** La lógica de negocio
+    (ej: mover inventario) no solo ejecutará su tarea, sino que "publicará"
+    un evento (ej: 'StockMovido'). Otros módulos (como notificaciones o auditoría)
+    podrán suscribirse a estos eventos para reaccionar. Esto desacopla la lógica
+    y hace el sistema más extensible.
+
+2.  **Excepciones Personalizadas (Inspirado en `exception/`):** Se definirá
+    un set de errores específicos para el módulo (ej: `UbicacionNoEncontradaError`).
+    Esto mejora la claridad del código, el logging de errores y permite dar
+    mensajes mucho más precisos al usuario final.
 
 ----------------------------------------------------------------------
 -- PASO 1: LÓGICA DE BASE DE DATOS (warehouse/lib/db.ts)
@@ -480,3 +496,5 @@ export default function WarehousePage() {
     // ... (el resto de la lógica de renderizado del componente se mantiene igual, pero ahora usará `filteredItems` que ya tiene la estructura jerárquica)
     // El código de renderizado que se muestra en la respuesta anterior es el que se usaría.
 }
+
+    

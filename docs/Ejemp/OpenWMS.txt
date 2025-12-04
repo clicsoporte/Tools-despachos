@@ -1,0 +1,3647 @@
+===== FILE: /mnt/data/org.openwms/org.openwms-master/org.openwms.core.util/src/main/java/org/openwms/core/Constants.java =====
+
+/*
+ * Copyright 2005-2025 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.openwms.core;
+
+/**
+ * A Constants class collects general used static constants.
+ *
+ * @author Heiko Scherrer
+ */
+public final class Constants {
+
+    private Constants() {
+    }
+
+    /**
+     * Path to the initial application properties file. This constant can be referenced by
+     * Springs Value annotation. Value is {@value}. appProps is declared in Springs XML
+     * configuration.
+     */
+    public static final String APPLICATION_INITIAL_PROPERTIES = "#{ appProps['application.initial.properties'] }";
+
+}
+
+
+===== FILE: /mnt/data/org.openwms/org.openwms-master/org.openwms.core.util/src/main/java/org/openwms/core/CorePackage.java =====
+
+/*
+ * Copyright 2005-2025 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.openwms.core;
+
+import java.lang.annotation.Documented;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+
+/**
+ * A CorePackage is a marker annotation to link to the current Java package. This is
+ * useful for component scanning.
+ *
+ * @author Heiko Scherrer
+ */
+@Retention(RetentionPolicy.RUNTIME)
+@Documented
+public @interface CorePackage {
+
+}
+
+
+===== FILE: /mnt/data/org.openwms/org.openwms-master/org.openwms.core.util/src/main/java/org/openwms/core/DomainObject.java =====
+
+/*
+ * Copyright 2005-2025 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.openwms.core;
+
+import java.io.Serializable;
+
+/**
+ * A DomainObject, implementation classes offer basic functionality characteristic to all
+ * persisted domain objects.
+ *
+ * Each domain object:
+ * <ul>
+ *   <li>must have a field for optimistic locking purpose</li>
+ *   <li>must return whether it is a transient or persisted instance</li>
+ *   <li>must return the technical key value to the caller</li>
+ * </ul>
+ *
+ * @param <ID> Type of technical key class
+ * @author Heiko Scherrer
+ */
+public interface DomainObject<ID extends Serializable> {
+
+    /**
+     * Check whether the instance is a transient or persisted one.
+     *
+     * @return {@literal true} if transient (not persisted before), otherwise {@literal false}
+     */
+    boolean isNew();
+
+    /**
+     * Return the value of the optimistic locking field.
+     *
+     * @return the version number
+     */
+    long getVersion();
+
+    /**
+     * Return the technical key value.
+     *
+     * @return The technical, unique key
+     */
+    ID getId();
+}
+
+===== FILE: /mnt/data/org.openwms/org.openwms-master/org.openwms.core.util/src/main/java/org/openwms/core/SecurityUtils.java =====
+
+/*
+ * Copyright 2005-2025 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.openwms.core;
+
+import org.springframework.http.HttpHeaders;
+
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
+
+/**
+ * A SecurityUtils collects useful functions regarding security aspects.
+ *
+ * @author Heiko Scherrer
+ */
+public final class SecurityUtils {
+
+    private SecurityUtils() {}
+
+    /**
+     * With the given {@code username} and {@code password} create a Base64 encoded valid
+     * http BASIC schema authorization header, and return it within a {@link HttpHeaders}
+     * object.
+     *
+     * @param username The BASIC auth username
+     * @param password The BASIC auth password
+     * @return The HttpHeaders object containing the Authorization Header
+     */
+    public static HttpHeaders createHeaders(String username, String password) {
+        if (username == null || username.isEmpty()) {
+            return new HttpHeaders();
+        }
+        String auth = username + ":" + password;
+        byte[] encodedAuth = Base64.getEncoder().encode(auth.getBytes(StandardCharsets.UTF_8));
+        String authHeader = "Basic " + new String(encodedAuth);
+
+        HttpHeaders result =  new HttpHeaders();
+        result.add(HttpHeaders.AUTHORIZATION, authHeader);
+        return result;
+    }
+}
+
+
+===== FILE: /mnt/data/org.openwms/org.openwms-master/org.openwms.core.util/src/main/java/org/openwms/core/SpringProfiles.java =====
+
+/*
+ * Copyright 2005-2025 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.openwms.core;
+
+/**
+ * A SpringProfiles is a collection of wellknown Spring Profiles used in OpenWMS.org.
+ *
+ * @author Heiko Scherrer
+ */
+public final class SpringProfiles {
+
+    /**
+     * Used to define that the service is running in a distributed environment.
+     *
+     * @deprecated Use {@link org.ameba.app.SpringProfiles#DISTRIBUTED DISTRIBUTED} instead
+     */
+    @Deprecated(forRemoval = true)
+    public static final String DISTRIBUTED = "DISTRIBUTED";
+    /**
+     * Used to define that asynchronous message handling is used.
+     *
+     * @deprecated Use {@link org.ameba.app.SpringProfiles#AMQP AMQP} instead
+     */
+    @Deprecated(forRemoval = true)
+    public static final String ASYNCHRONOUS_PROFILE = "ASYNCHRONOUS";
+    /** Used to define that the asynchronous message handling is NOT used. */
+    public static final String NOT_ASYNCHRONOUS = "!ASYNCHRONOUS";
+    /** Used to define that synchronous message handling is used. */
+    public static final String SYNCHRONOUS_PROFILE = "SYNCHRONOUS";
+    /** Used to define application slices when the application's workflow is not managed by a supervisor process. */
+    public static final String NOT_MANAGED = "!MANAGED";
+    /** Used to define that synchronous message handling is used. */
+    public static final String IN_MEMORY = "INMEM";
+    /**
+     * Used to define that running within an OSGi container.
+     *
+     * @deprecated In the next mayor release
+     */
+    @Deprecated(forRemoval = true)
+    public static final String OSGI = "OSGI";
+    /**
+     * Used to define that not running in an OSGi container.
+     *
+     * @deprecated In the next mayor release
+     */
+    @Deprecated(forRemoval = true)
+    public static final String NON_OSGI = "noOSGI";
+
+    private SpringProfiles() { }
+}
+
+
+===== FILE: /mnt/data/org.openwms/org.openwms-master/org.openwms.core.util/src/main/java/org/openwms/core/package-info.java =====
+
+/*
+ * Copyright 2005-2025 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+/**
+ * This package includes common used constant classes.
+ */
+package org.openwms.core;
+
+===== FILE: /mnt/data/org.openwms/org.openwms-master/org.openwms.core.util/src/main/java/org/openwms/core/annotation/FireAfterTransaction.java =====
+
+/*
+ * Copyright 2005-2025 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.openwms.core.annotation;
+
+import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+import java.util.EventObject;
+
+/**
+ * A FireAfterTransaction. is used to send a list of events synchronously after the current transaction has finished successfully.
+ *
+ * @author Heiko Scherrer
+ */
+@Target(ElementType.METHOD)
+@Retention(RetentionPolicy.RUNTIME)
+@Documented
+public @interface FireAfterTransaction {
+
+    /**
+     * @return An array of events that shall be fired after the methods completes.
+     */
+    Class<? extends EventObject>[] events() default {};
+}
+
+===== FILE: /mnt/data/org.openwms/org.openwms-master/org.openwms.core.util/src/main/java/org/openwms/core/annotation/FireAfterTransactionAsynchronous.java =====
+
+/*
+ * Copyright 2005-2025 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.openwms.core.annotation;
+
+import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+import java.util.EventObject;
+
+/**
+ * A FireAfterTransactionAsynchronous is used to send a list of events asynchronously after the current transaction has finished.
+ *
+ * @author Heiko Scherrer
+ */
+@Target(ElementType.METHOD)
+@Retention(RetentionPolicy.RUNTIME)
+@Documented
+public @interface FireAfterTransactionAsynchronous {
+
+    /** @return An array of events that shall be fired after the methods completes. */
+    Class<? extends EventObject>[] events() default {};
+}
+
+===== FILE: /mnt/data/org.openwms/org.openwms-master/org.openwms.core.util/src/main/java/org/openwms/core/annotation/Workflow.java =====
+
+/*
+ * Copyright 2005-2025 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.openwms.core.annotation;
+
+import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
+/**
+ * A Workflow annotated type is meant to be used in the BPMN workflow as bean.
+ *
+ * @author Heiko Scherrer
+ */
+@Target(ElementType.TYPE)
+@Retention(RetentionPolicy.RUNTIME)
+@Documented
+public @interface Workflow {
+}
+
+
+===== FILE: /mnt/data/org.openwms/org.openwms-master/org.openwms.core.util/src/main/java/org/openwms/core/annotation/package-info.java =====
+
+/*
+ * Copyright 2005-2025 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+/**
+ * This package includes common used annotation types.
+ */
+package org.openwms.core.annotation;
+
+===== FILE: /mnt/data/org.openwms/org.openwms-master/org.openwms.core.util/src/main/java/org/openwms/core/aop/FireAfterTransactionAspect.java =====
+
+/*
+ * Copyright 2005-2025 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.openwms.core.aop;
+
+import org.ameba.exception.TechnicalRuntimeException;
+import org.openwms.core.annotation.FireAfterTransaction;
+import org.openwms.core.annotation.FireAfterTransactionAsynchronous;
+import org.openwms.core.event.RootApplicationEvent;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationEvent;
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.stereotype.Component;
+
+import java.util.EventObject;
+
+/**
+ * An UserChangedEventAspect fires events after a method invocation completes.
+ * It's main purpose is to fire events after a transaction succeeds, thereby the
+ * advice must be enabled around Spring's Transaction advice.
+ * <p>
+ * Use the {@link FireAfterTransaction} event and declare some type of events
+ * inside the <code>value</code> attribute. Instances of these events will then
+ * be fired after the transaction completes.
+ * </p>
+ * Example: <blockquote>
+ *
+ * <pre>
+ * &#064;FireAfterTransaction(events = { UserChangedEvent.class })
+ * public User save(User user) { .. }
+ * </pre>
+ *
+ * </blockquote>
+ * <p>
+ * The component can be referenced by name {@value #COMPONENT_NAME}.
+ * </p>
+ *
+ * @author Heiko Scherrer
+ */
+@Component(FireAfterTransactionAspect.COMPONENT_NAME)
+public class FireAfterTransactionAspect {
+
+    /** Springs component name. */
+    public static final String COMPONENT_NAME = "fireAfterTransactionAspect";
+    private static final Logger LOGGER = LoggerFactory.getLogger(FireAfterTransactionAspect.class);
+    private final ApplicationContext ctx;
+
+    public FireAfterTransactionAspect(ApplicationContext ctx) {
+        this.ctx = ctx;
+    }
+
+    /**
+     * Only {@link ApplicationEvent}s are created and published over Springs
+     * {@link ApplicationContext}.
+     *
+     * @param publisher The instance that is publishing the event
+     * @param events A list of event classes to fire
+     */
+    public void fireEvent(Object publisher, FireAfterTransaction events) {
+        try {
+            for (int i = 0; i < events.events().length; i++) {
+                Class<? extends EventObject> event = events.events()[i];
+                if (ApplicationEvent.class.isAssignableFrom(event)) {
+                    ctx.publishEvent((ApplicationEvent) event.getConstructor(Object.class).newInstance(publisher));
+                }
+            }
+        } catch (Exception e) {
+            throw new TechnicalRuntimeException(e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Only {@link ApplicationEvent}s are created and published over Springs
+     * {@link ApplicationContext}.
+     *
+     * @param publisher The instance that is publishing the event
+     * @param events Stores a list of event classes to fire
+     */
+    @Async
+    public void fireEventAsync(Object publisher, FireAfterTransactionAsynchronous events) {
+        try {
+            for (int i = 0; i < events.events().length; i++) {
+                Class<? extends EventObject> event = events.events()[i];
+                if (RootApplicationEvent.class.isAssignableFrom(event)) {
+                    LOGGER.debug("Sending event: [{}]", event);
+                    ctx.publishEvent((RootApplicationEvent) event.getConstructor(Object.class).newInstance(publisher));
+                }
+            }
+        } catch (Exception e) {
+            throw new TechnicalRuntimeException(e.getMessage(), e);
+        }
+    }
+}
+
+===== FILE: /mnt/data/org.openwms/org.openwms-master/org.openwms.core.util/src/main/java/org/openwms/core/aop/package-info.java =====
+
+/*
+ * Copyright 2005-2025 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+/**
+ * This package contains AOP artifacts.
+ */
+package org.openwms.core.aop;
+
+===== FILE: /mnt/data/org.openwms/org.openwms-master/org.openwms.core.util/src/main/java/org/openwms/core/app/JSONConfiguration.java =====
+
+/*
+ * Copyright 2005-2025 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.openwms.core.app;
+
+import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateDeserializer;
+import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateTimeDeserializer;
+import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateSerializer;
+import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateTimeSerializer;
+import org.ameba.annotation.ExcludeFromScan;
+import org.springframework.boot.autoconfigure.jackson.Jackson2ObjectMapperBuilderCustomizer;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+import java.time.format.DateTimeFormatter;
+
+import static org.openwms.core.time.TimeProvider.DATE_FORMAT;
+import static org.openwms.core.time.TimeProvider.DATE_TIME_MILLIS_FORMAT;
+
+/**
+ * A JSONConfiguration.
+ *
+ * @author Heiko Scherrer
+ */
+@ExcludeFromScan
+@Configuration
+public class JSONConfiguration {
+
+    @Bean
+    public Jackson2ObjectMapperBuilderCustomizer jsonCustomizer() {
+        return builder -> {
+            builder.simpleDateFormat(DATE_FORMAT);
+            builder.serializers(new LocalDateSerializer(DateTimeFormatter.ofPattern(DATE_FORMAT)));
+            builder.serializers(new LocalDateTimeSerializer(DateTimeFormatter.ofPattern(DATE_TIME_MILLIS_FORMAT)));
+            builder.deserializers(new LocalDateDeserializer(DateTimeFormatter.ofPattern(DATE_FORMAT)));
+            builder.deserializers(new LocalDateTimeDeserializer(DateTimeFormatter.ofPattern(DATE_TIME_MILLIS_FORMAT)));
+        };
+    }
+}
+
+
+===== FILE: /mnt/data/org.openwms/org.openwms-master/org.openwms.core.util/src/main/java/org/openwms/core/event/ConfigurationChangedEvent.java =====
+
+/*
+ * Copyright 2005-2025 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.openwms.core.event;
+
+import java.io.Serializable;
+
+/**
+ * A ConfigurationChangedEvent is raised whenever OpenWMS {@code Preferences} change.
+ *
+ * @author Heiko Scherrer
+ */
+public class ConfigurationChangedEvent extends RootApplicationEvent implements Serializable {
+
+    /**
+     * Create a new ConfigurationChangedEvent.
+     *
+     * @param source The {@code Preferences} object that has changed or a Collection of
+     * those never {@literal null}
+     */
+    public ConfigurationChangedEvent(Object source) {
+        super(source);
+    }
+}
+
+===== FILE: /mnt/data/org.openwms/org.openwms-master/org.openwms.core.util/src/main/java/org/openwms/core/event/EventBroker.java =====
+
+/*
+ * Copyright 2005-2025 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.openwms.core.event;
+
+/**
+ * A EventDispatcher.
+ *
+ * @author Heiko Scherrer
+ */
+public interface EventBroker {
+
+    void subscribe(Class<? extends RootApplicationEvent> event, String listenerBeanName);
+
+    void subscribe(Class<? extends RootApplicationEvent> event, EventListener listener);
+
+    void unsubscribe(Class<? extends RootApplicationEvent> event, String listenerBeanName);
+
+    void unsubscribe(Class<? extends RootApplicationEvent> event, EventListener listener);
+}
+
+===== FILE: /mnt/data/org.openwms/org.openwms-master/org.openwms.core.util/src/main/java/org/openwms/core/event/EventDispatcher.java =====
+
+/*
+ * Copyright 2005-2025 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.openwms.core.event;
+
+/**
+ * An EventDispatcher dispatches / delivers events to subscribers.
+ *
+ * @author Heiko Scherrer
+ */
+public interface EventDispatcher extends EventBroker {
+
+    /**
+     * Take an event of type {@code T} and dispatch it to all subscribed
+     * listeners.
+     * Note: It is not defined whether the event is delivered synchronously or
+     * asynchronously.
+     *
+     * @param <T> A subtype of RootApplicationEvent
+     * @param event The event to deliver
+     */
+    <T extends RootApplicationEvent> void dispatch(T event);
+}
+
+===== FILE: /mnt/data/org.openwms/org.openwms-master/org.openwms.core.util/src/main/java/org/openwms/core/event/EventListener.java =====
+
+/*
+ * Copyright 2005-2025 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.openwms.core.event;
+
+/**
+ * A EventListener.
+ *
+ * @author Heiko Scherrer
+ */
+public interface EventListener {
+
+    void onEvent(RootApplicationEvent event);
+}
+
+===== FILE: /mnt/data/org.openwms/org.openwms-master/org.openwms.core.util/src/main/java/org/openwms/core/event/EventPublisher.java =====
+
+/*
+ * Copyright 2005-2025 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.openwms.core.event;
+
+/**
+ * An EventPublisher publishes any type of {@link RootApplicationEvent}s to registered
+ * {@code EventListener}s.
+ *
+ * @author Heiko Scherrer
+ * @see EventListener
+ */
+public interface EventPublisher<T extends RootApplicationEvent> {
+
+    /**
+     * Publish an event of type T to event listeners.
+     *
+     * @param event The event to publish
+     */
+    void publish(T event);
+}
+
+===== FILE: /mnt/data/org.openwms/org.openwms-master/org.openwms.core.util/src/main/java/org/openwms/core/event/MergePropertiesEvent.java =====
+
+/*
+ * Copyright 2005-2025 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.openwms.core.event;
+
+/**
+ * A MergePropertiesEvent.
+ *
+ * @author Heiko Scherrer
+ */
+public class MergePropertiesEvent extends RootApplicationEvent {
+
+    /**
+     * Create a new MergePropertiesEvent.
+     *
+     * @param source The event source
+     */
+    public MergePropertiesEvent(Object source) {
+        super(source);
+    }
+}
+
+===== FILE: /mnt/data/org.openwms/org.openwms-master/org.openwms.core.util/src/main/java/org/openwms/core/event/NonBlockingEventPublisherImpl.java =====
+
+/*
+ * Copyright 2005-2025 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.openwms.core.event;
+
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.stereotype.Component;
+
+/**
+ * A NonBlockingEventPublisherImpl is publishing events asynchronously.
+ *
+ * @author Heiko Scherrer
+ */
+@Component(value = NonBlockingEventPublisherImpl.COMPONENT_NAME)
+public class NonBlockingEventPublisherImpl<T extends RootApplicationEvent> implements EventPublisher<T> {
+
+    /** Springs service name. */
+    public static final String COMPONENT_NAME = "nonBlockingEventPublisherImpl";
+
+    private final EventDispatcher dispatcher;
+
+    public NonBlockingEventPublisherImpl(EventDispatcher dispatcher) {
+        this.dispatcher = dispatcher;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Async
+    @Override
+    public void publish(T event) {
+        dispatcher.dispatch(event);
+    }
+}
+
+===== FILE: /mnt/data/org.openwms/org.openwms-master/org.openwms.core.util/src/main/java/org/openwms/core/event/ReloadFilePreferencesEvent.java =====
+
+/*
+ * Copyright 2005-2025 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.openwms.core.event;
+
+/**
+ * A ReloadFilePreferencesEvent.
+ *
+ * @author Heiko Scherrer
+ */
+public class ReloadFilePreferencesEvent extends RootApplicationEvent {
+
+    /**
+     * Create a new ReloadFilePreferencesEvent.
+     *
+     * @param source The event source
+     */
+    public ReloadFilePreferencesEvent(Object source) {
+        super(source);
+    }
+}
+
+===== FILE: /mnt/data/org.openwms/org.openwms-master/org.openwms.core.util/src/main/java/org/openwms/core/event/RoleChangedEvent.java =====
+
+/*
+ * Copyright 2005-2025 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.openwms.core.event;
+
+/**
+ * A RoleChangedEvent is fired to notify listeners about changes on an <code>Role</code> instance. A listener could probably evict a cache
+ * of Roles.
+ *
+ * @author Heiko Scherrer
+ */
+public class RoleChangedEvent extends RootApplicationEvent {
+
+    /**
+     * Create a new RoleChangedEvent.
+     *
+     * @param source The <code>Role</code> that has changed or <code>null</code>
+     */
+    public RoleChangedEvent(Object source) {
+        super(source);
+    }
+}
+
+===== FILE: /mnt/data/org.openwms/org.openwms-master/org.openwms.core.util/src/main/java/org/openwms/core/event/RootApplicationEvent.java =====
+
+/*
+ * Copyright 2005-2025 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.openwms.core.event;
+
+import org.springframework.context.ApplicationEvent;
+
+import java.io.Serializable;
+
+/**
+ * A RootApplicationEvent is typically used as a super class for specific event types
+ * within the application domain.
+ *
+ * @author <a href="mailto:russelltina@users.sourceforge.net">Tina Russell</a>
+ * @author Heiko Scherrer
+ */
+public class RootApplicationEvent extends ApplicationEvent implements Serializable {
+
+    /**
+     * Create a new RootApplicationEvent.
+     *
+     * @param source The event sender, never {@literal null}
+     */
+    public RootApplicationEvent(Object source) {
+        super(source);
+    }
+}
+
+===== FILE: /mnt/data/org.openwms/org.openwms-master/org.openwms.core.util/src/main/java/org/openwms/core/event/RootNotification.java =====
+
+/*
+ * Copyright 2005-2025 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.openwms.core.event;
+
+import java.io.Serializable;
+import java.util.Objects;
+
+/**
+ * A RootNotification is used as super class for notifications within the application
+ * domain.
+ *
+ * @author Heiko Scherrer
+ */
+public class RootNotification implements Serializable {
+
+    private final Serializable data;
+
+    /**
+     * Constructs a RootNotification.
+     *
+     * @param data Any serializable object to be transfered
+     */
+    public RootNotification(Serializable data) {
+        Objects.requireNonNull(data, "data passed to RootNotification is null");
+        this.data = data;
+    }
+
+    /**
+     * The data that is transfered between notification sender and receiver.
+     *
+     * @return The transfered, serializable data object
+     */
+    public Serializable getData() {
+        return data;
+    }
+
+    /**
+     * Returns a String representation of this RootNotification.
+     *
+     * @return A String
+     */
+    @Override
+    public String toString() {
+        return getClass().getName() + "[data=" + data + "]";
+    }
+}
+
+===== FILE: /mnt/data/org.openwms/org.openwms-master/org.openwms.core.util/src/main/java/org/openwms/core/event/SimpleEventDispatcher.java =====
+
+/*
+ * Copyright 2005-2025 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.openwms.core.event;
+
+import org.ameba.exception.ServiceLayerException;
+import org.springframework.context.ApplicationContext;
+import org.springframework.stereotype.Component;
+
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+
+import static java.lang.String.format;
+
+/**
+ * A SimpleEventDispatcher is a Spring managed component that stores all subscribers in an
+ * in-memory key-value store implementation and calls all subscribers sequentially and
+ * synchronously.
+ *
+ * @author Heiko Scherrer
+ */
+@Component(value = SimpleEventDispatcher.COMPONENT_NAME)
+public class SimpleEventDispatcher implements EventDispatcher {
+
+    /** Springs service name. */
+    public static final String COMPONENT_NAME = "simpleEventDispatcher";
+    private final Map<Class<? extends RootApplicationEvent>, Set<EventListener>> subscriptions = new HashMap<>();
+    private final ApplicationContext ctx;
+
+    /**
+     * Autowiring constructor.
+     *
+     * @param ctx ApplicationContext
+     */
+    public SimpleEventDispatcher(ApplicationContext ctx) {
+        this.ctx = ctx;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void subscribe(Class<? extends RootApplicationEvent> event, EventListener listener) {
+        synchronized (subscriptions) {
+            Set<EventListener> listeners = subscriptions.get(event);
+            if (listeners == null) {
+                listeners = HashSet.newHashSet(1);
+                listeners.add(listener);
+            } else {
+                listeners.add(listener);
+                subscriptions.put(event, listeners);
+            }
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void subscribe(Class<? extends RootApplicationEvent> event, String listenerBeanName) {
+        Object instance = ctx.getBean(listenerBeanName);
+        if (instance instanceof EventListener i) {
+            subscribe(event, i);
+        } else {
+            throw new ServiceLayerException(format("The bean with name [%s] is not of type EventListener and cannot subscribe to events", listenerBeanName));
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void unsubscribe(Class<? extends RootApplicationEvent> event, EventListener listener) {
+        if (subscriptions.containsKey(event)) {
+            synchronized (subscriptions.get(event)) {
+                subscriptions.get(event).remove(listener);
+            }
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void unsubscribe(Class<? extends RootApplicationEvent> event, String listenerBeanName) {
+        Object instance = ctx.getBean(listenerBeanName);
+        if (instance instanceof EventListener i) {
+            unsubscribe(event, i);
+        } else {
+            throw new ServiceLayerException(format("The bean with name [%s] is not of type EventListener and cannot unsubscribe to events", listenerBeanName));
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public <T extends RootApplicationEvent> void dispatch(T event) {
+        if (null == event || !subscriptions.containsKey(event.getClass())) {
+            return;
+        }
+        synchronized (subscriptions.get(event.getClass())) {
+            Set<EventListener> listeners = subscriptions.get(event.getClass());
+            listeners.forEach(l -> l.onEvent(event));
+        }
+    }
+}
+
+===== FILE: /mnt/data/org.openwms/org.openwms-master/org.openwms.core.util/src/main/java/org/openwms/core/event/UserChangedEvent.java =====
+
+/*
+ * Copyright 2005-2025 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.openwms.core.event;
+
+import java.io.Serializable;
+
+/**
+ * An UserChangedEvent is raised to notify about changes on an {@code User} instance. A
+ * listener may for instance evict a cache.
+ *
+ * @author Heiko Scherrer
+ */
+public class UserChangedEvent extends RootApplicationEvent implements Serializable {
+
+    /**
+     * Create a new UserChangedEvent.
+     *
+     * @param source The {@code User} that has changed
+     */
+    public UserChangedEvent(Object source) {
+        super(source);
+    }
+}
+
+===== FILE: /mnt/data/org.openwms/org.openwms-master/org.openwms.core.util/src/main/java/org/openwms/core/event/package-info.java =====
+
+/*
+ * Copyright 2005-2025 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+/**
+ * This package provides common utility classes regarding event handling.
+ */
+package org.openwms.core.event;
+
+===== FILE: /mnt/data/org.openwms/org.openwms-master/org.openwms.core.util/src/main/java/org/openwms/core/exception/DataNotFoundException.java =====
+
+/*
+ * Copyright 2005-2025 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.openwms.core.exception;
+
+import org.ameba.exception.IntegrationLayerException;
+
+import java.io.Serializable;
+
+import static java.lang.String.format;
+
+/**
+ * A DataNotFoundException is thrown to indicate that data was expected but nothing was
+ * found.
+ *
+ * @author Heiko Scherrer
+ */
+public class DataNotFoundException extends IntegrationLayerException {
+
+    /**
+     * Create a new DataNotFoundException with a message text and the root
+     * exception.
+     *
+     * @param message Message text as String
+     * @param cause The root exception
+     */
+    public DataNotFoundException(String message, Throwable cause) {
+        super(message, cause);
+    }
+
+    /**
+     * Create a new DataNotFoundException with a message text.
+     *
+     * @param message Message text as String
+     */
+    public DataNotFoundException(String message) {
+        super(message);
+    }
+
+    /**
+     * Create a new DataNotFoundException with the id of the expected entity.
+     *
+     * @param id Id of the expected entity
+     */
+    public DataNotFoundException(Serializable id) {
+        super(format("Entity class not found in persistence layer, id=[%s]",id));
+    }
+}
+
+===== FILE: /mnt/data/org.openwms/org.openwms-master/org.openwms.core.util/src/main/java/org/openwms/core/exception/DomainModelException.java =====
+
+/*
+ * Copyright 2005-2025 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.openwms.core.exception;
+
+/**
+ * A DomainModelException is a checked top-level exception for all exceptions within the
+ * domain model layer.
+ *
+ * @author Heiko Scherrer
+ */
+public class DomainModelException extends Exception {
+
+    /**
+     * Create a new DomainModelException.
+     */
+    public DomainModelException() {
+        super();
+    }
+
+    /**
+     * Create a new DomainModelException.
+     *
+     * @param message Detail message
+     */
+    public DomainModelException(String message) {
+        super(message);
+    }
+
+    /**
+     * Create a new DomainModelException.
+     *
+     * @param cause Root cause
+     */
+    public DomainModelException(Throwable cause) {
+        super(cause);
+    }
+
+    /**
+     * Create a new DomainModelException.
+     *
+     * @param message Detail message
+     * @param cause Root cause
+     */
+    public DomainModelException(String message, Throwable cause) {
+        super(message, cause);
+    }
+}
+
+===== FILE: /mnt/data/org.openwms/org.openwms-master/org.openwms.core.util/src/main/java/org/openwms/core/exception/ExceptionCodes.java =====
+
+/*
+ * Copyright 2005-2025 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.openwms.core.exception;
+
+/**
+ * An ExceptionCodes class defines some, not all, of exception codes used in OpenWMS.org. The code is a descriptive message code, that can
+ * be used for translation purpose.
+ *
+ * @author Heiko Scherrer
+ */
+public final class ExceptionCodes {
+
+    /** Generic technical exception. */
+    public static final String TECHNICAL_RT_ERROR = "core.general.technical.error";
+    /** Thrown to signal one or more invalid parameters in API or method calls. */
+    public static final String INVALID_PARAMETER_ERROR = "core.invalid.parameter";
+    /** A generic validation error. */
+    public static final String VALIDATION_ERROR = "core.validation.error";
+
+    private ExceptionCodes() {
+    }
+}
+
+
+===== FILE: /mnt/data/org.openwms/org.openwms-master/org.openwms.core.util/src/main/java/org/openwms/core/exception/IllegalConfigurationValueException.java =====
+
+/*
+ * Copyright 2005-2025 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.openwms.core.exception;
+
+/**
+ * An IllegalConfigurationValueException is thrown to signal an invalid or unexpected
+ * configured value, usually derived from a configuration file that is maintained by
+ * developers or users.
+ *
+ * @author Heiko Scherrer
+ */
+public class IllegalConfigurationValueException extends RuntimeException {
+
+    /**
+     * Create a new IllegalConfigurationValueException.
+     */
+    public IllegalConfigurationValueException() {
+        super();
+    }
+
+    /**
+     * Create a new IllegalConfigurationValueException.
+     *
+     * @param message the detail message. The detail message is saved for later retrieval
+     * by the {@link #getMessage()} method.
+     */
+    public IllegalConfigurationValueException(String message) {
+        super(message);
+    }
+
+    /**
+     * Create a new IllegalConfigurationValueException.
+     *
+     * @param cause the cause (which is saved for later retrieval by the {@link #getCause()} method).
+     * (A {@literal null} value is permitted, and indicates that the cause is nonexistent
+     * or unknown.)
+     */
+    public IllegalConfigurationValueException(Throwable cause) {
+        super(cause);
+    }
+
+    /**
+     * Create a new IllegalConfigurationValueException.
+     *
+     * @param message the detail message. The detail message is saved for later retrieval
+     * by the {@link #getMessage()} method.
+     * @param cause the cause (which is saved for later retrieval by the {@link #getCause()}
+     * method). (A {@literal null} value is permitted, and indicates that the cause is
+     * nonexistent or unknown.)
+     */
+    public IllegalConfigurationValueException(String message, Throwable cause) {
+        super(message, cause);
+    }
+}
+
+
+===== FILE: /mnt/data/org.openwms/org.openwms-master/org.openwms.core.util/src/main/java/org/openwms/core/exception/NoUniqueResultException.java =====
+
+/*
+ * Copyright 2005-2025 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.openwms.core.exception;
+
+import org.ameba.exception.IntegrationLayerException;
+
+/**
+ * A NoUniqueResultException is thrown when a single result was expected but multiple
+ * entities were found.
+ *
+ * @author Heiko Scherrer
+ */
+public class NoUniqueResultException extends IntegrationLayerException {
+
+    /**
+     * Create a new NoUniqueResultException.
+     */
+    public NoUniqueResultException() {
+        super();
+    }
+
+    /**
+     * Create a new NoUniqueResultException with a message text.
+     *
+     * @param message Message text as String
+     */
+    public NoUniqueResultException(String message) {
+        super(message);
+    }
+
+    /**
+     * Create a new NoUniqueResultException with a message text and the root
+     * exception.
+     *
+     * @param message Message text as String
+     * @param cause The root exception
+     */
+    public NoUniqueResultException(String message, Throwable cause) {
+        super(message, cause);
+    }
+}
+
+===== FILE: /mnt/data/org.openwms/org.openwms-master/org.openwms.core.util/src/main/java/org/openwms/core/exception/ResourceNotFoundException.java =====
+
+/*
+ * Copyright 2005-2025 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.openwms.core.exception;
+
+/**
+ * A ResourceNotFoundException is thrown when a given resource couldn't be resolved.
+ *
+ * @author Heiko Scherrer
+ */
+public class ResourceNotFoundException extends RuntimeException {
+
+    /**
+     * Create a new ResourceNotFoundException.
+     */
+    public ResourceNotFoundException() {
+        super();
+    }
+
+    /**
+     * Create a new ResourceNotFoundException with a message text.
+     *
+     * @param message Message text as String
+     */
+    public ResourceNotFoundException(String message) {
+        super(message);
+    }
+
+    /**
+     * Create a new ResourceNotFoundException with the root exception.
+     *
+     * @param cause The root exception
+     */
+    public ResourceNotFoundException(Throwable cause) {
+        super(cause);
+    }
+
+    /**
+     * Create a new ResourceNotFoundException with a message text and the root exception.
+     *
+     * @param message Message text as String
+     * @param cause The root exception
+     */
+    public ResourceNotFoundException(String message, Throwable cause) {
+        super(message, cause);
+    }
+}
+
+===== FILE: /mnt/data/org.openwms/org.openwms-master/org.openwms.core.util/src/main/java/org/openwms/core/exception/WrongClassTypeException.java =====
+
+/*
+ * Copyright 2005-2025 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.openwms.core.exception;
+
+/**
+ * A WrongClassTypeException.
+ *
+ * @author Heiko Scherrer
+ */
+public class WrongClassTypeException extends RuntimeException {
+
+    /**
+     * Create a new WrongClassTypeException with a message text.
+     */
+    public WrongClassTypeException() {
+        super();
+    }
+
+    /**
+     * Create a new WrongClassTypeException with a message text.
+     *
+     * @param message Message text as String
+     */
+    public WrongClassTypeException(String message) {
+        super(message);
+    }
+
+    /**
+     * Create a new WrongClassTypeException with the root exception.
+     *
+     * @param cause The root exception
+     */
+    public WrongClassTypeException(Throwable cause) {
+        super(cause);
+    }
+
+    /**
+     * Create a new WrongClassTypeException with a message text and the root exception.
+     *
+     * @param message Message text as String
+     * @param cause The root exception
+     */
+    public WrongClassTypeException(String message, Throwable cause) {
+        super(message, cause);
+    }
+}
+
+===== FILE: /mnt/data/org.openwms/org.openwms-master/org.openwms.core.util/src/main/java/org/openwms/core/exception/package-info.java =====
+
+/*
+ * Copyright 2005-2025 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+/**
+ * This package contains common used exception types.
+ */
+package org.openwms.core.exception;
+
+===== FILE: /mnt/data/org.openwms/org.openwms-master/org.openwms.core.util/src/main/java/org/openwms/core/http/AbstractWebController.java =====
+
+/*
+ * Copyright 2005-2025 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.openwms.core.http;
+
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.ConstraintViolationException;
+import jakarta.validation.ValidationException;
+import org.ameba.LoggingCategories;
+import org.ameba.exception.BehaviorAwareException;
+import org.ameba.exception.BusinessRuntimeException;
+import org.ameba.exception.TechnicalRuntimeException;
+import org.ameba.http.Response;
+import org.openwms.core.exception.ExceptionCodes;
+import org.openwms.core.listener.RemovalNotAllowedException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSource;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.util.MultiValueMap;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.util.UriTemplate;
+
+import java.io.Serializable;
+import java.net.URI;
+import java.util.Locale;
+
+/**
+ * A AbstractWebController.
+ *
+ * @author Heiko Scherrer
+ */
+public abstract class AbstractWebController {
+
+    private static final Logger EXC_LOGGER = LoggerFactory.getLogger(LoggingCategories.PRESENTATION_LAYER_EXCEPTION);
+    private static final String P_PRESENTATION_LAYER_EXCEPTION = "[P] Presentation Layer Exception: {}";
+    @Autowired
+    private MessageSource messageSource;
+
+    /**
+     * @deprecated Will become private. Migrate to use {@link #AbstractWebController(MessageSource)} instead.
+     */
+    @Deprecated(since = "3.0.0")
+    public AbstractWebController() { }
+
+    protected AbstractWebController(MessageSource messageSource) {
+        this.messageSource = messageSource;
+    }
+
+    @ExceptionHandler(BehaviorAwareException.class)
+    protected ResponseEntity<Response<?>> handleBehaviorAwareException(BehaviorAwareException bae) {
+        EXC_LOGGER.error(P_PRESENTATION_LAYER_EXCEPTION, bae.getLocalizedMessage(), bae);
+        return new ResponseEntity<>(Response.newBuilder()
+                .withMessage(bae.getMessage())
+                .withMessageKey(bae.getMessageKey())
+                .withHttpStatus(String.valueOf(bae.getStatus().value()))
+                .withObj(bae.getData())
+                .build(),
+                bae.getStatus()
+        );
+    }
+
+    @ExceptionHandler(RemovalNotAllowedException.class)
+    protected ResponseEntity<Response<?>> handleRemovalNotAllowedException(RemovalNotAllowedException rnae) {
+        EXC_LOGGER.error(P_PRESENTATION_LAYER_EXCEPTION, rnae.getLocalizedMessage(), rnae);
+        return new ResponseEntity<>(Response.newBuilder()
+                .withMessage(rnae.getMessage())
+                .withMessageKey(rnae.getMessageKey())
+                .withObj(rnae.getData())
+                .build(),
+                HttpStatus.FORBIDDEN
+        );
+    }
+
+    @ExceptionHandler(BusinessRuntimeException.class)
+    protected ResponseEntity<Response<?>> handleBusinessRuntimeException(BusinessRuntimeException bre) {
+        EXC_LOGGER.error(P_PRESENTATION_LAYER_EXCEPTION, bre.getLocalizedMessage(), bre);
+        ResponseStatus annotation = bre.getClass().getAnnotation(ResponseStatus.class);
+        HttpStatus status = annotation != null ? annotation.value() : HttpStatus.INTERNAL_SERVER_ERROR;
+        return new ResponseEntity<>(Response.newBuilder()
+                .withMessage(bre.getMessage())
+                .withMessageKey(bre.getMessageKey())
+                .withHttpStatus(String.valueOf(status.value()))
+                .withObj(bre.getData())
+                .build(),
+                status
+        );
+    }
+
+    @ExceptionHandler(HttpBusinessException.class)
+    protected ResponseEntity<Response<?>> handleHttpBusinessException(HttpBusinessException hbe) {
+        EXC_LOGGER.error(P_PRESENTATION_LAYER_EXCEPTION, hbe.getLocalizedMessage(), hbe);
+        return new ResponseEntity<>(Response.newBuilder()
+                .withMessage(hbe.getMessage())
+                .withHttpStatus(String.valueOf(hbe.getHttpStatus().value()))
+                .build(),
+                hbe.getHttpStatus()
+        );
+    }
+
+    @ExceptionHandler(TechnicalRuntimeException.class)
+    protected ResponseEntity<Response<?>> handleTechnicalRuntimeException(TechnicalRuntimeException tre) {
+        if (tre.getCause() instanceof BehaviorAwareException bae) {
+            return handleBehaviorAwareException(bae);
+        }
+        if (tre.getCause() instanceof BusinessRuntimeException bre) {
+            return handleBusinessRuntimeException(bre);
+        }
+        if (tre.getCause() instanceof HttpBusinessException hbe) {
+            return handleHttpBusinessException(hbe);
+        }
+        EXC_LOGGER.error(P_PRESENTATION_LAYER_EXCEPTION, tre.getLocalizedMessage(), tre);
+        return new ResponseEntity<>(Response.newBuilder()
+                .withMessage(tre.getMessage())
+                .withMessageKey(tre.getMessageKey())
+                .withHttpStatus(String.valueOf(HttpStatus.BAD_GATEWAY.value()))
+                .withObj(tre.getData())
+                .build(),
+                HttpStatus.BAD_GATEWAY
+        );
+    }
+
+    @ExceptionHandler({IllegalArgumentException.class})
+    public ResponseEntity<Response<?>> illegalArgumentException(IllegalArgumentException ex) {
+        EXC_LOGGER.error(P_PRESENTATION_LAYER_EXCEPTION, ex.getLocalizedMessage(), ex);
+        return new ResponseEntity<>(
+                Response.newBuilder()
+                        .withMessage(ex.getMessage())
+                        .withMessageKey(ExceptionCodes.INVALID_PARAMETER_ERROR)
+                        .withHttpStatus(String.valueOf(HttpStatus.BAD_REQUEST.value()))
+                        .build(),
+                HttpStatus.BAD_REQUEST
+        );
+    }
+
+    @ExceptionHandler({MethodArgumentNotValidException.class, ValidationException.class})
+    protected ResponseEntity<Response<?>> handleValidationException(Exception e) {
+        EXC_LOGGER.error(P_PRESENTATION_LAYER_EXCEPTION, e.getLocalizedMessage(), e);
+        return new ResponseEntity<>(
+                Response.newBuilder()
+                        .withMessage(translate(ExceptionCodes.VALIDATION_ERROR))
+                        .withMessageKey(ExceptionCodes.VALIDATION_ERROR)
+                        .withHttpStatus(String.valueOf(HttpStatus.BAD_REQUEST.value()))
+                        .build(),
+                HttpStatus.BAD_REQUEST
+        );
+    }
+
+    @ExceptionHandler(ConstraintViolationException.class)
+    protected ResponseEntity<Response<?>> handleConstraintViolationException(ConstraintViolationException ex) {
+        var properties = ex.getConstraintViolations().stream().map(c -> c.getPropertyPath().toString()).toList();
+        EXC_LOGGER.error(P_PRESENTATION_LAYER_EXCEPTION, ex.getLocalizedMessage(), ex);
+        return new ResponseEntity<>(
+                Response.newBuilder()
+                        .withMessage(translate(ExceptionCodes.VALIDATION_ERROR, properties))
+                        .withMessageKey(ExceptionCodes.VALIDATION_ERROR)
+                        .withHttpStatus(String.valueOf(HttpStatus.BAD_REQUEST.value()))
+                        .build(),
+                HttpStatus.BAD_REQUEST
+        );
+    }
+
+    @ExceptionHandler(Exception.class)
+    protected ResponseEntity<Response<?>> handleException(Exception ex) {
+        EXC_LOGGER.error(P_PRESENTATION_LAYER_EXCEPTION, ex.getLocalizedMessage(), ex);
+        return new ResponseEntity<>(Response.newBuilder()
+                .withMessage(ex.getMessage())
+                .withMessageKey(ExceptionCodes.TECHNICAL_RT_ERROR)
+                .withHttpStatus(String.valueOf(HttpStatus.INTERNAL_SERVER_ERROR.value()))
+                .build(),
+                HttpStatus.INTERNAL_SERVER_ERROR
+        );
+    }
+
+    /**
+     * Get the messageSource.
+     *
+     * @param key The error code to search message text for
+     * @param objects Any arguments that are passed into the message text
+     * @return the messageSource.
+     */
+    protected String translate(String key, Object... objects) {
+        return messageSource.getMessage(key, objects, Locale.getDefault());
+    }
+
+    /**
+     * Build a response object that signals a not-okay response with a given status {@code code}.
+     *
+     * @param <T> Some type extending the AbstractBase entity
+     * @param code The status code to set as response code
+     * @param msg The error message passed to the caller
+     * @param msgKey The error message key passed to the caller
+     * @param params A set of Serializable objects that are passed to the caller
+     * @return A ResponseEntity with status {@code code}
+     */
+    protected <T extends Serializable> ResponseEntity<Response<T>> buildResponse(HttpStatus code, String msg, String msgKey, T... params) {
+        Response result = Response.newBuilder().withMessage(msg).withMessageKey(msgKey).withHttpStatus(code.toString()).withObj(params).build();
+        return new ResponseEntity<>(result, code);
+    }
+
+    /**
+     * Build a response object that signals a not-okay response with a given status {@code code} and with given http headers.
+     *
+     * @param <T> Some type extending the AbstractBase entity
+     * @param code The status code to set as response code
+     * @param msg The error message passed to the caller
+     * @param msgKey The error message key passed to the caller
+     * @param headers The map of headers.
+     * @param params A set of Serializable objects that are passed to the caller
+     * @return A ResponseEntity with status {@code code}
+     */
+    protected <T extends Serializable> ResponseEntity<Response<T>> buildResponse(HttpStatus code, String msg, String msgKey, MultiValueMap<String, String> headers, T... params) {
+        Response result = Response.newBuilder().withMessage(msg).withMessageKey(msgKey).withHttpStatus(code.toString()).withObj(params).build();
+        return new ResponseEntity<>(result, headers, code);
+    }
+
+    /**
+     * Build an response object that signals a success response to the caller.
+     *
+     * @param <T> Some type extending the AbstractBase entity
+     * @param params A set of Serializable objects that are passed to the caller
+     * @return A ResponseEntity with status {@link HttpStatus#OK}
+     */
+    protected <T extends Serializable> ResponseEntity<Response<T>> buildOKResponse(T... params) {
+        return buildResponse(HttpStatus.OK, "", "", params);
+    }
+
+    /**
+     * Build a response object that signals a not-okay response with a given status {@code code}.
+     *
+     * @param <T> Some type extending the AbstractBase entity
+     * @param code The status code to set as response code
+     * @param msg The error message passed to the caller
+     * @param msgKey The error message key passed to the caller
+     * @param params A set of Serializable objects that are passed to the caller
+     * @return A ResponseEntity with status {@code code}
+     */
+    protected <T extends Serializable> ResponseEntity<Response<T>> buildNOKResponseWithKey(HttpStatus code, String msg, String msgKey, T... params) {
+        return buildResponse(code, msg, msgKey, params);
+    }
+
+    /**
+     * Build a response object that signals a not-okay response with a given status {@code code}.
+     *
+     * @param <T> Some type extending the AbstractBase entity
+     * @param code The status code to set as response code
+     * @param msg The error message passed to the caller
+     * @param params A set of Serializable objects that are passed to the caller
+     * @return A ResponseEntity with status {@code code}
+     */
+    protected <T extends Serializable> ResponseEntity<Response<T>> buildNOKResponse(HttpStatus code, String msg, T... params) {
+        return buildResponse(code, msg, "", params);
+    }
+
+    /**
+     * Append the ID of the object that was created to the original request URL and return it.
+     *
+     * @param req The HttpServletRequest object
+     * @param objId The ID to append
+     * @return The complete appended URL as String
+     */
+    protected String getLocationForCreatedResource(HttpServletRequest req, String objId) {
+        return getLocationURIForCreatedResource(req, objId).toASCIIString();
+    }
+
+    /**
+     * Append the ID of the object that was created to the original request URL and return it.
+     *
+     * @param req The HttpServletRequest object
+     * @param objId The ID to append
+     * @return The complete appended URL
+     */
+    protected URI getLocationURIForCreatedResource(HttpServletRequest req, String objId) {
+        var protos = req.getHeader("x-forwarded-proto");
+        var hosts = req.getHeader("x-forwarded-host");
+        var url = new StringBuilder();
+        if (protos != null && hosts != null) {
+            var host = resolveFirstHost(hosts);
+            var proto = resolveFirstProtocol(protos);
+            url.append(proto).append(host);
+        } else {
+            url.append(req.getScheme().endsWith("://") ? req.getScheme() : req.getScheme() + "://")
+                    .append(req.getServerName()).append(":")
+                    .append(req.getServerPort());
+        }
+        var prefix = req.getHeader("x-forwarded-prefix");
+        if (prefix != null) {
+            url.append(prefix);
+        }
+        url.append(req.getRequestURI());
+        url.append("/{objId}");
+        return new UriTemplate(url.toString()).expand(objId);
+    }
+
+    private String resolveFirstHost(String hosts) {
+        var parts = hosts.split(",");
+        return parts.length == 1 ? hosts : parts[0];
+    }
+
+    private String resolveFirstProtocol(String protocols) {
+        var parts = protocols.split(",");
+        if (parts.length == 1) {
+            return protocols.endsWith("://") ? protocols : protocols + "://";
+        } else {
+            return parts[0].endsWith("://") ? parts[0] : parts[0] + "://";
+        }
+    }
+}
+
+
+===== FILE: /mnt/data/org.openwms/org.openwms-master/org.openwms.core.util/src/main/java/org/openwms/core/http/HttpBusinessException.java =====
+
+/*
+ * Copyright 2005-2025 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.openwms.core.http;
+
+import org.springframework.http.HttpStatus;
+
+/**
+ * A HttpBusinessException encapsulates well-known BusinessExceptions into exceptions
+ * particular to http translation.
+ *
+ * @author Heiko Scherrer
+ */
+public class HttpBusinessException extends RuntimeException {
+
+    private final HttpStatus httpStatus;
+
+    /**
+     * Create a new HttpBusinessException.
+     *
+     * @param httpStatus The passed http status
+     */
+    public HttpBusinessException(HttpStatus httpStatus) {
+        super();
+        this.httpStatus = httpStatus;
+    }
+
+    /**
+     * Create a new HttpBusinessException.
+     *
+     * @param message The passed message text
+     * @param httpStatus The passed http status
+     */
+    public HttpBusinessException(String message, HttpStatus httpStatus) {
+        super(message);
+        this.httpStatus = httpStatus;
+    }
+
+    /**
+     * Create a new HttpBusinessException.
+     *
+     * @param cause The root cause
+     * @param httpStatus The passed http status
+     */
+    public HttpBusinessException(Throwable cause, HttpStatus httpStatus) {
+        super(cause);
+        this.httpStatus = httpStatus;
+    }
+
+    /**
+     * Get the http status.
+     *
+     * @return the httpStatus.
+     */
+    public HttpStatus getHttpStatus() {
+        return httpStatus;
+    }
+}
+
+
+===== FILE: /mnt/data/org.openwms/org.openwms-master/org.openwms.core.util/src/main/java/org/openwms/core/http/Index.java =====
+
+/*
+ * Copyright 2005-2025 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.openwms.core.http;
+
+import org.ameba.http.AbstractBase;
+import org.springframework.hateoas.Link;
+
+/**
+ * A Index encapsulates HAL links to point to exposed REST resources.
+ *
+ * @author Heiko Scherrer
+ */
+public class Index extends AbstractBase<Index> {
+
+    public Index(Link... links) {
+        this.add(links);
+    }
+}
+
+
+===== FILE: /mnt/data/org.openwms/org.openwms-master/org.openwms.core.util/src/main/java/org/openwms/core/integration/persistence/CustomPostDeleteEventListener.java =====
+
+/*
+ * Copyright 2005-2025 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.openwms.core.integration.persistence;
+
+import org.hibernate.envers.boot.internal.EnversService;
+import org.hibernate.envers.event.spi.EnversPostDeleteEventListenerImpl;
+import org.hibernate.event.spi.PostDeleteEvent;
+
+/**
+ * A CustomPostDeleteEventListener overrides the default implementation.
+ *
+ * @author Heiko Scherrer
+ */
+public class CustomPostDeleteEventListener extends EnversPostDeleteEventListenerImpl {
+
+    public CustomPostDeleteEventListener(EnversService enversService) {
+        super(enversService);
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * Bypass the default implementation.
+     */
+    @Override
+    public void onPostDelete(PostDeleteEvent event) {
+        // Bypass the default implementation and do nothing.
+    }
+}
+
+
+===== FILE: /mnt/data/org.openwms/org.openwms-master/org.openwms.core.util/src/main/java/org/openwms/core/integration/persistence/EnversIntegrator.java =====
+
+/*
+ * Copyright 2005-2025 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.openwms.core.integration.persistence;
+
+import org.hibernate.HibernateException;
+import org.hibernate.boot.Metadata;
+import org.hibernate.engine.spi.SessionFactoryImplementor;
+import org.hibernate.envers.boot.internal.EnversService;
+import org.hibernate.envers.event.spi.EnversListenerDuplicationStrategy;
+import org.hibernate.envers.event.spi.EnversPostCollectionRecreateEventListenerImpl;
+import org.hibernate.envers.event.spi.EnversPostInsertEventListenerImpl;
+import org.hibernate.envers.event.spi.EnversPostUpdateEventListenerImpl;
+import org.hibernate.envers.event.spi.EnversPreCollectionRemoveEventListenerImpl;
+import org.hibernate.envers.event.spi.EnversPreCollectionUpdateEventListenerImpl;
+import org.hibernate.envers.event.spi.EnversPreUpdateEventListenerImpl;
+import org.hibernate.event.service.spi.EventListenerRegistry;
+import org.hibernate.event.spi.EventType;
+import org.hibernate.integrator.spi.Integrator;
+import org.hibernate.service.spi.SessionFactoryServiceRegistry;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+/**
+ * A EnversIntegrator.
+ *
+ * @author Heiko Scherrer
+ */
+public class EnversIntegrator implements Integrator {
+
+    private static final Logger log = LoggerFactory.getLogger( EnversIntegrator.class );
+
+    public static final String AUTO_REGISTER = "hibernate.envers.autoRegisterListeners";
+
+    /**
+     * {@inheritDoc}
+     */
+    @Deprecated
+    @Override
+    public void integrate(
+            Metadata metadata,
+            SessionFactoryImplementor sessionFactory,
+            SessionFactoryServiceRegistry serviceRegistry) {
+        final EnversService enversService = serviceRegistry.getService( EnversService.class );
+
+        // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        // Opt-out of registration if EnversService is disabled
+        if ( !enversService.isEnabled() ) {
+            log.debug( "Skipping Envers listener registrations : EnversService disabled" );
+            return;
+        }
+
+        // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        // Verify that the EnversService is fully initialized and ready to go.
+        if ( !enversService.isInitialized() ) {
+            throw new HibernateException(
+                    "Expecting EnversService to have been initialized prior to call to EnversIntegrator#integrate"
+            );
+        }
+
+        // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        // Opt-out of registration if no audited entities found
+        if ( !enversService.getEntitiesConfigurations().hasAuditedEntities() ) {
+            log.debug( "Skipping Envers listener registrations : No audited entities found" );
+            return;
+        }
+
+        // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        // Do the registrations
+        final EventListenerRegistry listenerRegistry = serviceRegistry.getService( EventListenerRegistry.class );
+        listenerRegistry.addDuplicationStrategy( EnversListenerDuplicationStrategy.INSTANCE );
+
+        if ( enversService.getEntitiesConfigurations().hasAuditedEntities() ) {
+            listenerRegistry.appendListeners(
+                    EventType.POST_DELETE,
+                    new CustomPostDeleteEventListener( enversService )
+            );
+            listenerRegistry.appendListeners(
+                    EventType.POST_INSERT,
+                    new EnversPostInsertEventListenerImpl( enversService )
+            );
+            listenerRegistry.appendListeners(
+                    EventType.PRE_UPDATE,
+                    new EnversPreUpdateEventListenerImpl( enversService )
+            );
+            listenerRegistry.appendListeners(
+                    EventType.POST_UPDATE,
+                    new EnversPostUpdateEventListenerImpl( enversService )
+            );
+            listenerRegistry.appendListeners(
+                    EventType.POST_COLLECTION_RECREATE,
+                    new EnversPostCollectionRecreateEventListenerImpl( enversService )
+            );
+            listenerRegistry.appendListeners(
+                    EventType.PRE_COLLECTION_REMOVE,
+                    new EnversPreCollectionRemoveEventListenerImpl( enversService )
+            );
+            listenerRegistry.appendListeners(
+                    EventType.PRE_COLLECTION_UPDATE,
+                    new EnversPreCollectionUpdateEventListenerImpl( enversService )
+            );
+        }
+    }
+
+    @Override
+    public void disintegrate(SessionFactoryImplementor sessionFactory, SessionFactoryServiceRegistry serviceRegistry) {
+        // nothing to do
+    }
+}
+
+
+===== FILE: /mnt/data/org.openwms/org.openwms-master/org.openwms.core.util/src/main/java/org/openwms/core/lang/CollectionUtil.java =====
+
+/*
+ * Copyright 2005-2025 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.openwms.core.lang;
+
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
+/**
+ * A CollectionUtil.
+ *
+ * @author Heiko Scherrer
+ */
+public final class CollectionUtil {
+
+    private CollectionUtil() {
+    }
+
+    /**
+     * Return the first element of list. If list is {@literal null} of empty,
+     * {@literal null} is returned.
+     *
+     * @param <T> Any type
+     * @param list The {@link List}
+     * @return list[0] or {@literal null} if list == null || list.isEmpty
+     */
+    public static <T> T getFirstOrNull(List<T> list) {
+        if (list == null || list.isEmpty()) {
+            return null;
+        }
+        return list.get(0);
+    }
+
+    /**
+     * Convert a list into a {@link LinkedHashMap} using a {@link ListExtractor} to
+     * determine the keys and values for the new Map.
+     *
+     * @param <K> Type of list key
+     * @param <V> Type of list value
+     * @param list The list to convert
+     * @param extractor To determine key and value for each list entry
+     * @return A created {@link LinkedHashMap} or an empty map when one of the arguments
+     * is {@literal null}
+     */
+    public static <K, V> Map<K, V> asHashMap(List<V> list, ListExtractor<K, V> extractor) {
+        if (list == null || extractor == null || list.isEmpty()) {
+            return Collections.emptyMap();
+        }
+        Map<K, V> map = LinkedHashMap.newLinkedHashMap(list.size());
+        for (V node : list) {
+            map.put(extractor.extractKey(node), extractor.extractValue(node));
+        }
+        return map;
+    }
+}
+
+===== FILE: /mnt/data/org.openwms/org.openwms-master/org.openwms.core.util/src/main/java/org/openwms/core/lang/ListExtractor.java =====
+
+/*
+ * Copyright 2005-2025 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.openwms.core.lang;
+
+/**
+ * A ListExtractor.
+ *
+ * @param <K> Type of key
+ * @param <V> Type of value
+ * @author Heiko Scherrer
+ */
+public interface ListExtractor<K, V> {
+
+    /**
+     * From a list node of type {@code T} extract the key element.
+     *
+     * @param <T> Type of list node
+     * @param listNode The node to extract the key from
+     * @return the extracted key
+     */
+    <T> K extractKey(T listNode);
+
+    /**
+     * From a list node of type {@code T} extract the value.
+     *
+     * @param <T> Type of list node
+     * @param listNode The node to extract the value from
+     * @return the extracted value
+     */
+    <T> V extractValue(T listNode);
+}
+
+===== FILE: /mnt/data/org.openwms/org.openwms-master/org.openwms.core.util/src/main/java/org/openwms/core/lang/Triple.java =====
+
+/*
+ * Copyright 2005-2025 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.openwms.core.lang;
+
+import java.util.Objects;
+
+/**
+ * A Triple.
+ *
+ * @author Heiko Scherrer
+ */
+public record Triple<K, V, T>(K key, V value, T type) {
+
+    /**
+     * Get the stored value as class type {@code clazz}.
+     *
+     * @param clazz The type to retrieve the value as
+     * @return The cast value
+     * @param <U> The requested type
+     * @throws ClassCastException in case of cast error
+     */
+    @SuppressWarnings("unchecked")
+    public <U> U valueAs(Class<U> clazz) {
+        if (Objects.equals(this.type.getClass().getComponentType(), clazz.getComponentType())) {
+            return (U) value;
+        }
+        throw new ClassCastException("Cannot case requested type [%s] from [%s]".formatted(clazz, type.getClass()));
+    }
+}
+
+
+===== FILE: /mnt/data/org.openwms/org.openwms-master/org.openwms.core.util/src/main/java/org/openwms/core/lang/package-info.java =====
+
+/*
+ * Copyright 2005-2025 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+/**
+ * This package provides utility classes to support common language features.
+ */
+package org.openwms.core.lang;
+
+===== FILE: /mnt/data/org.openwms/org.openwms-master/org.openwms.core.util/src/main/java/org/openwms/core/listener/OnRemovalListener.java =====
+
+/*
+ * Copyright 2005-2025 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.openwms.core.listener;
+
+import org.ameba.integration.jpa.BaseEntity;
+
+/**
+ * An OnRemovalListener is able to hook in the lifecycle of an entity class. A class
+ * implementing this interface is called before an Entity of type {@code T} is removed and
+ * can prevent the deletion.
+ *
+ * @param <T> Any kind of {@link BaseEntity}
+ * @author <a href="mailto:russelltina@users.sourceforge.net">Tina Russell</a>
+ */
+public interface OnRemovalListener<T extends BaseEntity> {
+
+    /**
+     * Decide whether the {@code entity} can be removed or not.
+     *
+     * @param entity The instance to be removed.
+     * @return {@code true} if removal is allowed, otherwise {@code false}
+     */
+    boolean preRemove(T entity);
+}
+
+===== FILE: /mnt/data/org.openwms/org.openwms-master/org.openwms.core.util/src/main/java/org/openwms/core/listener/RemovalNotAllowedException.java =====
+
+/*
+ * Copyright 2005-2025 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.openwms.core.listener;
+
+import org.ameba.exception.ServiceLayerException;
+
+/**
+ * A RemovalNotAllowedException is thrown when the caller is not allowed to remove an
+ * entity.
+ *
+ * @author <a href="mailto:russelltina@users.sourceforge.net">Tina Russell</a>
+ */
+public class RemovalNotAllowedException extends ServiceLayerException {
+
+    /**
+     * Create a new RemovalNotAllowedException.
+     *
+     * @param message Detail message
+     */
+    public RemovalNotAllowedException(String message) {
+        super(message);
+    }
+
+}
+
+===== FILE: /mnt/data/org.openwms/org.openwms-master/org.openwms.core.util/src/main/java/org/openwms/core/listener/package-info.java =====
+
+/*
+ * Copyright 2005-2025 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+/**
+ * Listener interfaces can be implemented by services to listen to domain specific events.
+ */
+package org.openwms.core.listener;
+
+===== FILE: /mnt/data/org.openwms/org.openwms-master/org.openwms.core.util/src/main/java/org/openwms/core/startup/ApplicationInitializer.java =====
+
+/*
+ * Copyright 2005-2025 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.openwms.core.startup;
+
+import org.openwms.core.SpringProfiles;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.context.ApplicationContextInitializer;
+import org.springframework.context.ConfigurableApplicationContext;
+
+/**
+ * A ApplicationInitializer is used to determine the runtime environment OpenWMS is
+ * running in. In case of an OSGi server, like Spring dmServer, the expected Spring
+ * profile is {@link SpringProfiles#OSGI}. If not running in an OSGi environment, the
+ * profile {@link SpringProfiles#NON_OSGI} is activated - if not already set.
+ *
+ * @author Heiko Scherrer
+ * @deprecated Multiple environments are likely going to be removed
+ */
+@Deprecated
+public class ApplicationInitializer implements ApplicationContextInitializer<ConfigurableApplicationContext> {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(ApplicationInitializer.class);
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Depending on the underlying platform, different Spring profiles are included.
+     */
+    @Override
+    public void initialize(ConfigurableApplicationContext applicationContext) {
+        var activeProfile = System.getProperty("spring.profiles.active");
+        if (SpringProfiles.OSGI.equalsIgnoreCase(activeProfile)) {
+            LOGGER.info("Running in OSGI environment");
+        } else if (SpringProfiles.NON_OSGI.equalsIgnoreCase(activeProfile)) {
+            LOGGER.info("Running in a non OSGI environment");
+        } else {
+            applicationContext.getEnvironment().setActiveProfiles(SpringProfiles.NON_OSGI);
+            applicationContext.refresh();
+            LOGGER.info("Switched to a non OSGI environment");
+        }
+    }
+}
+
+===== FILE: /mnt/data/org.openwms/org.openwms-master/org.openwms.core.util/src/main/java/org/openwms/core/startup/LocalServiceInitializer.java =====
+
+/*
+ * Copyright 2005-2025 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.openwms.core.startup;
+
+import org.openwms.core.event.MergePropertiesEvent;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationListener;
+import org.springframework.context.event.ContextRefreshedEvent;
+import org.springframework.stereotype.Component;
+
+/**
+ * A LocalServiceInitializer raises {@link MergePropertiesEvent}s whenever the OpenWMS
+ * OSGi bundle is started or restarted.
+ *
+ * @author Heiko Scherrer
+ */
+@Component
+public class LocalServiceInitializer implements ApplicationListener<ContextRefreshedEvent> {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(LocalServiceInitializer.class);
+    private final ApplicationContext ctx;
+
+    public LocalServiceInitializer(ApplicationContext ctx) {
+        this.ctx = ctx;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void onApplicationEvent(ContextRefreshedEvent event) {
+        LOGGER.info("CORE Service bundle started. Publishing properties merge event ...");
+        ctx.publishEvent(new MergePropertiesEvent(this));
+    }
+}
+
+===== FILE: /mnt/data/org.openwms/org.openwms-master/org.openwms.core.util/src/main/java/org/openwms/core/startup/package-info.java =====
+
+/*
+ * Copyright 2005-2025 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+/**
+ * This package contains framework classes regarding the OSGi application lifecycle.
+ */
+package org.openwms.core.startup;
+
+===== FILE: /mnt/data/org.openwms/org.openwms-master/org.openwms.core.util/src/main/java/org/openwms/core/time/TimeProvider.java =====
+
+/*
+ * Copyright 2005-2025 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.openwms.core.time;
+
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
+import java.util.Date;
+
+/**
+ * A TimeProvider defines several widely used time formats as constants and provides the current time. An implementation may be loaded using
+ * the Java1.6 ServiceLoader facility or by Spring dependency injection.
+ *
+ * @author Heiko Scherrer
+ */
+public interface TimeProvider {
+
+    /** The format pattern for all date types. */
+    String DATE_FORMAT = "yyyy-MM-dd";
+    /** The format pattern for all date-time types without milliseconds and without timezone. */
+    String DATE_TIME_FORMAT = "yyyy-MM-dd HH:mm:ss";
+    /** The format pattern for all date-time with milliseconds without timezone types. */
+    String DATE_TIME_MILLIS_FORMAT = "yyyy-MM-dd HH:mm:ss.SSS";
+    /** The format pattern for all date-time types without milliseconds but with timezone. */
+    String DATE_TIME_WITH_TIMEZONE_FORMAT = "yyyy-MM-dd'T'HH:mm:ssXXX";
+    /** The format pattern for all date-time types with milliseconds and timezone. */
+    String DATE_TIME_MILLIS_WITH_TIMEZONE_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSSXXX";
+
+    /**
+     * Returns the current date and time considering the configured timezone.
+     *
+     * @return Timezone aware Date
+     */
+    default Date nowAsCurrentDate() {
+        return Date.from(ZonedDateTime.of(LocalDateTime.now(ZoneId.systemDefault()), ZoneId.systemDefault()).toInstant());
+    }
+
+    /**
+     * Returns the current date and time in UTC timezone.
+     *
+     * @return UTC Date
+     */
+    default Date nowAsZuluDate() {
+        return Date.from(ZonedDateTime.now(ZoneId.of("Z")).toInstant());
+    }
+
+    /**
+     * Returns the current date and time considering the configured timezone.
+     *
+     * @return Timezone aware ZonedDateTime
+     */
+    default ZonedDateTime nowAsCurrentZonedDateTime() {
+        return nowAsZonedDateTime(ZoneId.systemDefault());
+    }
+
+    /**
+     * Returns the current date and time considering the configured timezone.
+     *
+     * @return Timezone aware ZonedDateTime
+     */
+    default ZonedDateTime nowAsZuluZonedDateTime() {
+        return nowAsZonedDateTime(ZoneOffset.UTC);
+    }
+
+    /**
+     * Returns the current date and time considering the given timezone.
+     *
+     * @param zoneId ZoneId to consider
+     * @return Timezone aware ZonedDateTime
+     */
+    default ZonedDateTime nowAsZonedDateTime(ZoneId zoneId) {
+        return ZonedDateTime.now(zoneId);
+    }
+
+    /**
+     * Returns the current date and time of the system considering the configured timezone.
+     *
+     * @return Timezone aware Instant
+     */
+    default Instant nowAsCurrentInstant() {
+        return ZonedDateTime.of(LocalDateTime.now(ZoneId.systemDefault()), ZoneId.systemDefault()).toInstant();
+    }
+
+    /**
+     * Returns the date and time in UTC timezone.
+     *
+     * @return Timezone aware Instant
+     */
+    default Instant nowAsZuluInstant() {
+        return ZonedDateTime.of(LocalDateTime.now(ZoneOffset.UTC), ZoneOffset.UTC).toInstant();
+    }
+}
+
+
+===== FILE: /mnt/data/org.openwms/org.openwms-master/org.openwms.core.util/src/main/java/org/openwms/core/util/TreeNode.java =====
+
+/*
+ * Copyright 2005-2025 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.openwms.core.util;
+
+import java.io.Serializable;
+import java.util.Iterator;
+import java.util.Map;
+
+/**
+ * A TreeNode to define a tree data structure.
+ *
+ * @param <T> The type of node.
+ * @author Heiko Scherrer
+ */
+public interface TreeNode<T> extends Serializable {
+
+    /**
+     * Get the data of the node.
+     *
+     * @return The attached Node data
+     */
+    T getData();
+
+    /**
+     * Set the data of the node.
+     *
+     * @param data Data to set
+     */
+    void setData(T data);
+
+    /**
+     * Return whether this node is leaf.
+     *
+     * @return {@literal true} if this node is leaf, otherwise {@literal false}
+     */
+    boolean isLeaf();
+
+    /**
+     * Get all child entries. Each child entry contains an identifier (key) and a child
+     * node (value).
+     * 
+     * Identifiers are used to generate model keys representing paths to tree nodes. Model
+     * keys are used:
+     * <ul>
+     *   <li>For persisting tree state. That means identifiers should be serializable when
+     *       some JSF features are used, e.g. client-side state saving.
+     *   </li>
+     *   <li>For construction of client identifiers. Client identifier for tree nodes
+     *       consists of String representations of identifiers separated by a separator
+     *       char. A String representation of identifier should be a valid XML ID, e.g.
+     *       conform to <a href="http://www.w3.org/TR/xml11/#NT-Name"> XML Name Production</a>
+     *       production.
+     *   </li>
+     * </ul>
+     *
+     * @return {@link Iterator} over Map.Entry instances containing {@link TreeNode} as
+     * values and their identifiers as keys
+     */
+    Iterator<Map.Entry<Object, TreeNode<T>>> getChildren();
+
+    /**
+     * Find a child by id.
+     * 
+     * See {@link #getChildren()} for more information about the identifier constraints.
+     *
+     * @param id The identifier of the child to find
+     * @return designated {@link TreeNode} instance or {@literal null}
+     */
+    TreeNode<T> getChild(Object id);
+
+    /**
+     * Adds a child to the children.
+     *
+     * See {@link #getChildren()} for more information about identifier constraints.
+     *
+     * @param identifier child identifier
+     * @param child The child
+     */
+    void addChild(Object identifier, TreeNode<T> child);
+
+    /**
+     * Removes a child from the children collection.
+     *
+     * See {@link #getChildren()} for more information about identifier constraints.
+     *
+     * @param id The id of the child to remove
+     */
+    void removeChild(Object id);
+
+    /**
+     * Get the parent {@link TreeNode}.
+     *
+     * @return parent {@link TreeNode} instance or {@literal null} if the node is the root
+     */
+    TreeNode<T> getParent();
+
+    /**
+     * Set the parent {@link TreeNode}.
+     *
+     * @param parent {@link TreeNode} to set as parent
+     */
+    void setParent(TreeNode<T> parent);
+}
+
+===== FILE: /mnt/data/org.openwms/org.openwms-master/org.openwms.core.util/src/main/java/org/openwms/core/util/TreeNodeImpl.java =====
+
+/*
+ * Copyright 2005-2025 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.openwms.core.util;
+
+import java.io.Serializable;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.Map;
+
+/**
+ * A TreeNodeImpl is a simple implementation of a {@link TreeNode}.
+ *
+ * @param <T> The type of the node
+ * @author Heiko Scherrer
+ */
+public class TreeNodeImpl<T extends Serializable> implements TreeNode<T>, Serializable {
+
+    private T data;
+    private TreeNode<T> parent;
+    private final Map<Object, TreeNode<T>> childrenMap = new LinkedHashMap<>();
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public T getData() {
+        return data;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public TreeNode<T> getChild(Object identifier) {
+        return childrenMap.get(identifier);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void addChild(Object identifier, TreeNode<T> child) {
+        child.setParent(this);
+        childrenMap.put(identifier, child);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void removeChild(Object identifier) {
+        TreeNode<T> treeNode = childrenMap.remove(identifier);
+        if (treeNode != null) {
+            treeNode.setParent(null);
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setData(T data) {
+        this.data = data;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public TreeNode<T> getParent() {
+        return parent;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setParent(TreeNode<T> parent) {
+        this.parent = parent;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Iterator<Map.Entry<Object, TreeNode<T>>> getChildren() {
+        return childrenMap.entrySet().iterator();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean isLeaf() {
+        return childrenMap.isEmpty();
+    }
+}
+
+===== FILE: /mnt/data/org.openwms/org.openwms-master/org.openwms.core.util/src/main/java/org/openwms/core/util/package-info.java =====
+
+/*
+ * Copyright 2005-2025 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+/**
+ * Contains common used utility and helper classes.
+ */
+package org.openwms.core.util;
+
+===== FILE: /mnt/data/org.openwms/org.openwms-master/org.openwms.core.util/src/main/java/org/openwms/core/values/AbstractBaseUnit.java =====
+
+/*
+ * Copyright 2005-2025 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.openwms.core.values;
+
+/**
+ * A AbstractBaseUnit is a stereotype interface that can be used in wildcard boundaries
+ * for any kind of BaseUnit types.
+ *
+ * @param <T> The type of BaseUnit
+ * @author Heiko Scherrer
+ */
+public interface AbstractBaseUnit<T extends AbstractBaseUnit<T>> extends BaseUnit<T> {
+}
+
+===== FILE: /mnt/data/org.openwms/org.openwms-master/org.openwms.core.util/src/main/java/org/openwms/core/values/AbstractMeasure.java =====
+
+/*
+ * Copyright 2005-2025 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.openwms.core.values;
+
+/**
+ * A definition of any kind of measurement used in the application. In general an
+ * {@code AbstractMeasure} is the base class for all kind of measures. For example {@literal 42 grams}
+ * is a {@code AbstractMeasure} (in particular a {@code Weight}, whereas 42 is the
+ * magnitude and grams is the {@code BaseUnit}. This type is merely used to erase the
+ * type declaration.
+ *
+ * @author Heiko Scherrer
+ */
+@SuppressWarnings("rawtypes")
+public interface AbstractMeasure extends Measurable {
+}
+
+===== FILE: /mnt/data/org.openwms/org.openwms-master/org.openwms.core.util/src/main/java/org/openwms/core/values/BaseUnit.java =====
+
+/*
+ * Copyright 2005-2025 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.openwms.core.values;
+
+import java.util.List;
+
+/**
+ * A BaseUnit is the type definition of an {@code Measurable}. Each BaseUnit defines a
+ * base {@code Measurable}. For example the BaseUnit of weights can define grams (G),
+ * kilograms (KG) or tons (T) and 1G is the base unit.
+ *
+ * @param <T> Concrete type of BaseUnit
+ * @author Heiko Scherrer
+ * @GlossaryTerm
+ */
+public interface BaseUnit<T extends BaseUnit<T>> {
+
+    /**
+     * Return all sub types of the {@code UnitType}.
+     *
+     * @return a list of sub types
+     */
+    List<T> getAll();
+
+    /**
+     * Return the base unit type of the {@code UnitType}.
+     *
+     * @return The base unit type
+     */
+    T getBaseUnit();
+}
+
+===== FILE: /mnt/data/org.openwms/org.openwms-master/org.openwms.core.util/src/main/java/org/openwms/core/values/CoreTypeDefinitions.java =====
+
+/*
+ * Copyright 2005-2025 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.openwms.core.values;
+
+/**
+ * A CoreTypeDefinitions.
+ *
+ * @author Heiko Scherrer
+ */
+public final class CoreTypeDefinitions {
+
+    /** Length of a Description field: {@value} */
+    public static final int DESCRIPTION_LENGTH = 1024;
+    /** Length of a Quantity field: {@value} */
+    public static final int QUANTITY_LENGTH = 16;
+
+    private CoreTypeDefinitions() {
+    }
+}
+
+===== FILE: /mnt/data/org.openwms/org.openwms-master/org.openwms.core.util/src/main/java/org/openwms/core/values/ImageProvider.java =====
+
+/*
+ * Copyright 2005-2025 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.openwms.core.values;
+
+/**
+ * An ImageProvider stores an image file.
+ *
+ * @author <a href="mailto:russelltina@users.sourceforge.net">Tina Russell</a>
+ */
+public interface ImageProvider {
+
+    /**
+     * Return the image of the {@code User}.
+     *
+     * @return The current image
+     */
+    byte[] getImage();
+
+    /**
+     * Change the image of the {@code User}.
+     *
+     * @param img The image to set
+     */
+    void setImage(byte[] img);
+}
+
+===== FILE: /mnt/data/org.openwms/org.openwms-master/org.openwms.core.util/src/main/java/org/openwms/core/values/Measurable.java =====
+
+/*
+ * Copyright 2005-2025 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.openwms.core.values;
+
+/**
+ * A Measurable.
+ *
+ * @author Heiko Scherrer
+ */
+public interface Measurable<V extends Number, E extends Measurable<V, E, T>, T extends BaseUnit<T>> extends Comparable<E> {
+
+    /**
+     * Returns the type of {@code Measurable}.
+     *
+     * @return The {@code Measurable}'s type
+     */
+    T getUnitType();
+
+    /**
+     * Get the magnitude of this {@code Measurable}.
+     *
+     * @return the magnitude
+     */
+    V getMagnitude();
+
+    /**
+     * Check whether the magnitude is 0.
+     *
+     * @return {@literal true} is magnitude is 0, otherwise {@literal false}
+     */
+    boolean isZero();
+
+    /**
+     * Check whether the magnitude is of negative value.
+     *
+     * @return {@literal true} if the magnitude is of negative value, otherwise
+     * {@literal false}
+     */
+    boolean isNegative();
+
+    /**
+     * Convert this {@code Measurable} into another {@code Measurable} .
+     *
+     * @param unit The {@code BaseUnit} to convert to
+     * @return The converted unit
+     */
+    E convertTo(T unit);
+}
+
+===== FILE: /mnt/data/org.openwms/org.openwms-master/org.openwms.core.util/src/main/java/org/openwms/core/values/PriorityLevel.java =====
+
+/*
+ * Copyright 2005-2025 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.openwms.core.values;
+
+import java.io.Serializable;
+import java.util.Arrays;
+
+/**
+ * A PriorityLevel is used to prioritize arbitrary kind of orders.
+ * 
+ * @author Heiko Scherrer
+ */
+public enum PriorityLevel implements Serializable {
+
+    /** Lowest priority. */
+    LOWEST(10),
+
+    /** Low priority. */
+    LOW(20),
+
+    /** Standard priority. */
+    NORMAL(30),
+
+    /** High priority. */
+    HIGH(40),
+
+    /** Highest priority. */
+    HIGHEST(50);
+
+    private int order;
+
+    /** Framework constructor.*/
+    PriorityLevel() {
+    }
+
+    /**
+     * Return the {@code PriorityLevel} of the given {@code priority}.
+     *
+     * @param priority String value
+     * @return Enum value
+     * @throws IllegalArgumentException if String value does not match one of the enum values
+     */
+    public static PriorityLevel of(String priority) {
+        return Arrays.stream(PriorityLevel.values())
+                .filter(p -> p.name().equals(priority))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException(String.format("A priority level of %s is not defined", priority)));
+    }
+
+    /**
+     * Convert the priority level as integer range into the corresponding enumeration.
+     *
+     * @param priority Integer mapped to ranges
+     * @return The PriorityLevel
+     */
+    public static PriorityLevel convert(int priority) {
+        if (priority < 11) {
+            return PriorityLevel.LOWEST;
+        } else if (priority < 21) {
+            return PriorityLevel.LOW;
+        } else if (priority < 31) {
+            return PriorityLevel.NORMAL;
+        } else if (priority < 41) {
+            return PriorityLevel.HIGH;
+        } else {
+            return PriorityLevel.HIGHEST;
+        }
+    }
+
+    /**
+     * Initializing constructor.
+     *
+     * @param order The order
+     */
+    PriorityLevel(int order) {
+        this.order = order;
+    }
+
+    /**
+     * Get the order.
+     * 
+     * @return the order.
+     */
+    public int getOrder() {
+        return order;
+    }
+}
+
+
+===== FILE: /mnt/data/org.openwms/org.openwms-master/org.openwms.core.util/src/main/java/org/openwms/core/values/package-info.java =====
+
+/*
+ * Copyright 2005-2025 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+/**
+ * Contains often used value classes.
+ */
+package org.openwms.core.values;
+
+===== FILE: /mnt/data/org.openwms/org.openwms-master/org.openwms.core.util/src/test/java/org/openwms/core/http/AbstractWebControllerTest.java =====
+
+/*
+ * Copyright 2005-2025 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.openwms.core.http;
+
+import org.junit.jupiter.api.Test;
+import org.springframework.mock.web.MockHttpServletRequest;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+/**
+ * A AbstractWebControllerTest.
+ *
+ * @author Heiko Scherrer
+ */
+class AbstractWebControllerTest {
+
+    @Test
+    void test_Location_header_without_forwarded() {
+
+        var request = new MockHttpServletRequest();
+        request.setServerName("172.19.0.4");
+        request.setRequestURI("/v1/rest");
+
+        var testee = new AbstractWebController(){};
+        assertThat(testee.getLocationURIForCreatedResource(request, "4711").toASCIIString()).isEqualTo("http://172.19.0.4:80/v1/rest/4711/");
+    }
+
+    @Test
+    void test_Location_header_with_forwarded() {
+
+        var request = new MockHttpServletRequest();
+        request.setServerName("172.19.0.4");
+        request.setRequestURI("/v1/rest");
+        request.addHeader("x-forwarded-for", "10.10.16.6");
+        request.addHeader("x-forwarded-proto", "http");
+        request.addHeader("x-forwarded-prefix", "/common");
+        request.addHeader("x-forwarded-port", "8086");
+        request.addHeader("x-forwarded-host", "hostname.local:8086");
+
+        var testee = new AbstractWebController(){};
+        assertThat(testee.getLocationURIForCreatedResource(request, "4711").toASCIIString()).isEqualTo("http://hostname.local:8086/common/v1/rest/4711/");
+    }
+}
+
+===== FILE: /mnt/data/org.openwms/org.openwms-master/org.openwms.core.util/src/test/java/org/openwms/core/lang/CollectionUtilTest.java =====
+
+/*
+ * Copyright 2005-2025 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.openwms.core.lang;
+
+import org.junit.jupiter.api.Test;
+
+import java.util.Arrays;
+import java.util.Collections;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+
+/**
+ * A CollectionUtilTest.
+ *
+ * @author Heiko Scherrer
+ */
+class CollectionUtilTest {
+
+    @Test void testGetFirstOrNullWithNull() {
+        assertNull(CollectionUtil.getFirstOrNull(null), "Calling with null should result in null");
+        assertNull(CollectionUtil.getFirstOrNull(Collections.emptyList()), "Calling with an empty list shall result in null");
+    }
+
+    @Test void testGetFirstOrNull() {
+        var strings = Arrays.asList("1", "2", "3");
+        assertEquals("1", CollectionUtil.getFirstOrNull(strings), "Calling with an list should result in the first element");
+    }
+
+    @Test void testAsHashMapWithNull() {
+        var strings = Arrays.asList("1", "2", "3");
+        assertEquals(Collections.EMPTY_MAP, CollectionUtil.asHashMap(null, null), "Calling with null should result in an empty map");
+        assertEquals(Collections.EMPTY_MAP, CollectionUtil.asHashMap(Collections.emptyList(), null), "Calling with an empty list shall result in an empty map");
+        assertEquals(Collections.EMPTY_MAP, CollectionUtil.asHashMap(strings, null), "Calling with a list and no extractor shall result in an empty map");
+    }
+}
+
+===== FILE: /mnt/data/org.openwms/org.openwms-master/org.openwms.core.util/src/test/java/org/openwms/core/time/TimeProviderTest.java =====
+
+/*
+ * Copyright 2005-2025 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.openwms.core.time;
+
+import org.junit.jupiter.api.Test;
+
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.util.Date;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.spy;
+
+/**
+ * A TimeProviderTest.
+ *
+ * @author Heiko Scherrer
+ */
+class TimeProviderTest {
+
+
+    /**
+     * This test verifies if the nowAsCurrentDate method returns the current date
+     * and time considering the system's configured timezone. The date generation
+     * process by the method is replicated inside the test to compare and validate
+     * the actual result.
+     */
+    @Test
+    void testNowAsCurrentDate() {
+        TimeProvider timeProvider = new TimeProvider() {};
+
+        // Call the method under test
+        Date actualDate = timeProvider.nowAsCurrentDate();
+
+        // Get the expected current date
+        Date expectedDate = Date.from(ZonedDateTime.of(LocalDateTime.now(ZoneId.systemDefault()), ZoneId.systemDefault()).toInstant());
+
+        // Since the date creation and method call can't happen simultaneously,
+        // there might be slight microseconds difference between actual and expected dates.
+        // The comparison should be upto the seconds to avoid test failure
+        long actualTimeInSec = actualDate.getTime() / 1000;
+        long expectedTimeInSec = expectedDate.getTime() / 1000;
+
+        assertEquals(expectedTimeInSec, actualTimeInSec, "The expected and actual dates should be equal");
+    }
+
+    @Test
+    void nowAsZuluZonedDateTime() {
+        var tp = spy(TimeProvider.class);
+
+
+        var zuluTime = tp.nowAsZuluZonedDateTime();
+        System.out.println(zuluTime);
+
+        ZonedDateTime nowGMTPlus1 = ZonedDateTime.now(ZoneId.of("GMT+1"));
+        Date.from(nowGMTPlus1.toInstant());
+        System.out.println(nowGMTPlus1);
+
+        assertTrue(zuluTime.isBefore(nowGMTPlus1));
+        assertTrue(zuluTime.plusMinutes(60).isAfter(nowGMTPlus1));
+    }
+
+    /**
+     * Trivial implementation of TimeProvider for testing purposes.
+     */
+    private final TimeProvider tp = new TimeProvider() {};
+
+    @Test
+    void testNowAsCurrentInstant() {
+        Instant testInstant = Instant.now();
+        Instant methodInstant = tp.nowAsCurrentInstant();
+
+        // We only check minutes as the precision of the test might result in a difference in milliseconds
+        assertEquals(testInstant.atZone(ZoneId.systemDefault()).getMinute(), methodInstant.atZone(ZoneId.systemDefault()).getMinute());
+    }
+}
+
