@@ -148,7 +148,7 @@ export const warehouseTools: Tool[] = [
     {
         id: "warehouse-search",
         name: "Consulta de Almacén",
-        description: "Localizar artículos y ver existencias en el almacén.",
+        description: "Localizar artículos, clientes y unidades de inventario.",
         href: "/dashboard/warehouse/search",
         icon: Search,
         bgColor: "bg-cyan-600",
@@ -156,7 +156,7 @@ export const warehouseTools: Tool[] = [
     },
     {
         id: "warehouse-assign",
-        name: "Asignar Ubicación a Cliente",
+        name: "Asignar Cliente a Ubicación",
         description: "Ligar clientes y productos a ubicaciones físicas.",
         href: "/dashboard/warehouse/assign",
         icon: PackagePlus,
@@ -172,6 +172,15 @@ export const warehouseTools: Tool[] = [
         bgColor: "bg-teal-600",
         textColor: "text-white",
     },
+    {
+        id: "warehouse-locations",
+        name: "Gestionar Ubicaciones",
+        description: "Definir la jerarquía y crear las ubicaciones físicas del almacén.",
+        href: "/dashboard/warehouse/locations",
+        icon: Map,
+        bgColor: "bg-indigo-500",
+        textColor: "text-white",
+    }
 ];
 
 
@@ -445,9 +454,9 @@ export const adminTools: Tool[] = [
       {
         id: "warehouse-settings",
         name: "Config. Almacenes",
-        description: "Definir niveles y estructura de ubicaciones físicas.",
+        description: "Ajustes de prefijos y comportamiento del módulo.",
         href: "/dashboard/admin/warehouse",
-        icon: Map,
+        icon: Wrench,
         bgColor: "bg-fuchsia-600",
         textColor: "text-white",
       },

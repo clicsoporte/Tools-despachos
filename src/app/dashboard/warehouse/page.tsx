@@ -33,6 +33,9 @@ export default function WarehouseDashboardPage() {
             if (tool.id === 'warehouse-units') {
                 return hasPermission('warehouse:units:manage');
             }
+             if (tool.id === 'warehouse-locations') {
+                return hasPermission('warehouse:locations:manage');
+            }
             return false;
         });
     }, [isAuthorized, hasPermission]);
