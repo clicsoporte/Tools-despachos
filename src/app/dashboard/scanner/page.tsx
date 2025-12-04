@@ -1,3 +1,4 @@
+
 /**
  * @fileoverview Page to display the results of a scanned inventory unit QR code.
  * If a `unitId` is provided in the URL, it fetches and displays the unit's data.
@@ -34,7 +35,8 @@ const renderLocationPath = (locationId: number | null | undefined, allLocations:
     
     while (current) {
         path.unshift(current);
-        current = current.parentId ? allLocations.find(l => l.id === current.parentId) : undefined;
+        const parentId = current.parentId;
+        current = parentId ? allLocations.find(l => l.id === parentId) : undefined;
     }
 
     return (
@@ -67,7 +69,13 @@ export default function ScannerResultPage() {
 
     useEffect(() => {
         setTitle("Resultado de Escaneo");
-        const unitId = searchParams?.get('unitId');
+        
+        if (!searchParams) {
+            router.replace('/dashboard/warehouse/search');
+            return;
+        }
+
+        const unitId = searchParams.get('unitId');
 
         if (!unitId) {
             router.replace('/dashboard/warehouse/search');

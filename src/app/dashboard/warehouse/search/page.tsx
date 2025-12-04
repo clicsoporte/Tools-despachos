@@ -1,3 +1,4 @@
+
 /**
  * @fileoverview Main warehouse search page.
  * This component allows users to search for products or customers and see a consolidated
@@ -31,7 +32,10 @@ type SearchableItem = {
   searchText: string;
 };
 
-type CombinedItem = {
+// Base type for product-centric or customer-centric results
+type SearchResultItem = {
+    isUnit: false;
+    unit: null;
     product: Product | null;
     physicalLocations: {
         path: React.ReactNode;
@@ -40,9 +44,24 @@ type CombinedItem = {
     }[];
     erpStock: StockInfo | null;
     client?: Customer | null;
-    isUnit?: boolean;
-    unit?: InventoryUnit | null;
-};
+}
+
+// Type specifically for unit search results
+type UnitResultItem = {
+    isUnit: true;
+    unit: InventoryUnit;
+    product: Product | null;
+    physicalLocations: {
+        path: React.ReactNode;
+        quantity?: undefined; // Units don't have separate quantities in this view
+        clientId?: undefined;
+    }[];
+    erpStock: StockInfo | null;
+    client?: undefined;
+}
+
+type CombinedItem = SearchResultItem | UnitResultItem;
+
 
 const normalizeText = (text: string | null | undefined): string => {
     if (!text) return "";
@@ -68,11 +87,7 @@ const renderLocationPath = (locationId: number | null | undefined, locations: Wa
     while (current) {
         path.unshift(current);
         const parentId = current.parentId;
-        if (parentId) {
-            current = locations.find(l => l.id === parentId);
-        } else {
-            current = undefined;
-        }
+        current = parentId ? locations.find(l => l.id === parentId) : undefined;
     }
 
     return (
@@ -184,7 +199,7 @@ export default function WarehouseSearchPage() {
                 } finally {
                     setIsLoading(false);
                 }
-            } else if (!normalizedSearch.startsWith('U')) {
+            } else if (!normalizedSearch.toUpperCase().startsWith('U')) {
                 setUnitSearchResult(null);
             }
         };
@@ -192,7 +207,7 @@ export default function WarehouseSearchPage() {
     }, [debouncedSearchTerm, exactMatch]);
 
 
-    const filteredItems = useMemo(() => {
+    const filteredItems = useMemo((): CombinedItem[] => {
         if (unitSearchResult) {
             const product = products.find(p => p.id === unitSearchResult.productId);
             const erpStock = stock.find(s => s.itemId === unitSearchResult.productId);
@@ -213,7 +228,6 @@ export default function WarehouseSearchPage() {
         let matchedIndexItems: SearchableItem[];
         
         if (exactMatch) {
-            // Unit code search is handled by the useEffect
             if (normalizedSearch.toUpperCase().startsWith('U')) return [];
             matchedIndexItems = searchIndex.filter(item => normalizeText(item.id) === normalizedSearch);
         } else {
@@ -227,7 +241,7 @@ export default function WarehouseSearchPage() {
         const relevantProductIds = new Set(matchedIndexItems.filter(i => i.type === 'product').map(i => i.id));
         const relevantCustomerIds = new Set(matchedIndexItems.filter(i => i.type === 'customer').map(i => i.id));
 
-        const groupedByItem: { [key: string]: CombinedItem } = {};
+        const groupedByItem: { [key: string]: SearchResultItem } = {};
 
         relevantProductIds.forEach(productId => {
             if (!groupedByItem[productId]) {
@@ -363,12 +377,12 @@ export default function WarehouseSearchPage() {
                                         <CardHeader>
                                             <CardTitle className="text-xl flex items-center gap-2">
                                                 <Package className="h-6 w-6 text-primary" />
-                                                {item.isUnit ? `Unidad ${item.unit?.unitCode} - ${item.product?.description}` : item.product?.description || 'Producto no encontrado'}
+                                                {item.isUnit ? `Unidad ${item.unit.unitCode} - ${item.product?.description}` : item.product?.description || 'Producto no encontrado'}
                                             </CardTitle>
                                             <CardDescription>
-                                                {item.isUnit ? `ID legible: ${item.unit?.humanReadableId || 'N/A'}` : `Código: ${item.product?.id}`}
+                                                {item.isUnit ? `ID legible: ${item.unit.humanReadableId || 'N/A'}` : `Código: ${item.product?.id}`}
                                             </CardDescription>
-                                             {item.client && (
+                                             {!item.isUnit && item.client && (
                                                 <div className="text-sm text-muted-foreground flex items-center gap-2 pt-1">
                                                     <User className="h-4 w-4"/>
                                                     <span>Inventario de Cliente: <strong>{item.client.name}</strong> ({item.client.id})</span>
@@ -388,7 +402,7 @@ export default function WarehouseSearchPage() {
                                                     </div>
                                                 )) : <p className="text-sm text-muted-foreground">Sin ubicaciones asignadas.</p>}
                                                 </div>
-                                                {item.unit?.notes && <p className="text-xs italic text-muted-foreground mt-2">&quot;{item.unit.notes}&quot;</p>}
+                                                {item.isUnit && item.unit?.notes && <p className="text-xs italic text-muted-foreground mt-2">&quot;{item.unit.notes}&quot;</p>}
                                             </div>
                                             <div>
                                                  <h4 className="font-semibold mb-2">Existencias por Bodega (ERP)</h4>
