@@ -330,7 +330,7 @@ export async function unassignItemFromLocation(itemLocationId: number): Promise<
 }
 
 // --- Inventory Unit Functions ---
-export async function addInventoryUnit(unit: Omit<InventoryUnit, 'id' | 'createdAt'>): Promise<InventoryUnit> {
+export async function addInventoryUnit(unit: Omit<InventoryUnit, 'id' | 'createdAt' | 'unitCode'>): Promise<InventoryUnit> {
     const db = await connectDb(WAREHOUSE_DB_FILE);
     
     const transaction = db.transaction(() => {
@@ -338,19 +338,18 @@ export async function addInventoryUnit(unit: Omit<InventoryUnit, 'id' | 'created
         const parsedSettings: WarehouseSettings = JSON.parse(settings.value);
         const prefix = parsedSettings.unitPrefix || 'U';
         const nextNumber = parsedSettings.nextUnitNumber || 1;
+        const unitCode = `${prefix}${String(nextNumber).padStart(5, '0')}`;
         
         const newUnitData = {
             ...unit,
             createdAt: new Date().toISOString(),
+            unitCode: unitCode
         };
         const info = db.prepare(
-            'INSERT INTO inventory_units (productId, humanReadableId, locationId, notes, createdAt, createdBy) VALUES (@productId, @humanReadableId, @locationId, @notes, @createdAt, @createdBy)'
+            'INSERT INTO inventory_units (unitCode, productId, humanReadableId, locationId, notes, createdAt, createdBy) VALUES (@unitCode, @productId, @humanReadableId, @locationId, @notes, @createdAt, @createdBy)'
         ).run(newUnitData);
         
         const newId = info.lastInsertRowid as number;
-        const unitCode = `${prefix}${String(nextNumber).padStart(5, '0')}`;
-        
-        db.prepare('UPDATE inventory_units SET unitCode = ? WHERE id = ?').run(unitCode, newId);
         
         // Atomically update the next number
         parsedSettings.nextUnitNumber = nextNumber + 1;
