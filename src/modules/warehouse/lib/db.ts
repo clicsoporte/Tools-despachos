@@ -42,6 +42,7 @@ export async function initializeWarehouseDb(db: import('better-sqlite3').Databas
 
         CREATE TABLE IF NOT EXISTS inventory_units (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
+            unitCode TEXT UNIQUE,
             productId TEXT NOT NULL,
             humanReadableId TEXT,
             locationId INTEGER,
@@ -161,6 +162,7 @@ export async function runWarehouseMigrations(db: import('better-sqlite3').Databa
         db.exec(`
             CREATE TABLE IF NOT EXISTS inventory_units (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
+                unitCode TEXT UNIQUE,
                 productId TEXT NOT NULL,
                 humanReadableId TEXT,
                 locationId INTEGER,
@@ -170,6 +172,13 @@ export async function runWarehouseMigrations(db: import('better-sqlite3').Databa
                 FOREIGN KEY (locationId) REFERENCES locations(id) ON DELETE SET NULL
             );
         `);
+    } else {
+        // Migration to add unitCode
+        const unitsTableInfo = db.prepare(`PRAGMA table_info(inventory_units)`).all() as { name: string }[];
+        if (!unitsTableInfo.some(c => c.name === 'unitCode')) {
+            console.log("MIGRATION (warehouse.db): Adding unitCode to inventory_units table.");
+            db.exec(`ALTER TABLE inventory_units ADD COLUMN unitCode TEXT UNIQUE;`);
+        }
     }
 }
 
@@ -272,10 +281,10 @@ export async function getWarehouseData(): Promise<{ locations: WarehouseLocation
 
     // Sanitize data to ensure they are plain objects for serialization
     return JSON.parse(JSON.stringify({
-        locations,
-        inventory,
+        locations: locations || [],
+        inventory: inventory || [],
         stock: stock || [], // Ensure stock is an array even if null
-        itemLocations,
+        itemLocations: itemLocations || [],
         warehouseSettings: warehouseSettings || { locationLevels: [], enablePhysicalInventoryTracking: false },
         stockSettings: stockSettings || { warehouses: [] },
     }));
@@ -308,14 +317,24 @@ export async function unassignItemFromLocation(itemLocationId: number): Promise<
 // --- Inventory Unit Functions ---
 export async function addInventoryUnit(unit: Omit<InventoryUnit, 'id' | 'createdAt'>): Promise<InventoryUnit> {
     const db = await connectDb(WAREHOUSE_DB_FILE);
-    const newUnit = {
-        ...unit,
-        createdAt: new Date().toISOString(),
-    };
-    const info = db.prepare(
-        'INSERT INTO inventory_units (productId, humanReadableId, locationId, notes, createdAt, createdBy) VALUES (@productId, @humanReadableId, @locationId, @notes, @createdAt, @createdBy)'
-    ).run(newUnit);
-    return db.prepare('SELECT * FROM inventory_units WHERE id = ?').get(info.lastInsertRowid) as InventoryUnit;
+    const transaction = db.transaction(() => {
+        const newUnitData = {
+            ...unit,
+            createdAt: new Date().toISOString(),
+        };
+        const info = db.prepare(
+            'INSERT INTO inventory_units (productId, humanReadableId, locationId, notes, createdAt, createdBy) VALUES (@productId, @humanReadableId, @locationId, @notes, @createdAt, @createdBy)'
+        ).run(newUnitData);
+        
+        const newId = info.lastInsertRowid as number;
+        const unitCode = `U${String(newId).padStart(5, '0')}`;
+        
+        db.prepare('UPDATE inventory_units SET unitCode = ? WHERE id = ?').run(unitCode, newId);
+        
+        return db.prepare('SELECT * FROM inventory_units WHERE id = ?').get(newId) as InventoryUnit;
+    });
+
+    return transaction();
 }
 
 export async function getInventoryUnits(): Promise<InventoryUnit[]> {
@@ -325,6 +344,11 @@ export async function getInventoryUnits(): Promise<InventoryUnit[]> {
 
 export async function getInventoryUnitById(id: number): Promise<InventoryUnit | null> {
     const db = await connectDb(WAREHOUSE_DB_FILE);
+    // Support searching by either the numeric ID or the prefixed code
+    const searchTerm = String(id);
+    if (searchTerm.toUpperCase().startsWith('U')) {
+        return db.prepare('SELECT * FROM inventory_units WHERE unitCode = ?').get(searchTerm.toUpperCase()) as InventoryUnit | null;
+    }
     return db.prepare('SELECT * FROM inventory_units WHERE id = ?').get(id) as InventoryUnit | null;
 }
 

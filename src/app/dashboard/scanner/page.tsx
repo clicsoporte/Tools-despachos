@@ -77,8 +77,9 @@ export default function ScannerResultPage() {
 
         const fetchData = async () => {
             try {
+                // The action now handles both numeric and prefixed IDs
                 const [fetchedUnit, allLocations] = await Promise.all([
-                    getInventoryUnitById(Number(unitId)),
+                    getInventoryUnitById(unitId),
                     getLocations(),
                 ]);
 
@@ -155,7 +156,7 @@ export default function ScannerResultPage() {
                             <QrCode className="h-8 w-8" />
                         </div>
                         <div>
-                             <CardTitle className="text-3xl">Unidad de Inventario: {unit.id}</CardTitle>
+                             <CardTitle className="text-3xl">Unidad de Inventario: {unit.unitCode}</CardTitle>
                              <CardDescription>Información detallada de la unidad escaneada.</CardDescription>
                         </div>
                     </div>

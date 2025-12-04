@@ -402,7 +402,7 @@ export type PurchaseRequest = {
       cost: number;
       salePrice: number;
       margin: number;
-  };
+  } | null;
 };
 
 export type UpdatePurchaseRequestPayload = Partial<Omit<PurchaseRequest, 'id' | 'consecutive' | 'requestDate' | 'status' | 'reopened' | 'requestedBy' | 'deliveredQuantity' | 'receivedInWarehouseBy' | 'receivedDate' | 'previousStatus' | 'lastModifiedAt' | 'lastModifiedBy' | 'hasBeenModified' | 'approvedBy' | 'lastStatusUpdateBy' | 'lastStatusUpdateNotes'>> & {
@@ -500,6 +500,19 @@ export type ItemLocation = {
     locationId: number;
     clientId?: string | null;
 };
+
+/** Represents a single physical unit of inventory (pallet, box, etc.) */
+export type InventoryUnit = {
+    id: number;
+    unitCode?: string; // e.g., 'U00001'
+    productId: string;
+    humanReadableId?: string; // e.g. a lot number
+    locationId: number | null;
+    notes?: string;
+    createdAt: string;
+    createdBy: string;
+};
+
 
 export type MovementLog = {
     id: number;

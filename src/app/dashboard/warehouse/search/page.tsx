@@ -171,32 +171,25 @@ export default function WarehouseSearchPage() {
         return [...productIndex, ...customerIndex];
     }, [products, customers]);
     
-    useEffect(() => {
-        const performSearch = async () => {
-            if (!debouncedSearchTerm) {
-                setUnitSearchResult(null);
-                return;
-            }
-            
-            const numericId = parseInt(debouncedSearchTerm, 10);
-            if (!isNaN(numericId)) {
+     useEffect(() => {
+        const performUnitSearch = async () => {
+            const normalizedSearch = debouncedSearchTerm.toUpperCase();
+            if (exactMatch && normalizedSearch.startsWith('U') && !isNaN(Number(normalizedSearch.substring(1)))) {
                 setIsLoading(true);
                 try {
-                    const unit = await getInventoryUnitById(numericId);
+                    const unit = await getInventoryUnitById(normalizedSearch);
                     setUnitSearchResult(unit);
                 } catch(e) {
                     setUnitSearchResult(null);
                 } finally {
                     setIsLoading(false);
                 }
-                return;
+            } else if (!normalizedSearch.startsWith('U')) {
+                setUnitSearchResult(null);
             }
-            
-            // If not a numeric ID, clear the unit search result
-            setUnitSearchResult(null);
         };
-        performSearch();
-    }, [debouncedSearchTerm]);
+        performUnitSearch();
+    }, [debouncedSearchTerm, exactMatch]);
 
 
     const filteredItems = useMemo(() => {
@@ -218,12 +211,10 @@ export default function WarehouseSearchPage() {
         const normalizedSearch = normalizeText(debouncedSearchTerm);
         
         let matchedIndexItems: SearchableItem[];
-
-        if (exactMatch && !isNaN(parseInt(normalizedSearch, 10))) {
-            return []; // Already handled by unit search
-        }
-
+        
         if (exactMatch) {
+            // Prioritize unit code search handled by the useEffect
+            if (normalizedSearch.toUpperCase().startsWith('U')) return [];
             matchedIndexItems = searchIndex.filter(item => normalizeText(item.id) === normalizedSearch);
         } else {
             const searchTerms = normalizedSearch.split(' ').filter(Boolean);
@@ -368,7 +359,7 @@ export default function WarehouseSearchPage() {
                                         <CardHeader>
                                             <CardTitle className="text-xl flex items-center gap-2">
                                                 <Package className="h-6 w-6 text-primary" />
-                                                {item.isUnit ? `Unidad ${item.unit?.id} - ${item.product?.description}` : item.product?.description || 'Producto no encontrado'}
+                                                {item.isUnit ? `Unidad ${item.unit?.unitCode} - ${item.product?.description}` : item.product?.description || 'Producto no encontrado'}
                                             </CardTitle>
                                             <CardDescription>
                                                 {item.isUnit ? `ID legible: ${item.unit?.humanReadableId || 'N/A'}` : `Código: ${item.product?.id}`}
