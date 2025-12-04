@@ -474,6 +474,8 @@ export type WarehouseLocationLevel = {
 export type WarehouseSettings = {
     locationLevels: WarehouseLocationLevel[];
     enablePhysicalInventoryTracking: boolean;
+    unitPrefix: string;
+    nextUnitNumber: number;
 };
 
 export type WarehouseLocation = {
@@ -859,3 +861,5 @@ export interface EmailSettings {
   recoveryEmailSubject: string;
   recoveryEmailBody: string;
 }
+
+    

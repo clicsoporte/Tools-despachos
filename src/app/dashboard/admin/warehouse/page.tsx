@@ -225,9 +225,32 @@ export default function WarehouseSettingsPage() {
                  <Card>
                     <CardHeader>
                         <CardTitle>Configuración General de Almacén</CardTitle>
-                        <CardDescription>Ajustes globales para el módulo de almacenes.</CardDescription>
+                        <CardDescription>Ajustes globales para el módulo de almacenes y unidades de inventario.</CardDescription>
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="space-y-6">
+                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="space-y-2">
+                                <Label htmlFor="unitPrefix">Prefijo de Unidad</Label>
+                                <Input
+                                    id="unitPrefix"
+                                    value={settings.unitPrefix || 'U'}
+                                    onChange={(e) => setSettings(prev => prev ? { ...prev, unitPrefix: e.target.value } : null)}
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="nextUnitNumber">Próximo Nº de Unidad</Label>
+                                <Input
+                                    id="nextUnitNumber"
+                                    type="number"
+                                    value={settings.nextUnitNumber || 1}
+                                    onChange={(e) => setSettings(prev => prev ? { ...prev, nextUnitNumber: Number(e.target.value) } : null)}
+                                />
+                            </div>
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                            Para reiniciar el consecutivo, cámbielo a 1 y asegúrese de usar un prefijo diferente para evitar duplicados.
+                        </p>
+                        <Separator />
                         <div className="flex items-center space-x-2">
                              <Switch
                                 id="enable-physical-inventory"
@@ -372,3 +395,5 @@ export default function WarehouseSettingsPage() {
         </main>
     );
 }
+
+    
