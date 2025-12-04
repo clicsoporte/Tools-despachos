@@ -35,7 +35,7 @@ const VERSION_FILE_PATH = path.join(process.cwd(), 'docs', 'VERSION.txt');
  * This function is called automatically when the main DB file is first created.
  * @param {Database.Database} db - The database instance to initialize.
  */
-async function initializeMainDatabase(db: import('better-sqlite3').Database) {
+function initializeMainDatabase(db: import('better-sqlite3').Database) {
     const schema = `
         CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY,
@@ -103,7 +103,11 @@ async function initializeMainDatabase(db: import('better-sqlite3').Database) {
     insertCompany.run({ ...initialCompany, quoterShowTaxId: initialCompany.quoterShowTaxId ? 1 : 0 });
     
     db.prepare(`INSERT OR IGNORE INTO api_settings (id, exchangeRateApi, haciendaExemptionApi, haciendaTributariaApi) VALUES (1, 'https://api.hacienda.go.cr/indicadores/tc/dolar', 'https://api.hacienda.go.cr/fe/ex?autorizacion=', 'https://api.hacienda.go.cr/fe/ae?identificacion=')`).run();
+    
     console.log(`Database ${DB_FILE} initialized.`);
+
+    // Run migrations after initialization
+    checkAndApplyMigrations(db);
 }
 
 /**
@@ -157,7 +161,7 @@ const dbDirectory = path.join(process.cwd(), 'dbs');
 
 const dbConnections = new Map<string, Database.Database>();
 
-// New helper function to run migrations asynchronously.
+// New helper function to run migrations safely.
 async function runMigrations(dbModule: DatabaseModule, db: Database.Database) {
     if (dbModule.migrationFn) {
         try {
@@ -170,18 +174,14 @@ async function runMigrations(dbModule: DatabaseModule, db: Database.Database) {
 
 /**
  * Establishes a connection to a specific SQLite database file.
- * This function is now ASYNCHRONOUS. It creates the database and runs initialization
+ * This function is ASYNCHRONOUS. It creates the database and runs initialization
  * and migrations if the file doesn't exist.
  * @param {string} dbFile - The filename of the database to connect to.
  * @param {boolean} [forceRecreate=false] - If true, deletes the existing DB file to start fresh.
- * @returns {Promise<Database.Database>} The database connection instance.
+ * @returns {Promise<Database.Database>} A promise that resolves to the database connection instance.
  */
 export async function connectDb(dbFile: string = DB_FILE, forceRecreate = false): Promise<Database.Database> {
     if (!forceRecreate && dbConnections.has(dbFile) && dbConnections.get(dbFile)!.open) {
-        const dbModule = DB_MODULES.find(m => m.dbFile === dbFile);
-        if (dbModule) {
-            await runMigrations(dbModule, dbConnections.get(dbFile)!);
-        }
         return dbConnections.get(dbFile)!;
     }
     
@@ -227,12 +227,13 @@ export async function connectDb(dbFile: string = DB_FILE, forceRecreate = false)
         if (!dbExists) {
             console.log(`Database ${dbFile} not found, creating and initializing...`);
             if (dbModule.initFn) {
-                await dbModule.initFn(db);
+                dbModule.initFn(db);
             }
+        } else {
+             // Always run migrations on an existing DB to check for updates.
+             await runMigrations(dbModule, db);
         }
-        await runMigrations(dbModule, db);
     }
-
 
     try {
         db.pragma('journal_mode = WAL');

@@ -1,4 +1,3 @@
-
 /**
  * @fileoverview The main entry point of the application, refactored as a Client Component.
  * This component now handles the logic for displaying the login form or the setup wizard
