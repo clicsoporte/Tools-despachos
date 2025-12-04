@@ -10,8 +10,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { usePageTitle } from '@/modules/core/hooks/usePageTitle';
-import { getInventoryUnitById } from '@/modules/warehouse/lib/actions';
-import { getLocations } from '@/modules/warehouse/lib/actions';
+import { getInventoryUnitById, getLocations } from '@/modules/warehouse/lib/actions';
 import type { InventoryUnit, Product, WarehouseLocation, StockInfo } from '@/modules/core/types';
 import { useAuth } from '@/modules/core/hooks/useAuth';
 import { AlertCircle, QrCode, Package, MapPin, Warehouse, ChevronRight, Building, Waypoints, Box, Layers, Loader2 } from 'lucide-react';
@@ -35,7 +34,7 @@ const renderLocationPath = (locationId: number | null | undefined, allLocations:
     
     while (current) {
         path.unshift(current);
-        current = allLocations.find(l => l.id === current.parentId);
+        current = current.parentId ? allLocations.find(l => l.id === current.parentId) : undefined;
     }
 
     return (
@@ -68,7 +67,7 @@ export default function ScannerResultPage() {
 
     useEffect(() => {
         setTitle("Resultado de Escaneo");
-        const unitId = searchParams.get('unitId');
+        const unitId = searchParams?.get('unitId');
 
         if (!unitId) {
             router.replace('/dashboard/warehouse/search');
@@ -77,7 +76,6 @@ export default function ScannerResultPage() {
 
         const fetchData = async () => {
             try {
-                // The action now handles both numeric and prefixed IDs
                 const [fetchedUnit, allLocations] = await Promise.all([
                     getInventoryUnitById(unitId),
                     getLocations(),
@@ -106,7 +104,7 @@ export default function ScannerResultPage() {
         fetchData();
     }, [setTitle, searchParams, products, stockLevels, router]);
 
-    if (!searchParams.get('unitId')) {
+    if (!searchParams?.get('unitId')) {
         return (
              <main className="flex-1 p-4 md:p-6 lg:p-8 flex items-center justify-center">
                 <div className="flex flex-col items-center gap-4 text-muted-foreground">

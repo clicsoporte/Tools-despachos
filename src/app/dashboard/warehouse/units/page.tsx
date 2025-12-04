@@ -24,6 +24,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
 import jsPDF from "jspdf";
 import QRCode from 'qrcode';
+import { format } from 'date-fns';
 
 const initialNewUnitState = {
     productId: '',
@@ -126,7 +127,7 @@ export default function ManageUnitsPage() {
             setInventoryUnits(prev => [createdUnit, ...prev]);
             
             toast({ title: "Unidad Creada", description: `Se ha creado la unidad para ${createdUnit.productId}.` });
-            logInfo('Inventory unit created', { unitId: createdUnit.id, productId: createdUnit.productId });
+            logInfo('Inventory unit created', { unitCode: createdUnit.unitCode, productId: createdUnit.productId });
             
             // Reset form
             setNewUnit(initialNewUnitState);
@@ -159,7 +160,7 @@ export default function ManageUnitsPage() {
         const product = products.find(p => p.id === unit.productId);
         const location = locations.find(l => l.id === unit.locationId);
         
-        const scanUrl = `${window.location.origin}/dashboard/scanner?unitId=${unit.id}`;
+        const scanUrl = `${window.location.origin}/dashboard/scanner?unitId=${unit.unitCode}`;
         
         try {
             const qrCodeDataUrl = await QRCode.toDataURL(scanUrl, { errorCorrectionLevel: 'H', width: 200 });
@@ -192,10 +193,10 @@ export default function ManageUnitsPage() {
             doc.text(`${location?.code || 'N/A'} - ${location?.name || 'N/A'}`, 0.2, 2.2);
 
             doc.setFontSize(8);
-            doc.text(`ID Interno: ${unit.id}`, 0.2, 2.8);
+            doc.text(`ID Interno: ${unit.unitCode}`, 0.2, 2.8);
             doc.text(`Creado: ${format(new Date(unit.createdAt), 'dd/MM/yyyy')}`, 1.8, 2.8);
 
-            doc.save(`etiqueta_unidad_${unit.id}.pdf`);
+            doc.save(`etiqueta_unidad_${unit.unitCode}.pdf`);
 
         } catch (err) {
             console.error(err);

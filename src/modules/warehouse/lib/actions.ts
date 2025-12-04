@@ -54,9 +54,9 @@ export const updateInventory = async(itemId: string, locationId: number, quantit
 
 // --- Simple Mode Actions ---
 export const getItemLocations = async (itemId: string): Promise<ItemLocation[]> => getItemLocationsServer(itemId);
-export async function assignItemToLocation(itemId: string, locationId: number): Promise<void> {
+export async function assignItemToLocation(itemId: string, locationId: number, clientId?: string | null): Promise<void> {
     await logInfo(`Item ${itemId} assigned to location ID ${locationId}.`);
-    return assignItemToLocationServer(itemId, locationId);
+    return assignItemToLocationServer(itemId, locationId, clientId);
 }
 export async function unassignItemFromLocation(itemLocationId: number): Promise<void> {
     await logInfo(`Item location mapping with ID ${itemLocationId} was removed.`);
@@ -68,7 +68,7 @@ export const getWarehouseData = async () => getWarehouseDataServer();
 export const getMovements = async (itemId?: string): Promise<MovementLog[]> => getMovementsServer(itemId);
 
 // --- Inventory Unit Actions ---
-export const addInventoryUnit = async (unit: Omit<InventoryUnit, 'id'|'createdAt'>): Promise<InventoryUnit> => addInventoryUnitServer(unit);
+export const addInventoryUnit = async (unit: Omit<InventoryUnit, 'id' | 'createdAt' | 'unitCode'>): Promise<InventoryUnit> => addInventoryUnitServer(unit);
 export const getInventoryUnits = async (): Promise<InventoryUnit[]> => getInventoryUnitsServer();
 export const deleteInventoryUnit = async (id: number): Promise<void> => deleteInventoryUnitServer(id);
-export const getInventoryUnitById = async (id: number): Promise<InventoryUnit | null> => getInventoryUnitByIdServer(id);
+export const getInventoryUnitById = async (id: string | number): Promise<InventoryUnit | null> => getInventoryUnitByIdServer(id);

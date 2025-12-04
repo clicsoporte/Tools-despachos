@@ -174,7 +174,7 @@ export default function WarehouseSearchPage() {
      useEffect(() => {
         const performUnitSearch = async () => {
             const normalizedSearch = debouncedSearchTerm.toUpperCase();
-            if (exactMatch && normalizedSearch.startsWith('U') && !isNaN(Number(normalizedSearch.substring(1)))) {
+            if (exactMatch && normalizedSearch.startsWith('U')) {
                 setIsLoading(true);
                 try {
                     const unit = await getInventoryUnitById(normalizedSearch);
@@ -213,7 +213,7 @@ export default function WarehouseSearchPage() {
         let matchedIndexItems: SearchableItem[];
         
         if (exactMatch) {
-            // Prioritize unit code search handled by the useEffect
+            // Unit code search is handled by the useEffect
             if (normalizedSearch.toUpperCase().startsWith('U')) return [];
             matchedIndexItems = searchIndex.filter(item => normalizeText(item.id) === normalizedSearch);
         } else {
@@ -233,6 +233,8 @@ export default function WarehouseSearchPage() {
             if (!groupedByItem[productId]) {
                 const product = products.find(p => p.id === productId);
                 groupedByItem[productId] = {
+                    isUnit: false,
+                    unit: null,
                     product: product || null,
                     physicalLocations: [],
                     erpStock: stock.find(s => s.itemId === productId) || null,
@@ -262,6 +264,8 @@ export default function WarehouseSearchPage() {
                 else if (itemLoc.clientId && relevantCustomerIds.has(itemLoc.clientId)) {
                     if (!groupedByItem[itemLoc.itemId]) {
                          groupedByItem[itemLoc.itemId] = {
+                            isUnit: false,
+                            unit: null,
                             product: product || { id: itemLoc.itemId, description: `Artículo ${itemLoc.itemId}`, active: 'S', cabys: '', classification: '', isBasicGood: 'N', lastEntry: '', notes: '', unit: '' },
                             physicalLocations: [],
                             erpStock: stock.find(s => s.itemId === itemLoc.itemId) || null,
@@ -354,8 +358,8 @@ export default function WarehouseSearchPage() {
                                     <Loader2 className="animate-spin h-8 w-8 text-muted-foreground"/>
                                 </div>
                             ) : filteredItems.length > 0 ? (
-                                filteredItems.map(item => (
-                                    <Card key={item.product?.id || item.unit?.id} className="w-full">
+                                filteredItems.map((item, itemIndex) => (
+                                    <Card key={item.product?.id || item.unit?.id || itemIndex} className="w-full">
                                         <CardHeader>
                                             <CardTitle className="text-xl flex items-center gap-2">
                                                 <Package className="h-6 w-6 text-primary" />
