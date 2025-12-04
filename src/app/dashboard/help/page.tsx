@@ -83,6 +83,7 @@ import {
   Palette,
   UserCheck,
   ShoppingBag,
+  QrCode,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -593,58 +594,56 @@ export default function HelpPage() {
         )
     },
      {
-        title: "Tutorial: Módulo de Almacenes",
+        title: "Guía Maestra: Módulo de Almacenes (v2.1)",
         icon: <Warehouse className="mr-4 h-6 w-6 text-cyan-600" />,
         content: (
              <div className="space-y-4">
-                <p>Este módulo te da control total sobre la ubicación física de tu inventario. Su configuración, aunque potente, puede ser confusa al principio. Se basa en un concepto de dos pasos: el <strong>Molde (La Jerarquía)</strong> y el <strong>Árbol (Las Ubicaciones Reales)</strong>.</p>
+                <p>Este módulo te da control total sobre la localización de tu inventario. Con la versión 2.1, hemos introducido la capacidad de rastrear tarimas o lotes individuales mediante códigos QR, centrando la funcionalidad en **dónde está algo**, no en cuánto hay.</p>
                 
-                <h4 className="font-semibold text-lg pt-2 border-t">Tutorial Práctico: Configurando tu Almacén desde Cero</h4>
-                <p>Usemos un ejemplo real: quieres registrar un inventario muy específico: un producto en la **posición horizontal A**, en el **nivel vertical 3** de un rack, y quieres saber si está al **Frente** o al **Fondo**.</p>
-
-                <h5 className="font-semibold">Paso 1: Crear el &quot;Molde&quot; (La Jerarquía)</h5>
-                <ol className="list-decimal space-y-2 pl-6">
-                    <li>Ve a <strong>Administración &gt; Config. Almacenes</strong>.</li>
-                    <li>En la sección <strong>&quot;Paso 1: Definir Jerarquía del Almacén&quot;</strong>, borra los niveles que existan y añade, en orden, los siguientes niveles exactos:
-                        <ul className="list-[circle] space-y-1 pl-5 mt-2">
-                            <li>Bodega</li>
-                            <li>Pasillo</li>
-                            <li>Rack</li>
-                            <li>Posición Horizontal</li>
-                            <li>Nivel Vertical</li>
-                            <li>Profundidad</li>
+                <h4 className="font-semibold text-lg pt-2 border-t">Flujo de Trabajo (Localización por Lote)</h4>
+                <p>La idea es simple: cada tarima física, caja o lote de producción recibe una etiqueta con un identificador único del sistema, representado por un código QR.</p>
+                <ol className="list-decimal space-y-4 pl-6">
+                    <li>
+                        <strong>Paso 1: Gestionar Ubicaciones Físicas.</strong>
+                        <ul className="list-[circle] space-y-2 pl-5 mt-2 text-sm">
+                            <li>Ve a <strong>Almacén &gt; Gestionar Ubicaciones</strong>. Aquí es donde construyes el mapa de tu bodega.</li>
+                            <li>Primero, defines la **Jerarquía** (el &quot;molde&quot;): le dices al sistema cómo organizas el espacio (ej: Bodega, Pasillo, Rack, Nivel).</li>
+                            <li>Luego, creas las **Ubicaciones Reales** (el &quot;árbol&quot;), anidando unas dentro de otras (ej: `Rack-01` dentro de `Pasillo-A`).</li>
                         </ul>
                     </li>
-                    <li>Haz clic en <strong>Guardar Niveles</strong>. Acabas de enseñarle al sistema cómo se estructura tu almacén.</li>
-                </ol>
-
-                <h5 className="font-semibold">Paso 2: Construir el &quot;Árbol&quot; (Las Ubicaciones Reales)</h5>
-                <p>Ahora, en la sección <strong>&quot;Paso 2: Crear Ubicaciones Reales&quot;</strong>, vamos a construir la ubicación física pieza por pieza:</p>
-                <ol className="list-decimal space-y-3 pl-6">
                     <li>
-                        <strong>Crear la Bodega:</strong> Añade una ubicación de tipo `Bodega` llamada `Bodega Principal` (código `BP`).
-                    </li>
-                     <li>
-                        <strong>Crear el Pasillo:</strong> Añade una ubicación de tipo `Pasillo` llamada `Pasillo A` (código `PA`), y asígnale como padre a `Bodega Principal`.
-                    </li>
-                     <li>
-                        <strong>Crear el Rack:</strong> Añade una ubicación de tipo `Rack` llamada `Rack 01` (código `R01`), y asígnale como padre a `Pasillo A`.
+                        <strong>Paso 2: Crear y Etiquetar Unidades de Inventario (<QrCode className="inline h-4 w-4"/>).</strong>
+                        <ul className="list-[circle] space-y-2 pl-5 mt-2 text-sm">
+                            <li>Ve a <strong>Almacén &gt; Gestión de Unidades</strong>. Esta es la nueva herramienta para digitalizar tus tarimas.</li>
+                            <li>Busca el producto (ej: Bolsa 4x4), asígnale un identificador legible (ej: LOTE-2410A) y selecciona la ubicación física donde **debería estar almacenado**.</li>
+                            <li>Al guardar, el sistema genera un **ID de Unidad** único (ej: `U00123`) y te permite **imprimir una etiqueta QR**.</li>
+                            <li>Esta etiqueta se pega en la tarima física.</li>
+                        </ul>
                     </li>
                     <li>
-                        <strong>Crear la Posición Horizontal:</strong> Añade una ubicación de tipo `Posición Horizontal` llamada `Posición 5` (código `H05`), con padre `Rack 01`.
-                    </li>
-                     <li>
-                        <strong>Crear el Nivel Vertical:</strong> Añade una ubicación de tipo `Nivel Vertical` llamada `Nivel 3` (código `V03`), con padre `Posición 5`.
-                    </li>
-                     <li>
-                        <strong>Crear la Profundidad (¡La clave!):</strong>
-                         <ul className="list-[circle] space-y-1 pl-5 mt-2 text-sm">
-                            <li>Añade una ubicación de tipo `Profundidad` llamada `Frente` (código `FTE`), con padre `Nivel 3`.</li>
-                             <li>Añade otra ubicación de tipo `Profundidad` llamada `Fondo` (código `FDO`), también con padre `Nivel 3`.</li>
+                        <strong>Paso 3: Escanear y Localizar.</strong>
+                        <ul className="list-[circle] space-y-2 pl-5 mt-2 text-sm">
+                            <li>Un bodeguero encuentra una tarima. Con la cámara de su celular, escanea el código QR.</li>
+                            <li>El sistema lo lleva a una página de resultados que le dice:
+                                <ul className="list-disc list-inside mt-1 pl-4">
+                                    <li>**Producto:** Bolsa 4x4 2mic.</li>
+                                    <li>**ID Humano:** LOTE-2410A.</li>
+                                    <li>**Ubicación Asignada:** Rack C-04 / Nivel 2 / Fondo.</li>
+                                </ul>
+                            </li>
+                             <li>
+                                <strong>Búsqueda Manual:</strong> Si el QR está dañado, el bodeguero puede ir a <strong>Almacén &gt; Consulta de Almacén</strong> e ingresar el ID de la unidad (ej: `U00123`) directamente en la barra de búsqueda para obtener el mismo resultado.
+                            </li>
                         </ul>
                     </li>
                 </ol>
-                <p className="pt-2">¡Listo! Ahora tienes dos ubicaciones finales y distintas (`.../FTE` y `.../FDO`). Al ir al módulo <strong>Asignar Inventario</strong>, puedes asignar una tarima de producto a `Frente` y otra a `Fondo`. Cuando busques el producto en la <strong>Consulta de Almacén</strong>, el sistema te mostrará claramente ambas ubicaciones con su ruta completa.</p>
+                <Alert variant="default" className="mt-4">
+                    <AlertTriangle className="h-4 w-4" />
+                    <AlertTitle>Importante: Localización, no Cantidad</AlertTitle>
+                    <AlertDescription>
+                        Recuerda que este sistema no lleva el conteo de unidades por tarima. Su objetivo es identificar un lote físico y decirte dónde debe estar guardado. El inventario total sigue siendo controlado por el ERP.
+                    </AlertDescription>
+                </Alert>
             </div>
         )
     },
@@ -740,7 +739,7 @@ export default function HelpPage() {
                     </div>
                     <div className="flex items-start gap-4">
                         <Map className="mt-1 h-6 w-6 text-teal-700 shrink-0" />
-                        <div><h4 className="font-semibold">Config. Almacenes</h4><p>Define la estructura jerárquica de tu bodega (Paso 1) y luego crea las ubicaciones físicas reales que la componen (Paso 2).</p></div>
+                        <div><h4 className="font-semibold">Config. Almacenes</h4><p>Ajusta el prefijo y consecutivo para las etiquetas de unidades de inventario, y habilita o deshabilita el control de inventario físico.</p></div>
                     </div>
                     <div className="flex items-start gap-4">
                         <Boxes className="mt-1 h-6 w-6 text-green-700 shrink-0" />
@@ -822,7 +821,22 @@ export default function HelpPage() {
         icon: <ListChecks className="mr-4 h-6 w-6 text-fuchsia-600" />,
         content: (
              <div className="space-y-4">
-                <h4 className="font-semibold text-lg">Versión 2.0.0 <Badge variant="secondary">Actual</Badge></h4>
+                <h4 className="font-semibold text-lg">Versión 2.1.0 <Badge variant="secondary">Actual</Badge></h4>
+                <p className="text-sm text-muted-foreground">Lanzamiento: Octubre 2024</p>
+                <ul className="list-disc space-y-3 pl-6">
+                    <li>
+                        <strong>Nueva Funcionalidad Mayor: Gestión de Unidades y Escaneo QR.</strong>
+                        <ul className="list-[circle] space-y-2 pl-5 mt-2 text-sm">
+                            <li>Se añadió una nueva herramienta en Almacén para crear **Unidades de Inventario** (lotes, tarimas) con identificadores únicos y etiquetas QR.</li>
+                            <li>La búsqueda en almacén ahora permite encontrar estas unidades por su ID único (ej: `U00123`).</li>
+                            <li>Se creó una nueva página de escaneo que, al leer un QR, muestra la información del producto y su ubicación asignada.</li>
+                        </ul>
+                    </li>
+                    <li>
+                        <strong>Reorganización del Módulo de Almacén:</strong> Las funciones operativas de gestión de ubicaciones y jerarquía se movieron del panel de Administración al sub-panel de Almacén, mejorando la coherencia y los permisos de usuario.
+                    </li>
+                </ul>
+                <h4 className="font-semibold text-lg pt-4 border-t">Versión 2.0.0</h4>
                 <p className="text-sm text-muted-foreground">Lanzamiento: Octubre 2024</p>
                 <ul className="list-disc space-y-3 pl-6">
                      <li>
@@ -830,15 +844,6 @@ export default function HelpPage() {
                     </li>
                      <li>
                         <strong>Mejora de Notificaciones:</strong> El sistema ahora envía notificaciones basadas en permisos de usuario (no solo por rol) e informa sobre nuevas sugerencias.
-                    </li>
-                     <li>
-                        <strong>Mejora de Usabilidad:</strong> La herramienta de Sugerencias de Compra ahora alerta sobre posibles solicitudes duplicadas. Se rediseñó el comportamiento de los filtros en los módulos principales para una mejor experiencia.
-                    </li>
-                    <li>
-                        <strong>Mejora Mayor de Estabilidad:</strong> Se corrigió un error de compilación crítico (`_document not found`) y se solucionaron reinicios inesperados en entornos de despliegue IIS.
-                    </li>
-                     <li>
-                        <strong>Mejora de Lógica:</strong> El Asistente de Costos ahora exporta a Excel un reporte idéntico a lo que se ve en pantalla.
                     </li>
                     <li>
                         <strong>Nueva Funcionalidad Mayor: Módulo de Analíticas, Centro de Ayuda y Recuperación de Contraseña.</strong>
