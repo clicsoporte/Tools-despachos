@@ -9,6 +9,7 @@ export const warehouseSchema: ExpectedSchema = {
     'locations': ['id', 'name', 'code', 'type', 'parentId'],
     'inventory': ['id', 'itemId', 'locationId', 'quantity', 'lastUpdated'],
     'item_locations': ['id', 'itemId', 'locationId', 'clientId'],
+    'inventory_units': ['id', 'productId', 'humanReadableId', 'locationId', 'notes', 'createdAt', 'createdBy'],
     'movements': ['id', 'itemId', 'quantity', 'fromLocationId', 'toLocationId', 'timestamp', 'userId', 'notes'],
     'warehouse_config': ['key', 'value'],
 };

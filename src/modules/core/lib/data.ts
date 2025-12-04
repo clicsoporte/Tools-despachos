@@ -1,4 +1,3 @@
-
 /**
  * @fileoverview This file contains the initial or default data for the application.
  * This data is used to populate the database on its first run.
@@ -36,6 +35,7 @@ import {
   Mail,
   UserCheck,
   Truck,
+  QrCode,
 } from "lucide-react";
 
 /**
@@ -117,7 +117,7 @@ export const mainTools: Tool[] = [
    {
     id: "warehouse",
     name: "Almacén",
-    description: "Consultar ubicaciones, existencias y asignar inventario.",
+    description: "Consultar ubicaciones, gestionar unidades y asignar inventario.",
     href: "/dashboard/warehouse",
     icon: Warehouse,
     bgColor: "bg-cyan-600",
@@ -156,11 +156,20 @@ export const warehouseTools: Tool[] = [
     },
     {
         id: "warehouse-assign",
-        name: "Asignar Inventario",
+        name: "Asignar Ubicación a Cliente",
         description: "Ligar clientes y productos a ubicaciones físicas.",
         href: "/dashboard/warehouse/assign",
         icon: PackagePlus,
         bgColor: "bg-fuchsia-600",
+        textColor: "text-white",
+    },
+    {
+        id: "warehouse-units",
+        name: "Gestión de Unidades",
+        description: "Crear y etiquetar unidades de inventario (lotes/tarimas).",
+        href: "/dashboard/warehouse/units",
+        icon: QrCode,
+        bgColor: "bg-teal-600",
         textColor: "text-white",
     },
 ];
@@ -254,6 +263,7 @@ export const initialRoles: Role[] = [
         "warehouse:access",
         "warehouse:inventory:assign",
         "warehouse:locations:manage",
+        "warehouse:units:manage",
         "hacienda:query",
     ],
   },

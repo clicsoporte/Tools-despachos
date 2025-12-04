@@ -4,7 +4,7 @@
 "use server";
 
 import { connectDb, getAllStock as getAllStockFromMain, getStockSettings as getStockSettingsFromMain } from '@/modules/core/lib/db';
-import type { WarehouseLocation, WarehouseInventoryItem, MovementLog, WarehouseSettings, StockSettings, StockInfo, ItemLocation } from '@/modules/core/types';
+import type { WarehouseLocation, WarehouseInventoryItem, MovementLog, WarehouseSettings, StockSettings, StockInfo, ItemLocation, InventoryUnit } from '@/modules/core/types';
 import { logError } from '@/modules/core/lib/logger';
 
 const WAREHOUSE_DB_FILE = 'warehouse.db';
@@ -38,6 +38,17 @@ export async function initializeWarehouseDb(db: import('better-sqlite3').Databas
             clientId TEXT,
             FOREIGN KEY (locationId) REFERENCES locations(id) ON DELETE CASCADE,
             UNIQUE (itemId, locationId, clientId)
+        );
+
+        CREATE TABLE IF NOT EXISTS inventory_units (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            productId TEXT NOT NULL,
+            humanReadableId TEXT,
+            locationId INTEGER,
+            notes TEXT,
+            createdAt TEXT NOT NULL,
+            createdBy TEXT NOT NULL,
+            FOREIGN KEY (locationId) REFERENCES locations(id) ON DELETE SET NULL
         );
 
         CREATE TABLE IF NOT EXISTS movements (
@@ -142,6 +153,23 @@ export async function runWarehouseMigrations(db: import('better-sqlite3').Databa
                 db.exec(`ALTER TABLE locations_new RENAME TO locations;`);
             })();
         }
+    }
+
+    const inventoryUnitsTable = db.prepare(`SELECT name FROM sqlite_master WHERE type='table' AND name='inventory_units'`).get();
+    if (!inventoryUnitsTable) {
+        console.log("MIGRATION (warehouse.db): Creating inventory_units table.");
+        db.exec(`
+            CREATE TABLE IF NOT EXISTS inventory_units (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                productId TEXT NOT NULL,
+                humanReadableId TEXT,
+                locationId INTEGER,
+                notes TEXT,
+                createdAt TEXT NOT NULL,
+                createdBy TEXT NOT NULL,
+                FOREIGN KEY (locationId) REFERENCES locations(id) ON DELETE SET NULL
+            );
+        `);
     }
 }
 
@@ -275,4 +303,37 @@ export async function assignItemToLocation(itemId: string, locationId: number, c
 export async function unassignItemFromLocation(itemLocationId: number): Promise<void> {
     const db = await connectDb(WAREHOUSE_DB_FILE);
     db.prepare('DELETE FROM item_locations WHERE id = ?').run(itemLocationId);
+}
+
+// --- Inventory Unit Functions ---
+export async function addInventoryUnit(unit: Omit<InventoryUnit, 'id' | 'createdAt'>): Promise<InventoryUnit> {
+    const db = await connectDb(WAREHOUSE_DB_FILE);
+    const newUnit = {
+        ...unit,
+        createdAt: new Date().toISOString(),
+    };
+    const info = db.prepare(
+        'INSERT INTO inventory_units (productId, humanReadableId, locationId, notes, createdAt, createdBy) VALUES (@productId, @humanReadableId, @locationId, @notes, @createdAt, @createdBy)'
+    ).run(newUnit);
+    return db.prepare('SELECT * FROM inventory_units WHERE id = ?').get(info.lastInsertRowid) as InventoryUnit;
+}
+
+export async function getInventoryUnits(): Promise<InventoryUnit[]> {
+    const db = await connectDb(WAREHOUSE_DB_FILE);
+    return db.prepare('SELECT * FROM inventory_units ORDER BY createdAt DESC LIMIT 100').all() as InventoryUnit[];
+}
+
+export async function getInventoryUnitById(id: number): Promise<InventoryUnit | null> {
+    const db = await connectDb(WAREHOUSE_DB_FILE);
+    return db.prepare('SELECT * FROM inventory_units WHERE id = ?').get(id) as InventoryUnit | null;
+}
+
+export async function deleteInventoryUnit(id: number): Promise<void> {
+    const db = await connectDb(WAREHOUSE_DB_FILE);
+    db.prepare('DELETE FROM inventory_units WHERE id = ?').run(id);
+}
+
+export async function updateInventoryUnitLocation(id: number, locationId: number): Promise<void> {
+    const db = await connectDb(WAREHOUSE_DB_FILE);
+    db.prepare('UPDATE inventory_units SET locationId = ? WHERE id = ?').run(locationId, id);
 }

@@ -1,4 +1,3 @@
-
 /**
  * @fileoverview The sub-dashboard page for the warehouse section.
  * It displays a grid of available warehouse tools like search and assignment.
@@ -30,6 +29,9 @@ export default function WarehouseDashboardPage() {
             }
             if (tool.id === 'warehouse-assign') {
                 return hasPermission('warehouse:inventory:assign');
+            }
+            if (tool.id === 'warehouse-units') {
+                return hasPermission('warehouse:units:manage');
             }
             return false;
         });

@@ -26,7 +26,8 @@ const config: Config = {
     'bg-green-600',
     'bg-green-700',
     'bg-blue-600',
-    'bg-sky-600'
+    'bg-sky-600',
+    'bg-teal-600'
   ],
   theme: {
     extend: {

@@ -1,4 +1,3 @@
-
 /**
  * @fileoverview This file defines the core TypeScript types used throughout the application.
  * Using centralized types helps ensure data consistency and provides autocompletion benefits.
@@ -501,6 +500,18 @@ export type ItemLocation = {
     locationId: number;
     clientId?: string | null;
 };
+
+/** Represents a single physical unit of inventory (pallet, box, etc.) */
+export type InventoryUnit = {
+    id: number;
+    productId: string;
+    humanReadableId?: string; // e.g. a lot number
+    locationId: number | null;
+    notes?: string;
+    createdAt: string;
+    createdBy: string;
+};
+
 
 export type MovementLog = {
     id: number;

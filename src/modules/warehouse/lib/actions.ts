@@ -19,8 +19,12 @@ import {
     unassignItemFromLocation as unassignItemFromLocationServer,
     getWarehouseData as getWarehouseDataServer,
     getMovements as getMovementsServer,
+    addInventoryUnit as addInventoryUnitServer,
+    getInventoryUnits as getInventoryUnitsServer,
+    deleteInventoryUnit as deleteInventoryUnitServer,
+    getInventoryUnitById as getInventoryUnitByIdServer,
 } from './db';
-import type { WarehouseSettings, WarehouseLocation, WarehouseInventoryItem, MovementLog, ItemLocation } from '@/modules/core/types';
+import type { WarehouseSettings, WarehouseLocation, WarehouseInventoryItem, MovementLog, ItemLocation, InventoryUnit } from '@/modules/core/types';
 import { logInfo, logWarn } from '@/modules/core/lib/logger';
 
 export const getWarehouseSettings = async (): Promise<WarehouseSettings> => getWarehouseSettingsServer();
@@ -62,3 +66,9 @@ export async function unassignItemFromLocation(itemLocationId: number): Promise<
 // --- Page-specific data loaders ---
 export const getWarehouseData = async () => getWarehouseDataServer();
 export const getMovements = async (itemId?: string): Promise<MovementLog[]> => getMovementsServer(itemId);
+
+// --- Inventory Unit Actions ---
+export const addInventoryUnit = async (unit: Omit<InventoryUnit, 'id'|'createdAt'>): Promise<InventoryUnit> => addInventoryUnitServer(unit);
+export const getInventoryUnits = async (): Promise<InventoryUnit[]> => getInventoryUnitsServer();
+export const deleteInventoryUnit = async (id: number): Promise<void> => deleteInventoryUnitServer(id);
+export const getInventoryUnitById = async (id: number): Promise<InventoryUnit | null> => getInventoryUnitByIdServer(id);
