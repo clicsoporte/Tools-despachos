@@ -225,7 +225,7 @@ export default function ManageLocationsPage() {
                             </AccordionTrigger>
                             <AccordionContent className="p-6 pt-0">
                                 <CardDescription className="mb-4">
-                                    Define los **nombres** para cada nivel de tu organización. Esto crea la plantilla para construir tu almacén. Por ejemplo: Bodega, Pasillo, Rack, Estante, Casilla.
+                                    Define los **nombres** para cada nivel de tu organización. Esto crea la plantilla para construir tu almacén. Por ejemplo: 'Bodega', 'Pasillo', 'Rack', 'Estante', 'Casilla'.
                                 </CardDescription>
                                 <div className="space-y-4">
                                     {settings.locationLevels?.map((level, index) => (
@@ -261,7 +261,7 @@ export default function ManageLocationsPage() {
                             <AccordionContent className="p-6 pt-0">
                                 <div className="flex items-center justify-between mb-4">
                                     <CardDescription>
-                                        Usa los niveles que definiste en el Paso 1 para construir la estructura real de tu almacén. Por ejemplo, crea una "Bodega" llamada "Bodega Principal", luego un "Pasillo" dentro de ella.
+                                        Usa los niveles que definiste en el Paso 1 para construir la estructura real de tu almacén. Por ejemplo, crea una 'Bodega' llamada 'Bodega Principal', luego un 'Pasillo' dentro de ella.
                                     </CardDescription>
                                     <Button onClick={() => openLocationForm()}>
                                         <PlusCircle className="mr-2"/> Añadir Ubicación
@@ -327,7 +327,7 @@ export default function ManageLocationsPage() {
                   <AlertDialog open={!!locationToDelete} onOpenChange={(open) => !open && setLocationToDelete(null)}>
                     <AlertDialogContent>
                         <AlertDialogHeader>
-                            <AlertDialogTitle>¿Eliminar "{locationToDelete?.name}"?</AlertDialogTitle>
+                            <AlertDialogTitle>¿Eliminar &quot;{locationToDelete?.name}&quot;?</AlertDialogTitle>
                             <AlertDialogDescription>
                                 Esta acción no se puede deshacer. Se eliminará la ubicación y TODAS las ubicaciones hijas que contenga. 
                                 El inventario asociado no se eliminará, pero quedará sin ubicación.
