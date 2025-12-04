@@ -1,4 +1,3 @@
-
 /**
  * @fileoverview Server-side functions for the warehouse database.
  */
@@ -6,6 +5,7 @@
 
 import { connectDb, getAllStock as getAllStockFromMain, getStockSettings as getStockSettingsFromMain } from '@/modules/core/lib/db';
 import type { WarehouseLocation, WarehouseInventoryItem, MovementLog, WarehouseSettings, StockSettings, StockInfo, ItemLocation } from '@/modules/core/types';
+import { logError } from '@/modules/core/lib/logger';
 
 const WAREHOUSE_DB_FILE = 'warehouse.db';
 
@@ -18,7 +18,7 @@ export async function initializeWarehouseDb(db: import('better-sqlite3').Databas
             code TEXT UNIQUE NOT NULL,
             type TEXT NOT NULL, -- 'building', 'zone', 'rack', 'shelf', 'bin'
             parentId INTEGER,
-            FOREIGN KEY (parentId) REFERENCES locations(id) ON DELETE CASCADE
+            FOREIGN KEY (parentId) REFERENCES locations(id) ON DELETE SET NULL
         );
 
         CREATE TABLE IF NOT EXISTS inventory (
@@ -115,6 +115,34 @@ export async function runWarehouseMigrations(db: import('better-sqlite3').Databa
             );
         `);
     }
+
+    // Migration to handle parentId on DELETE
+    const locationsTableInfo = db.prepare(`PRAGMA table_info(locations)`).all() as { name: string, type: string }[];
+    if (!locationsTableInfo.find(c => c.name === 'parentId')) {
+        db.exec(`ALTER TABLE locations ADD COLUMN parentId INTEGER REFERENCES locations(id) ON DELETE SET NULL;`);
+    } else {
+        // Recreate table to add ON DELETE SET NULL if not present. This is a bit risky but necessary for SQLite.
+        const foreignKeyList = db.prepare(`PRAGMA foreign_key_list(locations)`).all() as any[];
+        const parentFK = foreignKeyList.find(fk => fk.from === 'parentId');
+        if (parentFK && parentFK.on_delete !== 'SET NULL') {
+            console.log("MIGRATION (warehouse.db): Recreating 'locations' table to update parentId's ON DELETE action.");
+            db.transaction(() => {
+                db.exec(`
+                    CREATE TABLE locations_new (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        name TEXT NOT NULL,
+                        code TEXT UNIQUE NOT NULL,
+                        type TEXT NOT NULL,
+                        parentId INTEGER,
+                        FOREIGN KEY (parentId) REFERENCES locations(id) ON DELETE SET NULL
+                    );
+                `);
+                db.exec(`INSERT INTO locations_new SELECT id, name, code, type, parentId FROM locations;`);
+                db.exec(`DROP TABLE locations;`);
+                db.exec(`ALTER TABLE locations_new RENAME TO locations;`);
+            })();
+        }
+    }
 }
 
 export async function getWarehouseSettings(): Promise<WarehouseSettings> {
@@ -154,6 +182,7 @@ export async function saveWarehouseSettings(settings: WarehouseSettings): Promis
 
 export async function getLocations(): Promise<WarehouseLocation[]> {
     const db = await connectDb(WAREHOUSE_DB_FILE);
+    // Order by parentId then name to facilitate tree building on the client
     return db.prepare('SELECT * FROM locations ORDER BY parentId, name').all() as WarehouseLocation[];
 }
 
@@ -175,7 +204,8 @@ export async function updateLocation(location: WarehouseLocation): Promise<Wareh
 
 export async function deleteLocation(id: number): Promise<void> {
     const db = await connectDb(WAREHOUSE_DB_FILE);
-    // Note: ON DELETE CASCADE will handle child locations, item_locations and inventory.
+    // ON DELETE SET NULL on parentId will handle re-parenting children to the root.
+    // ON DELETE CASCADE on other tables will handle inventory/item_locations.
     db.prepare('DELETE FROM locations WHERE id = ?').run(id);
 }
 

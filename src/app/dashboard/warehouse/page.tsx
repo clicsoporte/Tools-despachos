@@ -2,7 +2,7 @@
  * @fileoverview Main warehouse search page.
  * This component allows users to search for products or customers and see a consolidated
  * view of their assigned physical locations (from the warehouse module) and their
- * stock levels from the ERP system.
+ * stock levels from the ERP system. This version is mobile-first and uses a hierarchical display.
  */
 'use client';
 
@@ -16,7 +16,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { getWarehouseData } from '@/modules/warehouse/lib/actions';
 import { syncAllData } from '@/modules/core/lib/actions';
 import type { WarehouseLocation, WarehouseInventoryItem, Product, StockInfo, StockSettings, ItemLocation, Customer } from '@/modules/core/types';
-import { Search, MapPin, Package, Building, Waypoints, Box, Layers, Warehouse as WarehouseIcon, RefreshCw, Loader2, Info, User } from 'lucide-react';
+import { Search, MapPin, Package, Building, Waypoints, Box, Layers, Warehouse as WarehouseIcon, RefreshCw, Loader2, Info, User, ChevronRight } from 'lucide-react';
 import { useDebounce } from 'use-debounce';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/modules/core/hooks/use-toast';
@@ -33,7 +33,7 @@ type CombinedItem = {
     product: Product | null;
     physicalLocations: {
         path: React.ReactNode;
-        quantity?: number; // Only present in advanced mode
+        quantity?: number;
         clientId?: string;
     }[];
     erpStock: StockInfo | null;
@@ -45,11 +45,53 @@ const normalizeText = (text: string | null | undefined): string => {
     return text.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 };
 
+const LocationIcon = ({ type }: { type: WarehouseLocation['type'] }) => {
+    switch (type) {
+        case 'building': return <Building className="h-5 w-5 text-muted-foreground" />;
+        case 'zone': return <Waypoints className="h-5 w-5 text-muted-foreground" />;
+        case 'rack': return <Box className="h-5 w-5 text-muted-foreground" />;
+        case 'shelf': return <Layers className="h-5 w-5 text-muted-foreground" />;
+        case 'bin': return <div className="h-5 w-5 text-muted-foreground font-bold text-center">B</div>;
+        default: return <MapPin className="h-5 w-5 text-muted-foreground" />;
+    }
+};
+
+const renderLocationPath = (locationId: number | null | undefined, locations: WarehouseLocation[]) => {
+    if (!locationId) return <span className="text-muted-foreground italic">Sin ubicación</span>;
+    const path: WarehouseLocation[] = [];
+    let current: WarehouseLocation | undefined = locations.find(l => l.id === locationId);
+    
+    while (current) {
+        path.unshift(current);
+        const parentId = current.parentId;
+        if (parentId) {
+            current = locations.find(l => l.id === parentId);
+        } else {
+            current = undefined;
+        }
+    }
+
+    return (
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground">
+            {path.map((loc, index) => (
+                <React.Fragment key={loc.id}>
+                    <div className="flex items-center gap-1">
+                        <LocationIcon type={loc.type} />
+                        <span>{loc.name}</span>
+                    </div>
+                    {index < path.length - 1 && <ChevronRight className="h-4 w-4 text-muted-foreground/50 shrink-0" />}
+                </React.Fragment>
+            ))}
+        </div>
+    );
+};
+
+
 export default function WarehousePage() {
     useAuthorization(['warehouse:access']);
     const { setTitle } = usePageTitle();
     const { toast } = useToast();
-    const { companyData, products, customers } = useAuth(); // Get master data from context
+    const { companyData, products, customers } = useAuth();
 
     const [isLoading, setIsLoading] = useState(true);
     const [isRefreshing, setIsRefreshing] = useState(false);
@@ -95,7 +137,6 @@ export default function WarehousePage() {
                 title: "Datos Actualizados",
                 description: `Los datos del ERP se han sincronizado. La página se recargará para reflejar los cambios.`
             });
-            // A full reload is simpler here to ensure all contexts and states are updated
             window.location.reload();
         } catch (error: any) {
             logError("Error during manual data refresh", { error: error.message });
@@ -109,46 +150,6 @@ export default function WarehousePage() {
         }
     };
 
-    const LocationIcon = ({ type }: { type: WarehouseLocation['type'] }) => {
-        switch (type) {
-            case 'building': return <Building className="h-5 w-5 text-muted-foreground" />;
-            case 'zone': return <Waypoints className="h-5 w-5 text-muted-foreground" />;
-            case 'rack': return <Box className="h-5 w-5 text-muted-foreground" />;
-            case 'shelf': return <Layers className="h-5 w-5 text-muted-foreground" />;
-            case 'bin': return <div className="h-5 w-5 text-muted-foreground font-bold text-center">B</div>;
-            default: return <MapPin className="h-5 w-5 text-muted-foreground" />;
-        }
-    };
-    
-    const renderLocationPath = useCallback((locationId?: number | null) => {
-        if (!locationId) return 'N/A';
-        const path: WarehouseLocation[] = [];
-        let current: WarehouseLocation | undefined = locations.find(l => l.id === locationId);
-        
-        while (current) {
-            path.unshift(current);
-            const parentId = current.parentId;
-            if (parentId) {
-                current = locations.find(l => l.id === parentId);
-            } else {
-                current = undefined;
-            }
-        }
-
-        return (
-            <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground">
-                {path.map((loc, index) => (
-                    <div key={loc.id} className="flex items-center gap-1">
-                        <LocationIcon type={loc.type} />
-                        <span>{loc.name}</span>
-                        {index < path.length - 1 && <span className="hidden sm:inline">/</span>}
-                    </div>
-                ))}
-            </div>
-        );
-    }, [locations]);
-
-    // Create a unified, lightweight search index once.
     const searchIndex = useMemo(() => {
         const productIndex: SearchableItem[] = products.map(p => ({
             id: p.id,
@@ -169,7 +170,6 @@ export default function WarehousePage() {
         const searchTerms = normalizeText(debouncedSearchTerm).split(' ').filter(Boolean);
         if (searchTerms.length === 0) return [];
         
-        // 1. Fast filter on the lightweight index
         const matchedIndexItems = searchIndex.filter(item => 
             searchTerms.every(term => item.searchText.includes(term))
         );
@@ -179,7 +179,6 @@ export default function WarehousePage() {
 
         const groupedByItem: { [key: string]: CombinedItem } = {};
 
-        // 2. Hydrate product results
         relevantProductIds.forEach(productId => {
             if (!groupedByItem[productId]) {
                 const product = products.find(p => p.id === productId);
@@ -191,12 +190,11 @@ export default function WarehousePage() {
             }
         });
         
-        // 3. Hydrate locations
         if (warehouseSettings?.enablePhysicalInventoryTracking) {
              inventory.forEach(item => {
                 if (groupedByItem[item.itemId]) {
                     groupedByItem[item.itemId].physicalLocations.push({
-                        path: renderLocationPath(item.locationId),
+                        path: renderLocationPath(item.locationId, locations),
                         quantity: item.quantity
                     });
                 }
@@ -207,7 +205,7 @@ export default function WarehousePage() {
                 
                 if (groupedByItem[itemLoc.itemId]) {
                     groupedByItem[itemLoc.itemId].physicalLocations.push({
-                        path: renderLocationPath(itemLoc.locationId),
+                        path: renderLocationPath(itemLoc.locationId, locations),
                         clientId: itemLoc.clientId || undefined
                     });
                 } 
@@ -221,7 +219,7 @@ export default function WarehousePage() {
                         };
                     }
                     groupedByItem[itemLoc.itemId].physicalLocations.push({
-                        path: renderLocationPath(itemLoc.locationId),
+                        path: renderLocationPath(itemLoc.locationId, locations),
                         clientId: itemLoc.clientId || undefined
                     });
                 }
@@ -230,7 +228,7 @@ export default function WarehousePage() {
         
         return Object.values(groupedByItem).sort((a, b) => (a.product?.id || '').localeCompare(b.product?.id || ''));
 
-    }, [debouncedSearchTerm, searchIndex, products, customers, inventory, itemLocations, stock, warehouseSettings, renderLocationPath]);
+    }, [debouncedSearchTerm, searchIndex, products, customers, inventory, itemLocations, stock, warehouseSettings, locations]);
 
     if (isLoading || !warehouseSettings) {
         return (
