@@ -1,0 +1,480 @@
+
+======================================================================
+  ARQUITECTURA PROPUESTA: MÓDULO DE CONSULTA DE ALMACÉN (v2)
+======================================================================
+
+Este documento contiene todo el código necesario para refactorizar el módulo
+de "Consulta Almacén" a un sistema jerárquico (estilo árbol), optimizado
+para dispositivos móviles.
+
+----------------------------------------------------------------------
+-- PASO 1: LÓGICA DE BASE DE DATOS (warehouse/lib/db.ts)
+----------------------------------------------------------------------
+-- PROPÓSITO: Actualizar la tabla 'locations' para soportar una
+-- estructura de árbol, añadiendo la columna 'parentId'. También se
+-- actualizan las funciones CRUD para manejar esta nueva relación.
+----------------------------------------------------------------------
+
+"use server";
+
+import { connectDb, getAllStock as getAllStockFromMain, getStockSettings as getStockSettingsFromMain } from '@/modules/core/lib/db';
+import type { WarehouseLocation, WarehouseInventoryItem, MovementLog, WarehouseSettings, StockSettings, StockInfo, ItemLocation } from '@/modules/core/types';
+import { logError } from '@/modules/core/lib/logger';
+
+const WAREHOUSE_DB_FILE = 'warehouse.db';
+
+export async function initializeWarehouseDb(db: import('better-sqlite3').Database) {
+    const schema = `
+        CREATE TABLE IF NOT EXISTS locations (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            code TEXT UNIQUE NOT NULL,
+            type TEXT NOT NULL,
+            parentId INTEGER,
+            FOREIGN KEY (parentId) REFERENCES locations(id) ON DELETE SET NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS inventory (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            itemId TEXT NOT NULL,
+            locationId INTEGER NOT NULL,
+            quantity REAL NOT NULL DEFAULT 0,
+            lastUpdated TEXT NOT NULL,
+            FOREIGN KEY (locationId) REFERENCES locations(id) ON DELETE CASCADE,
+            UNIQUE (itemId, locationId)
+        );
+
+         CREATE TABLE IF NOT EXISTS item_locations (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            itemId TEXT NOT NULL,
+            locationId INTEGER NOT NULL,
+            clientId TEXT,
+            FOREIGN KEY (locationId) REFERENCES locations(id) ON DELETE CASCADE,
+            UNIQUE (itemId, locationId, clientId)
+        );
+
+        CREATE TABLE IF NOT EXISTS movements (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            itemId TEXT NOT NULL,
+            quantity REAL NOT NULL,
+            fromLocationId INTEGER,
+            toLocationId INTEGER,
+            timestamp TEXT NOT NULL,
+            userId INTEGER NOT NULL,
+            notes TEXT,
+            FOREIGN KEY (fromLocationId) REFERENCES locations(id) ON DELETE SET NULL,
+            FOREIGN KEY (toLocationId) REFERENCES locations(id) ON DELETE SET NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS warehouse_config (
+            key TEXT PRIMARY KEY,
+            value TEXT NOT NULL
+        );
+    `;
+    db.exec(schema);
+
+    // Default settings
+    const defaultSettings: WarehouseSettings = {
+        locationLevels: [
+            { type: 'building', name: 'Edificio' },
+            { type: 'zone', name: 'Zona' },
+            { type: 'rack', name: 'Rack' },
+            { type: 'shelf', name: 'Estante' },
+            { type: 'bin', name: 'Casilla' }
+        ],
+        enablePhysicalInventoryTracking: false,
+    };
+    db.prepare(`
+        INSERT OR IGNORE INTO warehouse_config (key, value) VALUES ('settings', ?)
+    `).run(JSON.stringify(defaultSettings));
+    
+    console.log(`Database ${WAREHOUSE_DB_FILE} initialized for Warehouse Management.`);
+    await runWarehouseMigrations(db);
+};
+
+export async function runWarehouseMigrations(db: import('better-sqlite3').Database) {
+    // ... (la función de migración se mantiene igual para agregar columnas si no existen)
+    const warehouseConfigTable = db.prepare(`SELECT name FROM sqlite_master WHERE type='table' AND name='warehouse_config'`).get();
+    if (!warehouseConfigTable) {
+        return;
+    }
+
+    try {
+        const settingsRow = db.prepare(`SELECT value FROM warehouse_config WHERE key = 'settings'`).get() as { value: string } | undefined;
+        if (settingsRow) {
+            const settings = JSON.parse(settingsRow.value);
+            if (typeof settings.enablePhysicalInventoryTracking !== 'boolean') {
+                settings.enablePhysicalInventoryTracking = false;
+                db.prepare(`UPDATE warehouse_config SET value = ? WHERE key = 'settings'`).run(JSON.stringify(settings));
+            }
+        }
+    } catch (error) {
+        console.error("Error during warehouse settings migration:", error);
+    }
+    
+    const itemLocationsTable = db.prepare(`SELECT name FROM sqlite_master WHERE type='table' AND name='item_locations'`).get();
+    if (!itemLocationsTable) {
+        db.exec(`
+            CREATE TABLE IF NOT EXISTS item_locations (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                itemId TEXT NOT NULL,
+                locationId INTEGER NOT NULL,
+                clientId TEXT,
+                FOREIGN KEY (locationId) REFERENCES locations(id) ON DELETE CASCADE,
+                UNIQUE (itemId, locationId, clientId)
+            );
+        `);
+    }
+
+    const locationsTableInfo = db.prepare(`PRAGMA table_info(locations)`).all() as { name: string, type: string }[];
+    const hasParentId = locationsTableInfo.some(c => c.name === 'parentId');
+
+    if (!hasParentId) {
+        db.exec(`ALTER TABLE locations ADD COLUMN parentId INTEGER REFERENCES locations(id) ON DELETE SET NULL;`);
+    } else {
+        const foreignKeyList = db.prepare(`PRAGMA foreign_key_list(locations)`).all() as any[];
+        const parentFK = foreignKeyList.find(fk => fk.from === 'parentId');
+        if (parentFK && parentFK.on_delete !== 'SET NULL') {
+            console.log("MIGRATION (warehouse.db): Recreating 'locations' table to update parentId's ON DELETE action.");
+            db.transaction(() => {
+                db.exec(`
+                    CREATE TABLE locations_new (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        name TEXT NOT NULL,
+                        code TEXT UNIQUE NOT NULL,
+                        type TEXT NOT NULL,
+                        parentId INTEGER,
+                        FOREIGN KEY (parentId) REFERENCES locations(id) ON DELETE SET NULL
+                    );
+                `);
+                db.exec(`INSERT INTO locations_new(id, name, code, type, parentId) SELECT id, name, code, type, parentId FROM locations;`);
+                db.exec(`DROP TABLE locations;`);
+                db.exec(`ALTER TABLE locations_new RENAME TO locations;`);
+            })();
+        }
+    }
+}
+
+export async function getWarehouseSettings(): Promise<WarehouseSettings> {
+    const db = await connectDb(WAREHOUSE_DB_FILE);
+    try {
+        const row = db.prepare(`SELECT value FROM warehouse_config WHERE key = 'settings'`).get() as { value: string } | undefined;
+        if (row) {
+            const settings = JSON.parse(row.value);
+            if (typeof settings.enablePhysicalInventoryTracking !== 'boolean') {
+                settings.enablePhysicalInventoryTracking = false;
+            }
+            return settings;
+        }
+    } catch (error) {
+        console.error("Error fetching warehouse settings, returning default.", error);
+    }
+    return {
+        locationLevels: [
+            { type: 'building', name: 'Edificio' },
+            { type: 'zone', name: 'Zona' },
+            { type: 'rack', name: 'Rack' },
+            { type: 'shelf', name: 'Estante' },
+            { type: 'bin', name: 'Casilla' }
+        ],
+        enablePhysicalInventoryTracking: false
+    };
+}
+
+export async function saveWarehouseSettings(settings: WarehouseSettings): Promise<void> {
+    const db = await connectDb(WAREHOUSE_DB_FILE);
+    db.prepare(`INSERT OR REPLACE INTO warehouse_config (key, value) VALUES ('settings', ?)`).run(JSON.stringify(settings));
+}
+
+export async function getLocations(): Promise<WarehouseLocation[]> {
+    const db = await connectDb(WAREHOUSE_DB_FILE);
+    // Order by parentId and name to facilitate tree building on the client
+    return db.prepare('SELECT * FROM locations ORDER BY parentId, name').all() as WarehouseLocation[];
+}
+
+export async function addLocation(location: Omit<WarehouseLocation, 'id'>): Promise<WarehouseLocation> {
+    const db = await connectDb(WAREHOUSE_DB_FILE);
+    const { name, code, type, parentId } = location;
+    const info = db.prepare('INSERT INTO locations (name, code, type, parentId) VALUES (?, ?, ?, ?)').run(name, code, type, parentId ?? null);
+    const newLocation = db.prepare('SELECT * FROM locations WHERE id = ?').get(info.lastInsertRowid) as WarehouseLocation;
+    return newLocation;
+}
+
+export async function updateLocation(location: WarehouseLocation): Promise<WarehouseLocation> {
+    const db = await connectDb(WAREHOUSE_DB_FILE);
+    const { id, name, code, type, parentId } = location;
+    db.prepare('UPDATE locations SET name = ?, code = ?, type = ?, parentId = ? WHERE id = ?').run(name, code, type, parentId ?? null, id);
+    const updatedLocation = db.prepare('SELECT * FROM locations WHERE id = ?').get(id) as WarehouseLocation;
+    return updatedLocation;
+}
+
+// ... (El resto de las funciones de db.ts se mantienen igual: deleteLocation, getInventoryForItem, etc.)
+
+// El resto del archivo db.ts (getInventoryForItem, logMovement, etc.) se mantiene sin cambios.
+
+----------------------------------------------------------------------
+-- PASO 2: ACCIONES DEL SERVIDOR (warehouse/lib/actions.ts)
+----------------------------------------------------------------------
+-- PROPÓSITO: No hay cambios significativos aquí. Este archivo ya
+-- actúa como una capa de abstracción segura. Nos aseguramos de que
+-- exporte las funciones actualizadas de db.ts si es necesario.
+----------------------------------------------------------------------
+
+"use client";
+
+import {
+    // ... (importaciones existentes se mantienen)
+} from './db';
+import type { WarehouseSettings, WarehouseLocation, ... } from '@/modules/core/types';
+import { logInfo, logWarn } from '@/modules/core/lib/logger';
+
+// Las exportaciones de funciones se mantienen iguales.
+// Ejemplo:
+export const getLocations = async (): Promise<WarehouseLocation[]> => getLocationsServer();
+export async function addLocation(location: Omit<WarehouseLocation, 'id'>): Promise<WarehouseLocation> {
+    const newLocation = await addLocationServer(location);
+    await logInfo(`New warehouse location created: ${newLocation.name} (${newLocation.code})`);
+    return newLocation;
+}
+// etc.
+
+
+----------------------------------------------------------------------
+-- PASO 3: INTERFAZ DE USUARIO (warehouse/page.tsx)
+----------------------------------------------------------------------
+-- PROPÓSITO: Rediseño completo para mostrar los resultados de forma
+-- jerárquica y con un enfoque "mobile-first". Se introduce un
+-- componente para renderizar la ruta de ubicación (breadcrumbs) y la
+-- lógica principal se actualiza para agrupar resultados.
+----------------------------------------------------------------------
+
+'use client';
+
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { usePageTitle } from '@/modules/core/hooks/usePageTitle';
+import { useAuthorization } from '@/modules/core/hooks/useAuthorization';
+import { useAuth } from '@/modules/core/hooks/useAuth';
+import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
+import { getWarehouseData } from '@/modules/warehouse/lib/actions';
+import { syncAllData } from '@/modules/core/lib/actions';
+import type { WarehouseLocation, WarehouseInventoryItem, Product, StockInfo, StockSettings, ItemLocation, Customer } from '@/modules/core/types';
+import { Search, MapPin, Package, Building, Waypoints, Box, Layers, Warehouse as WarehouseIcon, RefreshCw, Loader2, Info, User, ChevronRight } from 'lucide-react';
+import { useDebounce } from 'use-debounce';
+import { Button } from '@/components/ui/button';
+import { useToast } from '@/modules/core/hooks/use-toast';
+import { logError } from '@/modules/core/lib/logger';
+import { Separator } from '@/components/ui/separator';
+
+type SearchableItem = {
+  id: string;
+  type: 'product' | 'customer';
+  searchText: string;
+};
+
+type CombinedItem = {
+    product: Product | null;
+    physicalLocations: {
+        path: React.ReactNode;
+        quantity?: number;
+        clientId?: string;
+    }[];
+    erpStock: StockInfo | null;
+    client?: Customer | null;
+};
+
+const normalizeText = (text: string | null | undefined): string => {
+    if (!text) return "";
+    return text.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+};
+
+// NUEVO Componente para renderizar la ruta de ubicación
+const LocationIcon = ({ type }: { type: WarehouseLocation['type'] }) => {
+    switch (type) {
+        case 'building': return <Building className="h-5 w-5 text-muted-foreground" />;
+        case 'zone': return <Waypoints className="h-5 w-5 text-muted-foreground" />;
+        case 'rack': return <Box className="h-5 w-5 text-muted-foreground" />;
+        case 'shelf': return <Layers className="h-5 w-5 text-muted-foreground" />;
+        case 'bin': return <div className="h-5 w-5 text-muted-foreground font-bold text-center">B</div>;
+        default: return <MapPin className="h-5 w-5 text-muted-foreground" />;
+    }
+};
+
+const renderLocationPath = (locationId: number | null | undefined, locations: WarehouseLocation[]) => {
+    if (!locationId) return <span className="text-muted-foreground italic">Sin ubicación</span>;
+    const path: WarehouseLocation[] = [];
+    let current: WarehouseLocation | undefined = locations.find(l => l.id === locationId);
+    
+    while (current) {
+        path.unshift(current);
+        const parentId = current.parentId;
+        if (parentId) {
+            current = locations.find(l => l.id === parentId);
+        } else {
+            current = undefined;
+        }
+    }
+
+    return (
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground">
+            {path.map((loc, index) => (
+                <React.Fragment key={loc.id}>
+                    <div className="flex items-center gap-1">
+                        <LocationIcon type={loc.type} />
+                        <span>{loc.name}</span>
+                    </div>
+                    {index < path.length - 1 && <ChevronRight className="h-4 w-4 text-muted-foreground/50 shrink-0" />}
+                </React.Fragment>
+            ))}
+        </div>
+    );
+};
+
+
+export default function WarehousePage() {
+    useAuthorization(['warehouse:access']);
+    const { setTitle } = usePageTitle();
+    const { toast } = useToast();
+    const { companyData, products, customers } = useAuth();
+
+    const [isLoading, setIsLoading] = useState(true);
+    const [isRefreshing, setIsRefreshing] = useState(false);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [debouncedSearchTerm] = useDebounce(searchTerm, companyData?.searchDebounceTime ?? 500);
+    
+    const [locations, setLocations] = useState<WarehouseLocation[]>([]);
+    const [inventory, setInventory] = useState<WarehouseInventoryItem[]>([]);
+    const [itemLocations, setItemLocations] = useState<ItemLocation[]>([]);
+    const [stock, setStock] = useState<StockInfo[]>([]);
+    const [stockSettings, setStockSettings] = useState<StockSettings | null>(null);
+    const [warehouseSettings, setWarehouseSettings] = useState<{ enablePhysicalInventoryTracking: boolean } | null>(null);
+
+    const loadData = useCallback(async () => {
+        setIsLoading(true);
+        try {
+            const wData = await getWarehouseData();
+            setLocations(wData.locations);
+            setInventory(wData.inventory);
+            setItemLocations(wData.itemLocations);
+            setStock(wData.stock);
+            setStockSettings(wData.stockSettings);
+            setWarehouseSettings(wData.warehouseSettings);
+        } catch (error) {
+            console.error("Failed to load warehouse data", error);
+            logError("Failed to load warehouse data", { error });
+            toast({ title: "Error de Carga", description: "No se pudieron cargar los datos del almacén.", variant: "destructive"});
+        } finally {
+            setIsLoading(false);
+        }
+    }, [toast]);
+    
+    useEffect(() => {
+        setTitle("Búsqueda en Almacén");
+        loadData();
+    }, [setTitle, loadData]);
+
+    const handleRefresh = async () => {
+        setIsRefreshing(true);
+        try {
+            await syncAllData();
+            toast({
+                title: "Datos Actualizados",
+                description: `Los datos del ERP se han sincronizado. La página se recargará para reflejar los cambios.`
+            });
+            window.location.reload();
+        } catch (error: any) {
+            logError("Error during manual data refresh", { error: error.message });
+            toast({
+                title: "Error al Refrescar",
+                description: error.message,
+                variant: "destructive"
+            });
+        } finally {
+            setIsRefreshing(false);
+        }
+    };
+
+    const searchIndex = useMemo(() => {
+        const productIndex: SearchableItem[] = products.map(p => ({
+            id: p.id,
+            type: 'product',
+            searchText: normalizeText(`${p.id} ${p.description}`)
+        }));
+        const customerIndex: SearchableItem[] = customers.map(c => ({
+            id: c.id,
+            type: 'customer',
+            searchText: normalizeText(`${c.id} ${c.name}`)
+        }));
+        return [...productIndex, ...customerIndex];
+    }, [products, customers]);
+
+    const filteredItems = useMemo(() => {
+        if (!debouncedSearchTerm) return [];
+
+        const searchTerms = normalizeText(debouncedSearchTerm).split(' ').filter(Boolean);
+        if (searchTerms.length === 0) return [];
+        
+        const matchedIndexItems = searchIndex.filter(item => 
+            searchTerms.every(term => item.searchText.includes(term))
+        );
+
+        const relevantProductIds = new Set(matchedIndexItems.filter(i => i.type === 'product').map(i => i.id));
+        const relevantCustomerIds = new Set(matchedIndexItems.filter(i => i.type === 'customer').map(i => i.id));
+
+        const groupedByItem: { [key: string]: CombinedItem } = {};
+
+        relevantProductIds.forEach(productId => {
+            if (!groupedByItem[productId]) {
+                const product = products.find(p => p.id === productId);
+                groupedByItem[productId] = {
+                    product: product || null,
+                    physicalLocations: [],
+                    erpStock: stock.find(s => s.itemId === productId) || null,
+                };
+            }
+        });
+        
+        if (warehouseSettings?.enablePhysicalInventoryTracking) {
+             inventory.forEach(item => {
+                if (groupedByItem[item.itemId]) {
+                    groupedByItem[item.itemId].physicalLocations.push({
+                        path: renderLocationPath(item.locationId, locations),
+                        quantity: item.quantity
+                    });
+                }
+            });
+        } else {
+            itemLocations.forEach(itemLoc => {
+                const product = products.find(p => p.id === itemLoc.itemId);
+                
+                if (groupedByItem[itemLoc.itemId]) {
+                    groupedByItem[itemLoc.itemId].physicalLocations.push({
+                        path: renderLocationPath(itemLoc.locationId, locations),
+                        clientId: itemLoc.clientId || undefined
+                    });
+                } 
+                else if (itemLoc.clientId && relevantCustomerIds.has(itemLoc.clientId)) {
+                    if (!groupedByItem[itemLoc.itemId]) {
+                         groupedByItem[itemLoc.itemId] = {
+                            product: product || { id: itemLoc.itemId, description: `Artículo ${itemLoc.itemId}`, active: 'S', cabys: '', classification: '', isBasicGood: 'N', lastEntry: '', notes: '', unit: '' },
+                            physicalLocations: [],
+                            erpStock: stock.find(s => s.itemId === itemLoc.itemId) || null,
+                            client: customers.find(c => c.id === itemLoc.clientId)
+                        };
+                    }
+                    groupedByItem[itemLoc.itemId].physicalLocations.push({
+                        path: renderLocationPath(itemLoc.locationId, locations),
+                        clientId: itemLoc.clientId || undefined
+                    });
+                }
+            });
+        }
+        
+        return Object.values(groupedByItem).sort((a, b) => (a.product?.id || '').localeCompare(b.product?.id || ''));
+
+    }, [debouncedSearchTerm, searchIndex, products, customers, inventory, itemLocations, stock, warehouseSettings, locations]);
+    
+    // ... (el resto de la lógica de renderizado del componente se mantiene igual, pero ahora usará `filteredItems` que ya tiene la estructura jerárquica)
+    // El código de renderizado que se muestra en la respuesta anterior es el que se usaría.
+}
