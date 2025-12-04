@@ -107,7 +107,7 @@ function initializeMainDatabase(db: import('better-sqlite3').Database) {
     console.log(`Database ${DB_FILE} initialized.`);
 
     // Run migrations after initialization
-    checkAndApplyMigrations(db);
+    runMainDbMigrations(db);
 }
 
 /**
@@ -121,7 +121,7 @@ const DB_MODULES: DatabaseModule[] = [
         name: 'Clic-Tools (Sistema Principal)', 
         dbFile: DB_FILE, 
         initFn: initializeMainDatabase, 
-        migrationFn: checkAndApplyMigrations,
+        migrationFn: runMainDbMigrations,
         schema: {
             'users': ['id', 'name', 'email', 'password', 'phone', 'whatsapp', 'erpAlias', 'avatar', 'role', 'recentActivity', 'securityQuestion', 'securityAnswer', 'forcePasswordChange'],
             'roles': ['id', 'name', 'permissions'],
@@ -248,13 +248,20 @@ export async function connectDb(dbFile: string = DB_FILE, forceRecreate = false)
     return db;
 }
 
+/**
+ * Checks the database schema and applies necessary alterations (migrations).
+ * @param {Database.Database} db - The database instance to check.
+ */
+function runMainDbMigrations(db: import('better-sqlite3').Database) {
+    checkAndApplyMigrations(db);
+}
 
 /**
  * Checks the database schema and applies necessary alterations (migrations).
  * This makes the app more resilient to schema changes over time without data loss.
  * @param {Database.Database} db - The database instance to check.
  */
-async function checkAndApplyMigrations(db: import('better-sqlite3').Database) {
+function checkAndApplyMigrations(db: import('better-sqlite3').Database) {
     // Main DB Migrations
     try {
         const usersTable = db.prepare(`SELECT name FROM sqlite_master WHERE type='table' AND name='users'`).get();
@@ -1569,6 +1576,28 @@ export async function runDatabaseAudit(userName: string): Promise<AuditResult[]>
     
     return results;
 }
+
+export async function runSingleModuleMigration(moduleId: string): Promise<void> {
+    const dbModule = DB_MODULES.find(m => m.id === moduleId);
+    if (!dbModule) {
+        throw new Error(`Módulo con ID '${moduleId}' no encontrado.`);
+    }
+
+    try {
+        console.log(`Manually running migration for module: ${dbModule.name}`);
+        const db = await connectDb(dbModule.dbFile);
+        if (dbModule.migrationFn) {
+            await dbModule.migrationFn(db);
+            await logInfo(`Migración manual ejecutada para el módulo: ${dbModule.name}`);
+        } else {
+            await logWarn(`No migration function found for module: ${dbModule.name}`);
+        }
+    } catch (error: any) {
+        await logError(`Error durante la migración manual del módulo ${dbModule.name}`, { error: error.message });
+        throw new Error(`Falló la migración para ${dbModule.name}: ${error.message}`);
+    }
+}
+
 
 // --- Planner-specific functions moved from core ---
 export { confirmPlannerModification };

@@ -26,13 +26,13 @@ import {
   } from "@/components/ui/select"
 import { useToast } from "@/modules/core/hooks/use-toast";
 import { logError, logInfo, logWarn } from "@/modules/core/lib/logger";
-import { UploadCloud, RotateCcw, Loader2, Save, LifeBuoy, Trash2 as TrashIcon, Download, Skull, AlertTriangle, FileUp, ShieldCheck, CheckCircle } from "lucide-react";
+import { UploadCloud, RotateCcw, Loader2, Save, LifeBuoy, Trash2 as TrashIcon, Download, Skull, AlertTriangle, FileUp, ShieldCheck, CheckCircle, Wrench } from "lucide-react";
 import { useDropzone } from 'react-dropzone';
 import { usePageTitle } from "@/modules/core/hooks/usePageTitle";
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { restoreAllFromUpdateBackup, listAllUpdateBackups, deleteOldUpdateBackups, restoreDatabase, backupAllForUpdate, factoryReset, getDbModules, getCurrentVersion, runDatabaseAudit } from '@/modules/core/lib/db';
+import { restoreAllFromUpdateBackup, listAllUpdateBackups, deleteOldUpdateBackups, restoreDatabase, backupAllForUpdate, factoryReset, getDbModules, getCurrentVersion, runDatabaseAudit, runSingleModuleMigration } from '@/modules/core/lib/db';
 import type { UpdateBackupInfo, DatabaseModule, AuditResult } from '@/modules/core/types';
 import { useAuthorization } from "@/modules/core/hooks/useAuthorization";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
@@ -313,6 +313,22 @@ export default function MaintenancePage() {
             setIsAuditing(false);
         }
     }
+
+    const handleManualMigration = async (moduleId: string) => {
+        if (!user) return;
+        setIsAuditing(true); // Reuse auditing spinner
+        try {
+            await runSingleModuleMigration(moduleId);
+            toast({ title: "Corrección Aplicada", description: `Se intentó aplicar la migración para el módulo. Ejecuta la auditoría de nuevo para verificar.` });
+            // Re-run audit automatically after attempting fix
+            await handleRunAudit();
+        } catch (error: any) {
+            logError(`Manual migration failed for module ${moduleId}`, { error: error.message, user: user.name });
+            toast({ title: "Error al Corregir", description: `No se pudo aplicar la corrección. ${error.message}`, variant: "destructive" });
+        } finally {
+            setIsAuditing(false);
+        }
+    };
     
     const uniqueTimestamps = [...new Set(updateBackups.map(b => b.date))].sort((a,b) => new Date(b).getTime() - new Date(a).getTime());
 
@@ -484,9 +500,17 @@ export default function MaintenancePage() {
                                         {auditResults.map(result => (
                                             <Card key={result.moduleId} className={result.status === 'ERROR' ? 'border-destructive' : 'border-green-600'}>
                                                 <CardHeader>
-                                                    <CardTitle className="flex items-center gap-2">
-                                                        {result.status === 'OK' ? <CheckCircle className="h-5 w-5 text-green-600" /> : <AlertTriangle className="h-5 w-5 text-destructive" />}
-                                                        {result.moduleName} ({result.dbFile})
+                                                    <CardTitle className="flex items-center justify-between">
+                                                         <div className="flex items-center gap-2">
+                                                            {result.status === 'OK' ? <CheckCircle className="h-5 w-5 text-green-600" /> : <AlertTriangle className="h-5 w-5 text-destructive" />}
+                                                            {result.moduleName} ({result.dbFile})
+                                                         </div>
+                                                          {result.status === 'ERROR' && (
+                                                            <Button size="sm" variant="destructive" onClick={() => handleManualMigration(result.moduleId)} disabled={isAuditing}>
+                                                                {isAuditing ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Wrench className="mr-2 h-4 w-4"/>}
+                                                                Intentar Corrección
+                                                            </Button>
+                                                        )}
                                                     </CardTitle>
                                                 </CardHeader>
                                                 {result.issues.length > 0 && (
