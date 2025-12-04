@@ -157,24 +157,31 @@ const dbDirectory = path.join(process.cwd(), 'dbs');
 
 const dbConnections = new Map<string, Database.Database>();
 
+// New helper function to run migrations asynchronously.
+async function runMigrations(dbModule: DatabaseModule, db: Database.Database) {
+    if (dbModule.migrationFn) {
+        try {
+            await dbModule.migrationFn(db);
+        } catch (error) {
+            console.error(`Migration failed for ${dbModule.dbFile}, but continuing. Error:`, error);
+        }
+    }
+}
+
 /**
  * Establishes a connection to a specific SQLite database file.
- * If the database file does not exist, it creates it and initializes the schema and default data.
- * It manages multiple connections in a map to support a multi-database architecture.
+ * This function is now ASYNCHRONOUS. It creates the database and runs initialization
+ * and migrations if the file doesn't exist.
  * @param {string} dbFile - The filename of the database to connect to.
  * @param {boolean} [forceRecreate=false] - If true, deletes the existing DB file to start fresh.
- * @returns {Database.Database} The database connection instance.
+ * @returns {Promise<Database.Database>} The database connection instance.
  */
 export async function connectDb(dbFile: string = DB_FILE, forceRecreate = false): Promise<Database.Database> {
     if (!forceRecreate && dbConnections.has(dbFile) && dbConnections.get(dbFile)!.open) {
-        // Migration check on existing connection to be safe.
+        // Run migrations even on existing connections to ensure schema is up-to-date
         const dbModule = DB_MODULES.find(m => m.dbFile === dbFile);
-        if (dbModule?.migrationFn) {
-            try {
-                await dbModule.migrationFn(dbConnections.get(dbFile)!);
-            } catch (error) {
-                console.error(`Migration check on existing connection failed for ${dbFile}, but continuing. Error:`, error);
-            }
+        if (dbModule) {
+            await runMigrations(dbModule, dbConnections.get(dbFile)!);
         }
         return dbConnections.get(dbFile)!;
     }
@@ -217,28 +224,22 @@ export async function connectDb(dbFile: string = DB_FILE, forceRecreate = false)
 
     const dbModule = DB_MODULES.find(m => m.dbFile === dbFile);
 
-    if (!dbExists) {
-        console.log(`Database ${dbFile} not found, creating and initializing...`);
-        if (dbModule?.initFn) {
-            await dbModule.initFn(db);
+    if (dbModule) {
+        if (!dbExists) {
+            console.log(`Database ${dbFile} not found, creating and initializing...`);
+            if (dbModule.initFn) {
+                await dbModule.initFn(db);
+            }
         }
-    }
-    
-    // Always run migrations on every connection attempt for robustness
-    if (dbModule?.migrationFn) {
-        try {
-            await dbModule.migrationFn(db);
-        } catch (error) {
-            console.error(`Migration failed for ${dbFile}, but continuing. Error:`, error);
-        }
+        // Always run migrations after connecting
+        await runMigrations(dbModule, db);
     }
 
 
     try {
         db.pragma('journal_mode = WAL');
     } catch(error: any) {
-        // This is a common error with a corrupt DB, log it but don't crash
-        console.error(`Could not set PRAGMA on ${dbFile}. DB might be corrupt.`, error);
+        console.error(`Could not set PRAGMA on ${dbFile}.`, error);
         if (error.code !== 'SQLITE_CORRUPT') {
             await logError(`Failed to set PRAGMA on ${dbFile}`, { error: (error as Error).message });
         }
@@ -254,7 +255,7 @@ export async function connectDb(dbFile: string = DB_FILE, forceRecreate = false)
  * This makes the app more resilient to schema changes over time without data loss.
  * @param {Database.Database} db - The database instance to check.
  */
-export async function checkAndApplyMigrations(db: import('better-sqlite3').Database) {
+async function checkAndApplyMigrations(db: import('better-sqlite3').Database) {
     // Main DB Migrations
     try {
         const usersTable = db.prepare(`SELECT name FROM sqlite_master WHERE type='table' AND name='users'`).get();
