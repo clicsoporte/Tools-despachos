@@ -178,7 +178,6 @@ async function runMigrations(dbModule: DatabaseModule, db: Database.Database) {
  */
 export async function connectDb(dbFile: string = DB_FILE, forceRecreate = false): Promise<Database.Database> {
     if (!forceRecreate && dbConnections.has(dbFile) && dbConnections.get(dbFile)!.open) {
-        // Run migrations even on existing connections to ensure schema is up-to-date
         const dbModule = DB_MODULES.find(m => m.dbFile === dbFile);
         if (dbModule) {
             await runMigrations(dbModule, dbConnections.get(dbFile)!);
@@ -231,7 +230,6 @@ export async function connectDb(dbFile: string = DB_FILE, forceRecreate = false)
                 await dbModule.initFn(db);
             }
         }
-        // Always run migrations after connecting
         await runMigrations(dbModule, db);
     }
 
