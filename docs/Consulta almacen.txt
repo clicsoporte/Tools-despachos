@@ -7,6 +7,8 @@ Este documento contiene todo el código necesario para refactorizar el módulo
 de "Consulta Almacén" a un sistema jerárquico (estilo árbol), optimizado
 para dispositivos móviles.
 
+**NOTA DE ARQUITECTURA DE DATOS:** La consulta SQL para la importación de artículos desde el ERP ya incluye el campo de la unidad de medida (ej: 'UND', 'KG', 'M'). La nueva arquitectura debe estar preparada para utilizar este dato, aunque la implementación inicial se centre en la visualización.
+
 ----------------------------------------------------------------------
 -- PASO 1: LÓGICA DE BASE DE DATOS (warehouse/lib/db.ts)
 ----------------------------------------------------------------------
