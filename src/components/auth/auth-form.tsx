@@ -70,7 +70,7 @@ export function AuthForm({ clientInfo }: AuthFormProps) {
     // On page load, if there's a path, store it for redirection after login.
     // This is especially for direct access to protected URLs (e.g. from QR scan).
     if (pathname && pathname !== '/') {
-        const fullPath = `${pathname}?${searchParams.toString()}`;
+        const fullPath = `${pathname}${searchParams ? '?' + searchParams.toString() : ''}`;
         if (fullPath !== '/?') { // Avoid storing a blank redirect
              sessionStorage.setItem(REDIRECT_URL_KEY, fullPath);
         }
