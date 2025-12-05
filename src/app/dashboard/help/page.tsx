@@ -395,7 +395,7 @@ export default function HelpPage() {
                         <strong>Paso 3: Ajustar y Calcular Precios.</strong>
                         <ul className="list-[circle] space-y-2 pl-5 mt-2 text-sm">
                             <li>En la tabla de &quot;Artículos Extraídos&quot;, puedes editar la mayoría de los campos.</li>
-                            <li><strong>Costo Unit. (s/IVA):</strong> Este es el costo real del artículo (costo de factura + costo prorrateado +/- efecto del descuento). Puedes **sobrescribirlo manually** si necesitas ajustar el costo base para un artículo específico.</li>
+                            <li><strong>Costo Unit. (s/IVA):</strong> Este es el costo real del artículo (costo de factura + costo prorrateado +/- efecto del descuento). Puedes **sobrescribirlo manualmente** si necesitas ajustar el costo base para un artículo específico.</li>
                             <li><strong>Imp. %:</strong> El sistema extrae el impuesto del XML, pero puedes editarlo aquí si es necesario (ej. de &quot;13&quot; a &quot;1&quot;).</li>
                             <li><strong>Margen:</strong> Introduce el margen de ganancia deseado (ej. &quot;20&quot; para un 20%).</li>
                             <li>El sistema calculará automáticamente el **P.V.P. Unitario Sugerido** y la **Ganancia por Línea** en tiempo real.</li>
@@ -601,79 +601,87 @@ export default function HelpPage() {
             <div className="space-y-4">
                 <p>Este módulo te da control total sobre la localización de tu inventario. Incluye herramientas para mapear tu bodega, asignar productos a ubicaciones y rastrear lotes individuales con códigos QR.</p>
                 
-                <div className="flex items-center gap-2 p-3 rounded-lg bg-blue-50 border border-blue-200 text-blue-800">
+                <h4 className="font-semibold text-lg pt-4 border-t">El Concepto Clave: El Molde vs. El Árbol</h4>
+                <p>Para configurar tu almacén, debes entender dos pasos:</p>
+                <ul className="list-none space-y-3 pl-0">
+                    <li>
+                        <strong className="text-base">1. El Molde (Definir Jerarquía):</strong> Aquí le dices al sistema las **categorías** que usas para organizar, pero sin crear nada real todavía. Es solo la plantilla. Piensa en esto como definir el vocabulario de tu almacén.
+                        <br/>
+                        <em>Se realiza en: <strong>Administración &gt; Config. Almacenes</strong>.</em>
+                    </li>
+                    <li>
+                        <strong className="text-base">2. El Árbol (Crear Ubicaciones Reales):</strong> Una vez que tienes el &quot;molde&quot;, aquí es donde creas el árbol real de tu almacén usando esas categorías, dándoles nombres y códigos únicos.
+                        <br/>
+                        <em>Se realiza en: <strong>Almacén &gt; Gestionar Ubicaciones</strong>.</em>
+                    </li>
+                </ul>
+
+                <h4 className="font-semibold text-lg pt-4 border-t">Tutorial Práctico: Configurar una Bodega</h4>
+                <p><strong>Escenario:</strong> Tienes una bodega de 6000 m² con 10 racks. Cada rack tiene 2 caras (A y B), 4 pisos de alto y 8 espacios de ancho.</p>
+                
+                <h5 className="font-semibold">Paso 1: Definir el &quot;Molde&quot; (Las Categorías)</h5>
+                <ol className="list-decimal space-y-2 pl-6">
+                    <li>Ve a <strong>Administración &gt; Config. Almacenes</strong>.</li>
+                    <li>En la sección **&quot;Paso 1: Definir Jerarquía del Almacén&quot;**, añade, en orden, los siguientes niveles:
+                        <ul className="list-[circle] space-y-1 pl-5 mt-2">
+                            <li>Bodega</li>
+                            <li>Rack</li>
+                            <li>Cara</li>
+                            <li>Piso</li>
+                            <li>Espacio</li>
+                        </ul>
+                    </li>
+                    <li>Haz clic en <strong>Guardar Niveles</strong>. Acabas de definir tu vocabulario.</li>
+                </ol>
+
+                <h5 className="font-semibold">Paso 2: Construir el &quot;Árbol&quot; (Las Ubicaciones Físicas)</h5>
+                <p>Ahora, ve a <strong>Almacén &gt; Gestionar Ubicaciones</strong> para construir el mapa físico de tu almacén.</p>
+                <ol className="list-decimal space-y-3 pl-6">
+                    <li>
+                        <strong>Crear la Bodega Principal:</strong>
+                        <ul className="list-[circle] space-y-1 pl-5 mt-2 text-sm">
+                            <li>Clic en <strong>&quot;Añadir Ubicación&quot;</strong>.</li>
+                            <li><strong>Nombre:</strong> `Bodega Principal`, <strong>Código:</strong> `BP`.</li>
+                            <li><strong>Tipo de Ubicación:</strong> `Nivel 1: Bodega`.</li>
+                            <li><strong>Ubicación Padre:</strong> Déjalo en `Sin padre`.</li>
+                            <li>Guarda. Ya tienes la raíz de tu almacén.</li>
+                        </ul>
+                    </li>
+                    <li>
+                        <strong>Crear los 10 Racks:</strong> Repite el siguiente proceso para cada rack (del 1 al 10).
+                        <ul className="list-[circle] space-y-1 pl-5 mt-2 text-sm">
+                            <li>Clic en <strong>&quot;Añadir Ubicación&quot;</strong>.</li>
+                            <li><strong>Nombre:</strong> `Rack 01`, <strong>Código:</strong> `R01`.</li>
+                            <li><strong>Tipo de Ubicación:</strong> `Nivel 2: Rack`.</li>
+                            <li><strong>Ubicación Padre:</strong> Selecciona `Bodega Principal`.</li>
+                            <li>Guarda.</li>
+                        </ul>
+                    </li>
+                     <li>
+                        <strong>Crear las Caras, Pisos y Espacios (Anidación):</strong> Ahora, anida el resto. Por ejemplo, para el Rack 01:
+                        <ul className="list-[circle] space-y-1 pl-5 mt-2 text-sm">
+                            <li>Crea la **`Cara A`** (Tipo: `Nivel 3`, Padre: `Rack 01`).</li>
+                            <li>Dentro de `Cara A`, crea los 4 pisos: **`Piso 1`**, **`Piso 2`**, etc. (Tipo: `Nivel 4`, Padre: `Cara A`).</li>
+                            <li>Dentro de `Piso 1`, crea los 8 espacios: **`Espacio 01`**, **`Espacio 02`**, etc. (Tipo: `Nivel 5`, Padre: `Piso 1`).</li>
+                        </ul>
+                         <p className="text-sm mt-2">Repite este proceso de anidación hasta que todo tu almacén físico esté representado en el sistema.</p>
+                    </li>
+                </ol>
+                
+                <h4 className="font-semibold text-lg pt-4 border-t">Funciones Adicionales</h4>
+                 <div className="flex items-center gap-2 p-3 rounded-lg bg-blue-50 border border-blue-200 text-blue-800">
                     <HelpCircle className="h-5 w-5"/>
                     <p className="text-sm">En el panel de Almacén, haz clic en el icono <HelpCircle className="inline h-4 w-4"/> junto al título de cada herramienta para ver una guía específica de esa sección.</p>
                 </div>
-
-                <h4 className="font-semibold text-lg pt-2 border-t">1. Configuración de Ubicaciones</h4>
-                <ul className="list-disc space-y-3 pl-6">
-                    <li>
-                        <strong>¿Qué es?:</strong> Es el primer paso para organizar tu almacén. Aquí defines cómo está estructurado.
-                    </li>
-                    <li>
-                        <strong>¿Cómo se hace?:</strong> Ve a <strong>Almacén &gt; Gestionar Ubicaciones</strong>.
-                        <ol className="list-decimal space-y-2 pl-5 mt-2">
-                            <li>
-                                <strong>Paso 1: Definir Jerarquía (El &quot;Molde&quot;):</strong> Dile al sistema los niveles que usas. Por ejemplo, añade en orden: &quot;Bodega&quot;, &quot;Pasillo&quot;, &quot;Rack&quot;, &quot;Nivel&quot;.
-                            </li>
-                            <li>
-                                <strong>Paso 2: Crear Ubicaciones Reales (El &quot;Árbol&quot;):</strong> Ahora que tienes el molde, crea las ubicaciones físicas.
-                                <ul className="list-[circle] space-y-1 pl-5 mt-2 text-sm">
-                                    <li>Crea una `Bodega` llamada `BODEGA-01` (Código `B01`).</li>
-                                    <li>Luego, crea un `Pasillo` llamado `PASILLO-A` (Código `P01-A`) y asígnale `BODEGA-01` como &quot;Padre&quot;.</li>
-                                    <li>Continúa anidando hasta mapear tu espacio real.</li>
-                                </ul>
-                            </li>
-                        </ol>
-                    </li>
-                </ul>
-
-                <h4 className="font-semibold text-lg pt-2 border-t">2. Asignar Productos a Ubicaciones</h4>
                  <ul className="list-disc space-y-3 pl-6">
                     <li>
-                        <strong>¿Para qué sirve?:</strong> Para crear un &quot;catálogo&quot; rápido que le dice a todos dónde encontrar un producto general o el inventario de un cliente específico.
+                        <strong>Asignar Productos a Ubicaciones:</strong> Usa esta herramienta para indicar dónde se almacena *generalmente* un producto o el inventario de un cliente. Es un catálogo rápido y no rastrea lotes.
                     </li>
                     <li>
-                        <strong>¿Cómo se hace?:</strong> Ve a <strong>Almacén &gt; Asignar Cliente a Ubicación</strong>.
-                        <ol className="list-decimal space-y-2 pl-5 mt-2">
-                            <li>Selecciona el **Producto**.</li>
-                            <li>(Opcional) Selecciona el **Cliente** si el inventario es de él.</li>
-                            <li>Selecciona la **Ubicación** física donde se guarda.</li>
-                            <li>Haz clic en **&quot;Crear Asignación&quot;**. La nueva relación aparecerá en la tabla de abajo.</li>
-                        </ol>
-                    </li>
-                </ul>
-
-                <h4 className="font-semibold text-lg pt-2 border-t">3. Gestión de Unidades (Lotes/Tarimas con QR)</h4>
-                <ul className="list-disc space-y-3 pl-6">
-                    <li>
-                        <strong>¿Qué es?:</strong> Es la herramienta para rastrear unidades físicas individuales, como una tarima o un lote de producción. A cada unidad se le asigna un código QR único.
+                        <strong>Gestión de Unidades (Lotes/Tarimas con QR):</strong> Úsalo para crear identificadores únicos para unidades físicas (ej. una tarima, un lote). El sistema genera un código QR que puedes imprimir y pegar en la unidad para rastrearla fácilmente.
                     </li>
                     <li>
-                        <strong>¿Cómo se usa?:</strong> Ve a <strong>Almacén &gt; Gestión de Unidades</strong>.
-                        <ol className="list-decimal space-y-2 pl-5 mt-2">
-                            <li>Selecciona el **Producto** que está en la tarima.</li>
-                            <li>Selecciona la **Ubicación** física donde vas a guardar esa tarima.</li>
-                            <li>(Opcional) Dale un **Identificador Humano** (ej. &quot;LOTE-54321&quot;) para que sea fácil de reconocer.</li>
-                            <li>Haz clic en **&quot;Crear Unidad&quot;**. El sistema generará un ID único (ej: `U00001`).</li>
-                            <li>Haz clic en el botón **&quot;Imprimir&quot;** en la tabla para generar y descargar una etiqueta con el código QR y los detalles.</li>
-                        </ol>
-                    </li>
-                </ul>
-                
-                <h4 className="font-semibold text-lg pt-2 border-t">4. Consulta y Escaneo</h4>
-                <ul className="list-disc space-y-3 pl-6">
-                     <li>
-                        <strong>Consulta Manual:</strong> Ve a <strong>Almacén &gt; Consulta de Almacén</strong>. Puedes buscar por código de producto, nombre de cliente o ID de unidad (ej: `U00001`) para ver todas las ubicaciones y existencias relacionadas.
-                    </li>
-                    <li>
-                        <strong>Escaneo con Celular:</strong>
-                        <ol className="list-decimal space-y-2 pl-5 mt-2">
-                            <li>Abre la cámara de tu celular y escanea la etiqueta QR de una unidad.</li>
-                            <li>El navegador te llevará a una URL. Si no has iniciado sesión, te pedirá que lo hagas.</li>
-                            <li>Una vez iniciada la sesión, te mostrará directamente la página de **Resultado de Escaneo** con toda la información de esa unidad: qué producto es, su lote y, lo más importante, su ubicación asignada.</li>
-                        </ol>
+                        <strong>Consulta y Escaneo:</strong> La herramienta de consulta te permite buscar por producto, cliente o ID de unidad. Si escaneas un QR con tu celular, te llevará directamente a una página con la información de esa unidad.
                     </li>
                 </ul>
             </div>
