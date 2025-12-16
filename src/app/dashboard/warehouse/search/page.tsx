@@ -13,17 +13,20 @@ import { useAuth } from '@/modules/core/hooks/useAuth';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { getWarehouseData, getInventoryUnitById } from '@/modules/warehouse/lib/actions';
+import { getWarehouseData, getInventoryUnitById, addInventoryUnit } from '@/modules/warehouse/lib/actions';
 import { syncAllData } from '@/modules/core/lib/actions';
 import type { WarehouseLocation, WarehouseInventoryItem, Product, StockInfo, StockSettings, ItemLocation, Customer, InventoryUnit } from '@/modules/core/types';
-import { Search, MapPin, Package, Building, Waypoints, Box, Layers, Warehouse as WarehouseIcon, RefreshCw, Loader2, Info, User, ChevronRight } from 'lucide-react';
+import { Search, MapPin, Package, Building, Waypoints, Box, Layers, Warehouse as WarehouseIcon, RefreshCw, Loader2, Info, User, ChevronRight, Printer } from 'lucide-react';
 import { useDebounce } from 'use-debounce';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/modules/core/hooks/use-toast';
-import { logError } from '@/modules/core/lib/logger';
+import { logError, logInfo } from '@/modules/core/lib/logger';
 import { Separator } from '@/components/ui/separator';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
+import jsPDF from "jspdf";
+import QRCode from 'qrcode';
+import { format } from 'date-fns';
 
 type SearchableItem = {
   id: string;
@@ -40,6 +43,7 @@ type SearchResultItem = {
         path: React.ReactNode;
         quantity?: number;
         clientId?: string;
+        location: WarehouseLocation | undefined;
     }[];
     erpStock: StockInfo | null;
     client?: Customer | null;
@@ -54,6 +58,7 @@ type UnitResultItem = {
         path: React.ReactNode;
         quantity?: undefined; // Units don't have separate quantities in this view
         clientId?: undefined;
+        location: WarehouseLocation | undefined;
     }[];
     erpStock: StockInfo | null;
     client?: undefined;
@@ -109,7 +114,7 @@ export default function WarehouseSearchPage() {
     useAuthorization(['warehouse:access']);
     const { setTitle } = usePageTitle();
     const { toast } = useToast();
-    const { companyData, products, customers } = useAuth();
+    const { user, companyData, products, customers } = useAuth();
 
     const [isLoading, setIsLoading] = useState(true);
     const [isRefreshing, setIsRefreshing] = useState(false);
@@ -122,7 +127,7 @@ export default function WarehouseSearchPage() {
     const [itemLocations, setItemLocations] = useState<ItemLocation[]>([]);
     const [stock, setStock] = useState<StockInfo[]>([]);
     const [stockSettings, setStockSettings] = useState<StockSettings | null>(null);
-    const [warehouseSettings, setWarehouseSettings] = useState<{ enablePhysicalInventoryTracking: boolean } | null>(null);
+    const [warehouseSettings, setWarehouseSettings] = useState<{ enablePhysicalInventoryTracking: boolean, unitPrefix?: string } | null>(null);
 
     const [unitSearchResult, setUnitSearchResult] = useState<InventoryUnit | null>(null);
 
@@ -188,7 +193,7 @@ export default function WarehouseSearchPage() {
      useEffect(() => {
         const performUnitSearch = async () => {
             const normalizedSearch = debouncedSearchTerm.trim().toUpperCase();
-            if (exactMatch && normalizedSearch.startsWith('U')) {
+            if (exactMatch && normalizedSearch.startsWith(warehouseSettings?.unitPrefix || 'U')) {
                 setIsLoading(true);
                 try {
                     const unit = await getInventoryUnitById(normalizedSearch);
@@ -203,7 +208,7 @@ export default function WarehouseSearchPage() {
             }
         };
         performUnitSearch();
-    }, [debouncedSearchTerm, exactMatch]);
+    }, [debouncedSearchTerm, exactMatch, warehouseSettings?.unitPrefix]);
 
 
     const filteredItems = useMemo((): CombinedItem[] => {
@@ -215,7 +220,8 @@ export default function WarehouseSearchPage() {
                 unit: unitSearchResult,
                 product: product || { id: unitSearchResult.productId, description: `Artículo ${unitSearchResult.productId}`, active: 'S', cabys: '', classification: '', isBasicGood: 'N', lastEntry: '', notes: '', unit: '' },
                 physicalLocations: [{
-                    path: renderLocationPath(unitSearchResult.locationId, locations)
+                    path: renderLocationPath(unitSearchResult.locationId, locations),
+                    location: locations.find(l => l.id === unitSearchResult.locationId),
                 }],
                 erpStock: erpStock || null,
             }]
@@ -227,7 +233,7 @@ export default function WarehouseSearchPage() {
         let matchedIndexItems: SearchableItem[];
         
         if (exactMatch) {
-             if (normalizedSearch.toUpperCase().startsWith('U')) return [];
+             if (normalizedSearch.toUpperCase().startsWith(warehouseSettings?.unitPrefix || 'U')) return [];
              const exactMatchLower = normalizedSearch.toLowerCase();
              matchedIndexItems = searchIndex.filter(item => normalizeText(item.id).toLowerCase() === exactMatchLower);
         } else {
@@ -261,7 +267,8 @@ export default function WarehouseSearchPage() {
                 if (groupedByItem[item.itemId]) {
                     groupedByItem[item.itemId].physicalLocations.push({
                         path: renderLocationPath(item.locationId, locations),
-                        quantity: item.quantity
+                        quantity: item.quantity,
+                        location: locations.find(l => l.id === item.locationId),
                     });
                 }
             });
@@ -273,7 +280,8 @@ export default function WarehouseSearchPage() {
                 if (groupedByItem[itemLoc.itemId]) {
                     groupedByItem[itemLoc.itemId].physicalLocations.push({
                         path: renderLocationPath(itemLoc.locationId, locations),
-                        clientId: itemLoc.clientId || undefined
+                        clientId: itemLoc.clientId || undefined,
+                        location: locations.find(l => l.id === itemLoc.locationId),
                     });
                 } 
                 // Case 2: The customer was part of the search results
@@ -292,7 +300,8 @@ export default function WarehouseSearchPage() {
                     // Add the location to this product's entry
                     groupedByItem[itemLoc.itemId].physicalLocations.push({
                         path: renderLocationPath(itemLoc.locationId, locations),
-                        clientId: itemLoc.clientId || undefined
+                        clientId: itemLoc.clientId || undefined,
+                        location: locations.find(l => l.id === itemLoc.locationId),
                     });
                 }
             });
@@ -301,6 +310,41 @@ export default function WarehouseSearchPage() {
         return Object.values(groupedByItem).sort((a, b) => (a.product?.id || '').localeCompare(b.product?.id || ''));
 
     }, [debouncedSearchTerm, searchIndex, products, customers, inventory, itemLocations, stock, warehouseSettings, locations, exactMatch, unitSearchResult]);
+    
+    const handlePrintLabel = async (product: Product, location: WarehouseLocation) => {
+        if (!user) {
+            toast({ title: 'Error', description: 'No se pudo identificar al usuario.', variant: 'destructive' });
+            return;
+        }
+        try {
+            const newUnit = await addInventoryUnit({
+                productId: product.id,
+                locationId: location.id,
+                createdBy: user.name,
+                notes: 'Etiqueta generada desde búsqueda.'
+            });
+
+            const scanUrl = `${window.location.origin}/dashboard/scanner?unitId=${newUnit.unitCode}`;
+            const qrCodeDataUrl = await QRCode.toDataURL(scanUrl, { errorCorrectionLevel: 'H', width: 200 });
+
+            const doc = new jsPDF({ orientation: 'landscape', unit: 'in', format: [4, 3] });
+            doc.addImage(qrCodeDataUrl, 'PNG', 0.2, 0.2, 1.5, 1.5);
+            doc.setFontSize(14).setFont('Helvetica', 'bold').text(`Producto: ${product.id}`, 1.8, 0.4);
+            doc.setFontSize(10).setFont('Helvetica', 'normal');
+            doc.text(doc.splitTextToSize(product.description, 1.9), 1.8, 0.6);
+            doc.setFontSize(12).setFont('Helvetica', 'bold').text(`Ubicación: ${location.code}`, 1.8, 1.3);
+            doc.setFontSize(8).text(`ID Interno: ${newUnit.unitCode}`, 0.2, 2.8);
+            doc.text(`Creado: ${format(new Date(), 'dd/MM/yyyy')}`, 1.8, 2.8);
+            doc.save(`etiqueta_unidad_${newUnit.unitCode}.pdf`);
+            
+            toast({ title: "Etiqueta Generada", description: `Se creó la unidad ${newUnit.unitCode} y se generó el PDF.` });
+
+        } catch (err: any) {
+            logError("Failed to generate and print label", { error: err.message, productId: product.id });
+            toast({ title: 'Error al Imprimir', description: err.message, variant: 'destructive' });
+        }
+    };
+
 
     if (!warehouseSettings) {
         return (
@@ -400,9 +444,16 @@ export default function WarehouseSearchPage() {
                                                 {item.physicalLocations.length > 0 ? item.physicalLocations.map((loc, index) => (
                                                     <div key={index} className="flex justify-between items-center p-2 border rounded-md">
                                                         <span>{loc.path}</span>
-                                                        {loc.quantity !== undefined && (
-                                                            <span className="font-bold text-lg">{loc.quantity.toLocaleString()}</span>
-                                                        )}
+                                                        <div className='flex items-center gap-1'>
+                                                            {loc.quantity !== undefined && (
+                                                                <span className="font-bold text-lg">{loc.quantity.toLocaleString()}</span>
+                                                            )}
+                                                            {item.product && loc.location && (
+                                                                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handlePrintLabel(item.product!, loc.location!)}>
+                                                                    <Printer className="h-4 w-4" />
+                                                                </Button>
+                                                            )}
+                                                        </div>
                                                     </div>
                                                 )) : <p className="text-sm text-muted-foreground">Sin ubicaciones asignadas.</p>}
                                                 </div>
