@@ -155,6 +155,15 @@ export const warehouseTools: Tool[] = [
         textColor: "text-white",
     },
     {
+        id: "warehouse-search-simple",
+        name: "Búsqueda Rápida (Móvil)",
+        description: "Interfaz optimizada para búsquedas rápidas en celulares y tablets.",
+        href: "/dashboard/warehouse/search/simple",
+        icon: QrCode,
+        bgColor: "bg-sky-600",
+        textColor: "text-white",
+    },
+    {
         id: "warehouse-assign",
         name: "Asignar Cliente a Ubicación",
         description: "Ligar clientes y productos a ubicaciones físicas.",
