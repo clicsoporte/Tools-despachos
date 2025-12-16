@@ -67,11 +67,40 @@ const normalizeText = (text: string | null | undefined): string => {
 };
 
 const LocationIcon = ({ type }: { type: WarehouseLocation['type'] }) => {
-    // ... same as in main search page
+    switch (type) {
+        case 'building': return <Building className="h-5 w-5 text-muted-foreground" />;
+        case 'zone': return <Waypoints className="h-5 w-5 text-muted-foreground" />;
+        case 'rack': return <Box className="h-5 w-5 text-muted-foreground" />;
+        case 'shelf': return <Layers className="h-5 w-5 text-muted-foreground" />;
+        case 'bin': return <div className="h-5 w-5 text-muted-foreground font-bold text-center">B</div>;
+        default: return <MapPin className="h-5 w-5 text-muted-foreground" />;
+    }
 };
 
-const renderLocationPath = (locationId: number | null | undefined, locations: WarehouseLocation[]) => {
-    // ... same as in main search page
+const renderLocationPath = (locationId: number | null | undefined, locations: WarehouseLocation[]): React.ReactNode => {
+    if (!locationId) return <span className="text-muted-foreground italic">Sin ubicación</span>;
+    const path: WarehouseLocation[] = [];
+    let current: WarehouseLocation | undefined = locations.find(l => l.id === locationId);
+    
+    while (current) {
+        path.unshift(current);
+        const parentId = current.parentId;
+        current = parentId ? locations.find(l => l.id === parentId) : undefined;
+    }
+
+    return (
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground">
+            {path.map((loc, index) => (
+                <React.Fragment key={loc.id}>
+                    <div className="flex items-center gap-1">
+                        <LocationIcon type={loc.type} />
+                        <span>{loc.name}</span>
+                    </div>
+                    {index < path.length - 1 && <ChevronRight className="h-4 w-4 text-muted-foreground/50 shrink-0" />}
+                </React.Fragment>
+            ))}
+        </div>
+    );
 };
 
 export default function SimpleWarehouseSearchPage() {
