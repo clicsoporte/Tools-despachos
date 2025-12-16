@@ -1,3 +1,7 @@
+/**
+ * @fileoverview Page for assigning items to warehouse locations, optionally linked to a customer.
+ * This component allows users to create a catalog of where items are stored.
+ */
 'use client';
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
@@ -81,12 +85,15 @@ export default function AssignInventoryPage() {
         [customers, debouncedCustomerSearch]
     );
 
-    const locationOptions = useMemo(() =>
-        debouncedLocationSearch.length < 1 ? [] : locations
-            .filter(l => l.name.toLowerCase().includes(debouncedLocationSearch.toLowerCase()) || l.code.toLowerCase().includes(debouncedLocationSearch.toLowerCase()))
-            .map(l => ({ value: String(l.id), label: `${l.code} (${l.name})` })),
-        [locations, debouncedLocationSearch]
-    );
+    const locationOptions = useMemo(() => {
+        const searchTerm = debouncedLocationSearch.trim();
+        if (searchTerm === '*' || searchTerm === '') {
+            return locations.map(l => ({ value: String(l.id), label: `${l.code} (${l.name})` }));
+        }
+        return locations
+            .filter(l => l.name.toLowerCase().includes(searchTerm.toLowerCase()) || l.code.toLowerCase().includes(searchTerm.toLowerCase()))
+            .map(l => ({ value: String(l.id), label: `${l.code} (${l.name})` }));
+    }, [locations, debouncedLocationSearch]);
 
     const handleSelectProduct = (value: string) => {
         setProductSearchOpen(false);
@@ -213,7 +220,7 @@ export default function AssignInventoryPage() {
                             </div>
                             <div className="space-y-2">
                                 <Label>3. Seleccione una Ubicación</Label>
-                                <SearchInput options={locationOptions} onSelect={handleSelectLocation} value={locationSearchTerm} onValueChange={setLocationSearchTerm} placeholder="Buscar ubicación..." open={isLocationSearchOpen} onOpenChange={setIsLocationSearchOpen} />
+                                <SearchInput options={locationOptions} onSelect={handleSelectLocation} value={locationSearchTerm} onValueChange={setLocationSearchTerm} placeholder="Buscar o '*' para ver todas..." open={isLocationSearchOpen} onOpenChange={setIsLocationSearchOpen} />
                             </div>
                         </div>
                     </CardContent>
@@ -230,7 +237,7 @@ export default function AssignInventoryPage() {
                     </CardHeader>
                     <CardContent>
                         <div className="max-h-96 overflow-y-auto">
-                            <table className="w-full">
+                            <table className="w-full text-sm">
                                 <thead className="sticky top-0 bg-muted">
                                     <tr>
                                         <th className="p-2 text-left">Producto</th>

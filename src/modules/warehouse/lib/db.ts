@@ -1,4 +1,3 @@
-
 /**
  * @fileoverview Server-side functions for the warehouse database.
  */
@@ -331,8 +330,37 @@ export async function updateLocation(location: WarehouseLocation): Promise<Wareh
     return updatedLocation;
 }
 
+const getAllDescendantIds = (locationId: number, allLocations: WarehouseLocation[]): number[] => {
+    let descendants: number[] = [];
+    const children = allLocations.filter(loc => loc.parentId === locationId);
+    for (const child of children) {
+        descendants.push(child.id);
+        descendants = descendants.concat(getAllDescendantIds(child.id, allLocations));
+    }
+    return descendants;
+};
+
+
 export async function deleteLocation(id: number): Promise<void> {
     const db = await connectDb(WAREHOUSE_DB_FILE);
+
+    // --- Safety Check ---
+    const allLocations = db.prepare('SELECT * FROM locations').all() as WarehouseLocation[];
+    const idsToCheck = [id, ...getAllDescendantIds(id, allLocations)];
+
+    const placeholders = idsToCheck.map(() => '?').join(',');
+
+    const itemLocationCheck = db.prepare(`SELECT 1 FROM item_locations WHERE locationId IN (${placeholders}) LIMIT 1`).get(...idsToCheck);
+    if (itemLocationCheck) {
+        throw new Error('No se puede eliminar la ubicación porque esta o una de sus sub-ubicaciones está en uso (asignación simple).');
+    }
+
+    const unitCheck = db.prepare(`SELECT 1 FROM inventory_units WHERE locationId IN (${placeholders}) LIMIT 1`).get(...idsToCheck);
+    if (unitCheck) {
+        throw new Error('No se puede eliminar la ubicación porque esta o una de sus sub-ubicaciones está en uso (unidades de inventario).');
+    }
+
+    // If checks pass, proceed with deletion
     db.prepare('DELETE FROM locations WHERE id = ?').run(id);
 }
 
@@ -442,7 +470,7 @@ export async function getInventoryUnitById(id: string | number): Promise<Invento
     const db = await connectDb(WAREHOUSE_DB_FILE);
     const searchTerm = String(id).toUpperCase();
     if (searchTerm.startsWith('U')) {
-        return db.prepare('SELECT * FROM inventory_units WHERE unitCode = ?').get(searchTerm) as InventoryUnit | null;
+        return db.prepare('SELECT * FROM inventory_units WHERE UPPER(unitCode) = ?').get(searchTerm) as InventoryUnit | null;
     }
     return db.prepare('SELECT * FROM inventory_units WHERE id = ?').get(id) as InventoryUnit | null;
 }
