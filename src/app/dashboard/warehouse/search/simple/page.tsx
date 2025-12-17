@@ -265,7 +265,7 @@ export default function SimpleWarehouseSearchPage() {
     };
 
 
-    if (isLoading || !warehouseSettings) {
+    if (isLoading || !warehouseSettings || !stockSettings) {
         return <div className="flex h-screen w-full items-center justify-center bg-background"><Loader2 className="h-12 w-12 animate-spin text-primary" /></div>
     }
 
@@ -322,8 +322,29 @@ export default function SimpleWarehouseSearchPage() {
                                             </div>
                                         </div>
                                         <div>
-                                            <h4 className="font-semibold mb-2">Existencias ERP</h4>
-                                            {item.erpStock && <div className="flex justify-between items-center p-2 border rounded-md font-bold text-xl"><p>Total en Bodegas</p><p>{item.erpStock.totalStock.toLocaleString()}</p></div>}
+                                            <h4 className="font-semibold mb-2">Existencias por Bodega (ERP)</h4>
+                                            {item.erpStock && stockSettings ? (
+                                                <div className="space-y-2">
+                                                    {Object.entries(item.erpStock.stockByWarehouse)
+                                                        .filter(([, qty]) => qty > 0)
+                                                        .map(([whId, qty]) => {
+                                                            const warehouse = stockSettings.warehouses.find(w => w.id === whId);
+                                                            return warehouse?.isVisible ? (
+                                                                <div key={whId} className="flex justify-between items-center p-2 border rounded-md">
+                                                                    <span>{warehouse.name} ({whId})</span>
+                                                                    <span className="font-bold text-lg">{qty.toLocaleString()}</span>
+                                                                </div>
+                                                            ) : null;
+                                                    })}
+                                                    <Separator />
+                                                    <div className="flex justify-between items-center p-2 font-bold">
+                                                        <span>Total ERP</span>
+                                                        <span className="text-xl">{item.erpStock.totalStock.toLocaleString()}</span>
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <p className="text-sm text-muted-foreground">Sin datos de existencias en el ERP.</p>
+                                            )}
                                         </div>
                                     </CardContent>
                                 </Card>
