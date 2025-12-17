@@ -48,7 +48,7 @@
     "jspdf-autotable": "^3.8.2",
     "lucide-react": "^0.408.0",
     "mssql": "^11.0.1",
-    "next": "14.2.5",
+    "next": "14.2.35",
     "nodemailer": "^6.9.14",
     "papaparse": "^5.4.1",
     "postcss": "^8.4.39",
