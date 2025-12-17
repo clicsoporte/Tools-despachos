@@ -142,7 +142,7 @@ export default function SimpleWarehouseSearchPage() {
     }, [toast]);
     
     useEffect(() => {
-        setTitle("Búsqueda Simple de Almacén");
+        setTitle("Búsqueda Rápida de Almacén");
         loadData();
     }, [setTitle, loadData]);
     
