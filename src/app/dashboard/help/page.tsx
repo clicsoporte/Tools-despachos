@@ -394,7 +394,7 @@ export default function HelpPage() {
                         <strong>Paso 3: Ajustar y Calcular Precios.</strong>
                         <ul className="list-[circle] space-y-2 pl-5 mt-2 text-sm">
                             <li>En la tabla de &quot;Artículos Extraídos&quot;, puedes editar la mayoría de los campos.</li>
-                            <li><strong>Costo Unit. (s/IVA):</strong> Este es el costo real del artículo (costo de factura + costo prorrateado +/- efecto del descuento). Puedes **sobrescribirlo manually** si necesitas ajustar el costo base para un artículo específico.</li>
+                            <li><strong>Costo Unit. (s/IVA):</strong> Este es el costo real del artículo (costo de factura + costo prorrateado +/- efecto del descuento). Puedes **sobrescribirlo manualmente** si necesitas ajustar el costo base para un artículo específico.</li>
                             <li><strong>Imp. %:</strong> El sistema extrae el impuesto del XML, pero puedes editarlo aquí si es necesario (ej. de &quot;13&quot; a &quot;1&quot;).</li>
                             <li><strong>Margen:</strong> Introduce el margen de ganancia deseado (ej. &quot;20&quot; para un 20%).</li>
                             <li>El sistema calculará automáticamente el **P.V.P. Unitario Sugerido** y la **Ganancia por Línea** en tiempo real.</li>
@@ -612,7 +612,7 @@ export default function HelpPage() {
                            <AlertTriangle className="h-4 w-4" />
                            <AlertTitle>¡Paso Crítico!</AlertTitle>
                            <AlertDescription>
-                                Si no registras las bodegas aquí, el desglose de inventario en las búsquedas **no aparecerá**, y solo verás un "Total ERP", lo cual puede ser confuso.
+                                Si no registras las bodegas aquí, el desglose de inventario en las búsquedas **no aparecerá**, y solo verás un &quot;Total ERP&quot;, lo cual puede ser confuso.
                            </AlertDescription>
                        </Alert>
                     </li>
@@ -628,7 +628,7 @@ export default function HelpPage() {
                         <strong>Consulta de Almacén:</strong> La herramienta principal para buscar artículos, clientes o unidades y ver sus ubicaciones y stock del ERP desglosado por bodega.
                     </li>
                     <li>
-                        <strong>Gestionar Ubicaciones:</strong> Aquí es donde se construye el "árbol" real de tu almacén, creando las ubicaciones físicas (ej: "Rack 01") y anidándolas según la jerarquía que definiste en la configuración.
+                        <strong>Gestionar Ubicaciones:</strong> Aquí es donde se construye el &quot;árbol&quot; real de tu almacén, creando las ubicaciones físicas (ej: &quot;Rack 01&quot;) y anidándolas según la jerarquía que definiste en la configuración.
                     </li>
                     <li>
                         <strong>Gestión de Unidades (QR):</strong> Úsalo para crear identificadores únicos para unidades físicas (ej. una tarima, un lote). El sistema genera un código QR que puedes imprimir y pegar en la unidad para rastrearla fácilmente.
