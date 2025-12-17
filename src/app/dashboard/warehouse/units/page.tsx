@@ -238,7 +238,7 @@ export default function ManageUnitsPage() {
                             </div>
                              <div className="space-y-2">
                                 <Label>2. Ubicación <span className="text-destructive">*</span></Label>
-                                <SearchInput options={locationOptions} onSelect={handleSelectLocation} value={locationSearchTerm} onValueChange={setLocationSearchTerm} placeholder="Buscar o '*' para ver todas..." open={isLocationSearchOpen} onOpenChange={setIsLocationSearchOpen} />
+                                <SearchInput options={locationOptions} onSelect={handleSelectLocation} value={locationSearchTerm} onValueChange={setLocationSearchTerm} placeholder="Buscar... ('*' o vacío para ver todas)" open={isLocationSearchOpen} onOpenChange={setIsLocationSearchOpen} />
                             </div>
                         </div>
                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
