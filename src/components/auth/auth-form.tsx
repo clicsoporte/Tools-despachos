@@ -69,11 +69,9 @@ export function AuthForm({ clientInfo }: AuthFormProps) {
   useEffect(() => {
     // On page load, if there's a path, store it for redirection after login.
     // This is especially for direct access to protected URLs (e.g. from QR scan).
-    if (pathname && pathname !== '/') {
-        const fullPath = `${pathname}${searchParams ? '?' + searchParams.toString() : ''}`;
-        if (fullPath !== '/?') { // Avoid storing a blank redirect
-             sessionStorage.setItem(REDIRECT_URL_KEY, fullPath);
-        }
+    const fullPath = `${pathname}${searchParams ? '?' + searchParams.toString() : ''}`;
+    if (pathname && pathname !== '/' && fullPath !== '/?') {
+        sessionStorage.setItem(REDIRECT_URL_KEY, fullPath);
     }
   }, [pathname, searchParams]);
 
@@ -88,7 +86,7 @@ export function AuthForm({ clientInfo }: AuthFormProps) {
           setUserForPasswordChange(loginResult.user);
           setAuthStep('force_change');
         } else {
-          await refreshAuthAndRedirect('/dashboard');
+          await refreshAuthAndRedirect(); // This will handle complex redirects
         }
       } else {
         toast({

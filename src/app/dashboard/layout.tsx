@@ -48,8 +48,6 @@ export default function DashboardLayout({
     // If the auth context is ready but there's no user, it means the session
     // is invalid (or the user logged out). Redirect to the login page.
     if (isReady && !user) {
-      // The redirect logic is now handled more robustly in the auth flow itself.
-      // This just ensures non-authed users are sent back.
       router.replace('/');
     }
   }, [isReady, user, router]);
