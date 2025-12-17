@@ -332,14 +332,14 @@ export default function SimpleWarehouseSearchPage() {
                                                             return warehouse?.isVisible ? (
                                                                 <div key={whId} className="flex justify-between items-center p-2 border rounded-md">
                                                                     <span>{warehouse.name} ({whId})</span>
-                                                                    <span className="font-bold text-lg">{qty.toLocaleString('es-CR')}</span>
+                                                                    <span className="font-bold text-lg">{qty.toLocaleString()}</span>
                                                                 </div>
                                                             ) : null;
                                                     })}
                                                     <Separator />
                                                     <div className="flex justify-between items-center p-2 font-bold">
                                                         <span>Total ERP</span>
-                                                        <span className="text-xl">{item.erpStock.totalStock.toLocaleString('es-CR')}</span>
+                                                        <span className="text-xl">{item.erpStock.totalStock.toLocaleString()}</span>
                                                     </div>
                                                 </div>
                                             ) : (
