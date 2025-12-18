@@ -97,7 +97,7 @@ export const mainTools: Tool[] = [
     bgColor: "bg-amber-700",
     textColor: "text-white",
   },
-  {
+   {
     id: "planner",
     name: "Planificador OP",
     description: "Gestionar y visualizar la carga de producción.",
