@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
@@ -629,13 +630,19 @@ export default function HelpPage() {
                 </div>
                  <ul className="list-disc space-y-3 pl-6 mt-4">
                     <li>
-                        <strong>Toma de Inventario (<ClipboardList className="inline h-4 w-4"/>):</strong> Permite a los bodegueros registrar conteos físicos de un producto en una ubicación específica. Estos datos se pueden usar luego para generar reportes y ajustar el inventario en el ERP.
+                        <strong>Búsqueda Rápida (<QrCode className="inline h-4 w-4"/>):</strong> Una interfaz simple, ideal para celulares, que permite escanear un código QR o buscar rápidamente un artículo para ver su ubicación e inventario.
+                    </li>
+                    <li>
+                        <strong>Asignar Ubicación a Producto (<PackagePlus className="inline h-4 w-4" />):</strong> Permite crear un &quot;catálogo&quot; indicando en qué ubicación física se almacena un producto específico de un cliente. Es ideal para productos que siempre van en el mismo lugar.
+                    </li>
+                     <li>
+                        <strong>Toma de Inventario Físico (<ClipboardCheck className="inline h-4 w-4"/>):</strong> Permite a los bodegueros registrar conteos físicos de un producto en una ubicación específica. Estos datos se pueden usar luego para generar reportes y ajustar el inventario en el ERP.
                     </li>
                      <li>
                         <strong>Reporte de Inventario Físico (<ClipboardCheck className="inline h-4 w-4"/>):</strong> (En Analíticas) Es la contraparte de la toma de inventario. Muestra una tabla comparando la `Cantidad Contada` vs. el `Stock del ERP` y resalta las diferencias, lista para exportar y realizar ajustes.
                     </li>
                     <li>
-                        <strong>Consulta de Almacén (<Search className="inline h-4 w-4"/>):</strong> La herramienta principal para buscar artículos y ver sus ubicaciones y stock del ERP desglosado por bodega.
+                        <strong>Consulta de Almacén (<Search className="inline h-4 w-4"/>):</strong> La herramienta completa para buscar artículos y ver sus ubicaciones y stock del ERP desglosado por bodega.
                     </li>
                     <li>
                         <strong>Gestión de Ubicaciones (<Map className="inline h-4 w-4"/>):</strong> Aquí es donde se construye el &quot;árbol&quot; real de tu almacén, creando las ubicaciones físicas (ej: &quot;Rack 01&quot;) y anidándolas según la jerarquía que un administrador haya definido.
@@ -818,7 +825,7 @@ export default function HelpPage() {
         content: (
              <div className="space-y-4">
                 <h4 className="font-semibold text-lg">Versión 2.0.0 <Badge variant="secondary">Actual</Badge></h4>
-                <p className="text-sm text-muted-foreground">Lanzamiento: Octubre 2024</p>
+                <p className="text-sm text-muted-foreground">Lanzamiento: Julio 2024</p>
                 <ul className="list-disc space-y-3 pl-6">
                     <li>
                         <strong>Mejora Radical de Estabilidad:</strong> Se refactorizó la lógica de autenticación y carga inicial, eliminando completamente el "parpadeo" de la pantalla de login y las condiciones de carrera al acceder a rutas protegidas.
@@ -830,10 +837,13 @@ export default function HelpPage() {
                         <strong>Nuevo Asistente de Creación de Racks:</strong> Se añadió una potente herramienta en la gestión de ubicaciones que permite crear y clonar estructuras de racks completas de forma masiva, reduciendo drásticamente el tiempo de configuración de una bodega.
                     </li>
                     <li>
-                        <strong>Mejora de Usabilidad:</strong> Se mejoró la visualización de ubicaciones en todo el módulo de Almacén para mostrar la ruta jerárquica completa (ej: "Rack 01 &gt; Nivel A &gt; 01"), eliminando la ambigüedad.
+                        <strong>Mejora de Usabilidad:</strong> Se mejoró la visualización de ubicaciones en todo el módulo de Almacén para mostrar la ruta jerárquica completa (ej: &quot;Rack 01 &gt; Nivel A &gt; 01&quot;), eliminando la ambigüedad.
                     </li>
                     <li>
                         <strong>Corrección de Permisos:</strong> Se corrigió el comportamiento de los permisos `:read:all` para que los supervisores vean todos los documentos por defecto, como se esperaba.
+                    </li>
+                     <li>
+                        <strong>Restauración de Funcionalidad:</strong> Se restauró la página y funcionalidad de &quot;Asignar Artículo a Cliente y Ubicación&quot;, diferenciándola claramente de la &quot;Toma de Inventario Físico&quot;.
                     </li>
                     <li>
                         <strong>Actualización Masiva de Documentación:</strong> El Centro de Ayuda ha sido completamente revisado, actualizado con las últimas funcionalidades y se ha añadido esta sección de "Control de Cambios".
