@@ -25,14 +25,11 @@ import {
   Wrench,
   LayoutDashboard,
   LifeBuoy,
-  Sheet as SheetIcon,
+  Sheet,
   CalendarCheck,
   ShoppingCart,
   Warehouse,
   Search,
-  PackagePlus,
-  BookMarked,
-  MessageSquare,
   BarChartBig,
   Calculator,
 } from "lucide-react";
@@ -103,15 +100,13 @@ export function AppSidebar() {
       description: "Visión general de las herramientas y actividad.",
       href: "/dashboard",
       icon: LayoutDashboard,
-      bgColor: "bg-blue-500",
     },
     {
       id: "quoter",
       name: "Cotizador",
       description: "Crear y gestionar cotizaciones para clientes.",
       href: "/dashboard/quoter",
-      icon: SheetIcon,
-      bgColor: "bg-green-500",
+      icon: Sheet,
     },
     {
       id: "purchase-request",
@@ -119,7 +114,6 @@ export function AppSidebar() {
       description: "Crear y gestionar solicitudes de compra internas.",
       href: "/dashboard/requests",
       icon: ShoppingCart,
-      bgColor: "bg-yellow-500",
     },
      {
       id: "planner",
@@ -127,7 +121,6 @@ export function AppSidebar() {
       description: "Gestionar y visualizar la carga de producción.",
       href: "/dashboard/planner",
       icon: CalendarCheck,
-      bgColor: "bg-purple-500",
     },
     {
       id: 'cost-assistant',
@@ -135,7 +128,6 @@ export function AppSidebar() {
       description: 'Calcular costos y precios a partir de facturas XML.',
       href: '/dashboard/cost-assistant',
       icon: Calculator,
-      bgColor: 'bg-orange-500',
     },
     {
       id: "warehouse",
@@ -143,7 +135,6 @@ export function AppSidebar() {
       description: "Consultar, asignar y gestionar inventario.",
       href: "/dashboard/warehouse",
       icon: Warehouse,
-      bgColor: "bg-cyan-600",
     },
      {
       id: "hacienda-query",
@@ -151,7 +142,6 @@ export function AppSidebar() {
       description: "Verificar situación tributaria y exoneraciones.",
       href: "/dashboard/hacienda",
       icon: Search,
-      bgColor: "bg-fuchsia-600",
     },
     {
       id: "help",
@@ -159,7 +149,6 @@ export function AppSidebar() {
       description: "Consultar la documentación y guías de uso del sistema.",
       href: "/dashboard/help",
       icon: LifeBuoy,
-      bgColor: "bg-blue-700",
     },
   ];
 

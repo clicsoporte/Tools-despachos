@@ -3,7 +3,7 @@
  */
 'use client';
 
-import { mainTools } from "@/modules/core/lib/data.tsx";
+import { mainTools } from "@/modules/core/lib/data";
 import { ToolCard } from "@/components/dashboard/tool-card";
 import { useEffect, useMemo } from "react";
 import type { Tool } from "@/modules/core/types";
