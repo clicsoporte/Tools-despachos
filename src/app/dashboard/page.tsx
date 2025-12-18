@@ -1,10 +1,9 @@
-
 /**
  * @fileoverview The main dashboard page, which greets the user and displays available tools.
  */
 'use client';
 
-import { mainTools, analyticsTools, adminTools } from "@/modules/core/lib/data";
+import { mainTools } from "@/modules/core/lib/data.tsx";
 import { ToolCard } from "@/components/dashboard/tool-card";
 import { useEffect, useMemo } from "react";
 import type { Tool } from "@/modules/core/types";
@@ -43,8 +42,6 @@ export default function DashboardPage() {
         description: "Inteligencia de negocio y reportes para la toma de decisiones.",
         href: "/dashboard/analytics",
         icon: BarChartBig,
-        bgColor: "bg-indigo-500",
-        textColor: "text-white",
       });
     }
     
@@ -56,8 +53,6 @@ export default function DashboardPage() {
         description: "Gestionar usuarios, roles, importaciones y ajustes del sistema.",
         href: "/dashboard/admin",
         icon: Wrench,
-        bgColor: "bg-slate-600",
-        textColor: "text-white",
       });
     }
     
