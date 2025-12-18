@@ -1,4 +1,3 @@
-
 /**
  * @fileoverview Redirect component for the old /dashboard/settings route.
  * This component will now permanently redirect to the user's profile page.

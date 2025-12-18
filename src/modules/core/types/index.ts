@@ -784,13 +784,8 @@ export interface PhysicalInventoryComparisonItem {
 
 // --- User Preferences ---
 export interface UserPreferences {
-    classificationFilter: string[];
-    showOnlyMyOrders: boolean;
-    visibleColumns: string[];
-    sortKey: 'item' | 'sourceOrders' | 'involvedClients' | 'erpUsers' | 'earliestCreationDate' | 'earliestDueDate' | 'shortage' | 'totalRequired' | 'currentStock' | 'inTransitStock' | undefined;
-    sortDirection: 'asc' | 'desc';
-    rowsPerPage: number;
-};
+    [key: string]: any;
+}
 
 
 // --- Cost Assistant Types ---

@@ -7,6 +7,7 @@
 
 'use client';
 
+import React from 'react';
 import { useState, useEffect, useCallback, useMemo, FormEvent } from 'react';
 import { useToast } from '@/modules/core/hooks/use-toast';
 import { usePageTitle } from '@/modules/core/hooks/usePageTitle';
@@ -719,8 +720,8 @@ export const usePlanner = () => {
                     rows: tableRows,
                     columnStyles: selectedColumnIds.reduce((acc, id, index) => {
                         const col = allPossibleColumns.find(c => c.id === id);
-                        if (col?.width) { acc[index] = { cellWidth: col.width }; }
-                        if (id === 'quantity') { acc[index] = { ...acc[index], halign: 'right' }; }
+                        if (col?.width) { (acc as any)[index] = { cellWidth: col.width }; }
+                        if (id === 'quantity') { (acc as any)[index] = { ...(acc as any)[index], halign: 'right' }; }
                         return acc;
                     }, {} as { [key: number]: any })
                 },
