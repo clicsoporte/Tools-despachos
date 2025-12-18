@@ -4,7 +4,7 @@
 "use server";
 
 import { connectDb, getAllStock as getAllStockFromMain, getStockSettings as getStockSettingsFromMain } from '@/modules/core/lib/db';
-import type { WarehouseLocation, WarehouseInventoryItem, MovementLog, WarehouseSettings, StockSettings, StockInfo, ItemLocation, InventoryUnit } from '@/modules/core/types';
+import type { WarehouseLocation, WarehouseInventoryItem, MovementLog, WarehouseSettings, StockSettings, StockInfo, ItemLocation, InventoryUnit, DateRange } from '@/modules/core/types';
 import { logError } from '@/modules/core/lib/logger';
 
 const WAREHOUSE_DB_FILE = 'warehouse.db';
@@ -375,6 +375,20 @@ export async function deleteLocation(id: number): Promise<void> {
 export async function getInventoryForItem(itemId: string): Promise<WarehouseInventoryItem[]> {
     const db = await connectDb(WAREHOUSE_DB_FILE);
     return db.prepare('SELECT * FROM inventory WHERE itemId = ?').all(itemId) as WarehouseInventoryItem[];
+}
+
+export async function getInventory(dateRange?: DateRange): Promise<WarehouseInventoryItem[]> {
+    const db = await connectDb(WAREHOUSE_DB_FILE);
+    if (dateRange?.from) {
+        const toDate = dateRange.to || new Date();
+        toDate.setHours(23, 59, 59, 999);
+        return db.prepare(`
+            SELECT * FROM inventory 
+            WHERE lastUpdated BETWEEN ? AND ?
+            ORDER BY lastUpdated DESC
+        `).all(dateRange.from.toISOString(), toDate.toISOString()) as WarehouseInventoryItem[];
+    }
+    return db.prepare('SELECT * FROM inventory ORDER BY lastUpdated DESC').all() as WarehouseInventoryItem[];
 }
 
 export async function updateInventory(itemId: string, locationId: number, quantity: number): Promise<void> {

@@ -27,7 +27,8 @@ const config: Config = {
     'bg-green-700',
     'bg-blue-600',
     'bg-sky-600',
-    'bg-teal-600'
+    'bg-teal-600',
+    'bg-lime-600'
   ],
   theme: {
     extend: {
@@ -51,7 +52,7 @@ const config: Config = {
           foreground: 'hsl(var(--secondary-foreground))',
         },
         muted: {
-          DEFAULT: 'hsl(var(--muted))',
+          DEFAULT: 'hsl((var(--muted))',
           foreground: 'hsl(var(--muted-foreground))',
         },
         accent: {

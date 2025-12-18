@@ -155,10 +155,10 @@ export async function getActiveTransitsReportData(dateRange: DateRange): Promise
     return JSON.parse(JSON.stringify(reportData));
 }
 
-export async function getPhysicalInventoryReportData(): Promise<PhysicalInventoryComparisonItem[]> {
+export async function getPhysicalInventoryReportData({ dateRange }: { dateRange?: DateRange }): Promise<PhysicalInventoryComparisonItem[]> {
     try {
         const [physicalInventory, erpStock, allProducts, allLocations] = await Promise.all([
-            getPhysicalInventory(),
+            getPhysicalInventory(dateRange), // Pass dateRange to the DB function
             getAllStock(),
             getAllProducts(),
             getWarehouseLocations(),
