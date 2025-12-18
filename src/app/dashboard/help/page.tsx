@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
@@ -396,7 +397,7 @@ export default function HelpPage() {
                         <strong>Paso 3: Ajustar y Calcular Precios.</strong>
                         <ul className="list-[circle] space-y-2 pl-5 mt-2 text-sm">
                             <li>En la tabla de &quot;Artículos Extraídos&quot;, puedes editar la mayoría de los campos.</li>
-                            <li><strong>Costo Unit. (s/IVA):</strong> Este es el costo real del artículo (costo de factura + costo prorrateado +/- efecto del descuento). Puedes **sobrescribirlo manualmente** si necesitas ajustar el costo base para un artículo específico.</li>
+                            <li><strong>Costo Unit. (s/IVA):</strong> Este es el costo real del artículo (costo de factura + costo prorrateado +/- efecto del descuento). Puedes **sobrescribirlo manually** si necesitas ajustar el costo base para un artículo específico.</li>
                             <li><strong>Imp. %:</strong> El sistema extrae el impuesto del XML, pero puedes editarlo aquí si es necesario (ej. de &quot;13&quot; a &quot;1&quot;).</li>
                             <li><strong>Margen:</strong> Introduce el margen de ganancia deseado (ej. &quot;20&quot; para un 20%).</li>
                             <li>El sistema calculará automáticamente el **P.V.P. Unitario Sugerido** y la **Ganancia por Línea** en tiempo real.</li>
@@ -482,7 +483,7 @@ export default function HelpPage() {
                 <h4 className="font-semibold text-lg pt-2 border-t">Funcionalidades Clave</h4>
                 <ul className="list-disc space-y-3 pl-6">
                 <li>
-                    <strong>Visibilidad por Defecto:</strong> Por seguridad y claridad, la vista de solicitudes siempre mostrará por defecto solo los documentos que tú has creado. Si tienes el permiso `requests:read:all`, la casilla "Mostrar solo mis solicitudes" aparecerá desmarcada por defecto, dándote visibilidad total, pero puedes marcarla para enfocarte en tus documentos.
+                    <strong>Visibilidad por Defecto:</strong> Por seguridad y claridad, la vista de solicitudes siempre mostrará por defecto solo los documentos que tú has creado. Si tienes el permiso `requests:read:all`, la casilla &quot;Mostrar solo mis solicitudes&quot; aparecerá desmarcada por defecto, dándote visibilidad total, pero puedes marcarla para enfocarte en tus documentos.
                 </li>
                 <li>
                     <strong>Creación Inteligente desde ERP (<Layers className="inline h-4 w-4"/>):</strong> Permite crear solicitudes de compra automáticamente a partir de un pedido de venta del ERP. El sistema analiza el pedido, compara con el inventario actual y sugiere qué artículos comprar.
@@ -563,12 +564,12 @@ export default function HelpPage() {
                     <li>
                         <strong>¿Cómo se usa?:</strong>
                         <ul className="list-[circle] space-y-2 pl-5 mt-2 text-sm">
-                            <li>Selecciona un rango de fechas de los pedidos del ERP que quieres analizar y haz clic en &quot;Analizar Pedidos&quot;.</li>
+                            <li>Selecciona un rango de fechas de los pedidos del ERP que quieres analizar y haz clic en <strong>&quot;Analizar Pedidos&quot;</strong>.</li>
                             <li>El sistema te mostrará una tabla con los artículos faltantes. Para cada artículo, verás la cantidad total que necesitas, cuánto tienes en inventario, y el faltante exacto.</li>
-                            <li>**Ordena los resultados:** Haz clic en el encabezado de cualquier columna (ej: &quot;Próxima Entrega&quot; o &quot;Faltante Total&quot;) para ordenar la tabla según ese criterio. Una flecha te indicará el orden actual.</li>
+                            <li>**Ordena los resultados:** Haz clic en el encabezado de cualquier columna (ej: <strong>&quot;Próxima Entrega&quot;</strong> o <strong>&quot;Faltante Total&quot;</strong>) para ordenar la tabla según ese criterio. Una flecha te indicará el orden actual.</li>
                             <li>Usa los filtros de búsqueda y de clasificación (que ahora permite **selección múltiple**) para refinar la lista.</li>
                             <li>
-                                <strong>Crear Solicitudes:</strong> Marca los artículos que quieres comprar y haz clic en **&quot;Crear Solicitudes&quot;**. El sistema creará las solicitudes automáticamente en segundo plano, dejándolas &quot;Pendientes&quot; para que Compras complete la información faltante, como el precio.
+                                <strong>Crear Solicitudes:</strong> Marca los artículos que quieres comprar y haz clic en <strong>&quot;Crear Solicitudes&quot;</strong>. El sistema creará las solicitudes automáticamente en segundo plano, dejándolas &quot;Pendientes&quot; para que Compras complete la información faltante, como el precio.
                             </li>
                              <li>
                                 <strong>Alerta de Duplicados (<Info className="inline h-4 w-4 text-amber-500"/>):</strong> Si intentas crear una solicitud para un artículo que ya tiene una solicitud activa, el sistema te mostrará una **alerta con detalles**, incluyendo el número de la solicitud existente y quién la creó. Podrás decidir si quieres crear el duplicado o no.
@@ -587,7 +588,7 @@ export default function HelpPage() {
                         <ul className="list-[circle] space-y-2 pl-5 mt-2 text-sm">
                             <li>Accede al reporte para ver la tabla completa.</li>
                             <li>Usa la barra de búsqueda para filtrar rápidamente por nombre de usuario, correo o nombre del rol.</li>
-                            <li>Haz clic en los encabezados de columna &quot;Usuario&quot; o &quot;Rol&quot; para ordenar la lista.</li>
+                            <li>Haz clic en los encabezados de columna <strong>&quot;Usuario&quot;</strong> o <strong>&quot;Rol&quot;</strong> para ordenar la lista.</li>
                             <li>Exporta la vista actual a **PDF** o **Excel** para compartirla o archivarla como un registro de auditoría de seguridad.</li>
                         </ul>
                     </li>
