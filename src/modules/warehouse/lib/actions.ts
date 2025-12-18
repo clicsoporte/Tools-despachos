@@ -49,7 +49,7 @@ export async function deleteLocation(id: number): Promise<void> {
 }
 export const getInventoryForItem = async (itemId: string): Promise<WarehouseInventoryItem[]> => getInventoryForItemServer(itemId);
 export const logMovement = async (movement: Omit<MovementLog, 'id'|'timestamp'>): Promise<void> => logMovementServer(movement);
-export const updateInventory = async(itemId: string, locationId: number, quantity: number): Promise<void> => updateInventoryServer(itemId, locationId, quantity);
+export const updateInventory = async(itemId: string, locationId: number, quantity: number, updatedBy: string): Promise<void> => updateInventoryServer(itemId, locationId, quantity, updatedBy);
 
 // --- Simple Mode Actions ---
 export const getItemLocations = async (itemId: string): Promise<ItemLocation[]> => getItemLocationsServer(itemId);

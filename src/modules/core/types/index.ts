@@ -492,6 +492,7 @@ export type WarehouseInventoryItem = {
     locationId: number; // Foreign key to locations table
     quantity: number;
     lastUpdated: string;
+    updatedBy: string;
 };
 
 /** Maps an item to a location without quantity */
@@ -778,6 +779,7 @@ export interface PhysicalInventoryComparisonItem {
     erpStock: number;
     difference: number;
     lastCountDate: string;
+    updatedBy: string;
 }
 
 // --- User Preferences ---

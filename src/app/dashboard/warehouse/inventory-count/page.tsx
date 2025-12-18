@@ -112,7 +112,7 @@ export default function InventoryCountPage() {
 
         setIsSubmitting(true);
         try {
-            await updateInventory(selectedProductId, parseInt(selectedLocationId, 10), quantity);
+            await updateInventory(selectedProductId, parseInt(selectedLocationId, 10), quantity, user.name);
             await logMovement({
                 itemId: selectedProductId,
                 quantity: quantity,
@@ -123,7 +123,7 @@ export default function InventoryCountPage() {
             });
             
             toast({ title: "Conteo Guardado", description: `Se registró un inventario de ${quantity} para el producto.` });
-            logInfo('Physical inventory count saved', { itemId: selectedProductId, locationId: selectedLocationId, quantity });
+            logInfo('Physical inventory count saved', { itemId: selectedProductId, locationId: selectedLocationId, quantity, user: user.name });
             
             // Reset for next count
             setSelectedProductId(null);

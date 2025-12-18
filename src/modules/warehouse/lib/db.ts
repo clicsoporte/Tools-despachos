@@ -27,6 +27,7 @@ export async function initializeWarehouseDb(db: import('better-sqlite3').Databas
             locationId INTEGER NOT NULL,
             quantity REAL NOT NULL DEFAULT 0,
             lastUpdated TEXT NOT NULL,
+            updatedBy TEXT,
             FOREIGN KEY (locationId) REFERENCES locations(id) ON DELETE CASCADE,
             UNIQUE (itemId, locationId)
         );
@@ -273,6 +274,12 @@ export async function runWarehouseMigrations(db: import('better-sqlite3').Databa
             })();
         }
     }
+
+    const inventoryTableInfo = db.prepare(`PRAGMA table_info(inventory)`).all() as { name: string }[];
+    if (!inventoryTableInfo.some(c => c.name === 'updatedBy')) {
+        console.log("MIGRATION (warehouse.db): Adding 'updatedBy' to 'inventory' table.");
+        db.exec('ALTER TABLE inventory ADD COLUMN updatedBy TEXT');
+    }
 }
 
 export async function getWarehouseSettings(): Promise<WarehouseSettings> {
@@ -391,14 +398,14 @@ export async function getInventory(dateRange?: DateRange): Promise<WarehouseInve
     return db.prepare('SELECT * FROM inventory ORDER BY lastUpdated DESC').all() as WarehouseInventoryItem[];
 }
 
-export async function updateInventory(itemId: string, locationId: number, quantity: number): Promise<void> {
+export async function updateInventory(itemId: string, locationId: number, quantity: number, updatedBy: string): Promise<void> {
     const db = await connectDb(WAREHOUSE_DB_FILE);
      db.prepare(
-        `INSERT INTO inventory (itemId, locationId, quantity, lastUpdated) 
-         VALUES (?, ?, ?, datetime('now'))
+        `INSERT INTO inventory (itemId, locationId, quantity, lastUpdated, updatedBy) 
+         VALUES (?, ?, ?, datetime('now'), ?)
          ON CONFLICT(itemId, locationId) 
-         DO UPDATE SET quantity = ?`
-    ).run(itemId, locationId, quantity, quantity);
+         DO UPDATE SET quantity = ?, updatedBy = ?`
+    ).run(itemId, locationId, quantity, updatedBy, quantity, updatedBy);
 }
 
 export async function logMovement(movement: Omit<MovementLog, 'id' | 'timestamp'>): Promise<void> {

@@ -79,7 +79,7 @@ export default function PhysicalInventoryReportPage() {
                             </PopoverTrigger>
                             <PopoverContent className="w-auto p-0" align="start"><Calendar initialFocus mode="range" defaultMonth={dateRange?.from} selected={dateRange} onSelect={actions.setDateRange} numberOfMonths={2} locale={es} /></PopoverContent>
                         </Popover>
-                        <div className="relative flex-1 min-w-[240px]"><Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><Input placeholder="Buscar por producto o ubicación..." value={searchTerm} onChange={(e) => actions.setSearchTerm(e.target.value)} className="pl-8 w-full" /></div>
+                        <div className="relative flex-1 min-w-[240px]"><Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><Input placeholder="Buscar por producto, ubicación o usuario..." value={searchTerm} onChange={(e) => actions.setSearchTerm(e.target.value)} className="pl-8 w-full" /></div>
                         <Select value={differenceFilter} onValueChange={actions.setDifferenceFilter}>
                             <SelectTrigger className="w-full sm:w-auto min-w-[200px]"><SelectValue /></SelectTrigger>
                             <SelectContent>
@@ -144,6 +144,7 @@ export default function PhysicalInventoryReportPage() {
                                                     {item.difference > 0 ? '+' : ''}{item.difference.toLocaleString()}
                                                 </TableCell>
                                             )}
+                                            {visibleColumns.includes('updatedBy') && <TableCell>{item.updatedBy}</TableCell>}
                                             {visibleColumns.includes('lastCountDate') && <TableCell className="text-xs text-muted-foreground">{format(parseISO(item.lastCountDate), 'dd/MM/yy HH:mm')}</TableCell>}
                                         </TableRow>
                                     ))

@@ -19,7 +19,7 @@ import { useAuth } from '@/modules/core/hooks/useAuth';
 import { getUserPreferences, saveUserPreferences } from '@/modules/core/lib/db';
 import { generateDocument } from '@/modules/core/lib/pdf-generator';
 
-export type SortKey = 'productId' | 'physicalCount' | 'erpStock' | 'difference' | 'lastCountDate' | 'locationName';
+export type SortKey = 'productId' | 'physicalCount' | 'erpStock' | 'difference' | 'lastCountDate' | 'locationName' | 'updatedBy';
 export type SortDirection = 'asc' | 'desc';
 export type DifferenceFilter = 'all' | 'with-difference' | 'shortage' | 'surplus';
 
@@ -47,7 +47,8 @@ export const availableColumns = [
     { id: 'physicalCount', label: 'Conteo Físico', sortable: true, align: 'right' },
     { id: 'erpStock', label: 'Stock ERP', sortable: true, align: 'right' },
     { id: 'difference', label: 'Diferencia', sortable: true, align: 'right' },
-    { id: 'lastCountDate', label: 'Último Conteo', sortable: true },
+    { id: 'updatedBy', label: 'Contado Por', sortable: true },
+    { id: 'lastCountDate', label: 'Fecha Conteo', sortable: true },
 ];
 
 export function usePhysicalInventoryReport() {
@@ -121,7 +122,8 @@ export function usePhysicalInventoryReport() {
             data = data.filter(item =>
                 normalizeText(item.productDescription).includes(lowercasedFilter) ||
                 normalizeText(item.productId).includes(lowercasedFilter) ||
-                normalizeText(item.locationName).includes(lowercasedFilter)
+                normalizeText(item.locationName).includes(lowercasedFilter) ||
+                normalizeText(item.updatedBy).includes(lowercasedFilter)
             );
         }
 
@@ -195,6 +197,7 @@ export function usePhysicalInventoryReport() {
             'Conteo Físico': item.physicalCount,
             'Stock ERP': item.erpStock,
             'Diferencia': item.difference,
+            'Contado Por': item.updatedBy,
             'Fecha Conteo': format(parseISO(item.lastCountDate), 'dd/MM/yyyy HH:mm', { locale: es }),
         }));
 
@@ -203,19 +206,20 @@ export function usePhysicalInventoryReport() {
             sheetName: 'ConteoFisico',
             headers: Object.keys(dataToExport[0] || {}),
             data: dataToExport.map(item => Object.values(item)),
-            columnWidths: [20, 40, 25, 15, 15, 15, 20],
+            columnWidths: [20, 40, 25, 15, 15, 15, 20, 20],
         });
     };
 
     const handleExportPDF = async () => {
         if (!companyData) return;
-        const tableHeaders = ["Producto", "Ubicación", "Conteo Físico", "Stock ERP", "Diferencia", "Fecha Conteo"];
+        const tableHeaders = ["Producto", "Ubicación", "Físico", "ERP", "Dif.", "Contado Por", "Fecha"];
         const tableRows = sortedData.map(item => [
             `${item.productDescription}\n(${item.productId})`,
             `${item.locationName} (${item.locationCode})`,
             item.physicalCount.toLocaleString(),
             item.erpStock.toLocaleString(),
             item.difference.toLocaleString(),
+            item.updatedBy,
             format(parseISO(item.lastCountDate), 'dd/MM/yy HH:mm')
         ]);
         const doc = generateDocument({

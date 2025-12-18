@@ -181,6 +181,7 @@ export async function getPhysicalInventoryReportData({ dateRange }: { dateRange?
                 erpStock: erpQuantity,
                 difference: item.quantity - erpQuantity,
                 lastCountDate: item.lastUpdated,
+                updatedBy: item.updatedBy || 'N/A',
             };
         });
 
