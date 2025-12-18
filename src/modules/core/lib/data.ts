@@ -167,7 +167,7 @@ export const warehouseTools: Tool[] = [
      {
         id: "assign-item",
         name: "Asignar Ubicación a Producto",
-        description: "Asignar productos a clientes y ubicaciones de forma permanente.",
+        description: "Asociar productos a clientes y ubicaciones de forma permanente.",
         href: "/dashboard/warehouse/assign",
         icon: PackagePlus,
         bgColor: "bg-fuchsia-600",
