@@ -233,7 +233,7 @@ export async function runWarehouseMigrations(db: import('better-sqlite3').Databa
 
                     // Update the next unit number in settings
                     settings.nextUnitNumber = nextUnitNumber;
-                    db.prepare('UPDATE warehouse_config SET value = ? WHERE key = \'settings\'').run(JSON.stringify(settings));
+                    db.prepare('UPDATE warehouse_config SET value = ? WHERE key = \\'settings\\'').run(JSON.stringify(settings));
 
                     // 4. Drop old table
                     db.exec('DROP TABLE inventory_units_old;');
@@ -335,6 +335,73 @@ export async function addLocation(location: Omit<WarehouseLocation, 'id'>): Prom
     const newLocation = db.prepare('SELECT * FROM locations WHERE id = ?').get(info.lastInsertRowid) as WarehouseLocation;
     return newLocation;
 }
+
+export async function addBulkLocations(payload: { type: 'rack' | 'clone', params: any }): Promise<void> {
+    const db = await connectDb(WAREHOUSE_DB_FILE);
+    const { type, params } = payload;
+    const settings = await getWarehouseSettings();
+
+    const transaction = db.transaction(() => {
+        if (type === 'rack') {
+            const { name, prefix, levels, positions, depth } = params;
+            // Create the main rack location
+            const rackType = settings.locationLevels.find(l => l.name.toLowerCase().includes('rack'))?.type || 'rack';
+            const info = db.prepare('INSERT INTO locations (name, code, type, parentId) VALUES (?, ?, ?, NULL)').run(name, prefix, rackType);
+            const rackId = info.lastInsertRowid as number;
+
+            // Generate children
+            for (let i = 0; i < levels; i++) {
+                const levelName = String.fromCharCode(65 + i); // A, B, C...
+                const levelType = settings.locationLevels[3]?.type || 'shelf';
+                const levelInfo = db.prepare('INSERT INTO locations (name, code, type, parentId) VALUES (?, ?, ?, ?)').run(`Nivel ${levelName}`, `${prefix}-${levelName}`, levelType, rackId);
+                const levelId = levelInfo.lastInsertRowid as number;
+
+                for (let j = 1; j <= positions; j++) {
+                    const posName = String(j).padStart(2, '0');
+                    const posType = settings.locationLevels[4]?.type || 'bin';
+                    const posCode = `${prefix}-${levelName}-${posName}`;
+                    const posInfo = db.prepare('INSERT INTO locations (name, code, type, parentId) VALUES (?, ?, ?, ?)').run(`Posición ${posName}`, posCode, posType, levelId);
+                    const posId = posInfo.lastInsertRowid as number;
+
+                    for (let k = 1; k <= depth; k++) {
+                        const depthName = k === 1 ? 'Frente' : 'Fondo';
+                        const depthCode = `${posCode}-${k === 1 ? 'F' : 'T'}`;
+                         db.prepare('INSERT INTO locations (name, code, type, parentId) VALUES (?, ?, ?, ?)').run(depthName, depthCode, posType, posId);
+                    }
+                }
+            }
+        } else if (type === 'clone') {
+            const { sourceRackId, newName, newPrefix } = params;
+            const allLocations = db.prepare('SELECT * FROM locations').all() as WarehouseLocation[];
+            const sourceRack = allLocations.find(l => l.id === Number(sourceRackId));
+            if (!sourceRack) throw new Error('Rack de origen no encontrado.');
+
+            const mapping = new Map<number, number>();
+            
+            // 1. Create the new parent rack
+            const newRackInfo = db.prepare('INSERT INTO locations (name, code, type, parentId) VALUES (?, ?, ?, ?)').run(newName, newPrefix, sourceRack.type, sourceRack.parentId);
+            const newRackId = newRackInfo.lastInsertRowid as number;
+            mapping.set(sourceRack.id, newRackId);
+
+            // 2. Recursively clone children
+            function cloneChildren(oldParentId: number, newParentId: number) {
+                const children = allLocations.filter(l => l.parentId === oldParentId);
+                for (const child of children) {
+                    const newCode = child.code.replace(sourceRack.code, newPrefix);
+                    const newChildInfo = db.prepare('INSERT INTO locations (name, code, type, parentId) VALUES (?, ?, ?, ?)').run(child.name, newCode, child.type, newParentId);
+                    const newChildId = newChildInfo.lastInsertRowid as number;
+                    mapping.set(child.id, newChildId);
+                    cloneChildren(child.id, newChildId);
+                }
+            }
+
+            cloneChildren(sourceRack.id, newRackId);
+        }
+    });
+
+    transaction();
+}
+
 
 export async function updateLocation(location: WarehouseLocation): Promise<WarehouseLocation> {
     const db = await connectDb(WAREHOUSE_DB_FILE);

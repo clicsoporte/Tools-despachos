@@ -22,6 +22,7 @@ import {
     getInventoryUnits as getInventoryUnitsServer,
     deleteInventoryUnit as deleteInventoryUnitServer,
     getInventoryUnitById as getInventoryUnitByIdServer,
+    addBulkLocations as addBulkLocationsServer,
 } from './db';
 import type { WarehouseSettings, WarehouseLocation, WarehouseInventoryItem, MovementLog, ItemLocation, InventoryUnit } from '@/modules/core/types';
 import { logInfo, logWarn } from '@/modules/core/lib/logger';
@@ -38,6 +39,12 @@ export async function addLocation(location: Omit<WarehouseLocation, 'id'>): Prom
     await logInfo(`New warehouse location created: ${newLocation.name} (${newLocation.code})`);
     return newLocation;
 }
+
+export async function addBulkLocations(payload: { type: 'rack' | 'clone'; params: any; }): Promise<void> {
+    await addBulkLocationsServer(payload);
+    await logInfo(`Bulk locations created via wizard`, { payload });
+}
+
 export async function updateLocation(location: WarehouseLocation): Promise<WarehouseLocation> {
     const updatedLocation = await updateLocationServer(location);
     await logInfo(`Warehouse location updated: ${updatedLocation.name} (${updatedLocation.code})`);

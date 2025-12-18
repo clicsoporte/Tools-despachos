@@ -13,8 +13,8 @@ import { useToast } from '@/modules/core/hooks/use-toast';
 import { logError, logInfo } from '@/modules/core/lib/logger';
 import { usePageTitle } from '@/modules/core/hooks/usePageTitle';
 import { useAuthorization } from '@/modules/core/hooks/useAuthorization';
-import { getWarehouseSettings, saveWarehouseSettings, getLocations, addLocation, deleteLocation, updateLocation } from '@/modules/warehouse/lib/actions';
-import { PlusCircle, Trash2, Edit2, Save, ChevronDown, ChevronRight, Info } from 'lucide-react';
+import { getWarehouseSettings, saveWarehouseSettings, getLocations, addLocation, deleteLocation, updateLocation, addBulkLocations } from '@/modules/warehouse/lib/actions';
+import { PlusCircle, Trash2, Edit2, Save, ChevronDown, ChevronRight, Info, Wand2, Copy } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { WarehouseSettings, WarehouseLocation } from '@/modules/core/types';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -106,6 +106,10 @@ export default function ManageLocationsPage() {
     const [isEditingLocation, setIsEditingLocation] = useState(false);
     const [locationToDelete, setLocationToDelete] = useState<WarehouseLocation | null>(null);
 
+    const [isWizardOpen, setWizardOpen] = useState(false);
+    const [wizardData, setWizardData] = useState({ name: '', prefix: '', levels: 4, positions: 10, depth: 2 });
+    const [cloneData, setCloneData] = useState({ sourceRackId: '', newName: '', newPrefix: '' });
+
     const fetchAllData = useCallback(async () => {
         setIsLoading(true);
         try {
@@ -180,7 +184,6 @@ export default function ManageLocationsPage() {
         if (!locationToDelete) return;
         try {
             await deleteLocation(locationToDelete.id);
-            // Refetch all locations to correctly represent the updated hierarchy
             const locationsData = await getLocations();
             setLocations(locationsData);
             toast({ title: "Ubicación Eliminada" });
@@ -194,16 +197,52 @@ export default function ManageLocationsPage() {
     const openLocationForm = (loc?: WarehouseLocation) => {
         if (loc) {
             setCurrentLocation(loc);
-setIsEditingLocation(true);
+            setIsEditingLocation(true);
         } else {
             setCurrentLocation(emptyLocation);
             setIsEditingLocation(false);
         }
         setLocationFormOpen(true);
-    }
+    };
+
+    const handleGenerateFromWizard = async () => {
+        if (!wizardData.name || !wizardData.prefix) {
+            toast({ title: 'Datos Incompletos', description: 'El nombre base y el prefijo son requeridos.', variant: 'destructive' });
+            return;
+        }
+        try {
+            await addBulkLocations({ type: 'rack', params: wizardData });
+            toast({ title: '¡Rack Creado!', description: `Se generaron las ubicaciones para ${wizardData.name}.` });
+            setWizardOpen(false);
+            await fetchAllData(); // Refresh the location list
+        } catch (error: any) {
+            logError('Failed to generate from wizard', { error: error.message });
+            toast({ title: 'Error al Generar', description: error.message, variant: 'destructive' });
+        }
+    };
+
+    const handleCloneRack = async () => {
+        if (!cloneData.sourceRackId || !cloneData.newName || !cloneData.newPrefix) {
+            toast({ title: 'Datos Incompletos', description: 'Debes seleccionar un rack de origen y proporcionar un nuevo nombre y prefijo.', variant: 'destructive' });
+            return;
+        }
+        try {
+            await addBulkLocations({ type: 'clone', params: cloneData });
+            toast({ title: '¡Rack Clonado!', description: `La estructura de ${cloneData.newName} ha sido creada.` });
+            setWizardOpen(false);
+            await fetchAllData(); // Refresh the location list
+        } catch (error: any) {
+            logError('Failed to clone rack', { error: error.message });
+            toast({ title: 'Error al Clonar', description: error.message, variant: 'destructive' });
+        }
+    };
     
     const parentLocationOptions = locations
-        .filter(l => l.id !== currentLocation?.id) // Prevent self-parenting
+        .filter(l => l.id !== currentLocation?.id)
+        .map(l => ({ value: String(l.id), label: `${l.name} (${l.code})` }));
+
+    const rackOptions = locations
+        .filter(l => l.type === 'rack')
         .map(l => ({ value: String(l.id), label: `${l.name} (${l.code})` }));
 
     if (isLoading || !settings) {
@@ -261,13 +300,18 @@ setIsEditingLocation(true);
                             <CardTitle>Paso 2: Crear Ubicaciones Reales (El Árbol)</CardTitle>
                             </AccordionTrigger>
                             <AccordionContent className="p-6 pt-0">
-                                <div className="flex items-center justify-between mb-4">
+                                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 gap-4">
                                     <CardDescription>
-                                        Usa los niveles que definiste en el Paso 1 para construir la estructura real de tu almacén. Por ejemplo, crea una <code>Bodega</code> llamada <code>Bodega Principal</code>, luego un <code>Pasillo</code> dentro de ella.
+                                        Usa los niveles que definiste para construir la estructura de tu almacén.
                                     </CardDescription>
-                                    <Button onClick={() => openLocationForm()}>
-                                        <PlusCircle className="mr-2"/> Añadir Ubicación
-                                    </Button>
+                                    <div className="flex items-center gap-2 flex-shrink-0">
+                                        <Button onClick={() => openLocationForm()}>
+                                            <PlusCircle className="mr-2"/> Añadir Manual
+                                        </Button>
+                                        <Button variant="secondary" onClick={() => setWizardOpen(true)}>
+                                            <Wand2 className="mr-2"/> Asistente de Racks
+                                        </Button>
+                                    </div>
                                 </div>
                                 <div>
                                     <LocationTree locations={locations} onEdit={openLocationForm} onDelete={setLocationToDelete} />
@@ -326,6 +370,78 @@ setIsEditingLocation(true);
                         </DialogFooter>
                     </DialogContent>
                  </Dialog>
+
+                 <Dialog open={isWizardOpen} onOpenChange={setWizardOpen}>
+                    <DialogContent className="sm:max-w-2xl">
+                        <DialogHeader>
+                            <DialogTitle>Asistente de Creación de Racks</DialogTitle>
+                            <DialogDescription>Genera o clona rápidamente la estructura completa de un rack.</DialogDescription>
+                        </DialogHeader>
+                        <Accordion type="single" collapsible className="w-full">
+                            <AccordionItem value="item-1">
+                                <AccordionTrigger>Crear Nuevo Rack desde Cero</AccordionTrigger>
+                                <AccordionContent className="pt-4 space-y-4">
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="space-y-2">
+                                            <Label htmlFor="wiz-name">Nombre Base del Rack</Label>
+                                            <Input id="wiz-name" value={wizardData.name} onChange={e => setWizardData(p => ({...p, name: e.target.value}))} placeholder="Ej: Rack 01" />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="wiz-prefix">Prefijo de Código</Label>
+                                            <Input id="wiz-prefix" value={wizardData.prefix} onChange={e => setWizardData(p => ({...p, prefix: e.target.value}))} placeholder="Ej: R01" />
+                                        </div>
+                                    </div>
+                                    <div className="grid grid-cols-3 gap-4">
+                                        <div className="space-y-2">
+                                            <Label htmlFor="wiz-levels">Nº de Niveles (Alto)</Label>
+                                            <Input id="wiz-levels" type="number" value={wizardData.levels} onChange={e => setWizardData(p => ({...p, levels: Number(e.target.value)}))} />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="wiz-positions">Nº de Posiciones (Ancho)</Label>
+                                            <Input id="wiz-positions" type="number" value={wizardData.positions} onChange={e => setWizardData(p => ({...p, positions: Number(e.target.value)}))} />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="wiz-depth">Nº de Fondos</Label>
+                                            <Input id="wiz-depth" type="number" value={wizardData.depth} onChange={e => setWizardData(p => ({...p, depth: Number(e.target.value)}))} />
+                                        </div>
+                                    </div>
+                                    <p className="text-xs text-muted-foreground">Ejemplo de código generado: {wizardData.prefix || 'R01'}-A-01-F</p>
+                                    <Button onClick={handleGenerateFromWizard}>
+                                        <Wand2 className="mr-2"/> Generar Estructura
+                                    </Button>
+                                </AccordionContent>
+                            </AccordionItem>
+                             <AccordionItem value="item-2">
+                                <AccordionTrigger>Clonar Estructura de Rack Existente</AccordionTrigger>
+                                <AccordionContent className="pt-4 space-y-4">
+                                     <div className="space-y-2">
+                                        <Label htmlFor="clone-source">Rack de Origen a Clonar</Label>
+                                        <Select value={cloneData.sourceRackId} onValueChange={val => setCloneData(p => ({...p, sourceRackId: val}))}>
+                                            <SelectTrigger><SelectValue placeholder="Seleccione un rack..."/></SelectTrigger>
+                                            <SelectContent>
+                                                {rackOptions.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="space-y-2">
+                                            <Label htmlFor="clone-name">Nuevo Nombre Base</Label>
+                                            <Input id="clone-name" value={cloneData.newName} onChange={e => setCloneData(p => ({...p, newName: e.target.value}))} placeholder="Ej: Rack 02"/>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="clone-prefix">Nuevo Prefijo de Código</Label>
+                                            <Input id="clone-prefix" value={cloneData.newPrefix} onChange={e => setCloneData(p => ({...p, newPrefix: e.target.value}))} placeholder="Ej: R02"/>
+                                        </div>
+                                    </div>
+                                     <Button onClick={handleCloneRack}>
+                                        <Copy className="mr-2"/> Clonar Rack
+                                    </Button>
+                                </AccordionContent>
+                            </AccordionItem>
+                        </Accordion>
+                    </DialogContent>
+                 </Dialog>
+
                   <AlertDialog open={!!locationToDelete} onOpenChange={(open) => !open && setLocationToDelete(null)}>
                     <AlertDialogContent>
                         <AlertDialogHeader>
