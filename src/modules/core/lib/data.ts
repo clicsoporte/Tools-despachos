@@ -37,6 +37,7 @@ import {
   Truck,
   QrCode,
   ClipboardList,
+  ClipboardCheck,
 } from "lucide-react";
 
 /**
@@ -252,6 +253,7 @@ export const initialRoles: Role[] = [
         "analytics:production-report:read",
         "analytics:transits-report:read",
         "analytics:user-permissions:read",
+        "analytics:physical-inventory-report:read",
         "cost-assistant:access",
         "cost-assistant:drafts:read-write",
         "users:create",
@@ -345,6 +347,7 @@ export const analyticsPermissions = [
     "analytics:production-report:read",
     "analytics:transits-report:read",
     "analytics:user-permissions:read",
+    "analytics:physical-inventory-report:read",
 ];
 
 
@@ -516,6 +519,15 @@ export const analyticsTools: Tool[] = [
         href: "/dashboard/analytics/production-report",
         icon: BarChartBig,
         bgColor: "bg-indigo-500",
+        textColor: "text-white",
+    },
+    {
+        id: "physical-inventory-report",
+        name: "Reporte de Inventario Físico",
+        description: "Comparar conteos físicos con el stock del ERP para encontrar diferencias.",
+        href: "/dashboard/analytics/physical-inventory-report",
+        icon: ClipboardCheck,
+        bgColor: "bg-lime-600",
         textColor: "text-white",
     },
     {

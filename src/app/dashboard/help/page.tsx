@@ -84,7 +84,8 @@ import {
   ShoppingBag,
   QrCode,
   HelpCircle,
-  ClipboardList
+  ClipboardList,
+  ClipboardCheck
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -625,6 +626,9 @@ export default function HelpPage() {
                     <li>
                         <strong>Toma de Inventario (<ClipboardList className="inline h-4 w-4"/>):</strong> Permite a los bodegueros registrar conteos físicos de un producto en una ubicación específica. Estos datos se pueden usar luego para generar reportes y ajustar el inventario en el ERP.
                     </li>
+                     <li>
+                        <strong>Reporte de Inventario Físico (<ClipboardCheck className="inline h-4 w-4"/>):</strong> (En Analíticas) Es la contraparte de la toma de inventario. Muestra una tabla comparando la `Cantidad Contada` vs. el `Stock del ERP` y resalta las diferencias, lista para exportar y realizar ajustes.
+                    </li>
                     <li>
                         <strong>Consulta de Almacén (<Search className="inline h-4 w-4"/>):</strong> La herramienta principal para buscar artículos y ver sus ubicaciones y stock del ERP desglosado por bodega.
                     </li>
@@ -808,7 +812,14 @@ export default function HelpPage() {
         icon: <ListChecks className="mr-4 h-6 w-6 text-fuchsia-600" />,
         content: (
              <div className="space-y-4">
-                <h4 className="font-semibold text-lg">Versión 2.2.0 <Badge variant="secondary">Actual</Badge></h4>
+                <h4 className="font-semibold text-lg">Versión 2.3.0 <Badge variant="secondary">Actual</Badge></h4>
+                <p className="text-sm text-muted-foreground">Lanzamiento: Octubre 2024</p>
+                <ul className="list-disc space-y-3 pl-6">
+                    <li>
+                        <strong>Nueva Funcionalidad Mayor: Reporte de Inventario Físico.</strong> Se añadió un nuevo reporte en Analíticas que compara los conteos físicos registrados en la herramienta &quot;Toma de Inventario&quot; contra el stock del ERP, resaltando las diferencias para facilitar los ajustes.
+                    </li>
+                </ul>
+                <h4 className="font-semibold text-lg pt-4 border-t">Versión 2.2.0</h4>
                 <p className="text-sm text-muted-foreground">Lanzamiento: Octubre 2024</p>
                 <ul className="list-disc space-y-3 pl-6">
                     <li>
@@ -836,22 +847,6 @@ export default function HelpPage() {
                     </li>
                     <li>
                         <strong>Reorganización del Módulo de Almacén:</strong> Las funciones operativas de gestión de ubicaciones y jerarquía se movieron del panel de Administración al sub-panel de Almacén, mejorando la coherencia y los permisos de usuario.
-                    </li>
-                </ul>
-                <h4 className="font-semibold text-lg pt-4 border-t">Versión 2.0.0</h4>
-                <p className="text-sm text-muted-foreground">Lanzamiento: Octubre 2024</p>
-                <ul className="list-disc space-y-3 pl-6">
-                     <li>
-                        <strong>Mejora Mayor de Flujo de Trabajo:</strong> Se implementó un flujo de aprobación por etapas (Pendiente, Revisión, Aprobación) en los módulos de Planificador y Solicitudes, con la capacidad de retroceder estados.
-                    </li>
-                     <li>
-                        <strong>Mejora de Notificaciones:</strong> El sistema ahora envía notificaciones basadas en permisos de usuario (no solo por rol) e informa sobre nuevas sugerencias.
-                    </li>
-                    <li>
-                        <strong>Nueva Funcionalidad Mayor: Módulo de Analíticas, Centro de Ayuda y Recuperación de Contraseña.</strong>
-                    </li>
-                    <li>
-                        <strong>Mejora Mayor de Arquitectura: Flujo de Autenticación y Sistema de Migraciones de Base de Datos.</strong>
                     </li>
                 </ul>
             </div>

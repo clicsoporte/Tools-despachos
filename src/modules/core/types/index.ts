@@ -488,7 +488,7 @@ export type WarehouseLocation = {
 /** Tracks physical quantity in a specific location */
 export type WarehouseInventoryItem = {
     id: number;
-    itemId: string; // Foreign key to main products table (Product['id'])
+    itemId: string; // Corresponds to Product['id'] from main DB
     locationId: number; // Foreign key to locations table
     quantity: number;
     lastUpdated: string;
@@ -766,6 +766,18 @@ export type ProductionReportData = {
         totalNet: number;
     };
     details: (ProductionOrder & { completionDate: string | null })[];
+}
+
+export interface PhysicalInventoryComparisonItem {
+    productId: string;
+    productDescription: string;
+    locationId: number;
+    locationName: string;
+    locationCode: string;
+    physicalCount: number;
+    erpStock: number;
+    difference: number;
+    lastCountDate: string;
 }
 
 // --- User Preferences ---

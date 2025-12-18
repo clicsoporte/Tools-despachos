@@ -6,11 +6,12 @@
 import { getCompletedOrdersByDateRange, getPlannerSettings } from '@/modules/planner/lib/db';
 import { getAllRoles, getAllSuppliers, getAllStock } from '@/modules/core/lib/db';
 import { getAllUsersForReport } from '@/modules/core/lib/auth';
-import type { DateRange, ProductionOrder, PlannerSettings, ProductionOrderHistoryEntry, Product, User, Role, ErpPurchaseOrderLine, ErpPurchaseOrderHeader, Supplier, StockInfo } from '@/modules/core/types';
+import type { DateRange, ProductionOrder, PlannerSettings, ProductionOrderHistoryEntry, Product, User, Role, ErpPurchaseOrderLine, ErpPurchaseOrderHeader, Supplier, StockInfo, PhysicalInventoryComparisonItem } from '@/modules/core/types';
 import { differenceInDays, parseISO } from 'date-fns';
 import type { ProductionReportDetail, ProductionReportData } from '../hooks/useProductionReport';
 import { logError } from '@/modules/core/lib/logger';
 import { getAllProducts, getAllErpPurchaseOrderHeaders, getAllErpPurchaseOrderLines } from '@/modules/core/lib/db';
+import { getLocations as getWarehouseLocations, getInventory as getPhysicalInventory } from '@/modules/warehouse/lib/db';
 import type { TransitReportItem } from '../hooks/useTransitsReport';
 
 
@@ -152,4 +153,40 @@ export async function getActiveTransitsReportData(dateRange: DateRange): Promise
         });
 
     return JSON.parse(JSON.stringify(reportData));
+}
+
+export async function getPhysicalInventoryReportData(): Promise<PhysicalInventoryComparisonItem[]> {
+    try {
+        const [physicalInventory, erpStock, allProducts, allLocations] = await Promise.all([
+            getPhysicalInventory(),
+            getAllStock(),
+            getAllProducts(),
+            getWarehouseLocations(),
+        ]);
+        
+        const erpStockMap = new Map(erpStock.map(item => [item.itemId, item.totalStock]));
+        const productMap = new Map(allProducts.map(item => [item.id, item.description]));
+        const locationMap = new Map(allLocations.map(item => [item.id, item]));
+
+        const comparisonData: PhysicalInventoryComparisonItem[] = physicalInventory.map(item => {
+            const erpQuantity = erpStockMap.get(item.itemId) ?? 0;
+            const location = locationMap.get(item.locationId);
+            return {
+                productId: item.itemId,
+                productDescription: productMap.get(item.itemId) || 'Producto Desconocido',
+                locationId: item.locationId,
+                locationName: location?.name || 'Ubicación Desconocida',
+                locationCode: location?.code || 'N/A',
+                physicalCount: item.quantity,
+                erpStock: erpQuantity,
+                difference: item.quantity - erpQuantity,
+                lastCountDate: item.lastUpdated,
+            };
+        });
+
+        return JSON.parse(JSON.stringify(comparisonData));
+    } catch (error) {
+        logError('Failed to generate physical inventory comparison report', { error });
+        throw new Error('No se pudo generar el reporte de inventario físico.');
+    }
 }
