@@ -42,6 +42,7 @@ export default function DashboardPage() {
         description: "Inteligencia de negocio y reportes para la toma de decisiones.",
         href: "/dashboard/analytics",
         icon: BarChartBig,
+        bgColor: "bg-indigo-500",
       });
     }
     
@@ -53,6 +54,7 @@ export default function DashboardPage() {
         description: "Gestionar usuarios, roles, importaciones y ajustes del sistema.",
         href: "/dashboard/admin",
         icon: Wrench,
+        bgColor: "bg-slate-600",
       });
     }
     

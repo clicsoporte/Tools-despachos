@@ -104,7 +104,6 @@ export function AppSidebar() {
       href: "/dashboard",
       icon: LayoutDashboard,
       bgColor: "bg-blue-500",
-      textColor: "text-white",
     },
     {
       id: "quoter",
@@ -113,7 +112,6 @@ export function AppSidebar() {
       href: "/dashboard/quoter",
       icon: SheetIcon,
       bgColor: "bg-green-500",
-      textColor: "text-white",
     },
     {
       id: "purchase-request",
@@ -122,7 +120,6 @@ export function AppSidebar() {
       href: "/dashboard/requests",
       icon: ShoppingCart,
       bgColor: "bg-yellow-500",
-      textColor: "text-white",
     },
      {
       id: "planner",
@@ -131,7 +128,6 @@ export function AppSidebar() {
       href: "/dashboard/planner",
       icon: CalendarCheck,
       bgColor: "bg-purple-500",
-      textColor: "text-white",
     },
     {
       id: 'cost-assistant',
@@ -140,7 +136,6 @@ export function AppSidebar() {
       href: '/dashboard/cost-assistant',
       icon: Calculator,
       bgColor: 'bg-orange-500',
-      textColor: 'text-white',
     },
     {
       id: "warehouse",
@@ -149,7 +144,6 @@ export function AppSidebar() {
       href: "/dashboard/warehouse",
       icon: Warehouse,
       bgColor: "bg-cyan-600",
-      textColor: "text-white",
     },
      {
       id: "hacienda-query",
@@ -157,8 +151,7 @@ export function AppSidebar() {
       description: "Verificar situación tributaria y exoneraciones.",
       href: "/dashboard/hacienda",
       icon: Search,
-      bgColor: "bg-blue-600",
-      textColor: "text-white",
+      bgColor: "bg-fuchsia-600",
     },
     {
       id: "help",
@@ -166,8 +159,7 @@ export function AppSidebar() {
       description: "Consultar la documentación y guías de uso del sistema.",
       href: "/dashboard/help",
       icon: LifeBuoy,
-      bgColor: "bg-orange-500",
-      textColor: "text-white",
+      bgColor: "bg-blue-700",
     },
   ];
 
