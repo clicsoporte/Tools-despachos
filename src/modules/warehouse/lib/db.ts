@@ -233,7 +233,7 @@ export async function runWarehouseMigrations(db: import('better-sqlite3').Databa
 
                     // Update the next unit number in settings
                     settings.nextUnitNumber = nextUnitNumber;
-                    db.prepare('UPDATE warehouse_config SET value = ? WHERE key = \\'settings\\'').run(JSON.stringify(settings));
+                    db.prepare("UPDATE warehouse_config SET value = ? WHERE key = 'settings'").run(JSON.stringify(settings));
 
                     // 4. Drop old table
                     db.exec('DROP TABLE inventory_units_old;');
@@ -471,7 +471,7 @@ export async function updateInventory(itemId: string, locationId: number, quanti
         `INSERT INTO inventory (itemId, locationId, quantity, lastUpdated, updatedBy) 
          VALUES (?, ?, ?, datetime('now'), ?)
          ON CONFLICT(itemId, locationId) 
-         DO UPDATE SET quantity = ?, updatedBy = ?`
+         DO UPDATE SET quantity = ?, updatedBy = ?, lastUpdated = datetime('now')`
     ).run(itemId, locationId, quantity, updatedBy, quantity, updatedBy);
 }
 

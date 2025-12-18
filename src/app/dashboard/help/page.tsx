@@ -87,6 +87,7 @@ import {
   HelpCircle,
   ClipboardList,
   ClipboardCheck,
+  Wand2,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -397,7 +398,7 @@ export default function HelpPage() {
                         <strong>Paso 3: Ajustar y Calcular Precios.</strong>
                         <ul className="list-[circle] space-y-2 pl-5 mt-2 text-sm">
                             <li>En la tabla de &quot;Artículos Extraídos&quot;, puedes editar la mayoría de los campos.</li>
-                            <li><strong>Costo Unit. (s/IVA):</strong> Este es el costo real del artículo (costo de factura + costo prorrateado +/- efecto del descuento). Puedes **sobrescribirlo manualmente** si necesitas ajustar el costo base para un artículo específico.</li>
+                            <li><strong>Costo Unit. (s/IVA):</strong> Este es el costo real del artículo (costo de factura + costo prorrateado +/- efecto del descuento). Puedes **sobrescribirlo manually** si necesitas ajustar el costo base para un artículo específico.</li>
                             <li><strong>Imp. %:</strong> El sistema extrae el impuesto del XML, pero puedes editarlo aquí si es necesario (ej. de &quot;13&quot; a &quot;1&quot;).</li>
                             <li><strong>Margen:</strong> Introduce el margen de ganancia deseado (ej. &quot;20&quot; para un 20%).</li>
                             <li>El sistema calculará automáticamente el **P.V.P. Unitario Sugerido** y la **Ganancia por Línea** en tiempo real.</li>
@@ -616,6 +617,9 @@ export default function HelpPage() {
                            </AlertDescription>
                        </Alert>
                     </li>
+                    <li>
+                        <strong>Asistente de Creación de Racks (<Wand2 className="inline h-4 w-4 text-purple-600"/>):</strong> En <strong>Administración &gt; Gestión de Ubicaciones</strong>, usa el botón &quot;Crear con Asistente&quot; para generar masivamente la estructura de un rack (niveles, posiciones, fondos) o para clonar un rack ya existente, ahorrando horas de trabajo manual.
+                    </li>
                 </ol>
                 
                 <h4 className="font-semibold text-lg pt-4 border-t">Herramientas Operativas</h4>
@@ -817,22 +821,22 @@ export default function HelpPage() {
                 <p className="text-sm text-muted-foreground">Lanzamiento: Octubre 2024</p>
                 <ul className="list-disc space-y-3 pl-6">
                     <li>
-                        <strong>Revisión General de Calidad y Estabilidad:</strong> Se ha realizado una auditoría completa del código para mejorar la estabilidad, eliminar código muerto y optimizar la experiencia de usuario.
+                        <strong>Mejora Radical de Estabilidad:</strong> Se refactorizó la lógica de autenticación y carga inicial, eliminando completamente el "parpadeo" de la pantalla de login y las condiciones de carrera al acceder a rutas protegidas.
                     </li>
                     <li>
-                        <strong>Mejora de Autenticación:</strong> Se eliminó el &quot;parpadeo&quot; de la pantalla de login al acceder a rutas protegidas y se mejoró el redireccionamiento después de iniciar sesión.
+                        <strong>Activación de Funcionalidad:</strong> Se activó completamente la lógica para "Solicitar Desaprobación" y "Solicitar Cancelación" en los módulos de Planificador y Compras, incluyendo las notificaciones a los administradores para su aprobación.
                     </li>
                     <li>
-                        <strong>Funcionalidad Activada:</strong> Se activó la lógica para &quot;Solicitar Desaprobación&quot; y &quot;Solicitar Cancelación&quot; en el módulo Planificador de Producción, incluyendo las notificaciones correspondientes para los administradores.
+                        <strong>Nuevo Asistente de Creación de Racks:</strong> Se añadió una potente herramienta en la gestión de ubicaciones que permite crear y clonar estructuras de racks completas de forma masiva, reduciendo drásticamente el tiempo de configuración de una bodega.
                     </li>
                     <li>
-                        <strong>Corrección de Permisos:</strong> Se corrigió el comportamiento de los permisos `:read:all` en los módulos de Compras y Planificador para que los supervisores vean todos los documentos por defecto.
+                        <strong>Mejora de Usabilidad:</strong> Se mejoró la visualización de ubicaciones en todo el módulo de Almacén para mostrar la ruta jerárquica completa (ej: "Rack 01 &gt; Nivel A &gt; 01"), eliminando la ambigüedad.
                     </li>
                     <li>
-                        <strong>Actualización Masiva de Documentación:</strong> El Centro de Ayuda ha sido completamente revisado y actualizado para reflejar todas las funcionalidades actuales del sistema.
+                        <strong>Corrección de Permisos:</strong> Se corrigió el comportamiento de los permisos `:read:all` para que los supervisores vean todos los documentos por defecto, como se esperaba.
                     </li>
                     <li>
-                        <strong>Control de Cambios:</strong> Se ha añadido esta misma sección de &quot;Changelog&quot; al Centro de Ayuda para mantener un registro de las mejoras en cada versión.
+                        <strong>Actualización Masiva de Documentación:</strong> El Centro de Ayuda ha sido completamente revisado, actualizado con las últimas funcionalidades y se ha añadido esta sección de "Control de Cambios".
                     </li>
                 </ul>
             </div>
