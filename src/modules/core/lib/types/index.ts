@@ -63,9 +63,7 @@ export type Tool = {
   name: string;
   description: string;
   href: string;
-  icon: LucideIcon;
-  bgColor: string;
-  textColor: string;
+  icon: () => React.JSX.Element; // Changed to a function that returns a JSX element
   adminOnly?: boolean;
 };
 
@@ -784,15 +782,8 @@ export interface PhysicalInventoryComparisonItem {
 
 // --- User Preferences ---
 export interface UserPreferences {
-    classificationFilter: string[];
-    showOnlyMyOrders: boolean;
-    visibleColumns: string[];
-    sortKey?: SortKey;
-    sortDirection: 'asc' | 'desc';
-    rowsPerPage: number;
-};
-
-export type SortKey = 'item' | 'sourceOrders' | 'involvedClients' | 'erpUsers' | 'earliestCreationDate' | 'earliestDueDate' | 'shortage' | 'totalRequired' | 'currentStock' | 'inTransitStock';
+    [key: string]: any;
+}
 
 
 // --- Cost Assistant Types ---

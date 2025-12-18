@@ -1,4 +1,3 @@
-
 /**
  * @fileoverview A reusable component for displaying a "tool" card on the dashboard.
  * Each card acts as a link to a specific feature or section of the application.
@@ -8,7 +7,6 @@
 import Link from "next/link";
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import type { Tool } from "@/modules/core/types";
-import { cn } from "@/lib/utils";
 
 interface ToolCardProps {
   tool: Tool;
@@ -34,9 +32,11 @@ export function ToolCard({ tool, badgeCount = 0 }: ToolCardProps) {
           </div>
         )}
         <CardHeader className="grid grid-cols-[auto_1fr] items-center gap-4">
-          <div className={cn("flex h-12 w-12 items-center justify-center rounded-lg shrink-0", tool.bgColor)}>
-            {Icon && <Icon className={cn("h-6 w-6", tool.textColor)} />}
-          </div>
+          {Icon && (
+            <div className="flex h-12 w-12 items-center justify-center rounded-lg shrink-0">
+               <Icon />
+            </div>
+          )}
           <div className="text-left">
             <CardTitle className="text-lg">{tool.name}</CardTitle>
             <CardDescription className="line-clamp-2">{tool.description}</CardDescription>
