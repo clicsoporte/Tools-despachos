@@ -397,7 +397,7 @@ export default function HelpPage() {
                         <strong>Paso 3: Ajustar y Calcular Precios.</strong>
                         <ul className="list-[circle] space-y-2 pl-5 mt-2 text-sm">
                             <li>En la tabla de &quot;Artículos Extraídos&quot;, puedes editar la mayoría de los campos.</li>
-                            <li><strong>Costo Unit. (s/IVA):</strong> Este es el costo real del artículo (costo de factura + costo prorrateado +/- efecto del descuento). Puedes **sobrescribirlo manually** si necesitas ajustar el costo base para un artículo específico.</li>
+                            <li><strong>Costo Unit. (s/IVA):</strong> Este es el costo real del artículo (costo de factura + costo prorrateado +/- efecto del descuento). Puedes **sobrescribirlo manualmente** si necesitas ajustar el costo base para un artículo específico.</li>
                             <li><strong>Imp. %:</strong> El sistema extrae el impuesto del XML, pero puedes editarlo aquí si es necesario (ej. de &quot;13&quot; a &quot;1&quot;).</li>
                             <li><strong>Margen:</strong> Introduce el margen de ganancia deseado (ej. &quot;20&quot; para un 20%).</li>
                             <li>El sistema calculará automáticamente el **P.V.P. Unitario Sugerido** y la **Ganancia por Línea** en tiempo real.</li>
@@ -820,10 +820,10 @@ export default function HelpPage() {
                         <strong>Revisión General de Calidad y Estabilidad:</strong> Se ha realizado una auditoría completa del código para mejorar la estabilidad, eliminar código muerto y optimizar la experiencia de usuario.
                     </li>
                     <li>
-                        <strong>Mejora de Autenticación:</strong> Se eliminó el "parpadeo" de la pantalla de login al acceder a rutas protegidas y se mejoró el redireccionamiento después de iniciar sesión.
+                        <strong>Mejora de Autenticación:</strong> Se eliminó el &quot;parpadeo&quot; de la pantalla de login al acceder a rutas protegidas y se mejoró el redireccionamiento después de iniciar sesión.
                     </li>
                     <li>
-                        <strong>Funcionalidad Activada:</strong> Se activó la lógica para "Solicitar Desaprobación" y "Solicitar Cancelación" en el módulo Planificador de Producción, incluyendo las notificaciones correspondientes para los administradores.
+                        <strong>Funcionalidad Activada:</strong> Se activó la lógica para &quot;Solicitar Desaprobación&quot; y &quot;Solicitar Cancelación&quot; en el módulo Planificador de Producción, incluyendo las notificaciones correspondientes para los administradores.
                     </li>
                     <li>
                         <strong>Corrección de Permisos:</strong> Se corrigió el comportamiento de los permisos `:read:all` en los módulos de Compras y Planificador para que los supervisores vean todos los documentos por defecto.
@@ -832,7 +832,7 @@ export default function HelpPage() {
                         <strong>Actualización Masiva de Documentación:</strong> El Centro de Ayuda ha sido completamente revisado y actualizado para reflejar todas las funcionalidades actuales del sistema.
                     </li>
                     <li>
-                        <strong>Control de Cambios:</strong> Se ha añadido esta misma sección de "Changelog" al Centro de Ayuda para mantener un registro de las mejoras en cada versión.
+                        <strong>Control de Cambios:</strong> Se ha añadido esta misma sección de &quot;Changelog&quot; al Centro de Ayuda para mantener un registro de las mejoras en cada versión.
                     </li>
                 </ul>
             </div>
