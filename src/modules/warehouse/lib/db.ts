@@ -384,18 +384,18 @@ export async function addBulkLocations(payload: { type: 'rack' | 'clone', params
             mapping.set(sourceRack.id, newRackId);
 
             // 2. Recursively clone children
-            function cloneChildren(oldParentId: number, newParentId: number) {
+            function cloneChildren(oldParentId: number, newParentId: number, originalRack: WarehouseLocation) {
                 const children = allLocations.filter(l => l.parentId === oldParentId);
                 for (const child of children) {
-                    const newCode = child.code.replace(sourceRack.code, newPrefix);
+                    const newCode = child.code.replace(originalRack.code, newPrefix);
                     const newChildInfo = db.prepare('INSERT INTO locations (name, code, type, parentId) VALUES (?, ?, ?, ?)').run(child.name, newCode, child.type, newParentId);
                     const newChildId = newChildInfo.lastInsertRowid as number;
                     mapping.set(child.id, newChildId);
-                    cloneChildren(child.id, newChildId);
+                    cloneChildren(child.id, newChildId, originalRack);
                 }
             }
 
-            cloneChildren(sourceRack.id, newRackId);
+            cloneChildren(sourceRack.id, newRackId, sourceRack);
         }
     });
 
