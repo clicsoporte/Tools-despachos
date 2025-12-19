@@ -17,7 +17,7 @@ import { getLocations, getItemLocations, assignItemToLocation, unassignItemFromL
 import type { Product, Customer, WarehouseLocation, ItemLocation } from '@/modules/core/types';
 import { useAuth } from '@/modules/core/hooks/useAuth';
 import { SearchInput } from '@/components/ui/search-input';
-import { Loader2, Trash2, Printer } from 'lucide-react';
+import { Loader2, Trash2, Printer, List } from 'lucide-react';
 import { useDebounce } from 'use-debounce';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Label } from '@/components/ui/label';
@@ -143,6 +143,11 @@ export default function AssignItemPage() {
             setSelectedLocationId(value);
             setLocationSearchTerm(renderLocationPathAsString(location.id, locations));
         }
+    };
+
+    const handleShowAllLocations = () => {
+        setLocationSearchTerm('*');
+        setIsLocationSearchOpen(true);
     };
 
     const handleCreateAssignment = async () => {
@@ -274,7 +279,21 @@ export default function AssignItemPage() {
                             </div>
                             <div className="space-y-2">
                                 <Label>3. Seleccione una Ubicación</Label>
-                                <SearchInput options={locationOptions} onSelect={handleSelectLocation} value={locationSearchTerm} onValueChange={setLocationSearchTerm} placeholder="Buscar o '*' para ver todas..." open={isLocationSearchOpen} onOpenChange={setIsLocationSearchOpen} />
+                                <div className="flex items-center gap-2">
+                                    <SearchInput 
+                                        options={locationOptions} 
+                                        onSelect={handleSelectLocation} 
+                                        value={locationSearchTerm} 
+                                        onValueChange={setLocationSearchTerm} 
+                                        placeholder="Buscar o '*' para ver todas..." 
+                                        open={isLocationSearchOpen} 
+                                        onOpenChange={setIsLocationSearchOpen}
+                                        className="flex-1"
+                                    />
+                                    <Button variant="outline" size="icon" onClick={handleShowAllLocations} title="Listar todas las ubicaciones">
+                                        <List className="h-4 w-4" />
+                                    </Button>
+                                </div>
                             </div>
                         </div>
                     </CardContent>
