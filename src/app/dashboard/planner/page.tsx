@@ -27,7 +27,6 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { MultiSelectFilter } from '@/components/ui/multi-select-filter';
 import { DialogColumnSelector } from '@/components/ui/dialog-column-selector';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 
 /**
@@ -115,37 +114,19 @@ export default function PlannerPage() {
                                 <DropdownMenuContent align="end">
                                     <DropdownMenuLabel>Acciones de Orden</DropdownMenuLabel>
                                     <DropdownMenuSeparator/>
-                                    <TooltipProvider>
-                                        <Tooltip>
-                                            <TooltipTrigger asChild>
-                                                 <div className={cn(!permissions.canEdit.allowed && "cursor-not-allowed")}>
-                                                    <DropdownMenuItem onSelect={() => { actions.setOrderToEdit(order); actions.setEditOrderDialogOpen(true); }} disabled={!permissions.canEdit.allowed}>
-                                                        <Pencil className="mr-2"/> Editar Orden
-                                                    </DropdownMenuItem>
-                                                </div>
-                                            </TooltipTrigger>
-                                            {!permissions.canEdit.allowed && permissions.canEdit.reason && <TooltipContent><p>{permissions.canEdit.reason}</p></TooltipContent>}
-                                        </Tooltip>
-                                    </TooltipProvider>
+                                    <DropdownMenuItem onSelect={() => { actions.setOrderToEdit(order); actions.setEditOrderDialogOpen(true); }} disabled={!permissions.canEdit}>
+                                        <Pencil className="mr-2"/> Editar Orden
+                                    </DropdownMenuItem>
                                     <DropdownMenuItem onSelect={() => actions.openAddNoteDialog(order)}><MessageSquarePlus className="mr-2" /> Añadir Nota</DropdownMenuItem>
                                     <DropdownMenuItem onSelect={() => actions.handleExportSingleOrderPDF(order)}><FileDown className="mr-2"/> Exportar a PDF</DropdownMenuItem>
                                     <DropdownMenuSeparator/>
                                     <DropdownMenuLabel>Cambio de Estado</DropdownMenuLabel>
                                     <DropdownMenuSeparator/>
-                                    {changeStatusActions.filter(a => a.check.visible).length > 0 ? (
-                                        changeStatusActions.filter(a => a.check.visible).map((action, index) => (
-                                            <TooltipProvider key={index}>
-                                                <Tooltip>
-                                                    <TooltipTrigger asChild>
-                                                         <div className={cn(!action.check.allowed && "cursor-not-allowed")}>
-                                                            <DropdownMenuItem onSelect={action.action} className={action.className} disabled={!action.check.allowed}>
-                                                                {action.icon} {action.label}
-                                                            </DropdownMenuItem>
-                                                        </div>
-                                                    </TooltipTrigger>
-                                                    {!action.check.allowed && action.check.reason && <TooltipContent><p>{action.check.reason}</p></TooltipContent>}
-                                                </Tooltip>
-                                            </TooltipProvider>
+                                    {changeStatusActions.filter(a => a.check).length > 0 ? (
+                                        changeStatusActions.filter(a => a.check).map((action, index) => (
+                                            <DropdownMenuItem key={index} onSelect={action.action} className={action.className}>
+                                                {action.icon} {action.label}
+                                            </DropdownMenuItem>
                                         ))
                                     ) : (
                                         <DropdownMenuItem disabled>No hay acciones disponibles</DropdownMenuItem>
@@ -650,3 +631,4 @@ export default function PlannerPage() {
         </main>
     );
 }
+

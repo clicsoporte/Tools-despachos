@@ -231,9 +231,7 @@ export const usePlanner = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [state.viewingArchived, state.archivedPage, state.pageSize, isAuthReady]);
 
-    const getOrderPermissions = useCallback((order: ProductionOrder): Record<string, { allowed: boolean; visible: boolean; reason: string | null }> => {
-        const createResult = (allowed: boolean, reason: string | null = null, visible = true) => ({ allowed, reason: allowed ? null : reason, visible });
-    
+    const getOrderPermissions = useCallback((order: ProductionOrder): { [key: string]: boolean } => {
         const isPending = order.status === 'pending';
         const isPendingReview = order.status === 'pending-review';
         const isPendingApproval = order.status === 'pending-approval';
@@ -249,28 +247,25 @@ export const usePlanner = () => {
         }
         const isFinalArchived = order.status === finalArchivedStatus || order.status === 'canceled';
         
-        const machineRequired = state.plannerSettings?.requireMachineForStart && !order.machineId;
-        const shiftRequired = state.plannerSettings?.requireShiftForCompletion && !order.shiftId;
-    
         return {
-            canEdit: createResult((isPending || isPendingReview || isPendingApproval) && hasPermission('planner:edit:pending'), "Solo editable en estados iniciales."),
-            canConfirmModification: createResult(!!order.hasBeenModified && hasPermission('planner:status:approve'), "Acción no requerida."),
-            canSendToReview: createResult(isPending && hasPermission('planner:status:review'), "Solo desde estado Pendiente."),
-            canGoBackToPending: createResult(isPendingReview && hasPermission('planner:status:review'), "Solo desde Pendiente Revisión."),
-            canSendToApproval: createResult(isPendingReview && hasPermission('planner:status:pending-approval'), "Solo desde Pendiente Revisión."),
-            canGoBackToReview: createResult(isPendingApproval && hasPermission('planner:status:pending-approval'), "Solo desde Pendiente Aprobación."),
-            canApprove: createResult(isPendingApproval && hasPermission('planner:status:approve'), "Solo para aprobar desde Pendiente Aprobación."),
-            canQueue: createResult(isApproved && hasPermission('planner:status:in-progress'), "Solo desde estado Aprobada."),
-            canStart: createResult((isApproved || isInQueue) && hasPermission('planner:status:in-progress') && !machineRequired, machineRequired ? "Se requiere asignar una máquina/proceso." : "Solo desde Aprobada o En Cola."),
-            canResumeFromHold: createResult(isOnHold && hasPermission('planner:status:in-progress'), "Solo para reanudar desde En Espera/Mantenimiento."),
-            canHold: createResult(isInProgress && hasPermission('planner:status:on-hold'), "Solo para órdenes En Progreso."),
-            canMaintain: createResult(isInProgress && hasPermission('planner:status:on-hold'), "Solo para órdenes En Progreso."),
-            canComplete: createResult((isInProgress || isOnHold) && hasPermission('planner:status:completed') && !shiftRequired, shiftRequired ? "Se requiere asignar un turno." : "Solo para órdenes En Progreso o En Espera."),
-            canRequestUnapproval: createResult((isApproved || isInQueue || isOnHold || isInProgress) && hasPermission('planner:status:unapprove-request'), "No se puede desaprobar en el estado actual."),
-            canCancelPending: createResult((isPending || isPendingReview || isPendingApproval) && hasPermission('planner:status:cancel'), "Solo para órdenes en estados iniciales."),
-            canRequestCancel: createResult((isApproved || isInQueue) && hasPermission('planner:status:cancel-approved'), "Solo para órdenes Aprobadas o En Cola."),
-            canReceive: createResult(isCompleted && !!state.plannerSettings?.useWarehouseReception && hasPermission('planner:receive'), "Paso no habilitado o estado incorrecto."),
-            canReopen: createResult(isFinalArchived && hasPermission('planner:reopen'), "Solo para órdenes archivadas."),
+            canEdit: (isPending || isPendingReview || isPendingApproval) && hasPermission('planner:edit:pending'),
+            canConfirmModification: !!order.hasBeenModified && hasPermission('planner:status:approve'),
+            canSendToReview: isPending && hasPermission('planner:status:review'),
+            canGoBackToPending: isPendingReview && hasPermission('planner:status:review'),
+            canSendToApproval: isPendingReview && hasPermission('planner:status:pending-approval'),
+            canGoBackToReview: isPendingApproval && hasPermission('planner:status:pending-approval'),
+            canApprove: isPendingApproval && hasPermission('planner:status:approve'),
+            canQueue: isApproved && hasPermission('planner:status:in-progress'),
+            canStart: (isApproved || isInQueue) && hasPermission('planner:status:in-progress') && (!state.plannerSettings?.requireMachineForStart || !!order.machineId),
+            canResumeFromHold: isOnHold && hasPermission('planner:status:in-progress'),
+            canHold: isInProgress && hasPermission('planner:status:on-hold'),
+            canMaintain: isInProgress && hasPermission('planner:status:on-hold'),
+            canComplete: (isInProgress || isOnHold) && hasPermission('planner:status:completed') && (!state.plannerSettings?.requireShiftForCompletion || !!order.shiftId),
+            canRequestUnapproval: (isApproved || isInQueue || isOnHold || isInProgress) && hasPermission('planner:status:unapprove-request'),
+            canCancelPending: (isPending || isPendingReview || isPendingApproval) && hasPermission('planner:status:cancel'),
+            canRequestCancel: (isApproved || isInQueue) && hasPermission('planner:status:cancel-approved'),
+            canReceive: isCompleted && !!state.plannerSettings?.useWarehouseReception && hasPermission('planner:receive'),
+            canReopen: isFinalArchived && hasPermission('planner:reopen'),
         };
     }, [hasPermission, state.plannerSettings]);
     
@@ -409,19 +404,6 @@ export const usePlanner = () => {
         },
 
         openStatusDialog: (order: ProductionOrder, status: ProductionOrderStatus) => {
-            const permissions = getOrderPermissions(order);
-            const permissionCheck = Object.values(permissions).find(p => p.reason && !p.allowed)
-            
-            // This is a simplified check. A more robust check would map status to permission.
-            if(status === 'in-progress' && !permissions.canStart.allowed) {
-                toast({ title: "Acción no permitida", description: permissions.canStart.reason, variant: "destructive" });
-                return;
-            }
-             if(status === 'completed' && !permissions.canComplete.allowed) {
-                toast({ title: "Acción no permitida", description: permissions.canComplete.reason, variant: "destructive" });
-                return;
-            }
-
             updateState({
                 orderToUpdate: order,
                 newStatus: status,
