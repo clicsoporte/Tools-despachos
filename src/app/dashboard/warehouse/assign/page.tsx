@@ -9,6 +9,9 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger, DialogClose } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { Pagination, PaginationContent, PaginationEllipsis, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
 import { useToast } from '@/modules/core/hooks/use-toast';
 import { usePageTitle } from '@/modules/core/hooks/usePageTitle';
 import { useAuthorization } from '@/modules/core/hooks/useAuthorization';
@@ -17,7 +20,7 @@ import { getLocations, getItemLocations, assignItemToLocation, unassignItemFromL
 import type { Product, Customer, WarehouseLocation, ItemLocation } from '@/modules/core/types';
 import { useAuth } from '@/modules/core/hooks/useAuth';
 import { SearchInput } from '@/components/ui/search-input';
-import { Loader2, Trash2, Printer, List } from 'lucide-react';
+import { Loader2, Trash2, Printer, List, PlusCircle, Search } from 'lucide-react';
 import { useDebounce } from 'use-debounce';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Label } from '@/components/ui/label';
@@ -37,6 +40,8 @@ const renderLocationPathAsString = (locationId: number, locations: WarehouseLoca
     return path.map(l => l.name).join(' > ');
 };
 
+const ROWS_PER_PAGE = 25;
+
 export default function AssignItemPage() {
     useAuthorization(['warehouse:inventory:assign']);
     const { setTitle } = usePageTitle();
@@ -45,9 +50,10 @@ export default function AssignItemPage() {
 
     const [isLoading, setIsLoading] = useState(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isFormOpen, setIsFormOpen] = useState(false);
     
     const [locations, setLocations] = useState<WarehouseLocation[]>([]);
-    const [assignments, setAssignments] = useState<ItemLocation[]>([]);
+    const [allAssignments, setAllAssignments] = useState<ItemLocation[]>([]);
     
     const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
     const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
@@ -59,16 +65,21 @@ export default function AssignItemPage() {
     const [isClientSearchOpen, setIsClientSearchOpen] = useState(false);
     const [locationSearchTerm, setLocationSearchTerm] = useState('');
     const [isLocationSearchOpen, setIsLocationSearchOpen] = useState(false);
+    
+    const [globalFilter, setGlobalFilter] = useState('');
+    const [currentPage, setCurrentPage] = useState(0);
 
     const [debouncedProductSearch] = useDebounce(productSearchTerm, companyData?.searchDebounceTime ?? 500);
     const [debouncedClientSearch] = useDebounce(clientSearchTerm, companyData?.searchDebounceTime ?? 500);
     const [debouncedLocationSearch] = useDebounce(locationSearchTerm, 300);
+    const [debouncedGlobalFilter] = useDebounce(globalFilter, 500);
 
     const loadInitialData = useCallback(async () => {
         setIsLoading(true);
         try {
-            const [locs] = await Promise.all([getLocations()]);
+            const [locs, allAssigns] = await Promise.all([getLocations(), getItemLocations()]);
             setLocations(locs);
+            setAllAssignments(allAssigns.sort((a, b) => b.id - a.id)); // Sort by most recent
         } catch (error) {
             logError("Failed to load data for assignment page", { error });
             toast({ title: "Error de Carga", description: "No se pudieron cargar los datos necesarios.", variant: "destructive" });
@@ -78,7 +89,7 @@ export default function AssignItemPage() {
     }, [toast]);
     
     useEffect(() => {
-        setTitle("Asignar Artículo a Cliente/Ubicación");
+        setTitle("Catálogo de Ubicaciones por Artículo");
         loadInitialData();
     }, [setTitle, loadInitialData]);
 
@@ -105,15 +116,6 @@ export default function AssignItemPage() {
             .filter(l => renderLocationPathAsString(l.id, locations).toLowerCase().includes(searchTerm))
             .map(l => ({ value: String(l.id), label: renderLocationPathAsString(l.id, locations) }));
     }, [locations, debouncedLocationSearch]);
-
-    useEffect(() => {
-        if (selectedProductId) {
-            getItemLocations(selectedProductId).then(setAssignments);
-        } else {
-            setAssignments([]);
-        }
-    }, [selectedProductId]);
-
 
     const handleSelectProduct = (value: string) => {
         setProductSearchOpen(false);
@@ -144,11 +146,15 @@ export default function AssignItemPage() {
             setLocationSearchTerm(renderLocationPathAsString(location.id, locations));
         }
     };
-
-    const handleShowAllLocations = () => {
-        setLocationSearchTerm('*');
-        setIsLocationSearchOpen(true);
-    };
+    
+    const resetForm = useCallback(() => {
+        setSelectedProductId(null);
+        setSelectedClientId(null);
+        setSelectedLocationId(null);
+        setProductSearchTerm('');
+        setClientSearchTerm('');
+        setLocationSearchTerm('');
+    }, []);
 
     const handleCreateAssignment = async () => {
         if (!selectedProductId || !selectedLocationId) {
@@ -160,16 +166,13 @@ export default function AssignItemPage() {
         setIsSubmitting(true);
         try {
             const newAssignment = await assignItemToLocation(selectedProductId, parseInt(selectedLocationId, 10), selectedClientId);
-            setAssignments(prev => [...prev, newAssignment]);
+            setAllAssignments(prev => [newAssignment, ...prev]);
             
-            toast({ title: "Asignación Creada", description: "La asociación entre producto, cliente y ubicación ha sido guardada." });
+            toast({ title: "Asignación Creada", description: "La asociación ha sido guardada." });
             logInfo('Item location assignment created', { itemId: selectedProductId, locationId: selectedLocationId, clientId: selectedClientId, user: user.name });
             
-            // Reset selectors for next assignment, keeping the product selected
-            setSelectedClientId(null);
-            setSelectedLocationId(null);
-            setClientSearchTerm('');
-            setLocationSearchTerm('');
+            setIsFormOpen(false);
+            resetForm();
 
         } catch(e: any) {
             logError('Failed to save item assignment', { error: e.message });
@@ -183,7 +186,7 @@ export default function AssignItemPage() {
         setIsSubmitting(true);
         try {
             await unassignItemFromLocation(assignmentId);
-            setAssignments(prev => prev.filter(a => a.id !== assignmentId));
+            setAllAssignments(prev => prev.filter(a => a.id !== assignmentId));
             toast({ title: "Asignación Eliminada", variant: "destructive" });
         } catch (e: any) {
             logError('Failed to delete item assignment', { error: e.message });
@@ -192,6 +195,33 @@ export default function AssignItemPage() {
             setIsSubmitting(false);
         }
     };
+    
+    const filteredAssignments = useMemo(() => {
+        if (!debouncedGlobalFilter) {
+            return allAssignments;
+        }
+        const lowerCaseFilter = debouncedGlobalFilter.toLowerCase();
+        return allAssignments.filter(a => {
+            const product = authProducts.find(p => p.id === a.itemId);
+            const client = authCustomers.find(c => c.id === a.clientId);
+            const locationString = renderLocationPathAsString(a.locationId, locations);
+
+            return (
+                product?.id.toLowerCase().includes(lowerCaseFilter) ||
+                product?.description.toLowerCase().includes(lowerCaseFilter) ||
+                client?.name.toLowerCase().includes(lowerCaseFilter) ||
+                locationString.toLowerCase().includes(lowerCaseFilter)
+            );
+        });
+    }, [allAssignments, debouncedGlobalFilter, authProducts, authCustomers, locations]);
+    
+    const paginatedAssignments = useMemo(() => {
+        const start = currentPage * ROWS_PER_PAGE;
+        const end = start + ROWS_PER_PAGE;
+        return filteredAssignments.slice(start, end);
+    }, [filteredAssignments, currentPage]);
+
+    const totalPages = Math.ceil(filteredAssignments.length / ROWS_PER_PAGE);
 
     const handlePrintRackLabel = async (assignment: ItemLocation) => {
         const product = authProducts.find(p => p.id === assignment.itemId);
@@ -204,50 +234,44 @@ export default function AssignItemPage() {
         }
     
         try {
-          const { default: jsPDF } = await import('jspdf');
-          const doc = new jsPDF({ orientation: "landscape", unit: "pt", format: "letter" });
-          const pageWidth = doc.internal.pageSize.getWidth();
-          const pageHeight = doc.internal.pageSize.getHeight();
+            const { default: jsPDF } = await import('jspdf');
+            const doc = new jsPDF({ orientation: "landscape", unit: "pt", format: "letter" });
+            const pageWidth = doc.internal.pageSize.getWidth();
+            const pageHeight = doc.internal.pageSize.getHeight();
     
-          // --- Main Product Code ---
-          doc.setFont("Helvetica", "bold");
-          doc.setFontSize(150);
-          const productCodeLines = doc.splitTextToSize(product.id, pageWidth - 80);
-          doc.text(productCodeLines, pageWidth / 2, pageHeight / 2 - 60, { align: "center" });
-    
-          // --- Product Description ---
-          doc.setFont("Helvetica", "normal");
-          doc.setFontSize(24);
-          const descriptionLines = doc.splitTextToSize(product.description, pageWidth - 80);
-          doc.text(descriptionLines, pageWidth / 2, pageHeight / 2 + (productCodeLines.length * 50), { align: "center" });
-    
-          // --- Bottom Information ---
-          const bottomY = pageHeight - 40;
-          doc.setFontSize(12);
-          
-          // Client Info
-          if (client) {
             doc.setFont("Helvetica", "bold");
-            doc.text("Cliente:", 40, bottomY - 40);
+            doc.setFontSize(150);
+            const productCodeLines = doc.splitTextToSize(product.id, pageWidth - 80);
+            doc.text(productCodeLines, pageWidth / 2, pageHeight / 2 - 60, { align: "center" });
+    
             doc.setFont("Helvetica", "normal");
-            doc.text(client.name, 95, bottomY - 40);
-          }
-          
-          // Location Info
-          doc.setFont("Helvetica", "bold");
-          doc.text("Ubicación:", 40, bottomY - 20);
-          doc.setFont("Helvetica", "normal");
-          doc.text(locationString, 105, bottomY - 20);
+            doc.setFontSize(24);
+            const descriptionLines = doc.splitTextToSize(product.description, pageWidth - 80);
+            doc.text(descriptionLines, pageWidth / 2, pageHeight / 2 + (productCodeLines.length * 50), { align: "center" });
     
-          // Date Info
-          doc.setFontSize(9);
-          doc.setTextColor(150);
-          doc.text(`Generado: ${format(new Date(), 'dd/MM/yyyy HH:mm')}`, pageWidth - 40, bottomY, { align: "right" });
+            const bottomY = pageHeight - 40;
+            doc.setFontSize(12);
+            
+            if (client) {
+              doc.setFont("Helvetica", "bold");
+              doc.text("Cliente:", 40, bottomY - 40);
+              doc.setFont("Helvetica", "normal");
+              doc.text(client.name, 95, bottomY - 40);
+            }
+            
+            doc.setFont("Helvetica", "bold");
+            doc.text("Ubicación:", 40, bottomY - 20);
+            doc.setFont("Helvetica", "normal");
+            doc.text(locationString, 105, bottomY - 20);
     
-          doc.save(`etiqueta_rack_${product.id}.pdf`);
+            doc.setFontSize(9);
+            doc.setTextColor(150);
+            doc.text(`Generado: ${format(new Date(), 'dd/MM/yyyy HH:mm')}`, pageWidth - 40, bottomY, { align: "right" });
+    
+            doc.save(`etiqueta_rack_${product.id}.pdf`);
         } catch (error: any) {
-          logError('Failed to generate rack label', { error });
-          toast({ title: "Error al generar PDF", description: "No se pudo crear la etiqueta.", variant: "destructive" });
+            logError('Failed to generate rack label', { error });
+            toast({ title: "Error al generar PDF", description: "No se pudo crear la etiqueta.", variant: "destructive" });
         }
       };
     
@@ -261,99 +285,146 @@ export default function AssignItemPage() {
 
     return (
         <main className="flex-1 p-4 md:p-6 lg:p-8">
-            <div className="mx-auto max-w-4xl space-y-8">
+            <div className="mx-auto max-w-5xl space-y-8">
                 <Card>
                     <CardHeader>
-                        <CardTitle>Asignar Artículo a Cliente y Ubicación</CardTitle>
-                        <CardDescription>Cree un catálogo de productos por cliente y asigne su ubicación física en el almacén.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div className="space-y-2">
-                                <Label>1. Seleccione un Producto</Label>
-                                <SearchInput options={productOptions} onSelect={handleSelectProduct} value={productSearchTerm} onValueChange={setProductSearchTerm} placeholder="Buscar producto..." open={isProductSearchOpen} onOpenChange={setProductSearchOpen} />
+                        <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
+                            <div>
+                                <CardTitle>Catálogo de Ubicaciones por Artículo</CardTitle>
+                                <CardDescription>Gestiona las ubicaciones físicas predeterminadas para los productos de tus clientes.</CardDescription>
                             </div>
-                            <div className="space-y-2">
-                                <Label>2. Seleccione un Cliente (Opcional)</Label>
-                                <SearchInput options={clientOptions} onSelect={handleSelectClient} value={clientSearchTerm} onValueChange={setClientSearchTerm} placeholder="Buscar cliente..." open={isClientSearchOpen} onOpenChange={setIsClientSearchOpen} />
-                            </div>
-                            <div className="space-y-2">
-                                <Label>3. Seleccione una Ubicación</Label>
-                                <div className="flex items-center gap-2">
-                                    <SearchInput 
-                                        options={locationOptions} 
-                                        onSelect={handleSelectLocation} 
-                                        value={locationSearchTerm} 
-                                        onValueChange={setLocationSearchTerm} 
-                                        placeholder="Buscar o '*' para ver todas..." 
-                                        open={isLocationSearchOpen} 
-                                        onOpenChange={setIsLocationSearchOpen}
-                                        className="flex-1"
-                                    />
-                                    <Button variant="outline" size="icon" onClick={handleShowAllLocations} title="Listar todas las ubicaciones">
-                                        <List className="h-4 w-4" />
-                                    </Button>
-                                </div>
-                            </div>
+                             <Dialog open={isFormOpen} onOpenChange={(open) => { setIsFormOpen(open); if (!open) resetForm(); }}>
+                                <DialogTrigger asChild>
+                                    <Button><PlusCircle className="mr-2 h-4 w-4"/>Crear Nueva Asignación</Button>
+                                </DialogTrigger>
+                                <DialogContent className="sm:max-w-2xl">
+                                    <DialogHeader>
+                                        <DialogTitle>Crear Asignación</DialogTitle>
+                                        <DialogDescription>Asocia un producto a un cliente y una ubicación física.</DialogDescription>
+                                    </DialogHeader>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-4">
+                                        <div className="space-y-2">
+                                            <Label>1. Seleccione un Producto <span className="text-destructive">*</span></Label>
+                                            <SearchInput options={productOptions} onSelect={handleSelectProduct} value={productSearchTerm} onValueChange={setProductSearchTerm} placeholder="Buscar producto..." open={isProductSearchOpen} onOpenChange={setProductSearchOpen} />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label>2. Seleccione un Cliente (Opcional)</Label>
+                                            <SearchInput options={clientOptions} onSelect={handleSelectClient} value={clientSearchTerm} onValueChange={setClientSearchTerm} placeholder="Buscar cliente..." open={isClientSearchOpen} onOpenChange={setIsClientSearchOpen} />
+                                        </div>
+                                        <div className="space-y-2 md:col-span-2">
+                                            <Label>3. Seleccione una Ubicación <span className="text-destructive">*</span></Label>
+                                            <SearchInput 
+                                                options={locationOptions} 
+                                                onSelect={handleSelectLocation} 
+                                                value={locationSearchTerm} 
+                                                onValueChange={setLocationSearchTerm} 
+                                                placeholder="Buscar... ('*' o vacío para ver todas)" 
+                                                open={isLocationSearchOpen} 
+                                                onOpenChange={setIsLocationSearchOpen}
+                                            />
+                                        </div>
+                                    </div>
+                                    <DialogFooter>
+                                        <DialogClose asChild><Button variant="ghost">Cancelar</Button></DialogClose>
+                                        <Button onClick={handleCreateAssignment} disabled={isSubmitting || !selectedProductId || !selectedLocationId}>
+                                            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                            Crear Asignación
+                                        </Button>
+                                    </DialogFooter>
+                                </DialogContent>
+                            </Dialog>
                         </div>
-                    </CardContent>
-                    <CardFooter>
-                        <Button onClick={handleCreateAssignment} disabled={isSubmitting || !selectedProductId || !selectedLocationId}>
-                            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            Crear Asignación
-                        </Button>
-                    </CardFooter>
-                </Card>
-
-                 {selectedProductId && (
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Asignaciones Actuales para: {productSearchTerm}</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Producto</TableHead>
-                                        <TableHead>Cliente</TableHead>
-                                        <TableHead>Ubicación</TableHead>
-                                        <TableHead className="text-right">Acciones</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {assignments.map(a => {
-                                        const product = authProducts.find(p => p.id === a.itemId);
-                                        const client = authCustomers.find(c => c.id === a.clientId);
-                                        const locationString = renderLocationPathAsString(a.locationId, locations);
-                                        return (
-                                            <TableRow key={a.id}>
-                                                <TableCell className="font-medium">
-                                                    <div>{product?.description}</div>
-                                                    <div className="text-xs text-muted-foreground">{product?.id}</div>
-                                                </TableCell>
-                                                <TableCell>{client?.name || <span className="italic text-muted-foreground">General</span>}</TableCell>
-                                                <TableCell>{locationString}</TableCell>
-                                                <TableCell className="text-right">
-                                                    <Button variant="ghost" size="icon" onClick={() => handlePrintRackLabel(a)}>
-                                                        <Printer className="h-4 w-4 text-blue-600" />
-                                                    </Button>
-                                                    <Button variant="ghost" size="icon" onClick={() => handleDeleteAssignment(a.id)} disabled={isSubmitting}>
-                                                        <Trash2 className="h-4 w-4 text-destructive" />
-                                                    </Button>
-                                                </TableCell>
-                                            </TableRow>
-                                        );
-                                    })}
-                                    {assignments.length === 0 && (
-                                        <TableRow>
-                                            <TableCell colSpan={4} className="text-center text-muted-foreground">No hay asignaciones para este producto.</TableCell>
+                         <div className="relative mt-4">
+                            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                            <Input
+                                placeholder="Filtrar asignaciones por producto, cliente o ubicación..."
+                                value={globalFilter}
+                                onChange={(e) => setGlobalFilter(e.target.value)}
+                                className="pl-8"
+                            />
+                        </div>
+                    </CardHeader>
+                    <CardContent>
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Producto</TableHead>
+                                    <TableHead>Cliente</TableHead>
+                                    <TableHead>Ubicación Asignada</TableHead>
+                                    <TableHead className="text-right">Acciones</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {paginatedAssignments.length > 0 ? paginatedAssignments.map(a => {
+                                    const product = authProducts.find(p => p.id === a.itemId);
+                                    const client = authCustomers.find(c => c.id === a.clientId);
+                                    const locationString = renderLocationPathAsString(a.locationId, locations);
+                                    return (
+                                        <TableRow key={a.id}>
+                                            <TableCell className="font-medium">
+                                                <div>{product?.description || 'Producto no encontrado'}</div>
+                                                <div className="text-xs text-muted-foreground">{product?.id}</div>
+                                            </TableCell>
+                                            <TableCell>{client?.name || <span className="italic text-muted-foreground">General</span>}</TableCell>
+                                            <TableCell>{locationString}</TableCell>
+                                            <TableCell className="text-right">
+                                                <Button variant="ghost" size="icon" onClick={() => handlePrintRackLabel(a)}>
+                                                    <Printer className="h-4 w-4 text-blue-600" />
+                                                </Button>
+                                                <AlertDialog>
+                                                    <AlertDialogTrigger asChild>
+                                                        <Button variant="ghost" size="icon" disabled={isSubmitting}>
+                                                            <Trash2 className="h-4 w-4 text-destructive" />
+                                                        </Button>
+                                                    </AlertDialogTrigger>
+                                                    <AlertDialogContent>
+                                                        <AlertDialogHeader>
+                                                          <AlertDialogTitle>¿Confirmar eliminación?</AlertDialogTitle>
+                                                          <AlertDialogDescription>
+                                                            Esta acción eliminará la asignación permanentemente. No se puede deshacer.
+                                                          </AlertDialogDescription>
+                                                        </AlertDialogHeader>
+                                                        <AlertDialogFooter>
+                                                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                                          <AlertDialogAction onClick={() => handleDeleteAssignment(a.id)}>Eliminar</AlertDialogAction>
+                                                        </AlertDialogFooter>
+                                                    </AlertDialogContent>
+                                                </AlertDialog>
+                                            </TableCell>
                                         </TableRow>
-                                    )}
-                                </TableBody>
-                            </Table>
-                        </CardContent>
-                    </Card>
-                )}
+                                    );
+                                }) : (
+                                    <TableRow>
+                                        <TableCell colSpan={4} className="text-center h-24 text-muted-foreground">
+                                            {debouncedGlobalFilter ? 'No se encontraron asignaciones con ese filtro.' : 'No hay asignaciones creadas.'}
+                                        </TableCell>
+                                    </TableRow>
+                                )}
+                            </TableBody>
+                        </Table>
+                    </CardContent>
+                    {totalPages > 1 && (
+                        <CardFooter>
+                            <Pagination>
+                                <PaginationContent>
+                                    <PaginationItem>
+                                        <PaginationPrevious href="#" onClick={(e) => { e.preventDefault(); setCurrentPage(p => Math.max(0, p - 1)); }} className={currentPage === 0 ? "pointer-events-none opacity-50" : undefined}/>
+                                    </PaginationItem>
+                                    {[...Array(totalPages)].map((_, i) => (
+                                        <PaginationItem key={i}>
+                                            <PaginationLink href="#" isActive={i === currentPage} onClick={(e) => { e.preventDefault(); setCurrentPage(i); }}>
+                                                {i + 1}
+                                            </PaginationLink>
+                                        </PaginationItem>
+                                    ))}
+                                    <PaginationItem>
+                                        <PaginationNext href="#" onClick={(e) => { e.preventDefault(); setCurrentPage(p => Math.min(totalPages - 1, p + 1)); }} className={currentPage === totalPages - 1 ? "pointer-events-none opacity-50" : undefined}/>
+                                    </PaginationItem>
+                                </PaginationContent>
+                            </Pagination>
+                        </CardFooter>
+                    )}
+                </Card>
             </div>
         </main>
     );
