@@ -345,7 +345,7 @@ export const useRequests = () => {
 
     // Effect to pre-fill form from URL parameters
     useEffect(() => {
-        if (isAuthReady && customers.length > 0 && products.length > 0) {
+        if (isAuthReady && customers.length > 0 && products.length > 0 && searchParams) {
             const itemId = searchParams.get('itemId');
             if (itemId) {
                 const product = products.find(p => p.id === itemId);
@@ -377,7 +377,7 @@ export const useRequests = () => {
     
     const getRequestPermissions = useCallback((request: PurchaseRequest): Record<string, { allowed: boolean; visible: boolean; reason: string | null }> => {
         const createResult = (allowed: boolean, reason: string | null = null, visible = true) => ({ allowed, reason: allowed ? null : reason, visible });
-
+    
         const isPending = request.status === 'pending';
         const isPurchasingReview = request.status === 'purchasing-review';
         const isPendingApproval = request.status === 'pending-approval';
