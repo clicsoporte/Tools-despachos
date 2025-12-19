@@ -22,7 +22,6 @@ import { useDebounce } from 'use-debounce';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import jsPDF from "jspdf";
 import { format } from 'date-fns';
 
 
@@ -200,7 +199,8 @@ export default function AssignItemPage() {
         }
     
         try {
-          const doc = new jsPDF({ orientation: "portrait", unit: "pt", format: "letter" });
+          const { default: jsPDF } = await import('jspdf');
+          const doc = new jsPDF({ orientation: "landscape", unit: "pt", format: "letter" });
           const pageWidth = doc.internal.pageSize.getWidth();
           const pageHeight = doc.internal.pageSize.getHeight();
     
