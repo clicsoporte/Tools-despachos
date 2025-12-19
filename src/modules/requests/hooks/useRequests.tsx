@@ -21,7 +21,7 @@ import { getAllErpPurchaseOrderHeaders, getAllErpPurchaseOrderLines } from '@/mo
 import type { 
     PurchaseRequest, PurchaseRequestStatus, PurchaseRequestPriority, 
     PurchaseRequestHistoryEntry, RequestSettings, Company, DateRange, 
-    AdministrativeAction, AdministrativeActionPayload, StockInfo, ErpOrderHeader, ErpOrderLine, User, RequestNotePayload, ErpPurchaseOrderHeader, Product, Customer
+    AdministrativeAction, AdministrativeActionPayload, StockInfo, ErpOrderHeader, ErpOrderLine, User, RequestNotePayload, ErpPurchaseOrderHeader, Product, Customer, ErpPurchaseOrderLine as ErpPOLine
 } from '../../core/types';
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -153,7 +153,7 @@ type State = {
     isAddNoteDialogOpen: boolean;
     notePayload: RequestNotePayload | null;
     erpPoHeaders: ErpPurchaseOrderHeader[];
-    erpPoLines: ErpPurchaseOrderLine[];
+    erpPoLines: ErpPOLine[];
     isTransitsDialogOpen: boolean;
     activeTransits: { itemId: string; itemDescription: string; transits: any[] } | null;
     isCostAnalysisDialogOpen: boolean;
@@ -375,7 +375,9 @@ export const useRequests = () => {
         updateState({ companyData: authCompanyData });
     }, [authCompanyData, updateState]);
     
-    const getRequestPermissions = useCallback((request: PurchaseRequest) => {
+    const getRequestPermissions = useCallback((request: PurchaseRequest): Record<string, { allowed: boolean; visible: boolean; reason: string | null }> => {
+        const createResult = (allowed: boolean, reason: string | null = null, visible = true) => ({ allowed, reason: allowed ? null : reason, visible });
+
         const isPending = request.status === 'pending';
         const isPurchasingReview = request.status === 'purchasing-review';
         const isPendingApproval = request.status === 'pending-approval';
@@ -392,21 +394,21 @@ export const useRequests = () => {
         const isArchived = request.status === finalArchivedStatus || request.status === 'canceled';
 
         return {
-            canEdit: (isPending || isPurchasingReview || isPendingApproval) && hasPermission('requests:edit:pending'),
-            canReopen: isArchived && hasPermission('requests:reopen'),
-            canSendToReview: isPending && hasPermission('requests:status:review'),
-            canGoBackToPending: isPurchasingReview && hasPermission('requests:status:review'),
-            canSendToApproval: isPurchasingReview && hasPermission('requests:status:pending-approval'),
-            canGoBackToReview: isPendingApproval && hasPermission('requests:status:pending-approval'),
-            canApprove: isPendingApproval && hasPermission('requests:status:approve'),
-            canOrder: isApproved && hasPermission('requests:status:ordered'),
-            canRevertToApproved: isOrdered && hasPermission('requests:status:revert-to-approved'),
-            canReceiveInWarehouse: isOrdered && !!state.requestSettings?.useWarehouseReception && hasPermission('requests:status:received-in-warehouse'),
-            canEnterToErp: isReceivedInWarehouse && !!state.requestSettings?.useErpEntry && hasPermission('requests:status:entered-erp'),
-            canRequestCancel: (isApproved || isOrdered) && hasPermission('requests:status:cancel'),
-            canCancelPending: (isPending || isPurchasingReview || isPendingApproval) && hasPermission('requests:status:cancel'),
-            canRequestUnapproval: (isApproved || isOrdered) && hasPermission('requests:status:unapproval-request'),
-            canAddNote: hasPermission('requests:notes:add'),
+            canEdit: createResult((isPending || isPurchasingReview || isPendingApproval) && hasPermission('requests:edit:pending'), 'Solo se puede editar en estados iniciales.'),
+            canReopen: createResult(isArchived && hasPermission('requests:reopen'), 'Solo para solicitudes archivadas.'),
+            canSendToReview: createResult(isPending && hasPermission('requests:status:review'), 'Solo desde estado Pendiente.'),
+            canGoBackToPending: createResult(isPurchasingReview && hasPermission('requests:status:review'), 'Solo desde Revisión Compras.'),
+            canSendToApproval: createResult(isPurchasingReview && hasPermission('requests:status:pending-approval'), 'Solo desde Revisión Compras.'),
+            canGoBackToReview: createResult(isPendingApproval && hasPermission('requests:status:pending-approval'), 'Solo desde Pendiente Aprobación.'),
+            canApprove: createResult(isPendingApproval && hasPermission('requests:status:approve'), 'Solo desde Pendiente Aprobación.'),
+            canOrder: createResult(isApproved && hasPermission('requests:status:ordered'), 'Solo para solicitudes Aprobadas.'),
+            canRevertToApproved: createResult(isOrdered && hasPermission('requests:status:revert-to-approved'), 'Solo para solicitudes Ordenadas.'),
+            canReceiveInWarehouse: createResult(isOrdered && !!state.requestSettings?.useWarehouseReception && hasPermission('requests:status:received-in-warehouse'), 'Paso no habilitado o estado incorrecto.'),
+            canEnterToErp: createResult(isReceivedInWarehouse && !!state.requestSettings?.useErpEntry && hasPermission('requests:status:entered-erp'), 'Paso no habilitado o estado incorrecto.'),
+            canRequestCancel: createResult((isApproved || isOrdered) && hasPermission('requests:status:cancel'), 'Solo para solicitudes Aprobadas u Ordenadas.'),
+            canCancelPending: createResult((isPending || isPurchasingReview || isPendingApproval) && hasPermission('requests:status:cancel'), 'Solo en estados iniciales.'),
+            canRequestUnapproval: createResult((isApproved || isOrdered) && hasPermission('requests:status:unapproval-request'), 'Solo para solicitudes Aprobadas u Ordenadas.'),
+            canAddNote: createResult(hasPermission('requests:notes:add')),
         };
     }, [hasPermission, state.requestSettings]);
 
