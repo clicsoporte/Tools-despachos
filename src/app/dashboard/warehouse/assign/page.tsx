@@ -27,6 +27,8 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { format } from 'date-fns';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import jsPDF from 'jspdf';
+import QRCode from 'qrcode';
 
 
 const renderLocationPathAsString = (locationId: number, locations: WarehouseLocation[]): string => {
@@ -235,11 +237,15 @@ export default function AssignItemPage() {
         }
     
         try {
-            const { default: jsPDF } = await import('jspdf');
+            const scanUrl = `${window.location.origin}/dashboard/scanner?locationId=${assignment.locationId}&productId=${product.id}`;
+            const qrCodeDataUrl = await QRCode.toDataURL(scanUrl, { errorCorrectionLevel: 'H', width: 200 });
+            
             const doc = new jsPDF({ orientation: "landscape", unit: "pt", format: "letter" });
             const pageWidth = doc.internal.pageSize.getWidth();
             const pageHeight = doc.internal.pageSize.getHeight();
     
+            doc.addImage(qrCodeDataUrl, 'PNG', 40, 40, 100, 100);
+
             doc.setFont("Helvetica", "bold");
             doc.setFontSize(150);
             const productCodeLines = doc.splitTextToSize(product.id, pageWidth - 80);
@@ -306,7 +312,7 @@ export default function AssignItemPage() {
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-4">
                                         <div className="space-y-2">
                                             <Label>1. Seleccione un Producto <span className="text-destructive">*</span></Label>
-                                            <SearchInput options={productOptions} onSelect={handleSelectProduct} value={productSearchTerm} onValueChange={setProductSearchTerm} placeholder="Buscar producto..." open={isProductSearchOpen} onOpenChange={setIsProductSearchOpen} />
+                                            <SearchInput options={productOptions} onSelect={handleSelectProduct} value={productSearchTerm} onValueChange={setIsProductSearchOpen} placeholder="Buscar producto..." open={isProductSearchOpen} onOpenChange={setIsProductSearchOpen} />
                                         </div>
                                         <div className="space-y-2">
                                             <Label>2. Seleccione un Cliente (Opcional)</Label>
