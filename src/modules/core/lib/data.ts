@@ -35,6 +35,7 @@ import {
   Truck,
   QrCode,
   ClipboardCheck,
+  BookMarked,
 } from "lucide-react";
 
 /**
