@@ -409,7 +409,7 @@ export const useRequests = () => {
             canRequestCancel: createResult((isApproved || isOrdered) && hasPermission('requests:status:cancel'), 'Solo para solicitudes Aprobadas u Ordenadas.'),
             canCancelPending: createResult((isPending || isPurchasingReview || isPendingApproval) && hasPermission('requests:status:cancel'), 'Solo en estados iniciales.'),
             canRequestUnapproval: createResult((isApproved || isOrdered) && hasPermission('requests:status:unapproval-request'), 'Solo para solicitudes Aprobadas u Ordenadas.'),
-            canAddNote: createResult(hasPermission('requests:notes:add')),
+            canAddNote: createResult(hasPermission('requests:notes:add'), 'Permiso requerido.'),
         };
     }, [hasPermission, state.requestSettings]);
 
@@ -1096,3 +1096,5 @@ export const useRequests = () => {
         isAuthorized
     };
 }
+
+    
