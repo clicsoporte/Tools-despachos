@@ -1,4 +1,3 @@
-
 /**
  * @fileoverview Admin page for user management.
  * Allows admins to view, create, edit, and delete users.
@@ -31,6 +30,7 @@ import {
     AlertDialogFooter,
     AlertDialogHeader,
     AlertDialogTitle,
+    AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import {
     Dialog,
