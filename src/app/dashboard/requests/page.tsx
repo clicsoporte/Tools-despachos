@@ -25,7 +25,7 @@ import { SearchInput } from '@/components/ui/search-input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Calendar } from '@/components/ui/calendar';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import type { PurchaseRequest, PurchaseRequestHistoryEntry, RequestNotePayload, PurchaseRequestPriority, ErpOrderHeader, ErpOrderLine, User, ErpPurchaseOrderHeader } from '@/modules/core/types';
+import type { PurchaseRequest, PurchaseRequestHistoryEntry, RequestNotePayload, PurchaseRequestPriority, ErpOrderHeader, ErpOrderLine, User, ErpPurchaseOrderHeader, ErpPurchaseOrderLine as ErpPOLine } from '@/modules/core/types';
 import Link from 'next/link';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -96,31 +96,24 @@ export default function PurchaseRequestPage() {
     }
 
     const renderRequestCard = (request: PurchaseRequest) => {
-        const {
-            canEdit, canReopen, canApprove, canOrder,
-            canRevertToApproved, canReceiveInWarehouse, canEnterToErp,
-            canRequestCancel, canCancelPending, canSendToReview, canGoBackToReview, canGoBackToPending,
-            canRequestUnapproval,
-        } = selectors.getRequestPermissions(request);
-
+        const permissions = selectors.getRequestPermissions(request);
         const daysRemaining = selectors.getDaysRemaining(request.requiredDate);
         
         const changeStatusActions = [
-            { condition: canSendToReview, action: () => actions.openStatusDialog(request, 'purchasing-review'), label: 'Enviar a Revisión', icon: <Send className="mr-2"/>, className: 'text-cyan-600' },
-            { condition: canGoBackToPending, action: () => actions.openStatusDialog(request, 'pending'), label: 'Devolver a Pendiente', icon: <Undo2 className="mr-2"/>, className: 'text-orange-600' },
-            { condition: selectors.hasPermission('requests:status:pending-approval'), action: () => actions.openStatusDialog(request, 'pending-approval'), label: 'Enviar a Aprobación', icon: <ShoppingBag className="mr-2"/>, className: 'text-orange-600' },
-            { condition: canGoBackToReview, action: () => actions.openStatusDialog(request, 'purchasing-review'), label: 'Devolver a Revisión', icon: <Undo2 className="mr-2"/>, className: 'text-orange-600' },
-            { condition: canApprove, action: () => actions.openStatusDialog(request, 'approved'), label: 'Aprobar', icon: <Check className="mr-2"/>, className: 'text-green-600' },
-            { condition: canOrder, action: () => actions.openStatusDialog(request, 'ordered'), label: 'Marcar como Ordenada', icon: <Truck className="mr-2"/>, className: 'text-blue-600' },
-            { condition: canRevertToApproved, action: () => actions.openStatusDialog(request, 'approved'), label: 'Revertir a Aprobada', icon: <Undo2 className="mr-2"/>, className: 'text-orange-600' },
-            { condition: canReceiveInWarehouse, action: () => actions.openStatusDialog(request, 'received-in-warehouse'), label: 'Recibir en Bodega', icon: <Home className="mr-2"/>, className: 'text-teal-600' },
-            { condition: canEnterToErp, action: () => actions.openStatusDialog(request, 'entered-erp'), label: 'Ingresar a ERP', icon: <PackageCheck className="mr-2"/>, className: 'text-indigo-600' },
-            { condition: canRequestUnapproval, action: () => actions.openAdminActionDialog(request, 'unapproval-request'), label: 'Solicitar Desaprobación', icon: <AlertTriangle className="mr-2"/>, className: 'text-orange-600 font-bold' },
-            { condition: canCancelPending, action: () => actions.openStatusDialog(request, 'canceled'), label: 'Cancelar Solicitud', icon: <XCircle className="mr-2"/>, className: 'text-red-600' },
-            { condition: canRequestCancel, action: () => actions.openAdminActionDialog(request, 'cancellation-request'), label: 'Solicitar Cancelación', icon: <XCircle className="mr-2"/>, className: 'text-red-600' },
-            { condition: canReopen, action: () => { actions.setRequestToUpdate(request); actions.setReopenDialogOpen(true); }, label: 'Reabrir', icon: <Undo2 className="mr-2"/>, className: 'text-orange-600' }
-        ].filter(item => item.condition);
-
+            { check: permissions.canSendToReview, action: () => actions.openStatusDialog(request, 'purchasing-review'), label: 'Enviar a Revisión', icon: <Send className="mr-2"/>, className: 'text-cyan-600' },
+            { check: permissions.canGoBackToPending, action: () => actions.openStatusDialog(request, 'pending'), label: 'Devolver a Pendiente', icon: <Undo2 className="mr-2"/>, className: 'text-orange-600' },
+            { check: permissions.canSendToApproval, action: () => actions.openStatusDialog(request, 'pending-approval'), label: 'Enviar a Aprobación', icon: <ShoppingBag className="mr-2"/>, className: 'text-orange-600' },
+            { check: permissions.canGoBackToReview, action: () => actions.openStatusDialog(request, 'purchasing-review'), label: 'Devolver a Revisión', icon: <Undo2 className="mr-2"/>, className: 'text-orange-600' },
+            { check: permissions.canApprove, action: () => actions.openStatusDialog(request, 'approved'), label: 'Aprobar', icon: <Check className="mr-2"/>, className: 'text-green-600' },
+            { check: permissions.canOrder, action: () => actions.openStatusDialog(request, 'ordered'), label: 'Marcar como Ordenada', icon: <Truck className="mr-2"/>, className: 'text-blue-600' },
+            { check: permissions.canRevertToApproved, action: () => actions.openStatusDialog(request, 'approved'), label: 'Revertir a Aprobada', icon: <Undo2 className="mr-2"/>, className: 'text-orange-600' },
+            { check: permissions.canReceiveInWarehouse, action: () => actions.openStatusDialog(request, 'received-in-warehouse'), label: 'Recibir en Bodega', icon: <Home className="mr-2"/>, className: 'text-teal-600' },
+            { check: permissions.canEnterToErp, action: () => actions.openStatusDialog(request, 'entered-erp'), label: 'Ingresar a ERP', icon: <PackageCheck className="mr-2"/>, className: 'text-indigo-600' },
+            { check: permissions.canRequestUnapproval, action: () => actions.openAdminActionDialog(request, 'unapproval-request'), label: 'Solicitar Desaprobación', icon: <AlertTriangle className="mr-2"/>, className: 'text-orange-600 font-bold' },
+            { check: permissions.canCancelPending, action: () => actions.openStatusDialog(request, 'canceled'), label: 'Cancelar Solicitud', icon: <XCircle className="mr-2"/>, className: 'text-red-600' },
+            { check: permissions.canRequestCancel, action: () => actions.openAdminActionDialog(request, 'cancellation-request'), label: 'Solicitar Cancelación', icon: <XCircle className="mr-2"/>, className: 'text-red-600' },
+            { check: permissions.canReopen, action: () => { actions.setRequestToUpdate(request); actions.setReopenDialogOpen(true); }, label: 'Reabrir', icon: <Undo2 className="mr-2"/>, className: 'text-orange-600' }
+        ];
 
         return (
             <Card key={request.id} className="w-full">
@@ -166,17 +159,33 @@ export default function PurchaseRequestPage() {
                                     <DropdownMenuContent align="end">
                                         <DropdownMenuLabel>Acciones de Solicitud</DropdownMenuLabel>
                                         <DropdownMenuSeparator />
-                                        {canEdit && <DropdownMenuItem onSelect={() => { actions.setRequestToEdit(request); actions.setEditRequestDialogOpen(true); }}><Pencil className="mr-2"/> Editar Solicitud</DropdownMenuItem>}
+                                         <Tooltip>
+                                            <TooltipTrigger asChild>
+                                                <div className={cn(!permissions.canEdit.allowed && "cursor-not-allowed")}>
+                                                    <DropdownMenuItem onSelect={() => { actions.setRequestToEdit(request); actions.setEditRequestDialogOpen(true); }} disabled={!permissions.canEdit.allowed}>
+                                                        <Pencil className="mr-2"/> Editar Solicitud
+                                                    </DropdownMenuItem>
+                                                </div>
+                                            </TooltipTrigger>
+                                            {!permissions.canEdit.allowed && permissions.canEdit.reason && <TooltipContent><p>{permissions.canEdit.reason}</p></TooltipContent>}
+                                        </Tooltip>
                                         {selectors.hasPermission('requests:notes:add') && <DropdownMenuItem onSelect={() => actions.openAddNoteDialog(request)}><Pencil className="mr-2"/> Añadir Nota</DropdownMenuItem>}
                                         {selectors.hasPermission('requests:edit:pending') && <DropdownMenuItem onSelect={() => actions.openCostAnalysisDialog(request)}><DollarSign className="mr-2" /> Analizar Costo</DropdownMenuItem>}
                                         <DropdownMenuSeparator />
                                         <DropdownMenuLabel>Cambio de Estado</DropdownMenuLabel>
                                         <DropdownMenuSeparator />
-                                        {changeStatusActions.length > 0 ? (
-                                            changeStatusActions.map((action, index) => (
-                                                <DropdownMenuItem key={index} onSelect={action.action} className={action.className}>
-                                                    {action.icon} {action.label}
-                                                </DropdownMenuItem>
+                                        {changeStatusActions.filter(a => a.check.visible).length > 0 ? (
+                                            changeStatusActions.filter(a => a.check.visible).map((action, index) => (
+                                                <Tooltip key={index}>
+                                                    <TooltipTrigger asChild>
+                                                        <div className={cn(!action.check.allowed && "cursor-not-allowed")}>
+                                                            <DropdownMenuItem onSelect={action.action} className={action.className} disabled={!action.check.allowed}>
+                                                                {action.icon} {action.label}
+                                                            </DropdownMenuItem>
+                                                        </div>
+                                                    </TooltipTrigger>
+                                                    {!action.check.allowed && action.check.reason && <TooltipContent><p>{action.check.reason}</p></TooltipContent>}
+                                                </Tooltip>
                                             ))
                                         ) : (
                                             <DropdownMenuItem disabled>No hay acciones disponibles</DropdownMenuItem>
@@ -463,3 +472,4 @@ export default function PurchaseRequestPage() {
     
 
     
+
