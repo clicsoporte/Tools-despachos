@@ -16,7 +16,7 @@ import { useToast } from '@/modules/core/hooks/use-toast';
 import { usePageTitle } from '@/modules/core/hooks/usePageTitle';
 import { useAuthorization } from '@/modules/core/hooks/useAuthorization';
 import { logError, logInfo } from '@/modules/core/lib/logger';
-import { getLocations, getItemLocations, assignItemToLocation, unassignItemFromLocation } from '@/modules/warehouse/lib/actions';
+import { getLocations, getAllItemLocations, assignItemToLocation, unassignItemFromLocation } from '@/modules/warehouse/lib/actions';
 import type { Product, Customer, WarehouseLocation, ItemLocation } from '@/modules/core/types';
 import { useAuth } from '@/modules/core/hooks/useAuth';
 import { SearchInput } from '@/components/ui/search-input';
@@ -26,6 +26,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { format } from 'date-fns';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 
 const renderLocationPathAsString = (locationId: number, locations: WarehouseLocation[]): string => {
@@ -77,7 +78,7 @@ export default function AssignItemPage() {
     const loadInitialData = useCallback(async () => {
         setIsLoading(true);
         try {
-            const [locs, allAssigns] = await Promise.all([getLocations(), getItemLocations()]);
+            const [locs, allAssigns] = await Promise.all([getLocations(), getAllItemLocations()]);
             setLocations(locs);
             setAllAssignments(allAssigns.sort((a, b) => b.id - a.id)); // Sort by most recent
         } catch (error) {
@@ -118,7 +119,7 @@ export default function AssignItemPage() {
     }, [locations, debouncedLocationSearch]);
 
     const handleSelectProduct = (value: string) => {
-        setProductSearchOpen(false);
+        setIsProductSearchOpen(false);
         const product = authProducts.find(p => p.id === value);
         if (product) {
             setSelectedProductId(value);
@@ -305,7 +306,7 @@ export default function AssignItemPage() {
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-4">
                                         <div className="space-y-2">
                                             <Label>1. Seleccione un Producto <span className="text-destructive">*</span></Label>
-                                            <SearchInput options={productOptions} onSelect={handleSelectProduct} value={productSearchTerm} onValueChange={setProductSearchTerm} placeholder="Buscar producto..." open={isProductSearchOpen} onOpenChange={setProductSearchOpen} />
+                                            <SearchInput options={productOptions} onSelect={handleSelectProduct} value={productSearchTerm} onValueChange={setProductSearchTerm} placeholder="Buscar producto..." open={isProductSearchOpen} onOpenChange={setIsProductSearchOpen} />
                                         </div>
                                         <div className="space-y-2">
                                             <Label>2. Seleccione un Cliente (Opcional)</Label>

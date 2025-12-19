@@ -15,6 +15,7 @@ import {
     logMovement as logMovementServer,
     updateInventory as updateInventoryServer,
     getItemLocations as getItemLocationsServer,
+    getAllItemLocations as getAllItemLocationsServer,
     assignItemToLocation as assignItemToLocationServer,
     unassignItemFromLocation as unassignItemFromLocationServer,
     getWarehouseData as getWarehouseDataServer,
@@ -61,6 +62,7 @@ export const updateInventory = async(itemId: string, locationId: number, quantit
 
 // --- Simple Mode Actions ---
 export const getItemLocations = async (itemId: string): Promise<ItemLocation[]> => getItemLocationsServer(itemId);
+export const getAllItemLocations = async (): Promise<ItemLocation[]> => getAllItemLocationsServer();
 export const assignItemToLocation = async (itemId: string, locationId: number, clientId: string | null): Promise<ItemLocation> => assignItemToLocationServer(itemId, locationId, clientId);
 
 export async function unassignItemFromLocation(itemLocationId: number): Promise<void> {

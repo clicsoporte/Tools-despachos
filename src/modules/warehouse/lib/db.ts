@@ -515,6 +515,11 @@ export async function getItemLocations(itemId: string): Promise<ItemLocation[]> 
     return db.prepare('SELECT * FROM item_locations WHERE itemId = ?').all(itemId) as ItemLocation[];
 }
 
+export async function getAllItemLocations(): Promise<ItemLocation[]> {
+    const db = await connectDb(WAREHOUSE_DB_FILE);
+    return db.prepare('SELECT * FROM item_locations').all() as ItemLocation[];
+}
+
 export async function assignItemToLocation(itemId: string, locationId: number, clientId: string | null): Promise<ItemLocation> {
     const db = await connectDb(WAREHOUSE_DB_FILE);
     const info = db.prepare('INSERT INTO item_locations (itemId, locationId, clientId) VALUES (?, ?, ?)').run(itemId, locationId, clientId);
