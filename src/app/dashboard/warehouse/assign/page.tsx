@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger, DialogClose } from '@/components/ui/dialog';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Pagination, PaginationContent, PaginationEllipsis, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
 import { useToast } from '@/modules/core/hooks/use-toast';
 import { usePageTitle } from '@/modules/core/hooks/usePageTitle';
@@ -28,7 +28,6 @@ import { Input } from '@/components/ui/input';
 import { format } from 'date-fns';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Checkbox } from '@/components/ui/checkbox';
-import jsPDF from 'jspdf';
 import QRCode from 'qrcode';
 
 
@@ -65,7 +64,7 @@ export default function AssignItemPage() {
 
     const [productSearchTerm, setProductSearchTerm] = useState('');
     const [isProductSearchOpen, setIsProductSearchOpen] = useState(false);
-    const [exactProductMatch, setExactProductMatch] = useState(false);
+    const [exactProductMatch, setExactProductMatch] = useState(true);
     const [clientSearchTerm, setClientSearchTerm] = useState('');
     const [isClientSearchOpen, setIsClientSearchOpen] = useState(false);
     const [locationSearchTerm, setLocationSearchTerm] = useState('');
@@ -169,7 +168,7 @@ export default function AssignItemPage() {
         setProductSearchTerm('');
         setClientSearchTerm('');
         setLocationSearchTerm('');
-        setExactProductMatch(false);
+        setExactProductMatch(true);
     }, []);
 
     const handleCreateAssignment = async () => {
@@ -253,7 +252,6 @@ export default function AssignItemPage() {
             const scanUrl = `${window.location.origin}/dashboard/scanner?locationId=${assignment.locationId}&productId=${product.id}`;
             const qrCodeDataUrl = await QRCode.toDataURL(scanUrl, { errorCorrectionLevel: 'H', width: 200 });
             
-            const { jsPDF } = await import('jspdf');
             const doc = new jsPDF({ orientation: "landscape", unit: "pt", format: "letter" });
             const pageWidth = doc.internal.pageSize.getWidth();
             const pageHeight = doc.internal.pageSize.getHeight();
