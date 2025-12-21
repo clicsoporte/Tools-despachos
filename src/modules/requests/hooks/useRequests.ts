@@ -1,4 +1,3 @@
-
 /**
  * @fileoverview Custom hook `useRequests` for managing the state and logic of the Purchase Request page.
  * This hook encapsulates all state and actions for the module, keeping the UI component clean.
@@ -376,7 +375,7 @@ export const useRequests = () => {
         updateState({ companyData: authCompanyData });
     }, [authCompanyData, updateState]);
     
-    const getRequestPermissions = useCallback((request: PurchaseRequest) => {
+    const getRequestPermissions = useCallback((request: PurchaseRequest): Record<string, boolean> => {
         const isPending = request.status === 'pending';
         const isPurchasingReview = request.status === 'purchasing-review';
         const isPendingApproval = request.status === 'pending-approval';
@@ -735,11 +734,12 @@ export const useRequests = () => {
             updateState({ isSubmitting: true });
             try {
                 for (const line of selectedLines) {
+                    const client = customers.find(c => c.id === erpHeader.CLIENTE);
                     const requestPayload = {
                         requiredDate: new Date(erpHeader.FECHA_PROMETIDA).toISOString().split('T')[0],
                         clientId: erpHeader.CLIENTE,
                         clientName: erpHeader.CLIENTE_NOMBRE || '',
-                        clientTaxId: customers.find(c => c.id === erpHeader.CLIENTE)?.taxId || '',
+                        clientTaxId: client?.taxId || '',
                         itemId: line.ARTICULO,
                         itemDescription: line.product.description,
                         quantity: parseFloat(line.displayQuantity) || 0,
@@ -1037,10 +1037,22 @@ export const useRequests = () => {
         itemOptions: useMemo(() => {
             if (debouncedItemSearch.length < 2) return [];
             const searchTerms = normalizeText(debouncedItemSearch).split(' ').filter(Boolean);
-            return products.filter(p => {
+            const exactMatchLower = debouncedItemSearch.toLowerCase();
+            const results = products.filter(p => {
+                // Exact code match check first
+                if (p.id.toLowerCase() === exactMatchLower) {
+                    return true;
+                }
                 const targetText = normalizeText(`${p.id} ${p.description}`);
                 return searchTerms.every(term => targetText.includes(term));
-            }).map(p => ({ value: p.id, label: `[${p.id}] - ${p.description}` }));
+            });
+            // Prioritize exact match if found
+            results.sort((a, b) => {
+                if (a.id.toLowerCase() === exactMatchLower) return -1;
+                if (b.id.toLowerCase() === exactMatchLower) return 1;
+                return 0;
+            });
+            return results.map(p => ({ value: p.id, label: `[${p.id}] - ${p.description}` }));
         }, [products, debouncedItemSearch]),
         classifications: useMemo(() => Array.from(new Set(products.map(p => p.classification).filter(Boolean))), [products]),
         filteredRequests: useMemo(() => {
@@ -1055,11 +1067,11 @@ export const useRequests = () => {
                 const statusMatch = state.statusFilter === 'all' || request.status === state.statusFilter;
                 const classificationMatch = state.classificationFilter === 'all' || (product && product.classification === state.classificationFilter);
                 const dateMatch = !state.dateFilter || !state.dateFilter.from || (new Date(request.requiredDate) >= state.dateFilter.from && new Date(request.requiredDate) <= (state.dateFilter.to || state.dateFilter.from));
-                const myRequestsMatch = !state.showOnlyMyRequests || (currentUser?.name && request.requestedBy.toLowerCase() === currentUser.name.toLowerCase()) || (currentUser?.erpAlias && request.erpOrderNumber && request.erpOrderNumber.toLowerCase().includes(currentUser.erpAlias.toLowerCase()));
+                const myRequestsMatch = !state.showOnlyMyRequests || !hasPermission('requests:read:all') || (currentUser?.name && request.requestedBy.toLowerCase() === currentUser.name.toLowerCase()) || (currentUser?.erpAlias && request.erpOrderNumber && request.erpOrderNumber.toLowerCase().includes(currentUser.erpAlias.toLowerCase()));
 
                 return searchMatch && statusMatch && classificationMatch && dateMatch && myRequestsMatch;
             });
-        }, [state.viewingArchived, state.activeRequests, state.archivedRequests, debouncedSearchTerm, state.statusFilter, state.classificationFilter, products, state.dateFilter, state.showOnlyMyRequests, currentUser?.name, currentUser?.erpAlias]),
+        }, [state.viewingArchived, state.activeRequests, state.archivedRequests, debouncedSearchTerm, state.statusFilter, state.classificationFilter, products, state.dateFilter, state.showOnlyMyRequests, currentUser?.name, currentUser?.erpAlias, hasPermission]),
         stockLevels: authStockLevels,
         visibleErpOrderLines: useMemo(() => {
             if (!state.showOnlyShortageItems) {
@@ -1094,3 +1106,4 @@ export const useRequests = () => {
         isAuthorized
     };
 }
+```
