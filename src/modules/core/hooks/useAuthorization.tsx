@@ -1,4 +1,3 @@
-
 /**
  * @fileoverview Custom hook to handle authorization for specific pages or components.
  * It checks if the current user's role includes at least one of the required permissions.

@@ -1,5 +1,3 @@
-
-
 /**
  * @fileoverview Custom hook `usePlanner` for managing the state and logic of the Production Planner page.
  * This hook encapsulates all state and actions for the planner, keeping the UI component clean.
@@ -862,7 +860,7 @@ export const usePlanner = () => {
             let ordersToFilter = state.viewingArchived ? state.archivedOrders : state.activeOrders;
             
             const searchTerms = normalizeText(debouncedSearchTerm).split(' ').filter(Boolean);
-
+            
             return ordersToFilter.filter(order => {
                 const product = products.find(p => p.id === order.productId);
                 const targetText = normalizeText(`${order.consecutive} ${order.customerName} ${order.productDescription} ${order.purchaseOrder || ''}`);
@@ -872,11 +870,11 @@ export const usePlanner = () => {
                 const statusMatch = state.statusFilter.length === 0 || state.statusFilter.includes(order.status);
                 const classificationMatch = state.classificationFilter.length === 0 || (product && state.classificationFilter.includes(product.classification));
                 const dateMatch = !state.dateFilter || !state.dateFilter.from || (new Date(order.deliveryDate) >= state.dateFilter.from && new Date(order.deliveryDate) <= (state.dateFilter.to || state.dateFilter.from));
-                const myOrdersMatch = !state.showOnlyMyOrders || (currentUser && (order.requestedBy.toLowerCase() === currentUser.name.toLowerCase() || (currentUser.erpAlias && order.erpOrderNumber?.toLowerCase().includes(currentUser.erpAlias.toLowerCase()))));
+                const myOrdersMatch = !state.showOnlyMyOrders || !hasPermission('planner:read:all') || (currentUser && order.requestedBy.toLowerCase() === currentUser.name.toLowerCase());
 
                 return searchMatch && statusMatch && classificationMatch && dateMatch && myOrdersMatch;
             });
-        }, [state.viewingArchived, state.activeOrders, state.archivedOrders, debouncedSearchTerm, state.statusFilter, state.classificationFilter, products, state.dateFilter, state.showOnlyMyOrders, currentUser]),
+        }, [state.viewingArchived, state.activeOrders, state.archivedOrders, debouncedSearchTerm, state.statusFilter, state.classificationFilter, products, state.dateFilter, state.showOnlyMyOrders, currentUser, hasPermission]),
         stockLevels: stockLevels,
         availableColumns,
     };
