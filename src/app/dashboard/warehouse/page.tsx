@@ -1,4 +1,3 @@
-
 /**
  * @fileoverview Main warehouse search page.
  * This component allows users to search for products or customers and see a consolidated
