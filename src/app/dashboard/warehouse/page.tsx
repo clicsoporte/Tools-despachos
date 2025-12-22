@@ -1,3 +1,4 @@
+
 /**
  * @fileoverview The sub-dashboard page for the warehouse section.
  * It displays a grid of available warehouse tools like search and assignment.

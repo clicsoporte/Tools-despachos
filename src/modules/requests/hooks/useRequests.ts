@@ -9,7 +9,7 @@
 import React from 'react';
 import { useState, useEffect, useCallback, useMemo, FormEvent } from 'react';
 import { useToast } from '@/modules/core/hooks/use-toast';
-import { usePageTitle } from '@/modules/core/hooks/usePageTitle';
+import { ToastAction } from "@/components/ui/toast";
 import { useAuthorization } from '@/modules/core/hooks/useAuthorization';
 import { logError, logInfo } from '@/modules/core/lib/logger';
 import { 
@@ -741,7 +741,7 @@ export const useRequests = () => {
                     const requestPayload = {
                         requiredDate: new Date(erpHeader.FECHA_PROMETIDA).toISOString().split('T')[0],
                         clientId: erpHeader.CLIENTE,
-                        clientName: erpHeader.CLIENTE_NOMBRE || '',
+                        clientName: client?.name || erpHeader.CLIENTE_NOMBRE || '',
                         clientTaxId: client?.taxId || '',
                         itemId: line.ARTICULO,
                         itemDescription: line.product.description,
@@ -1041,18 +1041,10 @@ export const useRequests = () => {
         itemOptions: useMemo(() => {
             if (debouncedItemSearch.length < 2) return [];
             const searchTerms = normalizeText(debouncedItemSearch).split(' ').filter(Boolean);
-            const exactMatchLower = debouncedItemSearch.toLowerCase();
-            const results = products.filter(p => {
-                if (p.id.toLowerCase() === exactMatchLower) return true;
+            return products.filter(p => {
                 const targetText = normalizeText(`${p.id} ${p.description}`);
                 return searchTerms.every(term => targetText.includes(term));
-            });
-            results.sort((a, b) => {
-                if (a.id.toLowerCase() === exactMatchLower) return -1;
-                if (b.id.toLowerCase() === exactMatchLower) return 1;
-                return 0;
-            });
-            return results.map(p => ({ value: p.id, label: `[${p.id}] - ${p.description}` }));
+            }).map(p => ({ value: p.id, label: `[${p.id}] - ${p.description}` }));
         }, [products, debouncedItemSearch]),
         classifications: useMemo(() => Array.from(new Set(products.map(p => p.classification).filter(Boolean))), [products]),
         filteredRequests: useMemo(() => {
@@ -1071,7 +1063,7 @@ export const useRequests = () => {
 
                 return searchMatch && statusMatch && classificationMatch && dateMatch && myRequestsMatch;
             });
-        }, [state.viewingArchived, state.activeRequests, state.archivedRequests, debouncedSearchTerm, state.statusFilter, state.classificationFilter, products, state.dateFilter, state.showOnlyMyRequests, currentUser?.name, currentUser?.erpAlias, hasPermission]),
+        }, [state.viewingArchived, state.activeRequests, state.archivedRequests, debouncedSearchTerm, state.statusFilter, state.classificationFilter, products, state.dateFilter, state.showOnlyMyRequests, currentUser, hasPermission]),
         stockLevels: authStockLevels,
         visibleErpOrderLines: useMemo(() => {
             if (!state.showOnlyShortageItems) {
