@@ -15,7 +15,7 @@ import { logError, logInfo } from '@/modules/core/lib/logger';
 import { 
     getPurchaseRequests, savePurchaseRequest, updatePurchaseRequest, 
     updatePurchaseRequestStatus, getRequestHistory, getRequestSettings, 
-    updatePendingAction, getErpOrderData, addNoteToRequest, updateRequestDetails, 
+    updatePendingAction, getErpOrderData, addNoteToRequest, updateRequestDetails as updateRequestDetailsServer, 
     saveCostAnalysis as saveCostAnalysisAction
 } from '@/modules/requests/lib/actions';
 import { getAllErpPurchaseOrderHeaders, getAllErpPurchaseOrderLines } from '@/modules/core/lib/db';
@@ -668,6 +668,9 @@ export const useRequests = () => {
             }
         },
         processSingleErpOrder: async (header: ErpOrderHeader) => {
+            const client = customers.find(c => c.id === header.CLIENTE);
+            const enrichedHeader = { ...header, CLIENTE_NOMBRE: client?.name || 'Cliente no encontrado' };
+            
             const { lines, inventory } = await getErpOrderData(header.PEDIDO);
 
             const enrichedLines: UIErpOrderLine[] = lines.map(line => {
@@ -683,9 +686,6 @@ export const useRequests = () => {
                     displayPrice: String(line.PRECIO_UNITARIO),
                 };
             }).sort((a, b) => (a.selected === b.selected) ? 0 : a.selected ? -1 : 1);
-            
-            const client = customers.find(c => c.id === header.CLIENTE);
-            const enrichedHeader = { ...header, CLIENTE_NOMBRE: client?.name || 'Cliente no encontrado' };
 
             updateState({
                 selectedErpOrderHeader: enrichedHeader,
@@ -728,6 +728,7 @@ export const useRequests = () => {
         handleCreateRequestsFromErp: async () => {
             if (!state.selectedErpOrderHeader || !currentUser) return;
             const erpHeader = state.selectedErpOrderHeader;
+            const client = customers.find(c => c.id === erpHeader.CLIENTE);
 
             const selectedLines = state.erpOrderLines.filter(line => line.selected);
             if (selectedLines.length === 0) {
@@ -737,9 +738,8 @@ export const useRequests = () => {
 
             updateState({ isSubmitting: true });
             try {
-                const client = customers.find(c => c.id === erpHeader.CLIENTE);
                 for (const line of selectedLines) {
-                    const requestPayload = {
+                    const requestPayload: Omit<PurchaseRequest, 'id'|'consecutive'|'requestDate'|'status'|'reopened'|'requestedBy'|'deliveredQuantity'|'receivedInWarehouseBy'|'receivedDate'|'previousStatus'|'lastModifiedAt'|'lastModifiedBy'|'hasBeenModified'|'approvedBy'|'lastStatusUpdateBy'|'lastStatusUpdateNotes'> = {
                         requiredDate: new Date(erpHeader.FECHA_PROMETIDA).toISOString().split('T')[0],
                         clientId: erpHeader.CLIENTE,
                         clientName: client?.name || erpHeader.CLIENTE_NOMBRE || '',
@@ -759,9 +759,11 @@ export const useRequests = () => {
                         route: '',
                         shippingMethod: '',
                         inventory: 0,
+                        inventoryErp: line.stock?.totalStock || 0,
                         manualSupplier: '',
                         arrivalDate: '',
                         pendingAction: 'none' as const,
+                        analysis: undefined,
                     };
                     await savePurchaseRequest(requestPayload, currentUser.name);
                 }
@@ -1063,11 +1065,11 @@ export const useRequests = () => {
                 const statusMatch = state.statusFilter === 'all' || request.status === state.statusFilter;
                 const classificationMatch = state.classificationFilter === 'all' || (product && product.classification === state.classificationFilter);
                 const dateMatch = !state.dateFilter || !state.dateFilter.from || (new Date(request.requiredDate) >= state.dateFilter.from && new Date(request.requiredDate) <= (state.dateFilter.to || state.dateFilter.from));
-                const myRequestsMatch = !state.showOnlyMyRequests || (currentUser && request.requestedBy.toLowerCase() === currentUser.name.toLowerCase()) || (currentUser?.erpAlias && request.erpOrderNumber && request.erpOrderNumber.toLowerCase().includes(currentUser.erpAlias.toLowerCase()));
+                const myRequestsMatch = !state.showOnlyMyRequests || (currentUser?.name && request.requestedBy.toLowerCase() === currentUser.name.toLowerCase()) || (currentUser?.erpAlias && request.erpOrderNumber && request.erpOrderNumber.toLowerCase().includes(currentUser.erpAlias.toLowerCase()));
 
                 return searchMatch && statusMatch && classificationMatch && dateMatch && myRequestsMatch;
             });
-        }, [state.viewingArchived, state.activeRequests, state.archivedRequests, debouncedSearchTerm, state.statusFilter, state.classificationFilter, products, state.dateFilter, state.showOnlyMyRequests, currentUser, hasPermission]),
+        }, [state.viewingArchived, state.activeRequests, state.archivedRequests, debouncedSearchTerm, state.statusFilter, state.classificationFilter, products, state.dateFilter, state.showOnlyMyRequests, currentUser?.name, currentUser?.erpAlias]),
         stockLevels: authStockLevels,
         visibleErpOrderLines: useMemo(() => {
             if (!state.showOnlyShortageItems) {
