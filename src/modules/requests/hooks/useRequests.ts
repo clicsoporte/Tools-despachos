@@ -34,6 +34,7 @@ import { exportToExcel } from '@/modules/core/lib/excel-export';
 import { AlertTriangle, Undo2, ChevronsLeft, ChevronsRight, Send, ShoppingBag } from 'lucide-react';
 import type { RowInput } from 'jspdf-autotable';
 import { useSearchParams } from 'next/navigation';
+import { usePageTitle } from '@/modules/core/hooks/usePageTitle';
 
 
 const normalizeText = (text: string | null | undefined): string => {
@@ -667,9 +668,6 @@ export const useRequests = () => {
             }
         },
         processSingleErpOrder: async (header: ErpOrderHeader) => {
-            const client = customers.find(c => c.id === header.CLIENTE);
-            const enrichedHeader = { ...header, CLIENTE_NOMBRE: client?.name || 'Cliente no encontrado' };
-            
             const { lines, inventory } = await getErpOrderData(header.PEDIDO);
 
             const enrichedLines: UIErpOrderLine[] = lines.map(line => {
@@ -685,6 +683,9 @@ export const useRequests = () => {
                     displayPrice: String(line.PRECIO_UNITARIO),
                 };
             }).sort((a, b) => (a.selected === b.selected) ? 0 : a.selected ? -1 : 1);
+            
+            const client = customers.find(c => c.id === header.CLIENTE);
+            const enrichedHeader = { ...header, CLIENTE_NOMBRE: client?.name || 'Cliente no encontrado' };
 
             updateState({
                 selectedErpOrderHeader: enrichedHeader,
@@ -748,6 +749,8 @@ export const useRequests = () => {
                         quantity: parseFloat(line.displayQuantity) || 0,
                         notes: `Generado desde Pedido ERP: ${erpHeader.PEDIDO}`,
                         unitSalePrice: parseFloat(line.displayPrice) || 0,
+                        salePriceCurrency: erpHeader.MONEDA_PEDIDO === 'DOL' ? 'USD' : 'CRC',
+                        requiresCurrency: true,
                         purchaseOrder: erpHeader.ORDEN_COMPRA || '',
                         erpOrderNumber: erpHeader.PEDIDO,
                         erpOrderLine: line.PEDIDO_LINEA,
@@ -903,7 +906,7 @@ export const useRequests = () => {
         },
         handleDetailUpdate: async (requestId: number, details: { priority: PurchaseRequestPriority }) => {
             if (!currentUser) return;
-            const updated = await updateRequestDetails({ requestId, ...details, updatedBy: currentUser.name });
+            const updated = await updateRequestDetailsServer({ requestId, ...details, updatedBy: currentUser.name });
             updateState({ 
                 activeRequests: state.activeRequests.map(o => o.id === requestId ? sanitizeRequest(updated) : o),
                 archivedRequests: state.archivedRequests.map(o => o.id === requestId ? sanitizeRequest(updated) : o)
@@ -989,7 +992,7 @@ export const useRequests = () => {
         setDateFilter: (range: DateRange | undefined) => updateState({ dateFilter: range }),
         setShowOnlyMyRequests: (show: boolean) => {
             const hasReadAllPermission = hasPermission('requests:read:all');
-            if (show === false && !hasReadAllPermission) {
+            if (!show && !hasReadAllPermission) {
                 toast({ title: "Permiso Requerido", description: "No tienes permiso para ver todas las solicitudes.", variant: "destructive"});
                 return;
             }
@@ -1051,6 +1054,7 @@ export const useRequests = () => {
             let requestsToFilter = state.viewingArchived ? state.archivedRequests : state.activeRequests;
             
             const searchTerms = normalizeText(debouncedSearchTerm).split(' ').filter(Boolean);
+            
             return requestsToFilter.filter(request => {
                 const product = products.find(p => p.id === request.itemId);
                 const targetText = normalizeText(`${request.consecutive} ${request.clientName} ${request.itemDescription} ${request.purchaseOrder || ''} ${request.erpOrderNumber || ''}`);
@@ -1059,7 +1063,7 @@ export const useRequests = () => {
                 const statusMatch = state.statusFilter === 'all' || request.status === state.statusFilter;
                 const classificationMatch = state.classificationFilter === 'all' || (product && product.classification === state.classificationFilter);
                 const dateMatch = !state.dateFilter || !state.dateFilter.from || (new Date(request.requiredDate) >= state.dateFilter.from && new Date(request.requiredDate) <= (state.dateFilter.to || state.dateFilter.from));
-                const myRequestsMatch = !state.showOnlyMyRequests || !hasPermission('requests:read:all') || (currentUser && (request.requestedBy.toLowerCase() === currentUser.name.toLowerCase() || (currentUser.erpAlias && request.erpOrderNumber && request.erpOrderNumber.toLowerCase().includes(currentUser.erpAlias.toLowerCase()))));
+                const myRequestsMatch = !state.showOnlyMyRequests || (currentUser && request.requestedBy.toLowerCase() === currentUser.name.toLowerCase()) || (currentUser?.erpAlias && request.erpOrderNumber && request.erpOrderNumber.toLowerCase().includes(currentUser.erpAlias.toLowerCase()));
 
                 return searchMatch && statusMatch && classificationMatch && dateMatch && myRequestsMatch;
             });
