@@ -107,7 +107,7 @@ export default function ManageLocationsPage() {
     const [locationToDelete, setLocationToDelete] = useState<WarehouseLocation | null>(null);
 
     const [isWizardOpen, setWizardOpen] = useState(false);
-    const [wizardData, setWizardData] = useState({ name: '', prefix: '', levels: 4, positions: 10, depth: 2 });
+    const [wizardData, setWizardData] = useState({ name: '', prefix: '', levels: '', positions: '', depth: '' });
     const [cloneData, setCloneData] = useState({ sourceRackId: '', newName: '', newPrefix: '' });
 
     const fetchAllData = useCallback(async () => {
@@ -206,12 +206,19 @@ export default function ManageLocationsPage() {
     };
 
     const handleGenerateFromWizard = async () => {
-        if (!wizardData.name || !wizardData.prefix) {
-            toast({ title: 'Datos Incompletos', description: 'El nombre base y el prefijo son requeridos.', variant: 'destructive' });
+        if (!wizardData.name || !wizardData.prefix || !wizardData.levels || !wizardData.positions || !wizardData.depth) {
+            toast({ title: 'Datos Incompletos', description: 'Todos los campos del asistente son requeridos.', variant: 'destructive' });
             return;
         }
         try {
-            await addBulkLocations({ type: 'rack', params: wizardData });
+            const params = {
+                name: wizardData.name,
+                prefix: wizardData.prefix,
+                levels: Number(wizardData.levels),
+                positions: Number(wizardData.positions),
+                depth: Number(wizardData.depth)
+            };
+            await addBulkLocations({ type: 'rack', params });
             toast({ title: '¡Rack Creado!', description: `Se generaron las ubicaciones para ${wizardData.name}.` });
             setWizardOpen(false);
             await fetchAllData(); // Refresh the location list
@@ -394,15 +401,15 @@ export default function ManageLocationsPage() {
                                     <div className="grid grid-cols-3 gap-4">
                                         <div className="space-y-2">
                                             <Label htmlFor="wiz-levels">Nº de Niveles (Alto)</Label>
-                                            <Input id="wiz-levels" type="number" value={wizardData.levels} onChange={e => setWizardData(p => ({...p, levels: Number(e.target.value)}))} />
+                                            <Input id="wiz-levels" type="number" value={wizardData.levels} onChange={e => setWizardData(p => ({...p, levels: e.target.value}))} placeholder="ej: 4" />
                                         </div>
                                         <div className="space-y-2">
                                             <Label htmlFor="wiz-positions">Nº de Posiciones (Ancho)</Label>
-                                            <Input id="wiz-positions" type="number" value={wizardData.positions} onChange={e => setWizardData(p => ({...p, positions: Number(e.target.value)}))} />
+                                            <Input id="wiz-positions" type="number" value={wizardData.positions} onChange={e => setWizardData(p => ({...p, positions: e.target.value}))} placeholder="ej: 10" />
                                         </div>
                                         <div className="space-y-2">
                                             <Label htmlFor="wiz-depth">Nº de Fondos</Label>
-                                            <Input id="wiz-depth" type="number" value={wizardData.depth} onChange={e => setWizardData(p => ({...p, depth: Number(e.target.value)}))} />
+                                            <Input id="wiz-depth" type="number" value={wizardData.depth} onChange={e => setWizardData(p => ({...p, depth: e.target.value}))} placeholder="1 o 2" />
                                         </div>
                                     </div>
                                     <p className="text-xs text-muted-foreground">Ejemplo de código generado: {wizardData.prefix || 'R01'}-A-01-F</p>

@@ -18,7 +18,7 @@ export async function initializeWarehouseDb(db: import('better-sqlite3').Databas
             code TEXT UNIQUE NOT NULL,
             type TEXT NOT NULL, -- 'building', 'zone', 'rack', 'shelf', 'bin'
             parentId INTEGER,
-            FOREIGN KEY (parentId) REFERENCES locations(id) ON DELETE SET NULL
+            FOREIGN KEY (parentId) REFERENCES locations(id) ON DELETE CASCADE
         );
 
         CREATE TABLE IF NOT EXISTS inventory (
@@ -50,7 +50,7 @@ export async function initializeWarehouseDb(db: import('better-sqlite3').Databas
             notes TEXT,
             createdAt TEXT NOT NULL,
             createdBy TEXT NOT NULL,
-            FOREIGN KEY (locationId) REFERENCES locations(id) ON DELETE SET NULL
+            FOREIGN KEY (locationId) REFERENCES locations(id) ON DELETE CASCADE
         );
 
         CREATE TABLE IF NOT EXISTS movements (
@@ -62,8 +62,8 @@ export async function initializeWarehouseDb(db: import('better-sqlite3').Databas
             timestamp TEXT NOT NULL,
             userId INTEGER NOT NULL,
             notes TEXT,
-            FOREIGN KEY (fromLocationId) REFERENCES locations(id) ON DELETE SET NULL,
-            FOREIGN KEY (toLocationId) REFERENCES locations(id) ON DELETE SET NULL
+            FOREIGN KEY (fromLocationId) REFERENCES locations(id) ON DELETE CASCADE,
+            FOREIGN KEY (toLocationId) REFERENCES locations(id) ON DELETE CASCADE
         );
 
         CREATE TABLE IF NOT EXISTS warehouse_config (
@@ -141,137 +141,56 @@ export async function runWarehouseMigrations(db: import('better-sqlite3').Databa
         `);
     }
 
-    const locationsTableInfo = db.prepare(`PRAGMA table_info(locations)`).all() as { name: string, type: string }[];
-    const hasParentId = locationsTableInfo.some(c => c.name === 'parentId');
+    const recreateTableWithCascade = (tableName: string, createSql: string, columns: string) => {
+        console.log(`MIGRATION (warehouse.db): Recreating '${tableName}' table to update foreign key ON DELETE action to CASCADE.`);
+        db.transaction(() => {
+            db.exec(`ALTER TABLE ${tableName} RENAME TO ${tableName}_old;`);
+            db.exec(createSql);
+            db.exec(`INSERT INTO ${tableName}(${columns}) SELECT ${columns} FROM ${tableName}_old;`);
+            db.exec(`DROP TABLE ${tableName}_old;`);
+        })();
+    };
 
-    if (!hasParentId) {
-        db.exec(`ALTER TABLE locations ADD COLUMN parentId INTEGER REFERENCES locations(id) ON DELETE SET NULL;`);
-    } else {
-        const foreignKeyList = db.prepare(`PRAGMA foreign_key_list(locations)`).all() as any[];
-        const parentFK = foreignKeyList.find(fk => fk.from === 'parentId');
-        if (parentFK && parentFK.on_delete !== 'SET NULL') {
-            db.transaction(() => {
-                db.exec(`
-                    CREATE TABLE locations_new (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, code TEXT UNIQUE NOT NULL,
-                        type TEXT NOT NULL, parentId INTEGER,
-                        FOREIGN KEY (parentId) REFERENCES locations(id) ON DELETE SET NULL
-                    );
-                `);
-                db.exec(`INSERT INTO locations_new(id, name, code, type, parentId) SELECT id, name, code, type, parentId FROM locations;`);
-                db.exec(`DROP TABLE locations;`);
-                db.exec(`ALTER TABLE locations_new RENAME TO locations;`);
-            })();
-             console.log("MIGRATION (warehouse.db): Recreated 'locations' table to update parentId's ON DELETE action.");
+    const checkAndRecreateForeignKey = (tableName: string, columnName: string, createSql: string, columnsCsv: string) => {
+        const foreignKeyList = db.prepare(`PRAGMA foreign_key_list(${tableName})`).all() as any[];
+        const fk = foreignKeyList.find(f => f.from === columnName);
+        if (fk && fk.on_delete !== 'CASCADE') {
+            recreateTableWithCascade(tableName, createSql, columnsCsv);
         }
-    }
+    };
     
-    // ** ROBUST MIGRATION FOR inventory_units **
-    const inventoryUnitsTable = db.prepare(`SELECT name FROM sqlite_master WHERE type='table' AND name='inventory_units'`).get();
-    if (!inventoryUnitsTable) {
-        console.log("MIGRATION (warehouse.db): Creating 'inventory_units' table as it does not exist.");
-        db.exec(`
-            CREATE TABLE inventory_units (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                unitCode TEXT UNIQUE,
-                productId TEXT NOT NULL,
-                humanReadableId TEXT,
-                locationId INTEGER,
-                notes TEXT,
-                createdAt TEXT NOT NULL,
-                createdBy TEXT NOT NULL,
-                FOREIGN KEY (locationId) REFERENCES locations(id) ON DELETE SET NULL
-            );
-        `);
-    } else {
-        const unitsTableInfo = db.prepare(`PRAGMA table_info(inventory_units)`).all() as { name: string }[];
-        if (!unitsTableInfo.some(c => c.name === 'unitCode')) {
-            console.log("MIGRATION (warehouse.db): 'unitCode' column is missing. Performing robust migration.");
-            try {
-                db.transaction(() => {
-                    // 1. Rename old table
-                    db.exec('ALTER TABLE inventory_units RENAME TO inventory_units_old;');
-
-                    // 2. Create new table with correct schema
-                    db.exec(`
-                        CREATE TABLE inventory_units (
-                            id INTEGER PRIMARY KEY AUTOINCREMENT,
-                            unitCode TEXT UNIQUE,
-                            productId TEXT NOT NULL,
-                            humanReadableId TEXT,
-                            locationId INTEGER,
-                            notes TEXT,
-                            createdAt TEXT NOT NULL,
-                            createdBy TEXT NOT NULL,
-                            FOREIGN KEY (locationId) REFERENCES locations(id) ON DELETE SET NULL
-                        );
-                    `);
-
-                    // 3. Copy data and generate unit codes
-                    const oldUnits = db.prepare('SELECT * FROM inventory_units_old').all();
-                    const insertNew = db.prepare('INSERT INTO inventory_units (id, unitCode, productId, humanReadableId, locationId, notes, createdAt, createdBy) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
-                    
-                    const settingsRow = db.prepare(`SELECT value FROM warehouse_config WHERE key = 'settings'`).get() as { value: string };
-                    const settings = JSON.parse(settingsRow.value);
-                    let nextUnitNumber = settings.nextUnitNumber || 1;
-                    const prefix = settings.unitPrefix || 'U';
-
-                    for (const oldUnit of oldUnits) {
-                        const unitCode = `${prefix}${String(nextUnitNumber).padStart(5, '0')}`;
-                        insertNew.run(
-                            (oldUnit as any).id,
-                            unitCode,
-                            (oldUnit as any).productId,
-                            (oldUnit as any).humanReadableId,
-                            (oldUnit as any).locationId,
-                            (oldUnit as any).notes,
-                            (oldUnit as any).createdAt,
-                            (oldUnit as any).createdBy
-                        );
-                        nextUnitNumber++;
-                    }
-
-                    // Update the next unit number in settings
-                    settings.nextUnitNumber = nextUnitNumber;
-                    db.prepare("UPDATE warehouse_config SET value = ? WHERE key = 'settings'").run(JSON.stringify(settings));
-
-                    // 4. Drop old table
-                    db.exec('DROP TABLE inventory_units_old;');
-                })();
-                console.log("MIGRATION (warehouse.db): Successfully migrated 'inventory_units' table.");
-            } catch (error) {
-                console.error("CRITICAL: Failed to migrate 'inventory_units' table. Rolling back.", error);
-                // Attempt to restore if something went wrong
-                if (db.prepare(`SELECT name FROM sqlite_master WHERE type='table' AND name='inventory_units_old'`).get()) {
-                    db.exec('DROP TABLE IF EXISTS inventory_units;');
-                    db.exec('ALTER TABLE inventory_units_old RENAME TO inventory_units;');
-                }
-                throw error; // Re-throw to indicate failure
-            }
-        }
+    // Check and fix ON DELETE for all relevant tables
+    if (db.prepare(`SELECT name FROM sqlite_master WHERE type='table' AND name='locations'`).get()) {
+        checkAndRecreateForeignKey('locations', 'parentId', 
+            `CREATE TABLE locations (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, code TEXT UNIQUE NOT NULL, type TEXT NOT NULL, parentId INTEGER, FOREIGN KEY (parentId) REFERENCES locations(id) ON DELETE CASCADE);`,
+            'id, name, code, type, parentId');
+    }
+    if (db.prepare(`SELECT name FROM sqlite_master WHERE type='table' AND name='inventory'`).get()) {
+        checkAndRecreateForeignKey('inventory', 'locationId',
+            `CREATE TABLE inventory (id INTEGER PRIMARY KEY AUTOINCREMENT, itemId TEXT NOT NULL, locationId INTEGER NOT NULL, quantity REAL NOT NULL DEFAULT 0, lastUpdated TEXT NOT NULL, updatedBy TEXT, FOREIGN KEY (locationId) REFERENCES locations(id) ON DELETE CASCADE, UNIQUE (itemId, locationId));`,
+            'id, itemId, locationId, quantity, lastUpdated, updatedBy');
+    }
+    if (db.prepare(`SELECT name FROM sqlite_master WHERE type='table' AND name='item_locations'`).get()) {
+        checkAndRecreateForeignKey('item_locations', 'locationId',
+            `CREATE TABLE item_locations (id INTEGER PRIMARY KEY AUTOINCREMENT, itemId TEXT NOT NULL, locationId INTEGER NOT NULL, clientId TEXT, FOREIGN KEY (locationId) REFERENCES locations(id) ON DELETE CASCADE, UNIQUE (itemId, locationId, clientId));`,
+            'id, itemId, locationId, clientId');
+    }
+    if (db.prepare(`SELECT name FROM sqlite_master WHERE type='table' AND name='inventory_units'`).get()) {
+        checkAndRecreateForeignKey('inventory_units', 'locationId',
+            `CREATE TABLE inventory_units (id INTEGER PRIMARY KEY AUTOINCREMENT, unitCode TEXT UNIQUE, productId TEXT NOT NULL, humanReadableId TEXT, locationId INTEGER, notes TEXT, createdAt TEXT NOT NULL, createdBy TEXT NOT NULL, FOREIGN KEY (locationId) REFERENCES locations(id) ON DELETE CASCADE);`,
+            'id, unitCode, productId, humanReadableId, locationId, notes, createdAt, createdBy');
     }
 
-
+    // Special migration for `movements` table with two foreign keys
     const movementsTable = db.prepare(`SELECT name FROM sqlite_master WHERE type='table' AND name='movements'`).get();
-    if(movementsTable) {
+    if (movementsTable) {
         const fkList = db.prepare(`PRAGMA foreign_key_list(movements)`).all() as any[];
         const fromFK = fkList.find(fk => fk.from === 'fromLocationId');
-        if (fromFK && fromFK.on_delete !== 'SET NULL') {
-            console.log("MIGRATION (warehouse.db): Recreating 'movements' table to update ON DELETE actions.");
-            db.transaction(() => {
-                db.exec('ALTER TABLE movements RENAME TO movements_old;');
-                db.exec(`
-                    CREATE TABLE movements (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT, itemId TEXT NOT NULL, quantity REAL NOT NULL,
-                        fromLocationId INTEGER, toLocationId INTEGER, timestamp TEXT NOT NULL,
-                        userId INTEGER NOT NULL, notes TEXT,
-                        FOREIGN KEY (fromLocationId) REFERENCES locations(id) ON DELETE SET NULL,
-                        FOREIGN KEY (toLocationId) REFERENCES locations(id) ON DELETE SET NULL
-                    );
-                `);
-                db.exec('INSERT INTO movements SELECT * FROM movements_old;');
-                db.exec('DROP TABLE movements_old;');
-            })();
+        const toFK = fkList.find(fk => fk.from === 'toLocationId');
+        if ((fromFK && fromFK.on_delete !== 'CASCADE') || (toFK && toFK.on_delete !== 'CASCADE')) {
+             recreateTableWithCascade('movements', 
+                `CREATE TABLE movements (id INTEGER PRIMARY KEY AUTOINCREMENT, itemId TEXT NOT NULL, quantity REAL NOT NULL, fromLocationId INTEGER, toLocationId INTEGER, timestamp TEXT NOT NULL, userId INTEGER NOT NULL, notes TEXT, FOREIGN KEY (fromLocationId) REFERENCES locations(id) ON DELETE CASCADE, FOREIGN KEY (toLocationId) REFERENCES locations(id) ON DELETE CASCADE);`,
+                'id, itemId, quantity, fromLocationId, toLocationId, timestamp, userId, notes');
         }
     }
 
@@ -281,6 +200,7 @@ export async function runWarehouseMigrations(db: import('better-sqlite3').Databa
         db.exec('ALTER TABLE inventory ADD COLUMN updatedBy TEXT');
     }
 }
+
 
 export async function getWarehouseSettings(): Promise<WarehouseSettings> {
     const db = await connectDb(WAREHOUSE_DB_FILE);
@@ -344,14 +264,12 @@ export async function addBulkLocations(payload: { type: 'rack' | 'clone', params
     const transaction = db.transaction(() => {
         if (type === 'rack') {
             const { name, prefix, levels, positions, depth } = params;
-            // Create the main rack location
             const rackType = settings.locationLevels.find(l => l.name.toLowerCase().includes('rack'))?.type || 'rack';
             const info = db.prepare('INSERT INTO locations (name, code, type, parentId) VALUES (?, ?, ?, NULL)').run(name, prefix, rackType);
             const rackId = info.lastInsertRowid as number;
 
-            // Generate children
             for (let i = 0; i < levels; i++) {
-                const levelName = String.fromCharCode(65 + i); // A, B, C...
+                const levelName = String.fromCharCode(65 + i);
                 const levelType = settings.locationLevels[3]?.type || 'shelf';
                 const levelInfo = db.prepare('INSERT INTO locations (name, code, type, parentId) VALUES (?, ?, ?, ?)').run(`Nivel ${levelName}`, `${prefix}-${levelName}`, levelType, rackId);
                 const levelId = levelInfo.lastInsertRowid as number;
@@ -362,11 +280,12 @@ export async function addBulkLocations(payload: { type: 'rack' | 'clone', params
                     const posCode = `${prefix}-${levelName}-${posName}`;
                     const posInfo = db.prepare('INSERT INTO locations (name, code, type, parentId) VALUES (?, ?, ?, ?)').run(`Posición ${posName}`, posCode, posType, levelId);
                     const posId = posInfo.lastInsertRowid as number;
-
-                    for (let k = 1; k <= depth; k++) {
-                        const depthName = k === 1 ? 'Frente' : 'Fondo';
-                        const depthCode = `${posCode}-${k === 1 ? 'F' : 'T'}`;
-                         db.prepare('INSERT INTO locations (name, code, type, parentId) VALUES (?, ?, ?, ?)').run(depthName, depthCode, posType, posId);
+                    
+                    if (depth === 1) {
+                         db.prepare('INSERT INTO locations (name, code, type, parentId) VALUES (?, ?, ?, ?)').run('Frente', `${posCode}-F`, posType, posId);
+                    } else if (depth >= 2) {
+                        db.prepare('INSERT INTO locations (name, code, type, parentId) VALUES (?, ?, ?, ?)').run('Frente', `${posCode}-F`, posType, posId);
+                        db.prepare('INSERT INTO locations (name, code, type, parentId) VALUES (?, ?, ?, ?)').run('Fondo', `${posCode}-T`, posType, posId);
                     }
                 }
             }
@@ -378,24 +297,22 @@ export async function addBulkLocations(payload: { type: 'rack' | 'clone', params
 
             const mapping = new Map<number, number>();
             
-            // 1. Create the new parent rack
             const newRackInfo = db.prepare('INSERT INTO locations (name, code, type, parentId) VALUES (?, ?, ?, ?)').run(newName, newPrefix, sourceRack.type, sourceRack.parentId);
             const newRackId = newRackInfo.lastInsertRowid as number;
             mapping.set(sourceRack.id, newRackId);
 
-            // 2. Recursively clone children
-            function cloneChildren(oldParentId: number, newParentId: number, originalRack: WarehouseLocation) {
+            function cloneChildren(oldParentId: number, newParentId: number, originalRackCode: string) {
                 const children = allLocations.filter(l => l.parentId === oldParentId);
                 for (const child of children) {
-                    const newCode = child.code.replace(originalRack.code, newPrefix);
+                    const newCode = child.code.replace(originalRackCode, newPrefix);
                     const newChildInfo = db.prepare('INSERT INTO locations (name, code, type, parentId) VALUES (?, ?, ?, ?)').run(child.name, newCode, child.type, newParentId);
                     const newChildId = newChildInfo.lastInsertRowid as number;
                     mapping.set(child.id, newChildId);
-                    cloneChildren(child.id, newChildId, originalRack);
+                    cloneChildren(child.id, newChildId, originalRackCode);
                 }
             }
 
-            cloneChildren(sourceRack.id, newRackId, sourceRack);
+            cloneChildren(sourceRack.id, newRackId, sourceRack.code);
         }
     });
 
@@ -411,37 +328,9 @@ export async function updateLocation(location: WarehouseLocation): Promise<Wareh
     return updatedLocation;
 }
 
-const getAllDescendantIds = (locationId: number, allLocations: WarehouseLocation[]): number[] => {
-    let descendants: number[] = [];
-    const children = allLocations.filter(loc => loc.parentId === locationId);
-    for (const child of children) {
-        descendants.push(child.id);
-        descendants = descendants.concat(getAllDescendantIds(child.id, allLocations));
-    }
-    return descendants;
-};
-
-
 export async function deleteLocation(id: number): Promise<void> {
     const db = await connectDb(WAREHOUSE_DB_FILE);
-
-    // --- Safety Check ---
-    const allLocations = db.prepare('SELECT * FROM locations').all() as WarehouseLocation[];
-    const idsToCheck = [id, ...getAllDescendantIds(id, allLocations)];
-
-    const placeholders = idsToCheck.map(() => '?').join(',');
-
-    const itemLocationCheck = db.prepare(`SELECT 1 FROM item_locations WHERE locationId IN (${placeholders}) LIMIT 1`).get(...idsToCheck);
-    if (itemLocationCheck) {
-        throw new Error('No se puede eliminar la ubicación porque esta o una de sus sub-ubicaciones está en uso (asignación simple).');
-    }
-
-    const unitCheck = db.prepare(`SELECT 1 FROM inventory_units WHERE locationId IN (${placeholders}) LIMIT 1`).get(...idsToCheck);
-    if (unitCheck) {
-        throw new Error('No se puede eliminar la ubicación porque esta o una de sus sub-ubicaciones está en uso (unidades de inventario).');
-    }
-
-    // If checks pass, proceed with deletion
+    // The ON DELETE CASCADE pragma on the foreign key will handle deleting all children.
     db.prepare('DELETE FROM locations WHERE id = ?').run(id);
 }
 
