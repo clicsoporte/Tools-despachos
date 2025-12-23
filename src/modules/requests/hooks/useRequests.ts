@@ -1,4 +1,3 @@
-
 /**
  * @fileoverview Custom hook `useRequests` for managing the state and logic of the Purchase Request page.
  * This hook encapsulates all state and actions for the module, keeping the UI component clean.
@@ -15,7 +14,7 @@ import { logError, logInfo } from '@/modules/core/lib/logger';
 import { 
     getPurchaseRequests, savePurchaseRequest, updatePurchaseRequest, 
     updatePurchaseRequestStatus, getRequestHistory, getRequestSettings, 
-    updatePendingAction, getErpOrderData, addNoteToRequest, updateRequestDetails as updateRequestDetailsServer, 
+    updatePendingAction, getErpOrderData, addNoteToRequest, updateRequestDetails, 
     saveCostAnalysis as saveCostAnalysisAction
 } from '@/modules/requests/lib/actions';
 import { getAllErpPurchaseOrderHeaders, getAllErpPurchaseOrderLines } from '@/modules/core/lib/db';
@@ -343,7 +342,7 @@ export const useRequests = () => {
         if (!isAuthReady || state.isLoading) return;
         loadInitialData(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [state.viewingArchived, state.archivedPage, state.pageSize, isAuthReady]);
+    }, [state.viewingArchived, state.archivedPage, state.pageSize]);
 
     // Effect to pre-fill form from URL parameters
     useEffect(() => {
@@ -749,7 +748,7 @@ export const useRequests = () => {
                         quantity: parseFloat(line.displayQuantity) || 0,
                         notes: `Generado desde Pedido ERP: ${erpHeader.PEDIDO}`,
                         unitSalePrice: parseFloat(line.displayPrice) || 0,
-                        salePriceCurrency: erpHeader.MONEDA_PEDIDO === 'DOL' ? 'USD' : 'CRC',
+                        salePriceCurrency: (erpHeader.MONEDA_PEDIDO === 'DOL' ? 'USD' : 'CRC') as 'CRC' | 'USD',
                         requiresCurrency: true,
                         purchaseOrder: erpHeader.ORDEN_COMPRA || '',
                         erpOrderNumber: erpHeader.PEDIDO,
@@ -908,7 +907,7 @@ export const useRequests = () => {
         },
         handleDetailUpdate: async (requestId: number, details: { priority: PurchaseRequestPriority }) => {
             if (!currentUser) return;
-            const updated = await updateRequestDetailsServer({ requestId, ...details, updatedBy: currentUser.name });
+            const updated = await updateRequestDetails({ requestId, ...details, updatedBy: currentUser.name });
             updateState({ 
                 activeRequests: state.activeRequests.map(o => o.id === requestId ? sanitizeRequest(updated) : o),
                 archivedRequests: state.archivedRequests.map(o => o.id === requestId ? sanitizeRequest(updated) : o)
@@ -993,8 +992,7 @@ export const useRequests = () => {
         setClassificationFilter: (filter: string) => updateState({ classificationFilter: filter }),
         setDateFilter: (range: DateRange | undefined) => updateState({ dateFilter: range }),
         setShowOnlyMyRequests: (show: boolean) => {
-            const hasReadAllPermission = hasPermission('requests:read:all');
-            if (!show && !hasReadAllPermission) {
+            if (!show && !hasPermission('requests:read:all')) {
                 toast({ title: "Permiso Requerido", description: "No tienes permiso para ver todas las solicitudes.", variant: "destructive"});
                 return;
             }
@@ -1065,11 +1063,11 @@ export const useRequests = () => {
                 const statusMatch = state.statusFilter === 'all' || request.status === state.statusFilter;
                 const classificationMatch = state.classificationFilter === 'all' || (product && product.classification === state.classificationFilter);
                 const dateMatch = !state.dateFilter || !state.dateFilter.from || (new Date(request.requiredDate) >= state.dateFilter.from && new Date(request.requiredDate) <= (state.dateFilter.to || state.dateFilter.from));
-                const myRequestsMatch = !state.showOnlyMyRequests || (currentUser?.name && request.requestedBy.toLowerCase() === currentUser.name.toLowerCase()) || (currentUser?.erpAlias && request.erpOrderNumber && request.erpOrderNumber.toLowerCase().includes(currentUser.erpAlias.toLowerCase()));
+                const myRequestsMatch = !state.showOnlyMyRequests || !hasPermission('requests:read:all') || (currentUser && request.requestedBy.toLowerCase() === currentUser.name.toLowerCase()) || (currentUser?.erpAlias && request.erpOrderNumber && request.erpOrderNumber.toLowerCase().includes(currentUser.erpAlias.toLowerCase()));
 
                 return searchMatch && statusMatch && classificationMatch && dateMatch && myRequestsMatch;
             });
-        }, [state.viewingArchived, state.activeRequests, state.archivedRequests, debouncedSearchTerm, state.statusFilter, state.classificationFilter, products, state.dateFilter, state.showOnlyMyRequests, currentUser?.name, currentUser?.erpAlias]),
+        }, [state.viewingArchived, state.activeRequests, state.archivedRequests, debouncedSearchTerm, state.statusFilter, state.classificationFilter, products, state.dateFilter, state.showOnlyMyRequests, currentUser, hasPermission]),
         stockLevels: authStockLevels,
         visibleErpOrderLines: useMemo(() => {
             if (!state.showOnlyShortageItems) {
