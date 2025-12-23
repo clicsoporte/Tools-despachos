@@ -36,9 +36,15 @@ export async function saveWarehouseSettings(settings: WarehouseSettings): Promis
 }
 export const getLocations = async (): Promise<WarehouseLocation[]> => getLocationsServer();
 
-export function getSelectableLocations(locations: WarehouseLocation[]): WarehouseLocation[] {
-    const parentIds = new Set(locations.map(l => l.parentId).filter(Boolean));
-    return locations.filter(l => !parentIds.has(l.id));
+/**
+ * Filters a list of all locations to return only those that can be selected as final destinations
+ * (i.e., they are not parents of other locations).
+ * @param allLocations - An array of all warehouse locations.
+ * @returns An array of selectable, "leaf" warehouse locations.
+ */
+export function getSelectableLocations(allLocations: WarehouseLocation[]): WarehouseLocation[] {
+    const parentIds = new Set(allLocations.map(l => l.parentId).filter(Boolean));
+    return allLocations.filter(l => !parentIds.has(l.id));
 }
 
 export async function addLocation(location: Omit<WarehouseLocation, 'id'>): Promise<WarehouseLocation> {

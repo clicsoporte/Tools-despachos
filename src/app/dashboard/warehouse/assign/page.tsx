@@ -16,7 +16,7 @@ import { useToast } from '@/modules/core/hooks/use-toast';
 import { usePageTitle } from '@/modules/core/hooks/usePageTitle';
 import { useAuthorization } from '@/modules/core/hooks/useAuthorization';
 import { logError, logInfo } from '@/modules/core/lib/logger';
-import { getLocations, getAllItemLocations, assignItemToLocation, unassignItemFromLocation } from '@/modules/warehouse/lib/actions';
+import { getLocations, getAllItemLocations, assignItemToLocation, unassignItemFromLocation, getSelectableLocations } from '@/modules/warehouse/lib/actions';
 import type { Product, Customer, WarehouseLocation, ItemLocation } from '@/modules/core/types';
 import { useAuth } from '@/modules/core/hooks/useAuth';
 import { SearchInput } from '@/components/ui/search-input';
@@ -36,16 +36,9 @@ const renderLocationPathAsString = (locationId: number, locations: WarehouseLoca
     let current: WarehouseLocation | undefined = locations.find(l => l.id === locationId);
     while (current) {
         path.unshift(current);
-        // Safely access parentId, as `current` is guaranteed to be defined here.
-        const parentId = current.parentId;
-        current = parentId ? locations.find(l => l.id === parentId) : undefined;
+        current = current.parentId ? locations.find(l => l.id === current.parentId) : undefined;
     }
     return path.map(l => l.name).join(' > ');
-};
-
-const getSelectableLocations = (allLocations: WarehouseLocation[]) => {
-    const parentIds = new Set(allLocations.map(l => l.parentId).filter(Boolean));
-    return allLocations.filter(l => !parentIds.has(l.id));
 };
 
 const ROWS_PER_PAGE = 25;
