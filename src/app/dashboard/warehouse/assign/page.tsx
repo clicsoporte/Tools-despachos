@@ -32,11 +32,15 @@ import jsPDF from "jspdf";
 import QRCode from 'qrcode';
 
 const renderLocationPathAsString = (locationId: number, locations: WarehouseLocation[]): string => {
+    if (!locationId) return '';
     const path: WarehouseLocation[] = [];
     let current: WarehouseLocation | undefined = locations.find(l => l.id === locationId);
+    
     while (current) {
         path.unshift(current);
-        current = current.parentId ? locations.find(l => l.id === current.parentId) : undefined;
+        const parentId = current.parentId;
+        if (!parentId) break;
+        current = locations.find(l => l.id === parentId);
     }
     return path.map(l => l.name).join(' > ');
 };
@@ -53,7 +57,8 @@ export default function AssignItemPage() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isFormOpen, setIsFormOpen] = useState(false);
     
-    const [locations, setLocations] = useState<WarehouseLocation[]>([]);
+    const [allLocations, setAllLocations] = useState<WarehouseLocation[]>([]);
+    const [selectableLocations, setSelectableLocations] = useState<WarehouseLocation[]>([]);
     const [allAssignments, setAllAssignments] = useState<ItemLocation[]>([]);
     
     const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
@@ -80,7 +85,8 @@ export default function AssignItemPage() {
         setIsLoading(true);
         try {
             const [locs, allAssigns] = await Promise.all([getLocations(), getAllItemLocations()]);
-            setLocations(locs);
+            setAllLocations(locs);
+            setSelectableLocations(getSelectableLocations(locs));
             setAllAssignments(allAssigns.sort((a, b) => b.id - a.id)); // Sort by most recent
         } catch (error) {
             logError("Failed to load data for assignment page", { error });
@@ -121,15 +127,14 @@ export default function AssignItemPage() {
 
     const locationOptions = useMemo(() => {
         const searchTerm = debouncedLocationSearch.trim().toLowerCase();
-        const selectableLocations = getSelectableLocations(locations);
 
         if (searchTerm === '*' || searchTerm === '') {
-            return selectableLocations.map(l => ({ value: String(l.id), label: renderLocationPathAsString(l.id, locations) }));
+            return selectableLocations.map(l => ({ value: String(l.id), label: renderLocationPathAsString(l.id, allLocations) }));
         }
         return selectableLocations
-            .filter(l => renderLocationPathAsString(l.id, locations).toLowerCase().includes(searchTerm))
-            .map(l => ({ value: String(l.id), label: renderLocationPathAsString(l.id, locations) }));
-    }, [locations, debouncedLocationSearch]);
+            .filter(l => renderLocationPathAsString(l.id, allLocations).toLowerCase().includes(searchTerm))
+            .map(l => ({ value: String(l.id), label: renderLocationPathAsString(l.id, allLocations) }));
+    }, [allLocations, selectableLocations, debouncedLocationSearch]);
 
     const handleSelectProduct = (value: string) => {
         setIsProductSearchOpen(false);
@@ -154,10 +159,10 @@ export default function AssignItemPage() {
 
     const handleSelectLocation = (value: string) => {
         setIsLocationSearchOpen(false);
-        const location = locations.find(l => String(l.id) === value);
+        const location = allLocations.find(l => String(l.id) === value);
         if (location) {
             setSelectedLocationId(value);
-            setLocationSearchTerm(renderLocationPathAsString(location.id, locations));
+            setLocationSearchTerm(renderLocationPathAsString(location.id, allLocations));
         }
     };
     
@@ -219,7 +224,7 @@ export default function AssignItemPage() {
         return allAssignments.filter(a => {
             const product = authProducts.find(p => p.id === a.itemId);
             const client = authCustomers.find(c => c.id === a.clientId);
-            const locationString = renderLocationPathAsString(a.locationId, locations);
+            const locationString = renderLocationPathAsString(a.locationId, allLocations);
 
             return (
                 product?.id.toLowerCase().includes(lowerCaseFilter) ||
@@ -228,7 +233,7 @@ export default function AssignItemPage() {
                 locationString.toLowerCase().includes(lowerCaseFilter)
             );
         });
-    }, [allAssignments, debouncedGlobalFilter, authProducts, authCustomers, locations]);
+    }, [allAssignments, debouncedGlobalFilter, authProducts, authCustomers, allLocations]);
     
     const paginatedAssignments = useMemo(() => {
         const start = currentPage * ROWS_PER_PAGE;
@@ -241,7 +246,7 @@ export default function AssignItemPage() {
     const handlePrintRackLabel = async (assignment: ItemLocation) => {
         const product = authProducts.find(p => p.id === assignment.itemId);
         const client = authCustomers.find(c => c.id === assignment.clientId);
-        const locationString = renderLocationPathAsString(assignment.locationId, locations);
+        const locationString = renderLocationPathAsString(assignment.locationId, allLocations);
     
         if (!product) {
           toast({ title: "Error", description: "No se encontró el producto para esta asignación.", variant: "destructive" });
@@ -386,7 +391,7 @@ export default function AssignItemPage() {
                                 {paginatedAssignments.length > 0 ? paginatedAssignments.map(a => {
                                     const product = authProducts.find(p => p.id === a.itemId);
                                     const client = authCustomers.find(c => c.id === a.clientId);
-                                    const locationString = renderLocationPathAsString(a.locationId, locations);
+                                    const locationString = renderLocationPathAsString(a.locationId, allLocations);
                                     return (
                                         <TableRow key={a.id}>
                                             <TableCell className="font-medium">

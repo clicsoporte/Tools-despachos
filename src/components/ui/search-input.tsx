@@ -59,7 +59,7 @@ const SearchInput = React.forwardRef<HTMLInputElement, SearchInputProps>(({
     };
     
     // This function handles the mouse wheel event to enable scrolling the list.
-    const handleWheel = (e: React.WheelEvent) => {
+    const handleWheel = (e: React.WheelEvent<HTMLDivElement>) => {
       if (scrollViewportRef.current) {
         scrollViewportRef.current.scrollTop += e.deltaY;
       }
@@ -86,11 +86,12 @@ const SearchInput = React.forwardRef<HTMLInputElement, SearchInputProps>(({
                 className="w-[var(--radix-popover-trigger-width)] p-0" 
                 align="start"
                 onOpenAutoFocus={(e) => e.preventDefault()}
+                onWheel={handleWheel} // Attach wheel event here
             >
                 <Command shouldFilter={false}>
                     <ScrollArea className="h-auto max-h-72">
                       <ScrollViewport ref={scrollViewportRef}>
-                        <CommandList onWheel={handleWheel}>
+                        <CommandList>
                             {options.length > 0 ? (
                                 options.map((option) => (
                                 <CommandItem

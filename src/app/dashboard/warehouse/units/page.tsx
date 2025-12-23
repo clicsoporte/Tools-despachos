@@ -34,11 +34,15 @@ const initialNewUnitState = {
 };
 
 const renderLocationPathAsString = (locationId: number, locations: WarehouseLocation[]): string => {
+    if (!locationId) return '';
     const path: WarehouseLocation[] = [];
     let current: WarehouseLocation | undefined = locations.find(l => l.id === locationId);
+    
     while (current) {
         path.unshift(current);
-        current = current.parentId ? locations.find(l => l.id === current.parentId) : undefined;
+        const parentId = current.parentId;
+        if (!parentId) break;
+        current = locations.find(l => l.id === parentId);
     }
     return path.map(l => l.name).join(' > ');
 };
@@ -53,7 +57,8 @@ export default function ManageUnitsPage() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     
     const [products, setProducts] = useState<Product[]>([]);
-    const [locations, setLocations] = useState<WarehouseLocation[]>([]);
+    const [allLocations, setAllLocations] = useState<WarehouseLocation[]>([]);
+    const [selectableLocations, setSelectableLocations] = useState<WarehouseLocation[]>([]);
     const [inventoryUnits, setInventoryUnits] = useState<InventoryUnit[]>([]);
     
     const [newUnit, setNewUnit] = useState(initialNewUnitState);
@@ -74,7 +79,8 @@ export default function ManageUnitsPage() {
                 getInventoryUnits(),
             ]);
             setProducts(authProducts.filter(p => p.active === 'S'));
-            setLocations(locs);
+            setAllLocations(locs);
+            setSelectableLocations(getSelectableLocations(locs));
             setInventoryUnits(units);
         } catch (error) {
             logError("Failed to load data for units page", { error });
@@ -98,14 +104,13 @@ export default function ManageUnitsPage() {
 
     const locationOptions = useMemo(() => {
         const searchTerm = debouncedLocationSearch.trim().toLowerCase();
-        const selectableLocations = getSelectableLocations(locations);
         if (searchTerm === '*' || searchTerm === '') {
-            return selectableLocations.map(l => ({ value: String(l.id), label: renderLocationPathAsString(l.id, locations) }));
+            return selectableLocations.map(l => ({ value: String(l.id), label: renderLocationPathAsString(l.id, allLocations) }));
         }
         return selectableLocations
-            .filter(l => renderLocationPathAsString(l.id, locations).toLowerCase().includes(searchTerm))
-            .map(l => ({ value: String(l.id), label: renderLocationPathAsString(l.id, locations) }));
-    }, [locations, debouncedLocationSearch]);
+            .filter(l => renderLocationPathAsString(l.id, allLocations).toLowerCase().includes(searchTerm))
+            .map(l => ({ value: String(l.id), label: renderLocationPathAsString(l.id, allLocations) }));
+    }, [allLocations, selectableLocations, debouncedLocationSearch]);
 
     const handleSelectProduct = (value: string) => {
         setIsProductSearchOpen(false);
@@ -118,10 +123,10 @@ export default function ManageUnitsPage() {
     
     const handleSelectLocation = (value: string) => {
         setIsLocationSearchOpen(false);
-        const location = locations.find(l => String(l.id) === value);
+        const location = allLocations.find(l => String(l.id) === value);
         if (location) {
             setNewUnit(prev => ({ ...prev, locationId: Number(value) }));
-            setLocationSearchTerm(renderLocationPathAsString(location.id, locations));
+            setLocationSearchTerm(renderLocationPathAsString(location.id, allLocations));
         }
     };
 
@@ -172,7 +177,7 @@ export default function ManageUnitsPage() {
 
     const handlePrintLabel = async (unit: InventoryUnit) => {
         const product = products.find(p => p.id === unit.productId);
-        const location = locations.find(l => l.id === unit.locationId);
+        const location = allLocations.find(l => l.id === unit.locationId);
         
         const scanUrl = `${window.location.origin}/dashboard/scanner?unitId=${unit.unitCode}`;
         
@@ -204,7 +209,7 @@ export default function ManageUnitsPage() {
             doc.text(`Ubicación Sugerida:`, 0.2, 2.0);
             doc.setFontSize(12);
             doc.setFont('Helvetica', 'bold');
-            doc.text(renderLocationPathAsString(location?.id || 0, locations), 0.2, 2.2);
+            doc.text(renderLocationPathAsString(location?.id || 0, allLocations), 0.2, 2.2);
 
             doc.setFontSize(8);
             doc.text(`ID Interno: ${unit.unitCode}`, 0.2, 2.8);
@@ -296,7 +301,7 @@ export default function ManageUnitsPage() {
                                 <tbody>
                                     {inventoryUnits.map(unit => {
                                         const product = products.find(p => p.id === unit.productId);
-                                        const location = locations.find(l => l.id === unit.locationId);
+                                        const location = allLocations.find(l => l.id === unit.locationId);
                                         return (
                                             <tr key={unit.id} className="border-b">
                                                 <td className="p-2 font-mono">{unit.unitCode}</td>
@@ -305,7 +310,7 @@ export default function ManageUnitsPage() {
                                                     <div className="text-xs text-muted-foreground">{unit.productId}</div>
                                                 </td>
                                                 <td className="p-2 font-mono">{unit.humanReadableId || '-'}</td>
-                                                <td className="p-2">{location ? renderLocationPathAsString(location.id, locations) : 'N/A'}</td>
+                                                <td className="p-2">{location ? renderLocationPathAsString(location.id, allLocations) : 'N/A'}</td>
                                                 <td className="p-2 text-xs text-muted-foreground">
                                                     <div>{unit.createdBy}</div>
                                                     <div>{format(new Date(unit.createdAt), 'dd/MM/yyyy HH:mm')}</div>

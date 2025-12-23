@@ -22,11 +22,15 @@ import { useDebounce } from 'use-debounce';
 import { Skeleton } from '@/components/ui/skeleton';
 
 const renderLocationPathAsString = (locationId: number, locations: WarehouseLocation[]): string => {
+    if (!locationId) return '';
     const path: WarehouseLocation[] = [];
     let current: WarehouseLocation | undefined = locations.find(l => l.id === locationId);
+    
     while (current) {
         path.unshift(current);
-        current = current.parentId ? locations.find(l => l.id === current.parentId) : undefined;
+        const parentId = current.parentId;
+        if (!parentId) break;
+        current = locations.find(l => l.id === parentId);
     }
     return path.map(l => l.name).join(' > ');
 };
@@ -40,7 +44,8 @@ export default function InventoryCountPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
     
-    const [locations, setLocations] = useState<WarehouseLocation[]>([]);
+    const [allLocations, setAllLocations] = useState<WarehouseLocation[]>([]);
+    const [selectableLocations, setSelectableLocations] = useState<WarehouseLocation[]>([]);
     
     const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
     const [selectedLocationId, setSelectedLocationId] = useState<string | null>(null);
@@ -58,7 +63,8 @@ export default function InventoryCountPage() {
         setIsLoading(true);
         try {
             const locs = await getLocations();
-            setLocations(locs);
+            setAllLocations(locs);
+            setSelectableLocations(getSelectableLocations(locs));
         } catch (error) {
             logError("Failed to load data for inventory count page", { error });
             toast({ title: "Error de Carga", description: "No se pudieron cargar las ubicaciones.", variant: "destructive" });
@@ -81,14 +87,13 @@ export default function InventoryCountPage() {
 
     const locationOptions = useMemo(() => {
         const searchTerm = debouncedLocationSearch.trim().toLowerCase();
-        const selectableLocations = getSelectableLocations(locations);
         if (searchTerm === '*' || searchTerm === '') {
-            return selectableLocations.map(l => ({ value: String(l.id), label: renderLocationPathAsString(l.id, locations) }));
+            return selectableLocations.map(l => ({ value: String(l.id), label: renderLocationPathAsString(l.id, allLocations) }));
         }
         return selectableLocations
-            .filter(l => renderLocationPathAsString(l.id, locations).toLowerCase().includes(searchTerm))
-            .map(l => ({ value: String(l.id), label: renderLocationPathAsString(l.id, locations) }));
-    }, [locations, debouncedLocationSearch]);
+            .filter(l => renderLocationPathAsString(l.id, allLocations).toLowerCase().includes(searchTerm))
+            .map(l => ({ value: String(l.id), label: renderLocationPathAsString(l.id, allLocations) }));
+    }, [allLocations, selectableLocations, debouncedLocationSearch]);
 
     const handleSelectProduct = (value: string) => {
         setIsProductSearchOpen(false);
@@ -101,10 +106,10 @@ export default function InventoryCountPage() {
     
     const handleSelectLocation = (value: string) => {
         setIsLocationSearchOpen(false);
-        const location = locations.find(l => String(l.id) === value);
+        const location = allLocations.find(l => String(l.id) === value);
         if (location) {
             setSelectedLocationId(value);
-            setLocationSearchTerm(renderLocationPathAsString(location.id, locations));
+            setLocationSearchTerm(renderLocationPathAsString(location.id, allLocations));
         }
     };
 
