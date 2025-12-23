@@ -6,11 +6,10 @@
 "use client";
 
 import * as React from "react";
-import { Search, List } from "lucide-react";
+import { Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   Command,
-  CommandInput,
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
@@ -21,7 +20,6 @@ import {
 } from "@/components/ui/popover";
 import { Input } from "@/components/ui/input";
 import { ScrollArea, ScrollViewport } from "./scroll-area";
-import { Button } from "./button";
 
 export interface SearchInputProps {
   options: { label: string; value: string; className?: string }[];
@@ -60,7 +58,7 @@ const SearchInput = React.forwardRef<HTMLInputElement, SearchInputProps>(({
         if (!open) onOpenChange(true);
     };
     
-    // Correctly handle mouse wheel scrolling on the popover list
+    // This function handles the mouse wheel event to enable scrolling the list.
     const handleWheel = (e: React.WheelEvent) => {
       if (scrollViewportRef.current) {
         scrollViewportRef.current.scrollTop += e.deltaY;
@@ -90,13 +88,6 @@ const SearchInput = React.forwardRef<HTMLInputElement, SearchInputProps>(({
                 onOpenAutoFocus={(e) => e.preventDefault()}
             >
                 <Command shouldFilter={false}>
-                     <CommandInput 
-                        placeholder={placeholder || "Buscar..."}
-                        value={value}
-                        onValueChange={onValueChange}
-                        disabled
-                        className="hidden" // The main input already handles this
-                    />
                     <ScrollArea className="h-auto max-h-72">
                       <ScrollViewport ref={scrollViewportRef}>
                         <CommandList onWheel={handleWheel}>

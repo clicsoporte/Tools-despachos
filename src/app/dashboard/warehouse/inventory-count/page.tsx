@@ -22,7 +22,6 @@ import { useDebounce } from 'use-debounce';
 import { Skeleton } from '@/components/ui/skeleton';
 
 const renderLocationPathAsString = (locationId: number, locations: WarehouseLocation[]): string => {
-    if (!locationId) return "Sin ubicación";
     const path: WarehouseLocation[] = [];
     let current: WarehouseLocation | undefined = locations.find(l => l.id === locationId);
     while (current) {

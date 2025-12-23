@@ -31,8 +31,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import jsPDF from "jspdf";
 import QRCode from 'qrcode';
 
-const renderLocationPathAsString = (locationId: number | null | undefined, locations: WarehouseLocation[]): string => {
-    if (!locationId) return "Sin ubicación";
+const renderLocationPathAsString = (locationId: number, locations: WarehouseLocation[]): string => {
     const path: WarehouseLocation[] = [];
     let current: WarehouseLocation | undefined = locations.find(l => l.id === locationId);
     while (current) {
