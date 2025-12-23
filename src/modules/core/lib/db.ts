@@ -9,13 +9,21 @@
 import Database from 'better-sqlite3';
 import path from 'path';
 import fs from 'fs';
-import { initialCompany, initialRoles, DB_MODULES } from './data';
+import { initialCompany, initialRoles } from './data';
+import { DB_MODULES } from './db-modules';
 import type { Company, LogEntry, ApiSettings, User, Product, Customer, Role, QuoteDraft, DatabaseModule, Exemption, ExemptionLaw, StockInfo, StockSettings, ImportQuery, ItemLocation, UpdateBackupInfo, Suggestion, DateRange, Supplier, ErpOrderHeader, ErpOrderLine, Notification, UserPreferences, AuditResult, ErpPurchaseOrderHeader, ErpPurchaseOrderLine, SqlConfig, ProductionOrder } from '@/modules/core/types';
 import bcrypt from 'bcryptjs';
 import Papa from 'papaparse';
 import { executeQuery } from './sql-service';
 import { logInfo, logWarn, logError } from './logger';
+import { headers } from 'next/headers';
+import { getExchangeRate, getEmailSettings } from './api-actions';
+import { NewUserSchema, UserSchema } from './auth-schemas';
 import { confirmModification as confirmPlannerModificationServer } from '../../planner/lib/db';
+import { initializePlannerDb, runPlannerMigrations } from '../../planner/lib/db';
+import { initializeRequestsDb, runRequestMigrations } from '../../requests/lib/db';
+import { initializeWarehouseDb, runWarehouseMigrations } from '../../warehouse/lib/db';
+import { initializeCostAssistantDb, runCostAssistantMigrations } from '../../cost-assistant/lib/db';
 
 const DB_FILE = 'intratool.db';
 const SALT_ROUNDS = 10;
@@ -110,10 +118,20 @@ const dbDirectory = path.join(process.cwd(), 'dbs');
 const dbConnections = new Map<string, Database.Database>();
 
 // New helper function to run migrations safely.
-async function runMigrations(dbModule: DatabaseModule, db: Database.Database) {
-    if (dbModule.migrationFn) {
+async function runMigrations(dbModule: Omit<DatabaseModule, 'schema'>, db: Database.Database) {
+    let migrationFn;
+    switch (dbModule.id) {
+        case 'clic-tools-main': migrationFn = runMainDbMigrations; break;
+        case 'purchase-requests': migrationFn = runRequestMigrations; break;
+        case 'production-planner': migrationFn = runPlannerMigrations; break;
+        case 'warehouse-management': migrationFn = runWarehouseMigrations; break;
+        case 'cost-assistant': migrationFn = runCostAssistantMigrations; break;
+        default: break;
+    }
+
+    if (migrationFn) {
         try {
-            await dbModule.migrationFn(db);
+            await migrationFn(db);
         } catch (error) {
             console.error(`Migration failed for ${dbModule.dbFile}, but continuing. Error:`, error);
         }
@@ -174,8 +192,17 @@ export async function connectDb(dbFile: string = DB_FILE, forceRecreate = false)
     if (dbModule) {
         if (!dbExists) {
             console.log(`Database ${dbFile} not found, creating and initializing...`);
-            if (dbModule.initFn) {
-                await dbModule.initFn(db);
+            let initFn;
+            switch (dbModule.id) {
+                case 'clic-tools-main': initFn = initializeMainDatabase; break;
+                case 'purchase-requests': initFn = initializeRequestsDb; break;
+                case 'production-planner': initFn = initializePlannerDb; break;
+                case 'warehouse-management': initFn = initializeWarehouseDb; break;
+                case 'cost-assistant': initFn = initializeCostAssistantDb; break;
+                default: break;
+            }
+            if (initFn) {
+                await initFn(db);
             }
         }
         // Always run migrations on an existing DB to check for updates.
@@ -815,7 +842,7 @@ export async function deleteQuoteDraft(draftId: string): Promise<void> {
 }
 
 export async function getDbModules(): Promise<Omit<DatabaseModule, 'initFn' | 'migrationFn' | 'schema'>[]> {
-    return DB_MODULES.map(({ initFn, migrationFn, schema, ...rest }) => rest);
+    return DB_MODULES.map(({ schema, ...rest }) => rest);
 }
 
 const createHeaderMapping = (type: ImportQuery['type']) => {
@@ -1552,8 +1579,18 @@ export async function runSingleModuleMigration(moduleId: string): Promise<void> 
     try {
         console.log(`Manually running migration for module: ${dbModule.name}`);
         const db = await connectDb(dbModule.dbFile);
-        if (dbModule.migrationFn) {
-            await dbModule.migrationFn(db);
+        let migrationFn;
+        switch (dbModule.id) {
+            case 'clic-tools-main': migrationFn = runMainDbMigrations; break;
+            case 'purchase-requests': migrationFn = runRequestMigrations; break;
+            case 'production-planner': migrationFn = runPlannerMigrations; break;
+            case 'warehouse-management': migrationFn = runWarehouseMigrations; break;
+            case 'cost-assistant': migrationFn = runCostAssistantMigrations; break;
+            default: break;
+        }
+
+        if (migrationFn) {
+            await migrationFn(db);
             await logInfo(`Migración manual ejecutada para el módulo: ${dbModule.name}`);
         } else {
             await logWarn(`No migration function found for module: ${dbModule.name}`);
@@ -1569,5 +1606,3 @@ export async function runSingleModuleMigration(moduleId: string): Promise<void> 
 export async function confirmPlannerModification(orderId: number, updatedBy: string): Promise<ProductionOrder> {
     return await confirmPlannerModificationServer(orderId, updatedBy);
 }
-
-    

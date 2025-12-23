@@ -44,7 +44,7 @@ import { cn } from '@/lib/utils';
 import { useAuth } from '@/modules/core/hooks/useAuth';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { shutdownServer } from '@/modules/core/lib/actions';
-import { Alert, AlertTitle } from '@/components/ui/alert';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 
 
 export default function MaintenancePage() {
@@ -463,9 +463,9 @@ export default function MaintenancePage() {
                                             <Alert variant="destructive">
                                                 <AlertTriangle className="h-4 w-4" />
                                                 <AlertTitle>¡Cuidado! Incompatibilidad de Versiones</AlertTitle>
-                                                <p className="text-xs">
+                                                <AlertDescription>
                                                    Estás intentando restaurar un backup de la versión <strong>v{selectedBackupVersion}</strong> sobre la versión actual del sistema <strong>v{systemVersion}</strong>. Esto puede causar errores o corrupción de datos. Procede solo si también vas a restaurar los archivos de la aplicación a la versión anterior.
-                                                </p>
+                                                </AlertDescription>
                                             </Alert>
                                         )}
                                         <AlertDialog open={isRestoreConfirmOpen} onOpenChange={setRestoreConfirmOpen}>
@@ -659,5 +659,3 @@ export default function MaintenancePage() {
         </main>
     );
 }
-
-    
