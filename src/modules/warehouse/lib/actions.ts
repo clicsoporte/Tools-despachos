@@ -36,6 +36,11 @@ export async function saveWarehouseSettings(settings: WarehouseSettings): Promis
 }
 export const getLocations = async (): Promise<WarehouseLocation[]> => getLocationsServer();
 
+export function getSelectableLocations(locations: WarehouseLocation[]): WarehouseLocation[] {
+    const parentIds = new Set(locations.map(l => l.parentId).filter(Boolean));
+    return locations.filter(l => !parentIds.has(l.id));
+}
+
 export async function addLocation(location: Omit<WarehouseLocation, 'id'>): Promise<WarehouseLocation> {
     const newLocation = await addLocationServer(location);
     await logInfo(`New warehouse location created: ${newLocation.name} (${newLocation.code})`);

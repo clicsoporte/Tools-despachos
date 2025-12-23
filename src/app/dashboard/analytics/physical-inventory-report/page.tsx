@@ -137,6 +137,7 @@ export default function PhysicalInventoryReportPage() {
                                                 </TableCell>
                                             )}
                                             {visibleColumns.includes('locationName') && <TableCell>{item.locationName} ({item.locationCode})</TableCell>}
+                                            {visibleColumns.includes('assignedLocation') && <TableCell className="text-sm text-muted-foreground">{item.assignedLocationPath}</TableCell>}
                                             {visibleColumns.includes('physicalCount') && <TableCell className="text-right font-medium">{item.physicalCount.toLocaleString()}</TableCell>}
                                             {visibleColumns.includes('erpStock') && <TableCell className="text-right">{item.erpStock.toLocaleString()}</TableCell>}
                                             {visibleColumns.includes('difference') && (

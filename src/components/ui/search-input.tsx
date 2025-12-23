@@ -6,7 +6,7 @@
 "use client";
 
 import * as React from "react";
-import { Search } from "lucide-react";
+import { Search, List } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   Command,
@@ -20,7 +20,8 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Input } from "@/components/ui/input";
-import { ScrollArea, ScrollViewport } from "./scroll-area"; // Import ScrollArea
+import { ScrollArea, ScrollViewport } from "./scroll-area";
+import { Button } from "./button";
 
 export interface SearchInputProps {
   options: { label: string; value: string; className?: string }[];
@@ -46,13 +47,12 @@ const SearchInput = React.forwardRef<HTMLInputElement, SearchInputProps>(({
     onOpenChange
   }, ref) => {
     
-    // Determine if the popover should be shown based on props and state.
-    // It shows if 'open' is true, there's a search value, and there are options to display.
-    const showPopover = open && value.length > 1 && options.length > 0;
+    const showPopover = open && options.length > 0;
     const scrollViewportRef = React.useRef<HTMLDivElement>(null);
     
     const handleSelect = (optionValue: string) => {
         onSelect(optionValue);
+        onOpenChange(false);
     };
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -60,7 +60,6 @@ const SearchInput = React.forwardRef<HTMLInputElement, SearchInputProps>(({
         if (!open) onOpenChange(true);
     };
     
-    // Manually handle scroll wheel events to scroll the popover content.
     const handleWheel = (e: React.WheelEvent) => {
       if (scrollViewportRef.current) {
         scrollViewportRef.current.scrollTop += e.deltaY;
@@ -70,7 +69,7 @@ const SearchInput = React.forwardRef<HTMLInputElement, SearchInputProps>(({
     return (
         <Popover open={showPopover} onOpenChange={onOpenChange}>
             <div className={cn("relative w-full", className)}>
-                 <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <PopoverTrigger asChild>
                     <Input
                         ref={ref}
@@ -79,7 +78,7 @@ const SearchInput = React.forwardRef<HTMLInputElement, SearchInputProps>(({
                         value={value}
                         onChange={handleChange}
                         onKeyDown={onKeyDown}
-                        className="pl-8"
+                        className="pl-9"
                         autoComplete="off"
                     />
                 </PopoverTrigger>
@@ -87,7 +86,7 @@ const SearchInput = React.forwardRef<HTMLInputElement, SearchInputProps>(({
             <PopoverContent 
                 className="w-[var(--radix-popover-trigger-width)] p-0" 
                 align="start"
-                onOpenAutoFocus={(e) => e.preventDefault()} // Prevent focus stealing
+                onOpenAutoFocus={(e) => e.preventDefault()}
             >
                 <Command shouldFilter={false}>
                      <CommandInput 
@@ -95,6 +94,7 @@ const SearchInput = React.forwardRef<HTMLInputElement, SearchInputProps>(({
                         value={value}
                         onValueChange={onValueChange}
                         disabled
+                        className="hidden" // The main input already handles this
                     />
                     <ScrollArea className="h-auto max-h-72">
                       <ScrollViewport ref={scrollViewportRef}>
