@@ -20,7 +20,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Input } from "@/components/ui/input";
-import { ScrollArea } from "./scroll-area"; // Import ScrollArea
+import { ScrollArea, ScrollViewport } from "./scroll-area"; // Import ScrollArea
 
 export interface SearchInputProps {
   options: { label: string; value: string; className?: string }[];
@@ -47,6 +47,7 @@ const SearchInput = React.forwardRef<HTMLInputElement, SearchInputProps>(({
   }, ref) => {
     
     const showPopover = open && value.length > 1 && options.length > 0;
+    const scrollViewportRef = React.useRef<HTMLDivElement>(null);
     
     const handleSelect = (optionValue: string) => {
         onSelect(optionValue);
@@ -55,6 +56,12 @@ const SearchInput = React.forwardRef<HTMLInputElement, SearchInputProps>(({
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         onValueChange(e.target.value);
         if (!open) onOpenChange(true);
+    };
+    
+    const handleWheel = (e: React.WheelEvent) => {
+      if (scrollViewportRef.current) {
+        scrollViewportRef.current.scrollTop += e.deltaY;
+      }
     };
 
     return (
@@ -87,7 +94,8 @@ const SearchInput = React.forwardRef<HTMLInputElement, SearchInputProps>(({
                         disabled
                     />
                     <ScrollArea className="h-auto max-h-72">
-                        <CommandList>
+                      <ScrollViewport ref={scrollViewportRef}>
+                        <CommandList onWheel={handleWheel}>
                             {options.length > 0 ? (
                                 options.map((option) => (
                                 <CommandItem
@@ -101,6 +109,7 @@ const SearchInput = React.forwardRef<HTMLInputElement, SearchInputProps>(({
                                 ))
                             ) : null }
                         </CommandList>
+                      </ScrollViewport>
                     </ScrollArea>
                 </Command>
             </PopoverContent>

@@ -49,7 +49,7 @@ export default function InventoryCountPage() {
     const [countedQuantity, setCountedQuantity] = useState<string>('');
 
     const [productSearchTerm, setProductSearchTerm] = useState('');
-    const [isProductSearchOpen, setProductSearchOpen] = useState(false);
+    const [isProductSearchOpen, setIsProductSearchOpen] = useState(false);
     const [locationSearchTerm, setLocationSearchTerm] = useState('');
     const [isLocationSearchOpen, setIsLocationSearchOpen] = useState(false);
 
@@ -176,7 +176,7 @@ export default function InventoryCountPage() {
                     <CardContent className="space-y-4">
                         <div className="space-y-2">
                             <Label>1. Seleccione un Producto</Label>
-                            <SearchInput options={productOptions} onSelect={handleSelectProduct} value={productSearchTerm} onValueChange={setProductSearchTerm} placeholder="Buscar producto..." open={isProductSearchOpen} onOpenChange={setProductSearchOpen} />
+                            <SearchInput options={productOptions} onSelect={handleSelectProduct} value={productSearchTerm} onValueChange={setProductSearchTerm} placeholder="Buscar producto..." open={isProductSearchOpen} onOpenChange={setIsProductSearchOpen} />
                         </div>
                         <div className="space-y-2">
                             <Label>2. Seleccione una Ubicación</Label>

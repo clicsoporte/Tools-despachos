@@ -144,10 +144,11 @@ export async function runWarehouseMigrations(db: import('better-sqlite3').Databa
     const recreateTableWithCascade = (tableName: string, createSql: string, columns: string) => {
         console.log(`MIGRATION (warehouse.db): Recreating '${tableName}' table to update foreign key ON DELETE action to CASCADE.`);
         db.transaction(() => {
-            db.exec(`ALTER TABLE ${tableName} RENAME TO ${tableName}_old;`);
+            db.exec(`CREATE TABLE ${tableName}_new AS SELECT * FROM ${tableName};`);
+            db.exec(`DROP TABLE ${tableName};`);
             db.exec(createSql);
-            db.exec(`INSERT INTO ${tableName}(${columns}) SELECT ${columns} FROM ${tableName}_old;`);
-            db.exec(`DROP TABLE ${tableName}_old;`);
+            db.exec(`INSERT INTO ${tableName}(${columns}) SELECT ${columns} FROM ${tableName}_new;`);
+            db.exec(`DROP TABLE ${tableName}_new;`);
         })();
     };
 
@@ -281,10 +282,10 @@ export async function addBulkLocations(payload: { type: 'rack' | 'clone', params
                     const posInfo = db.prepare('INSERT INTO locations (name, code, type, parentId) VALUES (?, ?, ?, ?)').run(`Posición ${posName}`, posCode, posType, levelId);
                     const posId = posInfo.lastInsertRowid as number;
                     
-                    if (depth === 1) {
+                    if (depth >= 1) {
                          db.prepare('INSERT INTO locations (name, code, type, parentId) VALUES (?, ?, ?, ?)').run('Frente', `${posCode}-F`, posType, posId);
-                    } else if (depth >= 2) {
-                        db.prepare('INSERT INTO locations (name, code, type, parentId) VALUES (?, ?, ?, ?)').run('Frente', `${posCode}-F`, posType, posId);
+                    }
+                    if (depth >= 2) {
                         db.prepare('INSERT INTO locations (name, code, type, parentId) VALUES (?, ?, ?, ?)').run('Fondo', `${posCode}-T`, posType, posId);
                     }
                 }
@@ -330,7 +331,6 @@ export async function updateLocation(location: WarehouseLocation): Promise<Wareh
 
 export async function deleteLocation(id: number): Promise<void> {
     const db = await connectDb(WAREHOUSE_DB_FILE);
-    // The ON DELETE CASCADE pragma on the foreign key will handle deleting all children.
     db.prepare('DELETE FROM locations WHERE id = ?').run(id);
 }
 
@@ -434,7 +434,8 @@ export async function addInventoryUnit(unit: Omit<InventoryUnit, 'id' | 'created
         const newUnitData = {
             ...unit,
             createdAt: new Date().toISOString(),
-            unitCode: unitCode
+            unitCode: unitCode,
+            humanReadableId: unit.humanReadableId || null
         };
         const info = db.prepare(
             'INSERT INTO inventory_units (unitCode, productId, humanReadableId, locationId, notes, createdAt, createdBy) VALUES (@unitCode, @productId, @humanReadableId, @locationId, @notes, @createdAt, @createdBy)'
