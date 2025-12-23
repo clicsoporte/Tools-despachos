@@ -112,7 +112,9 @@ export async function runWarehouseMigrations(db: import('better-sqlite3').Databa
 
             const foreignKeyList = db.prepare(`PRAGMA foreign_key_list(${tableName})`).all() as any[];
             const fk = foreignKeyList.find(f => f.from === columnName);
-            if (fk && fk.on_delete !== 'CASCADE') {
+            
+            // Also check if it's pointing to the wrong table (the old bug)
+            if ((fk && fk.on_delete !== 'CASCADE') || (fk && fk.table !== 'locations')) {
                 recreateTableWithCascade(tableName, createSql, columnsCsv);
             }
         };
@@ -133,8 +135,16 @@ export async function runWarehouseMigrations(db: import('better-sqlite3').Databa
             `CREATE TABLE inventory_units (id INTEGER PRIMARY KEY AUTOINCREMENT, unitCode TEXT UNIQUE, productId TEXT NOT NULL, humanReadableId TEXT, locationId INTEGER, notes TEXT, createdAt TEXT NOT NULL, createdBy TEXT NOT NULL, FOREIGN KEY (locationId) REFERENCES locations(id) ON DELETE CASCADE);`,
             'id, unitCode, productId, humanReadableId, locationId, notes, createdAt, createdBy');
         
+        // Corrected createSql for 'movements'
+        const movementsCreateSql = `CREATE TABLE movements (id INTEGER PRIMARY KEY AUTOINCREMENT, itemId TEXT NOT NULL, quantity REAL NOT NULL, fromLocationId INTEGER, toLocationId INTEGER, timestamp TEXT NOT NULL, userId INTEGER NOT NULL, notes TEXT, FOREIGN KEY (fromLocationId) REFERENCES locations(id) ON DELETE CASCADE, FOREIGN KEY (toLocationId) REFERENCES locations(id) ON DELETE CASCADE);`;
+        
         checkAndRecreateForeignKey('movements', 'fromLocationId',
-            `CREATE TABLE movements (id INTEGER PRIMARY KEY AUTOINCREMENT, itemId TEXT NOT NULL, quantity REAL NOT NULL, fromLocationId INTEGER, toLocationId INTEGER, timestamp TEXT NOT NULL, userId INTEGER NOT NULL, notes TEXT, FOREIGN KEY (fromLocationId) REFERENCES locations(id) ON DELETE CASCADE, FOREIGN KEY (toLocationId) REFERENCES locations(id) ON DELETE CASCADE);`,
+            movementsCreateSql,
+            'id, itemId, quantity, fromLocationId, toLocationId, timestamp, userId, notes');
+        
+        // It's possible only one of the two FKs is wrong, so check the other one too.
+        checkAndRecreateForeignKey('movements', 'toLocationId',
+            movementsCreateSql,
             'id, itemId, quantity, fromLocationId, toLocationId, timestamp, userId, notes');
 
         const inventoryTableInfo = db.prepare(`PRAGMA table_info(inventory)`).all() as { name: string }[];
