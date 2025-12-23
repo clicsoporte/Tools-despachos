@@ -199,8 +199,6 @@ export type DatabaseModule = {
     id: string;
     name: string;
     dbFile: string;
-    initFn?: (db: any) => void | Promise<void>;
-    migrationFn?: (db: any) => void | Promise<void>;
     schema: ExpectedSchema;
 };
 
@@ -779,6 +777,7 @@ export interface PhysicalInventoryComparisonItem {
     difference: number;
     lastCountDate: string;
     updatedBy: string;
+    assignedLocationPath: string;
 }
 
 // --- User Preferences ---

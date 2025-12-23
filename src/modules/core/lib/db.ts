@@ -1,4 +1,3 @@
-
 /**
  * @fileoverview This file handles the SQLite database connection and provides
  * server-side functions for all database operations. It includes initialization,
@@ -9,8 +8,7 @@
 import Database from 'better-sqlite3';
 import path from 'path';
 import fs from 'fs';
-import { initialCompany, initialRoles } from './data';
-import { DB_MODULES } from './db-modules';
+import { initialCompany, initialRoles, DB_MODULES } from './data';
 import type { Company, LogEntry, ApiSettings, User, Product, Customer, Role, QuoteDraft, DatabaseModule, Exemption, ExemptionLaw, StockInfo, StockSettings, ImportQuery, ItemLocation, UpdateBackupInfo, Suggestion, DateRange, Supplier, ErpOrderHeader, ErpOrderLine, Notification, UserPreferences, AuditResult, ErpPurchaseOrderHeader, ErpPurchaseOrderLine, SqlConfig, ProductionOrder } from '@/modules/core/types';
 import bcrypt from 'bcryptjs';
 import Papa from 'papaparse';
@@ -192,17 +190,16 @@ export async function connectDb(dbFile: string = DB_FILE, forceRecreate = false)
     if (dbModule) {
         if (!dbExists) {
             console.log(`Database ${dbFile} not found, creating and initializing...`);
-            let initFn;
-            switch (dbModule.id) {
-                case 'clic-tools-main': initFn = initializeMainDatabase; break;
-                case 'purchase-requests': initFn = initializeRequestsDb; break;
-                case 'production-planner': initFn = initializePlannerDb; break;
-                case 'warehouse-management': initFn = initializeWarehouseDb; break;
-                case 'cost-assistant': initFn = initializeCostAssistantDb; break;
-                default: break;
-            }
-            if (initFn) {
-                await initFn(db);
+            if (dbModule.id === 'clic-tools-main') {
+                await initializeMainDatabase(db);
+            } else if (dbModule.id === 'purchase-requests') {
+                await initializeRequestsDb(db);
+            } else if (dbModule.id === 'production-planner') {
+                await initializePlannerDb(db);
+            } else if (dbModule.id === 'warehouse-management') {
+                await initializeWarehouseDb(db);
+            } else if (dbModule.id === 'cost-assistant') {
+                await initializeCostAssistantDb(db);
             }
         }
         // Always run migrations on an existing DB to check for updates.
@@ -841,7 +838,8 @@ export async function deleteQuoteDraft(draftId: string): Promise<void> {
     }
 }
 
-export async function getDbModules(): Promise<Omit<DatabaseModule, 'initFn' | 'migrationFn' | 'schema'>[]> {
+export async function getDbModules(): Promise<Omit<DatabaseModule, 'schema'>[]> {
+    // This removes the 'schema' property to avoid circular dependencies
     return DB_MODULES.map(({ schema, ...rest }) => rest);
 }
 
@@ -1601,8 +1599,7 @@ export async function runSingleModuleMigration(moduleId: string): Promise<void> 
     }
 }
 
-
-// --- Planner-specific functions moved from core ---
+// Wrapper to solve re-export issue
 export async function confirmPlannerModification(orderId: number, updatedBy: string): Promise<ProductionOrder> {
     return await confirmPlannerModificationServer(orderId, updatedBy);
 }

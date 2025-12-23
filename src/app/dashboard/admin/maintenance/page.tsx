@@ -1,4 +1,3 @@
-
 /**
  * @fileoverview System maintenance page for administrators.
  * This page provides critical, high-risk functionalities such as database
@@ -58,7 +57,7 @@ export default function MaintenancePage() {
     // State for update backups
     const [systemVersion, setSystemVersion] = useState<string | null>(null);
     const [updateBackups, setUpdateBackups] = useState<UpdateBackupInfo[]>([]);
-    const [dbModules, setDbModules] = useState<Omit<DatabaseModule, 'initFn' | 'migrationFn' | 'schema'>[]>([]);
+    const [dbModules, setDbModules] = useState<Omit<DatabaseModule, 'schema'>[]>([]);
     const [isRestoreConfirmOpen, setRestoreConfirmOpen] = useState(false);
     const [isClearBackupsConfirmOpen, setClearBackupsConfirmOpen] = useState(false);
     

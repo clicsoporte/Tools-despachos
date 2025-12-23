@@ -1,4 +1,3 @@
-
 /**
  * @fileoverview This file contains the initial or default data for the application.
  * This data is used to populate the database on its first run.
@@ -38,8 +37,13 @@ import {
   ClipboardCheck,
   ClipboardList,
   Wand2,
-  BookUser, // Corrected Import
+  BookUser,
 } from "lucide-react";
+import { plannerSchema } from '../../planner/lib/schema';
+import { requestSchema } from '../../requests/lib/schema';
+import { warehouseSchema } from '../../warehouse/lib/schema';
+import { costAssistantSchema } from '../../cost-assistant/lib/schema';
+import { mainDbSchema } from './schema';
 
 /**
  * The default user to be created in the database.
@@ -524,13 +528,13 @@ export const allTools: Tool[] = [...mainTools, ...adminTools, ...analyticsTools]
 
 /**
  * Acts as a registry for all database modules in the application.
- * This is now the single source of truth, imported by `db.ts`.
- * It does NOT import any functions to avoid circular dependencies.
+ * This is now the single source of truth for module definitions.
+ * It does NOT contain function references to avoid circular dependencies.
  */
-export const DB_MODULES: Omit<DatabaseModule, 'initFn' | 'migrationFn' | 'schema'>[] = [
-    { id: 'clic-tools-main', name: 'Clic-Tools (Sistema Principal)', dbFile: 'intratool.db' },
-    { id: 'purchase-requests', name: 'Solicitud de Compra', dbFile: 'requests.db' },
-    { id: 'production-planner', name: 'Planificador de Producción', dbFile: 'planner.db' },
-    { id: 'warehouse-management', name: 'Gestión de Almacenes', dbFile: 'warehouse.db' },
-    { id: 'cost-assistant', name: 'Asistente de Costos', dbFile: 'cost_assistant.db' },
+export const DB_MODULES: Omit<DatabaseModule, 'initFn' | 'migrationFn'>[] = [
+    { id: 'clic-tools-main', name: 'Clic-Tools (Sistema Principal)', dbFile: 'intratool.db', schema: mainDbSchema },
+    { id: 'purchase-requests', name: 'Solicitud de Compra', dbFile: 'requests.db', schema: requestSchema },
+    { id: 'production-planner', name: 'Planificador de Producción', dbFile: 'planner.db', schema: plannerSchema },
+    { id: 'warehouse-management', name: 'Gestión de Almacenes', dbFile: 'warehouse.db', schema: warehouseSchema },
+    { id: 'cost-assistant', name: 'Asistente de Costos', dbFile: 'cost_assistant.db', schema: costAssistantSchema },
 ];
