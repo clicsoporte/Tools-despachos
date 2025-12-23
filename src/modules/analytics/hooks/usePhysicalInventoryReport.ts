@@ -10,7 +10,7 @@ import { usePageTitle } from '@/modules/core/hooks/usePageTitle';
 import { useAuthorization } from '@/modules/core/hooks/useAuthorization';
 import { logError } from '@/modules/core/lib/logger';
 import { getPhysicalInventoryReportData } from '@/modules/analytics/lib/actions';
-import type { PhysicalInventoryComparisonItem, DateRange, Product, UserPreferences, ItemLocation } from '@/modules/core/types';
+import type { PhysicalInventoryComparisonItem, DateRange, Product, UserPreferences, ItemLocation, WarehouseLocation } from '@/modules/core/types';
 import { exportToExcel } from '@/modules/core/lib/excel-export';
 import { format, parseISO, startOfDay, subDays } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -44,7 +44,7 @@ interface State {
 export const availableColumns = [
     { id: 'productId', label: 'Producto', sortable: true },
     { id: 'locationName', label: 'Ubicación Conteo', sortable: true },
-    { id: 'assignedLocation', label: 'Ubicación Designada', sortable: false },
+    { id: 'assignedLocationPath', label: 'Ubicación Designada', sortable: true },
     { id: 'physicalCount', label: 'Conteo Físico', sortable: true, align: 'right' },
     { id: 'erpStock', label: 'Stock ERP', sortable: true, align: 'right' },
     { id: 'difference', label: 'Diferencia', sortable: true, align: 'right' },
@@ -148,8 +148,8 @@ export function usePhysicalInventoryReport() {
         }
         
         data.sort((a, b) => {
-            const valA = a[state.sortKey];
-            const valB = b[state.sortKey];
+            const valA = a[state.sortKey as keyof PhysicalInventoryComparisonItem];
+            const valB = b[state.sortKey as keyof PhysicalInventoryComparisonItem];
             const direction = state.sortDirection === 'asc' ? 1 : -1;
 
             if (typeof valA === 'string' && typeof valB === 'string') {
@@ -214,7 +214,7 @@ export function usePhysicalInventoryReport() {
 
     const handleExportPDF = async () => {
         if (!companyData) return;
-        const tableHeaders = ["Producto", "Ubicación Conteo", "Ubic. Designada", "Físico", "ERP", "Dif.", "Contado Por", "Fecha"];
+        const tableHeaders = ["Producto", "Ubic. Conteo", "Ubic. Designada", "Físico", "ERP", "Dif.", "Contado Por", "Fecha"];
         const tableRows = sortedData.map(item => [
             `${item.productDescription}\n(${item.productId})`,
             `${item.locationName} (${item.locationCode})`,

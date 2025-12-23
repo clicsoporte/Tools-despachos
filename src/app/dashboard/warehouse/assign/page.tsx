@@ -31,17 +31,20 @@ import { Checkbox } from '@/components/ui/checkbox';
 import jsPDF from "jspdf";
 import QRCode from 'qrcode';
 
-
 const renderLocationPathAsString = (locationId: number | null | undefined, locations: WarehouseLocation[]): string => {
     if (!locationId) return "Sin ubicación";
     const path: WarehouseLocation[] = [];
     let current: WarehouseLocation | undefined = locations.find(l => l.id === locationId);
     while (current) {
         path.unshift(current);
-        const parentId = current.parentId;
-        current = parentId ? locations.find(l => l.id === parentId) : undefined;
+        current = current.parentId ? locations.find(l => l.id === current.parentId) : undefined;
     }
     return path.map(l => l.name).join(' > ');
+};
+
+const getSelectableLocations = (allLocations: WarehouseLocation[]) => {
+    const parentIds = new Set(allLocations.map(l => l.parentId).filter(Boolean));
+    return allLocations.filter(l => !parentIds.has(l.id));
 };
 
 const ROWS_PER_PAGE = 25;
@@ -124,9 +127,7 @@ export default function AssignItemPage() {
 
     const locationOptions = useMemo(() => {
         const searchTerm = debouncedLocationSearch.trim().toLowerCase();
-        const childIds = new Set(locations.map(l => l.parentId).filter(Boolean));
-
-        const selectableLocations = locations.filter(l => !childIds.has(l.id));
+        const selectableLocations = getSelectableLocations(locations);
 
         if (searchTerm === '*' || searchTerm === '') {
             return selectableLocations.map(l => ({ value: String(l.id), label: renderLocationPathAsString(l.id, locations) }));
@@ -351,7 +352,7 @@ export default function AssignItemPage() {
                                                     open={isLocationSearchOpen} 
                                                     onOpenChange={setIsLocationSearchOpen}
                                                 />
-                                                <Button type="button" variant="outline" size="icon" onClick={() => setIsLocationSearchOpen(true)}>
+                                                <Button type="button" variant="outline" size="icon" onClick={() => {setLocationSearchTerm('*'); setIsLocationSearchOpen(true)}}>
                                                     <List className="h-4 w-4" />
                                                 </Button>
                                             </div>

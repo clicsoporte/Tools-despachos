@@ -27,10 +27,14 @@ const renderLocationPathAsString = (locationId: number, locations: WarehouseLoca
     let current: WarehouseLocation | undefined = locations.find(l => l.id === locationId);
     while (current) {
         path.unshift(current);
-        const parentId = current.parentId;
-        current = parentId ? locations.find(l => l.id === parentId) : undefined;
+        current = current.parentId ? locations.find(l => l.id === current.parentId) : undefined;
     }
     return path.map(l => l.name).join(' > ');
+};
+
+const getSelectableLocations = (allLocations: WarehouseLocation[]) => {
+    const parentIds = new Set(allLocations.map(l => l.parentId).filter(Boolean));
+    return allLocations.filter(l => !parentIds.has(l.id));
 };
 
 export default function InventoryCountPage() {
@@ -83,10 +87,11 @@ export default function InventoryCountPage() {
 
     const locationOptions = useMemo(() => {
         const searchTerm = debouncedLocationSearch.trim().toLowerCase();
+        const selectableLocations = getSelectableLocations(locations);
         if (searchTerm === '*' || searchTerm === '') {
-            return locations.map(l => ({ value: String(l.id), label: renderLocationPathAsString(l.id, locations) }));
+            return selectableLocations.map(l => ({ value: String(l.id), label: renderLocationPathAsString(l.id, locations) }));
         }
-        return locations
+        return selectableLocations
             .filter(l => renderLocationPathAsString(l.id, locations).toLowerCase().includes(searchTerm))
             .map(l => ({ value: String(l.id), label: renderLocationPathAsString(l.id, locations) }));
     }, [locations, debouncedLocationSearch]);
@@ -182,7 +187,7 @@ export default function InventoryCountPage() {
                             <Label>2. Seleccione una Ubicación</Label>
                             <div className="flex items-center gap-2">
                                 <SearchInput options={locationOptions} onSelect={handleSelectLocation} value={locationSearchTerm} onValueChange={setLocationSearchTerm} placeholder="Buscar... ('*' o vacío para ver todas)" open={isLocationSearchOpen} onOpenChange={setIsLocationSearchOpen} />
-                                <Button type="button" variant="outline" size="icon" onClick={() => setIsLocationSearchOpen(true)}>
+                                <Button type="button" variant="outline" size="icon" onClick={() => {setLocationSearchTerm('*'); setIsLocationSearchOpen(true);}}>
                                     <List className="h-4 w-4" />
                                 </Button>
                             </div>
