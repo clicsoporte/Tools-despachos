@@ -8,21 +8,13 @@
 import Database from 'better-sqlite3';
 import path from 'path';
 import fs from 'fs';
-import { initialCompany, initialRoles } from './data';
+import { DB_MODULES, initialCompany, initialRoles } from './data';
 import type { Company, LogEntry, ApiSettings, User, Product, Customer, Role, QuoteDraft, DatabaseModule, Exemption, ExemptionLaw, StockInfo, StockSettings, ImportQuery, ItemLocation, UpdateBackupInfo, Suggestion, DateRange, Supplier, ErpOrderHeader, ErpOrderLine, Notification, UserPreferences, AuditResult, ErpPurchaseOrderHeader, ErpPurchaseOrderLine, SqlConfig } from '@/modules/core/types';
 import bcrypt from 'bcryptjs';
 import Papa from 'papaparse';
 import { executeQuery } from './sql-service';
 import { logInfo, logWarn, logError } from './logger';
-import { initializePlannerDb, runPlannerMigrations, confirmModification as confirmPlannerModification } from '../../planner/lib/db';
-import { initializeRequestsDb, runRequestMigrations } from '../../requests/lib/db';
-import { initializeWarehouseDb, runWarehouseMigrations } from '../../warehouse/lib/db';
-import { initializeCostAssistantDb, runCostAssistantMigrations } from '../../cost-assistant/lib/db';
-import { costAssistantSchema } from '../../cost-assistant/lib/schema';
-import { plannerSchema } from '../../planner/lib/schema';
-import { requestSchema } from '../../requests/lib/schema';
-import { warehouseSchema } from '../../warehouse/lib/schema';
-
+import { confirmPlannerModification as confirmPlannerModificationServer } from '../../planner/lib/db';
 
 const DB_FILE = 'intratool.db';
 const SALT_ROUNDS = 10;
@@ -35,7 +27,7 @@ const VERSION_FILE_PATH = path.join(process.cwd(), 'package.json');
  * This function is called automatically when the main DB file is first created.
  * @param {Database.Database} db - The database instance to initialize.
  */
-function initializeMainDatabase(db: import('better-sqlite3').Database) {
+export async function initializeMainDatabase(db: import('better-sqlite3').Database) {
     const schema = `
         CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY,
@@ -107,53 +99,8 @@ function initializeMainDatabase(db: import('better-sqlite3').Database) {
     console.log(`Database ${DB_FILE} initialized.`);
 
     // Run migrations after initialization
-    runMainDbMigrations(db);
+    await runMainDbMigrations(db);
 }
-
-/**
- * Acts as a registry for all database modules in the application.
- * This structure allows the core `connectDb` function to be completely agnostic
- * of any specific module, promoting true modularity and decoupling.
- */
-export const DB_MODULES: DatabaseModule[] = [
-    { 
-        id: 'clic-tools-main', 
-        name: 'Clic-Tools (Sistema Principal)', 
-        dbFile: DB_FILE, 
-        initFn: initializeMainDatabase, 
-        migrationFn: runMainDbMigrations,
-        schema: {
-            'users': ['id', 'name', 'email', 'password', 'phone', 'whatsapp', 'erpAlias', 'avatar', 'role', 'recentActivity', 'securityQuestion', 'securityAnswer', 'forcePasswordChange'],
-            'roles': ['id', 'name', 'permissions'],
-            'company_settings': ['id', 'name', 'taxId', 'address', 'phone', 'email', 'logoUrl', 'systemName', 'quotePrefix', 'nextQuoteNumber', 'decimalPlaces', 'quoterShowTaxId', 'searchDebounceTime', 'syncWarningHours', 'lastSyncTimestamp', 'importMode', 'customerFilePath', 'productFilePath', 'exemptionFilePath', 'stockFilePath', 'locationFilePath', 'cabysFilePath', 'supplierFilePath', 'erpPurchaseOrderHeaderFilePath', 'erpPurchaseOrderLineFilePath'],
-            'logs': ['id', 'timestamp', 'type', 'message', 'details'],
-            'api_settings': ['id', 'exchangeRateApi', 'haciendaExemptionApi', 'haciendaTributariaApi'],
-            'customers': ['id', 'name', 'address', 'phone', 'taxId', 'currency', 'creditLimit', 'paymentCondition', 'salesperson', 'active', 'email', 'electronicDocEmail'],
-            'products': ['id', 'description', 'classification', 'lastEntry', 'active', 'notes', 'unit', 'isBasicGood', 'cabys'],
-            'exemptions': ['code', 'description', 'customer', 'authNumber', 'startDate', 'endDate', 'percentage', 'docType', 'institutionName', 'institutionCode'],
-            'quote_drafts': ['id', 'createdAt', 'userId', 'customerId', 'customerDetails', 'lines', 'totals', 'notes', 'currency', 'exchangeRate', 'purchaseOrderNumber', 'deliveryAddress', 'deliveryDate', 'sellerName', 'sellerType', 'quoteDate', 'validUntilDate', 'paymentTerms', 'creditDays'],
-            'exemption_laws': ['docType', 'institutionName', 'authNumber'],
-            'cabys_catalog': ['code', 'description', 'taxRate'],
-            'stock': ['itemId', 'stockByWarehouse', 'totalStock'],
-            'sql_config': ['key', 'value'],
-            'import_queries': ['type', 'query'],
-            'suggestions': ['id', 'content', 'userId', 'userName', 'isRead', 'timestamp'],
-            'user_preferences': ['userId', 'key', 'value'],
-            'notifications': ['id', 'userId', 'message', 'href', 'isRead', 'timestamp', 'entityId', 'entityType', 'taskType'],
-            'email_settings': ['key', 'value'],
-            'suppliers': ['id', 'name', 'alias', 'email', 'phone'],
-            'erp_order_headers': ['PEDIDO', 'ESTADO', 'CLIENTE', 'FECHA_PEDIDO', 'FECHA_PROMETIDA', 'ORDEN_COMPRA', 'TOTAL_UNIDADES', 'MONEDA_PEDIDO', 'USUARIO'],
-            'erp_order_lines': ['PEDIDO', 'PEDIDO_LINEA', 'ARTICULO', 'CANTIDAD_PEDIDA', 'PRECIO_UNITARIO'],
-            'erp_purchase_order_headers': ['ORDEN_COMPRA', 'PROVEEDOR', 'FECHA_HORA', 'ESTADO', 'CreatedBy'],
-            'erp_purchase_order_lines': ['ORDEN_COMPRA', 'ARTICULO', 'CANTIDAD_ORDENADA'],
-        }
-    },
-    { id: 'purchase-requests', name: 'Solicitud de Compra', dbFile: 'requests.db', initFn: initializeRequestsDb, migrationFn: runRequestMigrations, schema: requestSchema },
-    { id: 'production-planner', name: 'Planificador de Producción', dbFile: 'planner.db', initFn: initializePlannerDb, migrationFn: runPlannerMigrations, schema: plannerSchema },
-    { id: 'warehouse-management', name: 'Gestión de Almacenes', dbFile: 'warehouse.db', initFn: initializeWarehouseDb, migrationFn: runWarehouseMigrations, schema: warehouseSchema },
-    { id: 'cost-assistant', name: 'Asistente de Costos', dbFile: 'cost_assistant.db', initFn: initializeCostAssistantDb, migrationFn: runCostAssistantMigrations, schema: costAssistantSchema },
-];
-
 
 // This path is configured to work correctly within the Next.js build output directory,
 // which is crucial for serverless environments.
@@ -227,7 +174,7 @@ export async function connectDb(dbFile: string = DB_FILE, forceRecreate = false)
         if (!dbExists) {
             console.log(`Database ${dbFile} not found, creating and initializing...`);
             if (dbModule.initFn) {
-                dbModule.initFn(db);
+                await dbModule.initFn(db);
             }
         }
         // Always run migrations on an existing DB to check for updates.
@@ -251,8 +198,8 @@ export async function connectDb(dbFile: string = DB_FILE, forceRecreate = false)
  * Checks the database schema and applies necessary alterations (migrations).
  * @param {Database.Database} db - The database instance to check.
  */
-function runMainDbMigrations(db: import('better-sqlite3').Database) {
-    checkAndApplyMigrations(db);
+export async function runMainDbMigrations(db: import('better-sqlite3').Database) {
+    await checkAndApplyMigrations(db);
 }
 
 /**
@@ -260,7 +207,7 @@ function runMainDbMigrations(db: import('better-sqlite3').Database) {
  * This makes the app more resilient to schema changes over time without data loss.
  * @param {Database.Database} db - The database instance to check.
  */
-function checkAndApplyMigrations(db: import('better-sqlite3').Database) {
+async function checkAndApplyMigrations(db: import('better-sqlite3').Database) {
     // Main DB Migrations
     try {
         const usersTable = db.prepare(`SELECT name FROM sqlite_master WHERE type='table' AND name='users'`).get();
@@ -866,8 +813,8 @@ export async function deleteQuoteDraft(draftId: string): Promise<void> {
     }
 }
 
-export async function getDbModules(): Promise<Omit<DatabaseModule, 'initFn' | 'migrationFn'>[]> {
-    return DB_MODULES.map(({ initFn, migrationFn, ...rest }) => rest);
+export async function getDbModules(): Promise<Omit<DatabaseModule, 'initFn' | 'migrationFn' | 'schema'>[]> {
+    return DB_MODULES.map(({ initFn, migrationFn, schema, ...rest }) => rest);
 }
 
 const createHeaderMapping = (type: ImportQuery['type']) => {
@@ -1599,4 +1546,6 @@ export async function runSingleModuleMigration(moduleId: string): Promise<void> 
 
 
 // --- Planner-specific functions moved from core ---
-export { confirmPlannerModification };
+export async function confirmPlannerModification(orderId: number, updatedBy: string) {
+    return confirmPlannerModificationServer(orderId, updatedBy);
+}

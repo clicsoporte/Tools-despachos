@@ -1,4 +1,3 @@
-
 /**
  * @fileoverview Server-side authentication and user management functions.
  * These functions interact directly with the database to handle user data.
@@ -263,6 +262,7 @@ export async function comparePasswords(userId: number, password: string, clientI
  * This is a server action that aggregates data from various database functions.
  */
 export async function getInitialAuthData() {
+    const db = await connectDb();
     // Ensure all databases are initialized on first authenticated load
     const dbModules = await getDbModules();
     for (const dbModule of dbModules) {
