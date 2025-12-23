@@ -345,15 +345,77 @@ export default function MaintenancePage() {
     const selectedBackupVersion = selectedRestoreTimestamp ? updateBackups.find(b => b.date === selectedRestoreTimestamp)?.version : null;
     const isVersionMismatch = systemVersion && selectedBackupVersion && systemVersion !== selectedBackupVersion;
 
+    const hasAuditErrors = auditResults?.some(r => r.status === 'ERROR');
+
     return (
         <main className="flex-1 p-4 md:p-6 lg:p-8">
             <div className="mx-auto max-w-4xl space-y-8">
-                <Accordion type="multiple" defaultValue={['backups']} className="w-full space-y-6">
-                    <Card className="border-primary/50">
+                <Accordion type="multiple" defaultValue={['audit']} className="w-full space-y-6">
+                     <Card>
+                        <AccordionItem value="audit">
+                            <AccordionTrigger className="p-6 hover:no-underline">
+                                <div className="flex items-center gap-4">
+                                    <ShieldCheck className="h-8 w-8 text-primary" />
+                                    <div>
+                                        <CardTitle>Centro de Actualización y Verificación</CardTitle>
+                                        <CardDescription>
+                                        Audita y repara la estructura de las bases de datos. Ideal después de una actualización.
+                                        </CardDescription>
+                                    </div>
+                                </div>
+                            </AccordionTrigger>
+                            <AccordionContent className="p-6 pt-0 space-y-6">
+                                <div className='flex flex-wrap gap-4 items-center'>
+                                    <Button onClick={handleRunAudit} disabled={isAuditing}>
+                                        {isAuditing ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <ShieldCheck className="mr-2 h-4 w-4" />}
+                                        Ejecutar Auditoría del Sistema
+                                    </Button>
+                                    {hasAuditErrors && (
+                                        <Alert variant="destructive" className="flex-1">
+                                            <AlertTriangle className="h-4 w-4" />
+                                            <AlertTitle>¡Se encontraron problemas!</AlertTitle>
+                                            <AlertDescription>Revisa los módulos marcados en rojo. Puedes intentar una reparación automática.</AlertDescription>
+                                        </Alert>
+                                    )}
+                                </div>
+                                {auditResults && (
+                                     <div className="space-y-4">
+                                        {auditResults.map(result => (
+                                            <Card key={result.moduleId} className={result.status === 'ERROR' ? 'border-destructive' : 'border-green-600'}>
+                                                <CardHeader>
+                                                    <CardTitle className="flex items-center justify-between">
+                                                         <div className="flex items-center gap-2">
+                                                            {result.status === 'OK' ? <CheckCircle className="h-5 w-5 text-green-600" /> : <AlertTriangle className="h-5 w-5 text-destructive" />}
+                                                            {result.moduleName} ({result.dbFile})
+                                                         </div>
+                                                          {result.status === 'ERROR' && (
+                                                            <Button size="sm" variant="destructive" onClick={() => handleManualMigration(result.moduleId)} disabled={isAuditing}>
+                                                                {isAuditing ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Wrench className="mr-2 h-4 w-4"/>}
+                                                                Intentar Reparación
+                                                            </Button>
+                                                        )}
+                                                    </CardTitle>
+                                                </CardHeader>
+                                                {result.issues.length > 0 && (
+                                                    <CardContent>
+                                                        <ul className="list-disc space-y-1 pl-5 text-sm text-destructive">
+                                                            {result.issues.map((issue, i) => <li key={i}>{issue}</li>)}
+                                                        </ul>
+                                                    </CardContent>
+                                                )}
+                                            </Card>
+                                        ))}
+                                    </div>
+                                )}
+                            </AccordionContent>
+                        </AccordionItem>
+                    </Card>
+
+                    <Card>
                         <AccordionItem value="backups">
                             <AccordionTrigger className="p-6 hover:no-underline">
                                 <div className="flex items-center gap-4">
-                                    <LifeBuoy className="h-8 w-8 text-primary" />
+                                    <LifeBuoy className="h-8 w-8 text-blue-600" />
                                     <div>
                                         <CardTitle>Backups y Puntos de Restauración</CardTitle>
                                         <CardDescription>
@@ -416,7 +478,7 @@ export default function MaintenancePage() {
                                                 <AlertDialogHeader>
                                                     <AlertDialogTitle>¿Confirmar Restauración del Sistema?</AlertDialogTitle>
                                                     <AlertDialogDescription>
-                                                        Esta acción reemplazará **TODAS** las bases de datos actuales con las del backup seleccionado. El servidor se reiniciará automáticamente.
+                                                        Esta acción reemplazará **TODAS** las bases de datos actuales con las del backup seleccionado. Se requiere un reinicio manual del servidor de la aplicación.
                                                     </AlertDialogDescription>
                                                 </AlertDialogHeader>
                                                 <AlertDialogFooter>
@@ -475,59 +537,6 @@ export default function MaintenancePage() {
                         </AccordionItem>
                     </Card>
                     
-                    <Card>
-                        <AccordionItem value="audit">
-                            <AccordionTrigger className="p-6 hover:no-underline">
-                                <div className="flex items-center gap-4">
-                                    <ShieldCheck className="h-8 w-8 text-green-600" />
-                                    <div>
-                                        <CardTitle>Auditoría y Verificación del Sistema</CardTitle>
-                                        <CardDescription>
-                                        Verifica la integridad de todas las bases de datos para asegurar que estén actualizadas.
-                                        </CardDescription>
-                                    </div>
-                                </div>
-                            </AccordionTrigger>
-                            <AccordionContent className="p-6 pt-0 space-y-6">
-                                <div>
-                                    <Button onClick={handleRunAudit} disabled={isAuditing}>
-                                        {isAuditing ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <ShieldCheck className="mr-2 h-4 w-4" />}
-                                        Ejecutar Auditoría de Bases de Datos
-                                    </Button>
-                                </div>
-                                {auditResults && (
-                                     <div className="space-y-4">
-                                        {auditResults.map(result => (
-                                            <Card key={result.moduleId} className={result.status === 'ERROR' ? 'border-destructive' : 'border-green-600'}>
-                                                <CardHeader>
-                                                    <CardTitle className="flex items-center justify-between">
-                                                         <div className="flex items-center gap-2">
-                                                            {result.status === 'OK' ? <CheckCircle className="h-5 w-5 text-green-600" /> : <AlertTriangle className="h-5 w-5 text-destructive" />}
-                                                            {result.moduleName} ({result.dbFile})
-                                                         </div>
-                                                          {result.status === 'ERROR' && (
-                                                            <Button size="sm" variant="destructive" onClick={() => handleManualMigration(result.moduleId)} disabled={isAuditing}>
-                                                                {isAuditing ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Wrench className="mr-2 h-4 w-4"/>}
-                                                                Intentar Corrección
-                                                            </Button>
-                                                        )}
-                                                    </CardTitle>
-                                                </CardHeader>
-                                                {result.issues.length > 0 && (
-                                                    <CardContent>
-                                                        <ul className="list-disc space-y-1 pl-5 text-sm text-destructive">
-                                                            {result.issues.map((issue, i) => <li key={i}>{issue}</li>)}
-                                                        </ul>
-                                                    </CardContent>
-                                                )}
-                                            </Card>
-                                        ))}
-                                    </div>
-                                )}
-                            </AccordionContent>
-                        </AccordionItem>
-                    </Card>
-
                     {hasPermission('admin:maintenance:reset') && (
                         <Card className="border-destructive">
                             <AccordionItem value="danger-zone">
@@ -650,3 +659,5 @@ export default function MaintenancePage() {
         </main>
     );
 }
+
+    

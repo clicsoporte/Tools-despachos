@@ -1,3 +1,4 @@
+
 /**
  * @fileoverview This file handles the SQLite database connection and provides
  * server-side functions for all database operations. It includes initialization,
@@ -8,8 +9,7 @@
 import Database from 'better-sqlite3';
 import path from 'path';
 import fs from 'fs';
-import { initialCompany, initialRoles } from './data';
-import { DB_MODULES } from './db-modules';
+import { initialCompany, initialRoles, DB_MODULES } from './data';
 import type { Company, LogEntry, ApiSettings, User, Product, Customer, Role, QuoteDraft, DatabaseModule, Exemption, ExemptionLaw, StockInfo, StockSettings, ImportQuery, ItemLocation, UpdateBackupInfo, Suggestion, DateRange, Supplier, ErpOrderHeader, ErpOrderLine, Notification, UserPreferences, AuditResult, ErpPurchaseOrderHeader, ErpPurchaseOrderLine, SqlConfig, ProductionOrder } from '@/modules/core/types';
 import bcrypt from 'bcryptjs';
 import Papa from 'papaparse';
@@ -1480,6 +1480,25 @@ export async function runDatabaseAudit(userName: string): Promise<AuditResult[]>
         try {
             const db = await connectDb(dbModule.dbFile);
             
+            // Check for failed migration artifacts
+            const oldTable = db.prepare(`SELECT name FROM sqlite_master WHERE type='table' AND name LIKE '%_old'`).get() as { name: string } | undefined;
+            const tempTable = db.prepare(`SELECT name FROM sqlite_master WHERE type='table' AND name LIKE '%_temp_migration'`).get() as { name: string } | undefined;
+
+            if (oldTable) {
+                audit.status = 'ERROR';
+                overallStatus = 'ERROR';
+                const issue = `MIGRACIÓN FALLIDA: Se encontró una tabla de respaldo '${oldTable.name}'. Esto indica que una actualización anterior falló.`;
+                audit.issues.push(issue);
+                allIssues.push(issue);
+            }
+             if (tempTable) {
+                audit.status = 'ERROR';
+                overallStatus = 'ERROR';
+                const issue = `MIGRACIÓN INCOMPLETA: Se encontró una tabla temporal '${tempTable.name}'.`;
+                audit.issues.push(issue);
+                allIssues.push(issue);
+            }
+
             for (const expectedTable in dbModule.schema) {
                 const tableInfo = db.prepare(`PRAGMA table_info(${expectedTable})`).all() as { name: string }[];
                 
@@ -1550,3 +1569,5 @@ export async function runSingleModuleMigration(moduleId: string): Promise<void> 
 export async function confirmPlannerModification(orderId: number, updatedBy: string): Promise<ProductionOrder> {
     return await confirmPlannerModificationServer(orderId, updatedBy);
 }
+
+    
