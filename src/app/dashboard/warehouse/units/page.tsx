@@ -95,12 +95,26 @@ export default function ManageUnitsPage() {
         loadInitialData();
     }, [setTitle, loadInitialData]);
 
-    const productOptions = useMemo(() =>
-        debouncedProductSearch.length < 2 ? [] : products
-            .filter(p => p.id.toLowerCase().includes(debouncedProductSearch.toLowerCase()) || p.description.toLowerCase().includes(debouncedProductSearch.toLowerCase()))
-            .map(p => ({ value: p.id, label: `[${p.id}] ${p.description}` })),
-        [products, debouncedProductSearch]
-    );
+    const productOptions = useMemo(() => {
+        if (!debouncedProductSearch) return [];
+        const searchLower = debouncedProductSearch.toLowerCase();
+
+        if (searchLower.length < 2 && !/^\d+$/.test(searchLower)) return [];
+
+        const exactMatch = products.find(p => p.id.toLowerCase() === searchLower);
+        const partialMatches = products.filter(p =>
+            p.id.toLowerCase() !== searchLower &&
+            (p.id.toLowerCase().includes(searchLower) || p.description.toLowerCase().includes(searchLower))
+        );
+
+        const results = [];
+        if (exactMatch) {
+            results.push({ value: exactMatch.id, label: `[${exactMatch.id}] ${exactMatch.description}` });
+        }
+        results.push(...partialMatches.map(p => ({ value: p.id, label: `[${p.id}] ${p.description}` })));
+        
+        return results;
+    }, [products, debouncedProductSearch]);
 
     const locationOptions = useMemo(() => {
         const searchTerm = debouncedLocationSearch.trim().toLowerCase();

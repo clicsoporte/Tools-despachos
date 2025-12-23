@@ -67,7 +67,6 @@ export default function AssignItemPage() {
 
     const [productSearchTerm, setProductSearchTerm] = useState('');
     const [isProductSearchOpen, setIsProductSearchOpen] = useState(false);
-    const [exactProductMatch, setExactProductMatch] = useState(true);
     const [clientSearchTerm, setClientSearchTerm] = useState('');
     const [isClientSearchOpen, setIsClientSearchOpen] = useState(false);
     const [locationSearchTerm, setLocationSearchTerm] = useState('');
@@ -104,19 +103,23 @@ export default function AssignItemPage() {
     const productOptions = useMemo(() => {
         if (!debouncedProductSearch) return [];
         const searchLower = debouncedProductSearch.toLowerCase();
-        
-        if (exactProductMatch) {
-            return authProducts
-                .filter(p => p.id.toLowerCase() === searchLower)
-                .map(p => ({ value: p.id, label: `[${p.id}] ${p.description}` }));
+
+        if (searchLower.length < 2 && !/^\d+$/.test(searchLower)) return [];
+
+        const exactMatch = authProducts.find(p => p.id.toLowerCase() === searchLower);
+        const partialMatches = authProducts.filter(p =>
+            p.id.toLowerCase() !== searchLower &&
+            (p.id.toLowerCase().includes(searchLower) || p.description.toLowerCase().includes(searchLower))
+        );
+
+        const results = [];
+        if (exactMatch) {
+            results.push({ value: exactMatch.id, label: `[${exactMatch.id}] ${exactMatch.description}` });
         }
-
-        if (debouncedProductSearch.length < 2) return [];
-
-        return authProducts
-            .filter(p => p.id.toLowerCase().includes(searchLower) || p.description.toLowerCase().includes(searchLower))
-            .map(p => ({ value: p.id, label: `[${p.id}] ${p.description}` }));
-    }, [authProducts, debouncedProductSearch, exactProductMatch]);
+        results.push(...partialMatches.map(p => ({ value: p.id, label: `[${p.id}] ${p.description}` })));
+        
+        return results;
+    }, [authProducts, debouncedProductSearch]);
 
     const clientOptions = useMemo(() =>
         debouncedClientSearch.length < 2 ? [] : authCustomers
@@ -173,7 +176,6 @@ export default function AssignItemPage() {
         setProductSearchTerm('');
         setClientSearchTerm('');
         setLocationSearchTerm('');
-        setExactProductMatch(true);
     }, []);
 
     const handleCreateAssignment = async () => {
@@ -330,10 +332,6 @@ export default function AssignItemPage() {
                                         <div className="space-y-2">
                                             <Label>1. Seleccione un Producto <span className="text-destructive">*</span></Label>
                                             <SearchInput options={productOptions} onSelect={handleSelectProduct} value={productSearchTerm} onValueChange={setProductSearchTerm} placeholder="Buscar producto..." open={isProductSearchOpen} onOpenChange={setIsProductSearchOpen} />
-                                            <div className="flex items-center space-x-2 pt-1">
-                                                <Checkbox id="exact-product-match" checked={exactProductMatch} onCheckedChange={(checked) => setExactProductMatch(checked as boolean)} />
-                                                <Label htmlFor="exact-product-match" className="text-xs font-normal">Buscar coincidencia exacta de código</Label>
-                                            </div>
                                         </div>
                                         <div className="space-y-2">
                                             <Label>2. Seleccione un Cliente (Opcional)</Label>
