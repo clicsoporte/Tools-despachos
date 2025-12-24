@@ -33,7 +33,7 @@ const renderLocationPathAsString = (locationId: number, locations: WarehouseLoca
     while (current) {
         path.unshift(current);
         const parentId = current.parentId;
-        if (!parentId) break; // Exit if there's no parent
+        if (!parentId) break;
         current = locations.find(l => l.id === parentId);
     }
     return path.map(l => l.name).join(' > ');
@@ -124,9 +124,11 @@ export default function PopulationWizardPage() {
 
         try {
             const levelNames = Array.from(selectedLevelIds).map(id => rackLevels.find(l => l.id === id)?.name || '').join(', ');
+            const rackName = rackLevels[0]?.parentId ? renderLocationPathAsString(rackLevels[0].parentId, allLocations) : '';
+
             const { sessionId: newSessionId, locked } = await lockEntity({
                 entityIds: Array.from(selectedLevelIds),
-                entityName: `${rackLevels[0]?.parentId ? renderLocationPathAsString(rackLevels[0].parentId, allLocations) : ''} > ${levelNames}`,
+                lockedEntityName: `${rackName} > ${levelNames}`,
                 userId: user.id,
                 userName: user.name,
             });

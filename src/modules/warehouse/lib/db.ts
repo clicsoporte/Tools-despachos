@@ -182,8 +182,7 @@ export async function runWarehouseMigrations(db: import('better-sqlite3').Databa
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     userId INTEGER NOT NULL,
                     userName TEXT NOT NULL,
-                    lockedEntityId INTEGER NOT NULL,
-                    lockedEntityType TEXT NOT NULL,
+                    lockedEntityIds TEXT NOT NULL,
                     lockedEntityName TEXT NOT NULL,
                     expiresAt TEXT NOT NULL
                 );
@@ -508,7 +507,7 @@ export async function getActiveLocks(): Promise<WizardSession[]> {
     }));
 }
 
-export async function lockEntity(payload: Omit<WizardSession, 'id' | 'expiresAt' | 'lockedEntityIds'> & { entityIds: number[]; entityName: string }): Promise<{ sessionId: number, locked: boolean }> {
+export async function lockEntity(payload: Omit<WizardSession, 'id' | 'expiresAt' > & { entityIds: number[] }): Promise<{ sessionId: number, locked: boolean }> {
     const db = await connectDb(WAREHOUSE_DB_FILE);
     const { entityIds, lockedEntityName, userId, userName } = payload;
     
