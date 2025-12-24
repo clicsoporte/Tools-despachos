@@ -100,7 +100,7 @@ export default function LockManagementPage() {
                                 {locks.length > 0 ? locks.map(lock => (
                                     <TableRow key={lock.id}>
                                         <TableCell className="font-medium">{lock.userName}</TableCell>
-                                        <TableCell>{lock.lockedEntityName}</TableCell>
+                                        <TableCell>{lock.entityName}</TableCell>
                                         <TableCell>{formatDistanceToNow(parseISO(lock.expiresAt), { addSuffix: true, locale: es })}</TableCell>
                                         <TableCell className="text-right">
                                             <AlertDialog>
@@ -114,7 +114,7 @@ export default function LockManagementPage() {
                                                     <AlertDialogHeader>
                                                         <AlertDialogTitle>¿Forzar Liberación?</AlertDialogTitle>
                                                         <AlertDialogDescription>
-                                                            Esta acción finalizará la sesión de <strong>{lock.userName}</strong> en el tramo <strong>{lock.lockedEntityName}</strong>. El usuario perderá cualquier progreso no guardado.
+                                                            Esta acción finalizará la sesión de <strong>{lock.userName}</strong> en el tramo <strong>{lock.entityName}</strong>. El usuario perderá cualquier progreso no guardado.
                                                         </AlertDialogDescription>
                                                     </AlertDialogHeader>
                                                     <AlertDialogFooter>
