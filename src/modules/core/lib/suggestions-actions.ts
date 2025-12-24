@@ -1,4 +1,3 @@
-
 /**
  * @fileoverview Server Actions specifically for handling user suggestions.
  * This file isolates the database logic for suggestions to prevent bundling issues.

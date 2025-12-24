@@ -1,4 +1,3 @@
-
 /**
  * @fileoverview This file defines a central authentication context and hook.
  * It provides a single source of truth for the current user, their role, company data,
@@ -35,8 +34,6 @@ interface AuthContextType {
   };
   unreadSuggestions: Suggestion[];
   unreadSuggestionsCount: number;
-  notifications: Notification[];
-  unreadNotificationsCount: number;
   fetchUnreadNotifications: () => Promise<void>;
   refreshAuth: () => Promise<void>;
   refreshAuthAndRedirect: (path?: string) => Promise<void>;
@@ -87,6 +84,7 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
 
   const updateUnreadSuggestionsCount = useCallback(async () => {
     try {
+        // Optimized to only fetch the count, not the full list
         const count = await getUnreadSuggestionsCountAction();
         setUnreadSuggestionsCount(count);
     } catch (error) {
