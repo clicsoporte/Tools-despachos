@@ -480,6 +480,8 @@ export type WarehouseLocation = {
     code: string; // A unique, human-readable code, e.g., R01-S03-B05
     type: string; // Corresponds to WarehouseLocationLevel['type']
     parentId?: number | null; // For hierarchical structure
+    isLocked?: 0 | 1;
+    lockedBy?: string | null;
 };
 
 /** Tracks physical quantity in a specific location */

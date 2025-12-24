@@ -14,10 +14,8 @@ import { usePageTitle } from '@/modules/core/hooks/usePageTitle';
 import { useAuthorization } from '@/modules/core/hooks/useAuthorization';
 import { logError, logInfo } from '@/modules/core/lib/logger';
 import { getActiveLocks, forceReleaseLock } from '@/modules/warehouse/lib/actions';
-import type { WizardSession } from '@/modules/core/types';
+import type { WarehouseLocation } from '@/modules/core/types';
 import { Loader2, RefreshCw, Unlock } from 'lucide-react';
-import { formatDistanceToNow, parseISO } from 'date-fns';
-import { es } from 'date-fns/locale';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export default function LockManagementPage() {
@@ -26,7 +24,7 @@ export default function LockManagementPage() {
     const { toast } = useToast();
     const [isLoading, setIsLoading] = useState(true);
     const [isReleasing, setIsReleasing] = useState<number | null>(null);
-    const [locks, setLocks] = useState<WizardSession[]>([]);
+    const [locks, setLocks] = useState<WarehouseLocation[]>([]);
 
     const fetchLocks = useCallback(async () => {
         setIsLoading(true);
@@ -46,14 +44,14 @@ export default function LockManagementPage() {
         fetchLocks();
     }, [setTitle, fetchLocks]);
 
-    const handleReleaseLock = async (sessionId: number) => {
-        setIsReleasing(sessionId);
+    const handleReleaseLock = async (locationId: number) => {
+        setIsReleasing(locationId);
         try {
-            await forceReleaseLock(sessionId);
-            toast({ title: "Bloqueo Liberado", description: "La sesión ha sido finalizada y el tramo está disponible." });
+            await forceReleaseLock(locationId);
+            toast({ title: "Bloqueo Liberado", description: "La ubicación está disponible." });
             await fetchLocks(); // Refresh the list
         } catch (error: any) {
-            logError("Failed to force release lock", { error: error.message, sessionId });
+            logError("Failed to force release lock", { error: error.message, locationId });
             toast({ title: "Error", description: "No se pudo liberar el bloqueo.", variant: "destructive" });
         } finally {
             setIsReleasing(null);
@@ -75,9 +73,9 @@ export default function LockManagementPage() {
                     <CardHeader>
                         <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
                             <div>
-                                <CardTitle>Sesiones Activas del Asistente de Poblado</CardTitle>
+                                <CardTitle>Ubicaciones Bloqueadas</CardTitle>
                                 <CardDescription>
-                                    Aquí puedes ver qué usuarios están poblando racks o niveles y liberar bloqueos si es necesario.
+                                    Aquí puedes ver qué ubicaciones están siendo pobladas y por quién. Puedes liberar bloqueos si es necesario.
                                 </CardDescription>
                             </div>
                             <Button onClick={() => fetchLocks()} disabled={isLoading}>
@@ -90,18 +88,18 @@ export default function LockManagementPage() {
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead>Usuario</TableHead>
-                                    <TableHead>Tramo Bloqueado</TableHead>
-                                    <TableHead>Expira en</TableHead>
+                                    <TableHead>Ubicación</TableHead>
+                                    <TableHead>Código</TableHead>
+                                    <TableHead>Bloqueado por</TableHead>
                                     <TableHead className="text-right">Acción</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
                                 {locks.length > 0 ? locks.map(lock => (
                                     <TableRow key={lock.id}>
-                                        <TableCell className="font-medium">{lock.userName}</TableCell>
-                                        <TableCell>{lock.entityName}</TableCell>
-                                        <TableCell>{formatDistanceToNow(parseISO(lock.expiresAt), { addSuffix: true, locale: es })}</TableCell>
+                                        <TableCell className="font-medium">{lock.name}</TableCell>
+                                        <TableCell className="font-mono">{lock.code}</TableCell>
+                                        <TableCell>{lock.lockedBy || 'Desconocido'}</TableCell>
                                         <TableCell className="text-right">
                                             <AlertDialog>
                                                 <AlertDialogTrigger asChild>
@@ -114,7 +112,7 @@ export default function LockManagementPage() {
                                                     <AlertDialogHeader>
                                                         <AlertDialogTitle>¿Forzar Liberación?</AlertDialogTitle>
                                                         <AlertDialogDescription>
-                                                            Esta acción finalizará la sesión de <strong>{lock.userName}</strong> en el tramo <strong>{lock.entityName}</strong>. El usuario perderá cualquier progreso no guardado.
+                                                            Esta acción finalizará la sesión de <strong>{lock.lockedBy}</strong> en la ubicación <strong>{lock.name}</strong>. El usuario podría perder progreso no guardado.
                                                         </AlertDialogDescription>
                                                     </AlertDialogHeader>
                                                     <AlertDialogFooter>
@@ -128,7 +126,7 @@ export default function LockManagementPage() {
                                 )) : (
                                     <TableRow>
                                         <TableCell colSpan={4} className="h-24 text-center text-muted-foreground">
-                                            No hay sesiones de poblado activas en este momento.
+                                            No hay ubicaciones bloqueadas en este momento.
                                         </TableCell>
                                     </TableRow>
                                 )}

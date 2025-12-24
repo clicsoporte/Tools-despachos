@@ -4,7 +4,7 @@
 "use server";
 
 import { connectDb, getAllStock as getAllStockFromMain, getStockSettings as getStockSettingsFromMain } from '@/modules/core/lib/db';
-import type { WarehouseLocation, WarehouseInventoryItem, MovementLog, WarehouseSettings, StockSettings, StockInfo, ItemLocation, InventoryUnit, DateRange, WizardSession } from '@/modules/core/types';
+import type { WarehouseLocation, WarehouseInventoryItem, MovementLog, WarehouseSettings, StockSettings, StockInfo, ItemLocation, InventoryUnit, DateRange } from '@/modules/core/types';
 import { logError } from '@/modules/core/lib/logger';
 
 const WAREHOUSE_DB_FILE = 'warehouse.db';
@@ -18,6 +18,8 @@ export async function initializeWarehouseDb(db: import('better-sqlite3').Databas
             code TEXT UNIQUE NOT NULL,
             type TEXT NOT NULL, -- 'building', 'zone', 'rack', 'shelf', 'bin'
             parentId INTEGER,
+            isLocked INTEGER DEFAULT 0,
+            lockedBy TEXT,
             FOREIGN KEY (parentId) REFERENCES locations(id) ON DELETE CASCADE
         );
 
@@ -72,15 +74,6 @@ export async function initializeWarehouseDb(db: import('better-sqlite3').Databas
             key TEXT PRIMARY KEY,
             value TEXT NOT NULL
         );
-
-        CREATE TABLE IF NOT EXISTS active_wizard_sessions (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            userId INTEGER NOT NULL,
-            userName TEXT NOT NULL,
-            lockedEntityIds TEXT NOT NULL,
-            entityName TEXT NOT NULL,
-            expiresAt TEXT NOT NULL
-        );
     `;
     db.exec(schema);
 
@@ -124,15 +117,14 @@ export async function runWarehouseMigrations(db: import('better-sqlite3').Databa
             const foreignKeyList = db.prepare(`PRAGMA foreign_key_list(${tableName})`).all() as any[];
             const fk = foreignKeyList.find(f => f.from === columnName);
             
-            // Also check if it's pointing to the wrong table (the old bug)
             if ((fk && fk.on_delete !== 'CASCADE') || (fk && fk.table !== 'locations')) {
                 recreateTableWithCascade(tableName, createSql, columnsCsv);
             }
         };
 
         checkAndRecreateForeignKey('locations', 'parentId', 
-            `CREATE TABLE locations (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, code TEXT UNIQUE NOT NULL, type TEXT NOT NULL, parentId INTEGER, FOREIGN KEY (parentId) REFERENCES locations(id) ON DELETE CASCADE);`,
-            'id, name, code, type, parentId');
+            `CREATE TABLE locations (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, code TEXT UNIQUE NOT NULL, type TEXT NOT NULL, parentId INTEGER, isLocked INTEGER DEFAULT 0, lockedBy TEXT, FOREIGN KEY (parentId) REFERENCES locations(id) ON DELETE CASCADE);`,
+            'id, name, code, type, parentId, isLocked, lockedBy');
         
         checkAndRecreateForeignKey('inventory', 'locationId',
             `CREATE TABLE inventory (id INTEGER PRIMARY KEY AUTOINCREMENT, itemId TEXT NOT NULL, locationId INTEGER NOT NULL, quantity REAL NOT NULL DEFAULT 0, lastUpdated TEXT NOT NULL, updatedBy TEXT, FOREIGN KEY (locationId) REFERENCES locations(id) ON DELETE CASCADE, UNIQUE (itemId, locationId));`,
@@ -146,55 +138,31 @@ export async function runWarehouseMigrations(db: import('better-sqlite3').Databa
             `CREATE TABLE inventory_units (id INTEGER PRIMARY KEY AUTOINCREMENT, unitCode TEXT UNIQUE, productId TEXT NOT NULL, humanReadableId TEXT, locationId INTEGER, notes TEXT, createdAt TEXT NOT NULL, createdBy TEXT NOT NULL, FOREIGN KEY (locationId) REFERENCES locations(id) ON DELETE CASCADE);`,
             'id, unitCode, productId, humanReadableId, locationId, notes, createdAt, createdBy');
         
-        // Corrected createSql for 'movements'
         const movementsCreateSql = `CREATE TABLE movements (id INTEGER PRIMARY KEY AUTOINCREMENT, itemId TEXT NOT NULL, quantity REAL NOT NULL, fromLocationId INTEGER, toLocationId INTEGER, timestamp TEXT NOT NULL, userId INTEGER NOT NULL, notes TEXT, FOREIGN KEY (fromLocationId) REFERENCES locations(id) ON DELETE CASCADE, FOREIGN KEY (toLocationId) REFERENCES locations(id) ON DELETE CASCADE);`;
         
-        checkAndRecreateForeignKey('movements', 'fromLocationId',
-            movementsCreateSql,
-            'id, itemId, quantity, fromLocationId, toLocationId, timestamp, userId, notes');
-        
-        // It's possible only one of the two FKs is wrong, so check the other one too.
-        checkAndRecreateForeignKey('movements', 'toLocationId',
-            movementsCreateSql,
-            'id, itemId, quantity, fromLocationId, toLocationId, timestamp, userId, notes');
+        checkAndRecreateForeignKey('movements', 'fromLocationId', movementsCreateSql, 'id, itemId, quantity, fromLocationId, toLocationId, timestamp, userId, notes');
+        checkAndRecreateForeignKey('movements', 'toLocationId', movementsCreateSql, 'id, itemId, quantity, fromLocationId, toLocationId, timestamp, userId, notes');
 
         const inventoryTableInfo = db.prepare(`PRAGMA table_info(inventory)`).all() as { name: string }[];
         if (!inventoryTableInfo.some(c => c.name === 'updatedBy')) {
-            console.log("MIGRATION (warehouse.db): Adding 'updatedBy' to 'inventory' table.");
             db.exec('ALTER TABLE inventory ADD COLUMN updatedBy TEXT');
         }
 
         const itemLocationsTableInfo = db.prepare(`PRAGMA table_info(item_locations)`).all() as { name: string }[];
-        if (!itemLocationsTableInfo.some(c => c.name === 'updatedBy')) {
-            console.log("MIGRATION (warehouse.db): Adding 'updatedBy' to 'item_locations' table.");
-            db.exec('ALTER TABLE item_locations ADD COLUMN updatedBy TEXT');
-        }
-        if (!itemLocationsTableInfo.some(c => c.name === 'updatedAt')) {
-            console.log("MIGRATION (warehouse.db): Adding 'updatedAt' to 'item_locations' table.");
-            db.exec('ALTER TABLE item_locations ADD COLUMN updatedAt TEXT');
+        if (!itemLocationsTableInfo.some(c => c.name === 'updatedBy')) db.exec('ALTER TABLE item_locations ADD COLUMN updatedBy TEXT');
+        if (!itemLocationsTableInfo.some(c => c.name === 'updatedAt')) db.exec('ALTER TABLE item_locations ADD COLUMN updatedAt TEXT');
+        
+        const locationsTableInfo = db.prepare(`PRAGMA table_info(locations)`).all() as { name: string }[];
+        if (!locationsTableInfo.some(c => c.name === 'isLocked')) db.exec('ALTER TABLE locations ADD COLUMN isLocked INTEGER DEFAULT 0');
+        if (!locationsTableInfo.some(c => c.name === 'lockedBy')) db.exec('ALTER TABLE locations ADD COLUMN lockedBy TEXT');
+
+        // Clean up the old, now unused sessions table if it exists
+        const wizardTable = db.prepare(`SELECT name FROM sqlite_master WHERE type='table' AND name='active_wizard_sessions'`).get();
+        if (wizardTable) {
+            console.log("MIGRATION (warehouse.db): Dropping unused 'active_wizard_sessions' table.");
+            db.exec('DROP TABLE active_wizard_sessions');
         }
 
-        const wizardTable = db.prepare(`SELECT name FROM sqlite_master WHERE type='table' AND name='active_wizard_sessions'`).get();
-        if (!wizardTable) {
-             console.log("MIGRATION (warehouse.db): Creating 'active_wizard_sessions' table.");
-             db.exec(`
-                CREATE TABLE IF NOT EXISTS active_wizard_sessions (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    userId INTEGER NOT NULL,
-                    userName TEXT NOT NULL,
-                    lockedEntityIds TEXT NOT NULL,
-                    entityName TEXT NOT NULL,
-                    expiresAt TEXT NOT NULL
-                );
-             `);
-        } else {
-            const wizardTableInfo = db.prepare(`PRAGMA table_info(active_wizard_sessions)`).all() as { name: string }[];
-            const wizardColumns = new Set(wizardTableInfo.map(c => c.name));
-            if (!wizardColumns.has('entityName')) {
-                console.log("MIGRATION (warehouse.db): Adding 'entityName' to 'active_wizard_sessions' table.");
-                db.exec('ALTER TABLE active_wizard_sessions ADD COLUMN entityName TEXT NOT NULL DEFAULT \'unknown\'');
-            }
-        }
     } catch (error) {
         console.error("Error during warehouse migrations:", error);
         logError("Error during warehouse migrations", { error: (error as Error).message });
@@ -473,48 +441,42 @@ export async function updateInventoryUnitLocation(id: number, locationId: number
 
 // --- Wizard Lock Functions ---
 
-export async function getActiveLocks(): Promise<WizardSession[]> {
+export async function getActiveLocks(): Promise<WarehouseLocation[]> {
     const db = await connectDb(WAREHOUSE_DB_FILE);
-    const now = new Date().toISOString();
-    db.prepare('DELETE FROM active_wizard_sessions WHERE expiresAt < ?').run(now);
-    const rows = db.prepare('SELECT * FROM active_wizard_sessions').all() as any[];
-    return rows.map(row => ({
-        ...row,
-        lockedEntityIds: JSON.parse(row.lockedEntityIds)
-    }));
+    return db.prepare('SELECT * FROM locations WHERE isLocked = 1').all() as WarehouseLocation[];
 }
 
-export async function lockEntity(payload: Omit<WizardSession, 'id' | 'expiresAt'>): Promise<{ sessionId: number, locked: boolean }> {
+export async function lockEntity(payload: { entityIds: number[], userName: string }): Promise<{ locked: boolean }> {
     const db = await connectDb(WAREHOUSE_DB_FILE);
-    const { entityIds, entityName, userId, userName } = payload;
-    
-    // Correctly check for conflicts for ANY of the requested IDs
-    const activeLocks = await getActiveLocks();
-    const allCurrentlyLockedIds = new Set<number>(activeLocks.flatMap(lock => lock.lockedEntityIds));
-    const conflict = entityIds.some(id => allCurrentlyLockedIds.has(id));
+    const { entityIds, userName } = payload;
 
-    if (conflict) {
-        return { sessionId: -1, locked: true };
-    }
+    const transaction = db.transaction(() => {
+        const placeholders = entityIds.map(() => '?').join(',');
+        const conflictingLocks = db.prepare(`SELECT id, lockedBy FROM locations WHERE id IN (${placeholders}) AND isLocked = 1`).all(...entityIds) as { id: number; lockedBy: string }[];
+        
+        if (conflictingLocks.length > 0) {
+            return { locked: true };
+        }
 
-    const expiresAt = new Date(Date.now() + 30 * 60 * 1000).toISOString();
-    
-    const info = db.prepare(
-        'INSERT INTO active_wizard_sessions (userId, userName, lockedEntityIds, entityName, expiresAt) VALUES (?, ?, ?, ?, ?)'
-    ).run(userId, userName, JSON.stringify(entityIds), entityName, expiresAt);
+        const stmt = db.prepare(`UPDATE locations SET isLocked = 1, lockedBy = ? WHERE id IN (${placeholders})`);
+        stmt.run(userName, ...entityIds);
+        
+        return { locked: false };
+    });
 
-    const sessionId = info.lastInsertRowid as number;
-    return { sessionId, locked: false };
+    return transaction();
 }
 
-export async function releaseLock(sessionId: number): Promise<void> {
+export async function releaseLock(entityIds: number[]): Promise<void> {
     const db = await connectDb(WAREHOUSE_DB_FILE);
-    db.prepare('DELETE FROM active_wizard_sessions WHERE id = ?').run(sessionId);
+    if (entityIds.length === 0) return;
+    const placeholders = entityIds.map(() => '?').join(',');
+    db.prepare(`UPDATE locations SET isLocked = 0, lockedBy = NULL WHERE id IN (${placeholders})`).run(...entityIds);
 }
 
-export async function forceReleaseLock(sessionId: number): Promise<void> {
+export async function forceReleaseLock(locationId: number): Promise<void> {
     const db = await connectDb(WAREHOUSE_DB_FILE);
-    db.prepare('DELETE FROM active_wizard_sessions WHERE id = ?').run(sessionId);
+    db.prepare('UPDATE locations SET isLocked = 0, lockedBy = NULL WHERE id = ?').run(locationId);
 }
 
 export async function getChildLocations(parentIds: number[]): Promise<WarehouseLocation[]> {

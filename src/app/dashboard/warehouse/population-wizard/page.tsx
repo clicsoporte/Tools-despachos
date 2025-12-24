@@ -13,8 +13,8 @@ import { useToast } from '@/modules/core/hooks/use-toast';
 import { usePageTitle } from '@/modules/core/hooks/usePageTitle';
 import { useAuthorization } from '@/modules/core/hooks/useAuthorization';
 import { logError, logInfo } from '@/modules/core/lib/logger';
-import { getLocations, getChildLocations, lockEntity, releaseLock, assignItemToLocation, getActiveLocks } from '@/modules/warehouse/lib/actions';
-import type { Product, WarehouseLocation, WizardSession } from '@/modules/core/types';
+import { getLocations, getChildLocations, lockEntity, releaseLock, assignItemToLocation } from '@/modules/warehouse/lib/actions';
+import type { Product, WarehouseLocation } from '@/modules/core/types';
 import { useAuth } from '@/modules/core/hooks/useAuth';
 import { SearchInput } from '@/components/ui/search-input';
 import { Loader2, CheckCircle, Play, ArrowRight, ArrowLeft, LogOut } from 'lucide-react';
@@ -53,10 +53,8 @@ export default function PopulationWizardPage() {
     const [selectedRackId, setSelectedRackId] = useState<number | null>(null);
     const [rackLevels, setRackLevels] = useState<WarehouseLocation[]>([]);
     const [selectedLevelIds, setSelectedLevelIds] = useState<Set<number>>(new Set());
-    const [lockedLevelIds, setLockedLevelIds] = useState<Set<number>>(new Set());
 
     // Populating state
-    const [sessionId, setSessionId] = useState<number | null>(null);
     const [locationsToPopulate, setLocationsToPopulate] = useState<WarehouseLocation[]>([]);
     const [currentIndex, setCurrentIndex] = useState(0);
     const [productSearch, setProductSearch] = useState('');
@@ -98,17 +96,11 @@ export default function PopulationWizardPage() {
     const handleSelectRack = async (rackIdStr: string) => {
         const id = Number(rackIdStr);
         setSelectedRackId(id);
-        const levels = allLocations.filter(l => l.parentId === id);
+        const allLocs = await getLocations(); // Re-fetch to get latest lock status
+        setAllLocations(allLocs);
+        const levels = allLocs.filter(l => l.parentId === id);
         setRackLevels(levels);
         setSelectedLevelIds(new Set());
-        
-        // Fetch active locks to disable already locked levels
-        const activeLocks = await getActiveLocks();
-        const currentlyLocked = new Set<number>();
-        activeLocks.forEach(lock => {
-            lock.lockedEntityIds.forEach(lockedId => currentlyLocked.add(lockedId));
-        });
-        setLockedLevelIds(currentlyLocked);
     };
 
     const handleToggleLevel = (levelId: number) => {
@@ -129,39 +121,30 @@ export default function PopulationWizardPage() {
             return;
         }
 
-        // --- Guard Clauses to prevent runtime errors ---
-        if (!rackLevels || !Array.isArray(rackLevels) || rackLevels.length === 0) {
-            toast({ title: 'Error de Datos', description: 'No se encontraron los niveles para el rack seleccionado. Por favor, vuelve a seleccionarlo.', variant: 'destructive' });
+        if (!rackLevels || rackLevels.length === 0 || !allLocations || allLocations.length === 0) {
+            toast({ title: 'Error de Datos', description: 'Los datos de ubicación no se cargaron correctamente. Intenta seleccionar el rack de nuevo.', variant: 'destructive' });
             return;
         }
-        if (!allLocations || !Array.isArray(allLocations)) {
-            toast({ title: 'Error de Carga', description: 'Los datos de ubicaciones no se han cargado correctamente. Intenta refrescar la página.', variant: 'destructive' });
-            return;
-        }
-        // --- End of Guard Clauses ---
 
         setIsLoading(true);
 
         try {
             const levelNames = Array.from(selectedLevelIds).map(id => rackLevels.find(l => l.id === id)?.name || '').join(', ');
             const rackName = rackLevels[0]?.parentId ? renderLocationPathAsString(rackLevels[0].parentId, allLocations) : '';
-
-            const { sessionId: newSessionId, locked } = await lockEntity({
+            const entityName = `${rackName} > ${levelNames}`;
+            
+            const { locked } = await lockEntity({
                 entityIds: Array.from(selectedLevelIds),
-                lockedEntityName: `${rackName} > ${levelNames}`,
-                userId: user.id,
                 userName: user.name,
             });
 
             if (locked) {
                  toast({ title: 'Niveles ya en uso', description: 'Algunos de los niveles seleccionados están siendo poblados por otro usuario.', variant: 'destructive' });
                  setIsLoading(false);
-                 // Re-fetch locks to update UI
-                 handleSelectRack(String(selectedRackId));
+                 handleSelectRack(String(selectedRackId)); // Re-fetch to update lock status display
                  return;
             }
 
-            setSessionId(newSessionId);
             const childLocations = await getChildLocations(Array.from(selectedLevelIds));
             
             setLocationsToPopulate(childLocations.sort((a,b) => a.code.localeCompare(b.code, undefined, { numeric: true })));
@@ -216,8 +199,8 @@ export default function PopulationWizardPage() {
     };
 
     const handleFinishWizard = async () => {
-        if (sessionId) {
-            await releaseLock(sessionId);
+        if (selectedLevelIds.size > 0) {
+            await releaseLock(Array.from(selectedLevelIds));
         }
         setWizardStep('finished');
     };
@@ -226,8 +209,6 @@ export default function PopulationWizardPage() {
         setSelectedRackId(null);
         setRackLevels([]);
         setSelectedLevelIds(new Set());
-        setLockedLevelIds(new Set());
-        setSessionId(null);
         setLocationsToPopulate([]);
         setCurrentIndex(0);
         setLastAssignment(null);
@@ -279,10 +260,10 @@ export default function PopulationWizardPage() {
                                                 id={`level-${level.id}`}
                                                 onCheckedChange={() => handleToggleLevel(level.id)}
                                                 checked={selectedLevelIds.has(level.id)}
-                                                disabled={lockedLevelIds.has(level.id)}
+                                                disabled={!!level.isLocked}
                                             />
-                                            <Label htmlFor={`level-${level.id}`} className={`font-normal ${lockedLevelIds.has(level.id) ? 'text-muted-foreground italic' : ''}`}>
-                                                {level.name} {lockedLevelIds.has(level.id) && '(En uso)'}
+                                            <Label htmlFor={`level-${level.id}`} className={`font-normal ${!!level.isLocked ? 'text-muted-foreground italic' : ''}`}>
+                                                {level.name} {!!level.isLocked && `(En uso por ${level.lockedBy || 'otro usuario'})`}
                                             </Label>
                                         </div>
                                     ))}

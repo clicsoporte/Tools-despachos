@@ -31,7 +31,7 @@ import {
     forceReleaseLock as forceReleaseLockServer,
     getChildLocations as getChildLocationsServer,
 } from './db';
-import type { WarehouseSettings, WarehouseLocation, WarehouseInventoryItem, MovementLog, ItemLocation, InventoryUnit, WizardSession } from '@/modules/core/types';
+import type { WarehouseSettings, WarehouseLocation, WarehouseInventoryItem, MovementLog, ItemLocation, InventoryUnit } from '@/modules/core/types';
 import { logInfo, logWarn } from '@/modules/core/lib/logger';
 
 export const getWarehouseSettings = async (): Promise<WarehouseSettings> => getWarehouseSettingsServer();
@@ -97,8 +97,8 @@ export const deleteInventoryUnit = async (id: number): Promise<void> => deleteIn
 export const getInventoryUnitById = async (id: string | number): Promise<InventoryUnit | null> => getInventoryUnitByIdServer(id);
 
 // --- Wizard Lock Actions ---
-export const getActiveLocks = async (): Promise<WizardSession[]> => getActiveLocksServer();
-export const lockEntity = async (payload: Omit<WizardSession, 'id' | 'expiresAt'>): Promise<{ sessionId: number, locked: boolean }> => lockEntityServer(payload);
-export const releaseLock = async (sessionId: number): Promise<void> => releaseLockServer(sessionId);
-export const forceReleaseLock = async (sessionId: number): Promise<void> => forceReleaseLockServer(sessionId);
+export const getActiveLocks = async (): Promise<WarehouseLocation[]> => getActiveLocksServer();
+export const lockEntity = async (payload: { entityIds: number[]; userName: string }): Promise<{ locked: boolean }> => lockEntityServer(payload);
+export const releaseLock = async (entityIds: number[]): Promise<void> => releaseLockServer(entityIds);
+export const forceReleaseLock = async (locationId: number): Promise<void> => forceReleaseLockServer(locationId);
 export const getChildLocations = async (parentIds: number[]): Promise<WarehouseLocation[]> => getChildLocationsServer(parentIds);
