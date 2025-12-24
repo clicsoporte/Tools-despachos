@@ -165,7 +165,7 @@ export function Header({ title }: HeaderProps) {
   return (
     <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b bg-background/80 px-4 backdrop-blur-sm shrink-0">
       <div className="flex items-center gap-2">
-        <SidebarTrigger className="h-8 w-8 bg-primary/10 text-primary animate-pulse" >
+        <SidebarTrigger className="h-8 w-8 bg-primary/10 text-primary" >
           <PanelLeft />
         </SidebarTrigger>
         <h1 className="text-2xl font-semibold hidden sm:block">{title}</h1>
