@@ -484,7 +484,7 @@ export async function getActiveLocks(): Promise<WizardSession[]> {
     }));
 }
 
-export async function lockEntity(payload: Omit<WizardSession, 'id' | 'expiresAt' | 'lockedEntityIds'> & { entityIds: number[] }): Promise<{ sessionId: number, locked: boolean }> {
+export async function lockEntity(payload: Omit<WizardSession, 'id' | 'expiresAt'> & { entityIds: number[] }): Promise<{ sessionId: number, locked: boolean }> {
     const db = await connectDb(WAREHOUSE_DB_FILE);
     const { entityIds, entityName, userId, userName } = payload;
     
