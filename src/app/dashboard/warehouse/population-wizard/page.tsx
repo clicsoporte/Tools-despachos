@@ -57,7 +57,7 @@ export default function PopulationWizardPage() {
     const [currentIndex, setCurrentIndex] = useState(0);
     const [productSearch, setProductSearch] = useState('');
     const [isProductSearchOpen, setProductSearchOpen] = useState(false);
-    const [lastAssignment, setLastAssignment] = useState<{ location: string; product: string } | null>(null);
+    const [lastAssignment, setLastAssignment] = useState<{ location: string; product: string; code: string; } | null>(null);
 
     const [debouncedProductSearch] = useDebounce(productSearch, 300);
 
@@ -153,8 +153,14 @@ export default function PopulationWizardPage() {
         if (productId && user) {
             try {
                 await assignItemToLocation(productId, currentLocation.id, null, user.name);
-                const productName = authProducts.find(p => p.id === productId)?.description || productId;
-                setLastAssignment({ location: renderLocationPathAsString(currentLocation.id, allLocations), product: productName });
+                const product = authProducts.find(p => p.id === productId);
+                const productName = product?.description || productId;
+                const productCode = product?.id || productId;
+                setLastAssignment({ 
+                    location: renderLocationPathAsString(currentLocation.id, allLocations), 
+                    product: productName,
+                    code: productCode
+                });
             } catch (err: any) {
                 toast({ title: "Error al Asignar", description: err.message, variant: "destructive" });
                 return; // Stop flow on error
@@ -292,8 +298,8 @@ export default function PopulationWizardPage() {
                         {lastAssignment && (
                              <Alert variant="default">
                                 <AlertTitle className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-green-500"/>Asignación Anterior</AlertTitle>
-                                <AlertDescription className="text-xs">
-                                    {lastAssignment.product} en {lastAssignment.location}
+                                <AlertDescription className="text-xs text-left">
+                                    <span className="font-semibold">[{lastAssignment.code}]</span> {lastAssignment.product} en <span className="italic">{lastAssignment.location}</span>
                                 </AlertDescription>
                             </Alert>
                         )}
@@ -317,7 +323,7 @@ export default function PopulationWizardPage() {
                     </CardHeader>
                     <CardContent>
                         {lastAssignment && (
-                             <p className="text-sm text-muted-foreground">Última asignación: {lastAssignment.product} en {lastAssignment.location}.</p>
+                             <p className="text-sm text-muted-foreground">Última asignación: [{lastAssignment.code}] {lastAssignment.product} en {lastAssignment.location}.</p>
                         )}
                     </CardContent>
                     <CardFooter className="justify-center">
