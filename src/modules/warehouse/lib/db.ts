@@ -77,8 +77,7 @@ export async function initializeWarehouseDb(db: import('better-sqlite3').Databas
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             userId INTEGER NOT NULL,
             userName TEXT NOT NULL,
-            lockedEntityId INTEGER NOT NULL,
-            lockedEntityType TEXT NOT NULL,
+            lockedEntityIds TEXT NOT NULL,
             lockedEntityName TEXT NOT NULL,
             expiresAt TEXT NOT NULL
         );
@@ -189,6 +188,35 @@ export async function runWarehouseMigrations(db: import('better-sqlite3').Databa
                     expiresAt TEXT NOT NULL
                 );
              `);
+        } else {
+            const wizardTableInfo = db.prepare(`PRAGMA table_info(active_wizard_sessions)`).all() as { name: string }[];
+            const wizardColumns = new Set(wizardTableInfo.map(c => c.name));
+            if (!wizardColumns.has('lockedEntityIds')) {
+                db.exec('ALTER TABLE active_wizard_sessions ADD COLUMN lockedEntityIds TEXT');
+                // Potentially migrate old lockedEntityId to new column here if needed.
+                // For simplicity, we are assuming a fresh start for this feature.
+                // You might run: db.exec('UPDATE active_wizard_sessions SET lockedEntityIds = JSON_ARRAY(lockedEntityId)');
+            }
+             if (wizardColumns.has('lockedEntityId') || wizardColumns.has('lockedEntityType')) {
+                console.log("MIGRATION (warehouse.db): Recreating 'active_wizard_sessions' table with new schema.");
+                db.transaction(() => {
+                    const tempCreate = `CREATE TABLE active_wizard_sessions_temp (id INTEGER, userId INTEGER, userName TEXT, lockedEntityIds TEXT, lockedEntityName TEXT, expiresAt TEXT);`;
+                    db.exec(tempCreate);
+                    // No data migration as the structure is fundamentally changing
+                    db.exec('DROP TABLE active_wizard_sessions;');
+                    db.exec(`
+                        CREATE TABLE active_wizard_sessions (
+                            id INTEGER PRIMARY KEY AUTOINCREMENT,
+                            userId INTEGER NOT NULL,
+                            userName TEXT NOT NULL,
+                            lockedEntityIds TEXT NOT NULL,
+                            lockedEntityName TEXT NOT NULL,
+                            expiresAt TEXT NOT NULL
+                        );
+                    `);
+                    db.exec('DROP TABLE active_wizard_sessions_temp;');
+                })();
+            }
         }
 
     } catch (error) {
@@ -473,44 +501,40 @@ export async function getActiveLocks(): Promise<WizardSession[]> {
     const db = await connectDb(WAREHOUSE_DB_FILE);
     const now = new Date().toISOString();
     db.prepare('DELETE FROM active_wizard_sessions WHERE expiresAt < ?').run(now);
-    return db.prepare('SELECT * FROM active_wizard_sessions').all() as WizardSession[];
+    const rows = db.prepare('SELECT * FROM active_wizard_sessions').all() as any[];
+    return rows.map(row => ({
+        ...row,
+        lockedEntityIds: JSON.parse(row.lockedEntityIds)
+    }));
 }
 
 export async function lockEntity(payload: Omit<WizardSession, 'id' | 'expiresAt' | 'lockedEntityIds'> & { entityIds: number[]; entityName: string }): Promise<{ sessionId: number, locked: boolean }> {
     const db = await connectDb(WAREHOUSE_DB_FILE);
-    const { entityIds, entityType, lockedEntityName, userId, userName } = payload;
+    const { entityIds, lockedEntityName, userId, userName } = payload;
     
-    const placeholders = entityIds.map(() => '?').join(',');
-    const checkStmt = db.prepare(`SELECT * FROM active_wizard_sessions WHERE lockedEntityType = ? AND lockedEntityId IN (${placeholders})`);
-    const existingLock = checkStmt.get(entityType, ...entityIds) as WizardSession | undefined;
-
-    if (existingLock) {
-        return { sessionId: existingLock.id, locked: true };
+    const allLocks = await getActiveLocks(); // This already cleans up expired locks
+    const requestedIds = new Set(entityIds);
+    
+    for (const lock of allLocks) {
+        for (const lockedId of lock.lockedEntityIds) {
+            if (requestedIds.has(lockedId)) {
+                return { sessionId: lock.id, locked: true }; // Found an overlap
+            }
+        }
     }
 
     const expiresAt = new Date(Date.now() + 30 * 60 * 1000).toISOString();
     
-    const insertStmt = db.prepare('INSERT INTO active_wizard_sessions (userId, userName, lockedEntityId, lockedEntityType, lockedEntityName, expiresAt) VALUES (?, ?, ?, ?, ?, ?)');
-    
-    const transaction = db.transaction(() => {
-        let lastId = 0;
-        for (const entityId of entityIds) {
-            const info = insertStmt.run(userId, userName, entityId, entityType, lockedEntityName, expiresAt);
-            lastId = info.lastInsertRowid as number;
-        }
-        return lastId;
-    });
+    const info = db.prepare(
+        'INSERT INTO active_wizard_sessions (userId, userName, lockedEntityIds, lockedEntityName, expiresAt) VALUES (?, ?, ?, ?, ?)'
+    ).run(userId, userName, JSON.stringify(entityIds), lockedEntityName, expiresAt);
 
-    const sessionId = transaction();
+    const sessionId = info.lastInsertRowid as number;
     return { sessionId, locked: false };
 }
 
 export async function releaseLock(sessionId: number): Promise<void> {
     const db = await connectDb(WAREHOUSE_DB_FILE);
-    // This is tricky as one session could span multiple locked rows. We can't use the session ID.
-    // We'd need to know which user/entity combo to release. For now, releasing one ID might be enough.
-    // A better approach would be a session UUID that links all rows.
-    // For now, let's assume the sessionId is the ID of the last inserted lock record.
     db.prepare('DELETE FROM active_wizard_sessions WHERE id = ?').run(sessionId);
 }
 

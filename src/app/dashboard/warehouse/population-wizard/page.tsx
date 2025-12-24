@@ -14,7 +14,7 @@ import { usePageTitle } from '@/modules/core/hooks/usePageTitle';
 import { useAuthorization } from '@/modules/core/hooks/useAuthorization';
 import { logError, logInfo } from '@/modules/core/lib/logger';
 import { getLocations, getChildLocations, lockEntity, releaseLock, assignItemToLocation } from '@/modules/warehouse/lib/actions';
-import type { Product, WarehouseLocation } from '@/modules/core/types';
+import type { Product, WarehouseLocation, WizardSession } from '@/modules/core/types';
 import { useAuth } from '@/modules/core/hooks/useAuth';
 import { SearchInput } from '@/components/ui/search-input';
 import { Loader2, CheckCircle, Play, ArrowRight, ArrowLeft, LogOut } from 'lucide-react';
@@ -26,11 +26,15 @@ import { Progress } from '@/components/ui/progress';
 type WizardStep = 'setup' | 'populating' | 'finished';
 
 const renderLocationPathAsString = (locationId: number, locations: WarehouseLocation[]): string => {
+    if (!locationId) return '';
     const path: WarehouseLocation[] = [];
     let current: WarehouseLocation | undefined = locations.find(l => l.id === locationId);
+    
     while (current) {
         path.unshift(current);
-        current = current?.parentId ? locations.find(l => l.id === current.parentId) : undefined;
+        const parentId = current.parentId;
+        if (!parentId) break; // Exit if there's no parent
+        current = locations.find(l => l.id === parentId);
     }
     return path.map(l => l.name).join(' > ');
 };
@@ -121,9 +125,8 @@ export default function PopulationWizardPage() {
         try {
             const levelNames = Array.from(selectedLevelIds).map(id => rackLevels.find(l => l.id === id)?.name || '').join(', ');
             const { sessionId: newSessionId, locked } = await lockEntity({
-                entityType: 'level',
                 entityIds: Array.from(selectedLevelIds),
-                lockedEntityName: `${rackLevels[0]?.parentId ? renderLocationPathAsString(rackLevels[0].parentId, allLocations) : ''} > ${levelNames}`,
+                entityName: `${rackLevels[0]?.parentId ? renderLocationPathAsString(rackLevels[0].parentId, allLocations) : ''} > ${levelNames}`,
                 userId: user.id,
                 userName: user.name,
             });
