@@ -13,7 +13,7 @@ import { useToast } from '@/modules/core/hooks/use-toast';
 import { usePageTitle } from '@/modules/core/hooks/usePageTitle';
 import { useAuthorization } from '@/modules/core/hooks/useAuthorization';
 import { logError, logInfo } from '@/modules/core/lib/logger';
-import { getLocations, getChildLocations, lockEntity, releaseLock, assignItemToLocation } from '@/modules/warehouse/lib/actions';
+import { getLocations, getChildLocations, lockEntity, releaseLock, assignItemToLocation, getActiveLocks } from '@/modules/warehouse/lib/actions';
 import type { Product, WarehouseLocation, WizardSession } from '@/modules/core/types';
 import { useAuth } from '@/modules/core/hooks/useAuth';
 import { SearchInput } from '@/components/ui/search-input';
@@ -53,7 +53,7 @@ export default function PopulationWizardPage() {
     const [selectedRackId, setSelectedRackId] = useState<number | null>(null);
     const [rackLevels, setRackLevels] = useState<WarehouseLocation[]>([]);
     const [selectedLevelIds, setSelectedLevelIds] = useState<Set<number>>(new Set());
-    const [lockedLevels, setLockedLevels] = useState<any[]>([]);
+    const [lockedLevelIds, setLockedLevelIds] = useState<Set<number>>(new Set());
 
     // Populating state
     const [sessionId, setSessionId] = useState<number | null>(null);
@@ -95,12 +95,20 @@ export default function PopulationWizardPage() {
         loadInitial();
     }, [setTitle, toast]);
 
-    const handleSelectRack = (rackId: string) => {
-        const id = Number(rackId);
+    const handleSelectRack = async (rackIdStr: string) => {
+        const id = Number(rackIdStr);
         setSelectedRackId(id);
         const levels = allLocations.filter(l => l.parentId === id);
         setRackLevels(levels);
-        setSelectedLevelIds(new Set()); // Reset selection
+        setSelectedLevelIds(new Set());
+        
+        // Fetch active locks to disable already locked levels
+        const activeLocks = await getActiveLocks();
+        const currentlyLocked = new Set<number>();
+        activeLocks.forEach(lock => {
+            lock.lockedEntityIds.forEach(lockedId => currentlyLocked.add(lockedId));
+        });
+        setLockedLevelIds(currentlyLocked);
     };
 
     const handleToggleLevel = (levelId: number) => {
@@ -136,6 +144,8 @@ export default function PopulationWizardPage() {
             if (locked) {
                  toast({ title: 'Niveles ya en uso', description: 'Algunos de los niveles seleccionados están siendo poblados por otro usuario.', variant: 'destructive' });
                  setIsLoading(false);
+                 // Re-fetch locks to update UI
+                 handleSelectRack(String(selectedRackId));
                  return;
             }
 
@@ -204,7 +214,7 @@ export default function PopulationWizardPage() {
         setSelectedRackId(null);
         setRackLevels([]);
         setSelectedLevelIds(new Set());
-        setLockedLevels([]);
+        setLockedLevelIds(new Set());
         setSessionId(null);
         setLocationsToPopulate([]);
         setCurrentIndex(0);
@@ -257,8 +267,11 @@ export default function PopulationWizardPage() {
                                                 id={`level-${level.id}`}
                                                 onCheckedChange={() => handleToggleLevel(level.id)}
                                                 checked={selectedLevelIds.has(level.id)}
+                                                disabled={lockedLevelIds.has(level.id)}
                                             />
-                                            <Label htmlFor={`level-${level.id}`} className="font-normal">{level.name}</Label>
+                                            <Label htmlFor={`level-${level.id}`} className={`font-normal ${lockedLevelIds.has(level.id) ? 'text-muted-foreground italic' : ''}`}>
+                                                {level.name} {lockedLevelIds.has(level.id) && '(En uso)'}
+                                            </Label>
                                         </div>
                                     ))}
                                 </div>
@@ -289,17 +302,23 @@ export default function PopulationWizardPage() {
                             <Label className="text-muted-foreground">Ubicación Actual</Label>
                             <p className="text-2xl font-bold">{renderLocationPathAsString(locationsToPopulate[currentIndex]?.id, allLocations)}</p>
                         </div>
-                        <SearchInput
-                            options={productOptions}
-                            onSelect={handleProductSelect}
-                            value={productSearch}
-                            onValueChange={setProductSearch}
-                            placeholder="Escanear o buscar producto..."
-                            onKeyDown={handleKeyDown}
-                            open={isProductSearchOpen}
-                            onOpenChange={setProductSearchOpen}
-                            className="text-lg h-14"
-                        />
+                         <div className="flex flex-col gap-4">
+                            <SearchInput
+                                options={productOptions}
+                                onSelect={handleProductSelect}
+                                value={productSearch}
+                                onValueChange={setProductSearch}
+                                placeholder="Escanear o buscar producto..."
+                                onKeyDown={handleKeyDown}
+                                open={isProductSearchOpen}
+                                onOpenChange={setProductSearchOpen}
+                                className="text-lg h-14"
+                            />
+                             <div className="flex justify-center gap-2">
+                                <Button className="w-1/2" variant="outline" onClick={handlePrevious} disabled={currentIndex === 0}><ArrowLeft className="mr-2"/> Anterior</Button>
+                                <Button className="w-1/2" variant="secondary" onClick={handleSkip}>Omitir <ArrowRight className="ml-2"/></Button>
+                            </div>
+                        </div>
                         {lastAssignment && (
                              <Alert variant="default">
                                 <AlertTitle className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-green-500"/>Asignación Anterior</AlertTitle>
@@ -309,9 +328,7 @@ export default function PopulationWizardPage() {
                             </Alert>
                         )}
                     </CardContent>
-                    <CardFooter className="flex justify-between">
-                        <Button variant="outline" onClick={handlePrevious} disabled={currentIndex === 0}><ArrowLeft className="mr-2"/> Anterior</Button>
-                        <Button variant="secondary" onClick={handleSkip}>Omitir <ArrowRight className="ml-2"/></Button>
+                    <CardFooter className="justify-center">
                         <Button variant="destructive" onClick={handleFinishWizard}>Finalizar Sesión</Button>
                     </CardFooter>
                 </Card>
