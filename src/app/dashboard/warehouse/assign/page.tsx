@@ -87,7 +87,7 @@ export default function AssignItemPage() {
             const [locs, allAssigns] = await Promise.all([getLocations(), getAllItemLocations()]);
             setAllLocations(locs);
             setSelectableLocations(getSelectableLocations(locs));
-            setAllAssignments(allAssigns.sort((a, b) => b.id - a.id)); // Sort by most recent
+            setAllAssignments(allAssigns.sort((a, b) => (b.id ?? 0) - (a.id ?? 0))); // Sort by most recent
         } catch (error) {
             logError("Failed to load data for assignment page", { error });
             toast({ title: "Error de Carga", description: "No se pudieron cargar los datos necesarios.", variant: "destructive" });
@@ -274,25 +274,26 @@ export default function AssignItemPage() {
             currentY += (productCodeLines.length * 100);
     
             doc.setFont("Helvetica", "normal");
-            doc.setFontSize(48);
+            doc.setFontSize(52);
             const descriptionLines = doc.splitTextToSize(product.description, pageWidth - 80);
             doc.text(descriptionLines, pageWidth / 2, currentY + 40, { align: "center" });
     
             const bottomY = pageHeight - 40;
             
             if (client) {
-              doc.setFontSize(22);
+              doc.setFontSize(24);
               doc.setFont("Helvetica", "bold");
-              doc.text("Cliente:", 40, bottomY - 60);
+              doc.text("Cliente:", 40, bottomY - 70);
               doc.setFont("Helvetica", "normal");
-              doc.text(client.name, 120, bottomY - 60);
+              doc.text(client.name, 120, bottomY - 70);
             }
             
-            doc.setFontSize(32);
+            doc.setFontSize(28);
             doc.setFont("Helvetica", "bold");
             doc.text("Ubicación:", 40, bottomY - 20);
             doc.setFont("Helvetica", "normal");
-            doc.text(locationString, 160, bottomY - 20);
+            doc.setFontSize(36);
+            doc.text(locationString, 40, bottomY + 20);
     
             doc.setFontSize(9);
             doc.setTextColor(150);
