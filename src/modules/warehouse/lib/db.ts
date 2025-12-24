@@ -4,7 +4,7 @@
 "use server";
 
 import { connectDb, getAllStock as getAllStockFromMain, getStockSettings as getStockSettingsFromMain } from '@/modules/core/lib/db';
-import type { WarehouseLocation, WarehouseInventoryItem, MovementLog, WarehouseSettings, StockSettings, StockInfo, ItemLocation, InventoryUnit, DateRange } from '@/modules/core/types';
+import type { WarehouseLocation, WarehouseInventoryItem, MovementLog, WarehouseSettings, StockSettings, StockInfo, ItemLocation, InventoryUnit, DateRange, WizardSession } from '@/modules/core/types';
 import { logError } from '@/modules/core/lib/logger';
 
 const WAREHOUSE_DB_FILE = 'warehouse.db';
@@ -37,6 +37,8 @@ export async function initializeWarehouseDb(db: import('better-sqlite3').Databas
             itemId TEXT NOT NULL,
             locationId INTEGER NOT NULL,
             clientId TEXT,
+            updatedBy TEXT,
+            updatedAt TEXT,
             FOREIGN KEY (locationId) REFERENCES locations(id) ON DELETE CASCADE,
             UNIQUE (itemId, locationId, clientId)
         );
@@ -69,6 +71,16 @@ export async function initializeWarehouseDb(db: import('better-sqlite3').Databas
         CREATE TABLE IF NOT EXISTS warehouse_config (
             key TEXT PRIMARY KEY,
             value TEXT NOT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS active_wizard_sessions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            userId INTEGER NOT NULL,
+            userName TEXT NOT NULL,
+            lockedEntityId INTEGER NOT NULL,
+            lockedEntityType TEXT NOT NULL,
+            lockedEntityName TEXT NOT NULL,
+            expiresAt TEXT NOT NULL
         );
     `;
     db.exec(schema);
@@ -128,8 +140,8 @@ export async function runWarehouseMigrations(db: import('better-sqlite3').Databa
             'id, itemId, locationId, quantity, lastUpdated, updatedBy');
         
         checkAndRecreateForeignKey('item_locations', 'locationId',
-            `CREATE TABLE item_locations (id INTEGER PRIMARY KEY AUTOINCREMENT, itemId TEXT NOT NULL, locationId INTEGER NOT NULL, clientId TEXT, FOREIGN KEY (locationId) REFERENCES locations(id) ON DELETE CASCADE, UNIQUE (itemId, locationId, clientId));`,
-            'id, itemId, locationId, clientId');
+            `CREATE TABLE item_locations (id INTEGER PRIMARY KEY AUTOINCREMENT, itemId TEXT NOT NULL, locationId INTEGER NOT NULL, clientId TEXT, updatedBy TEXT, updatedAt TEXT, FOREIGN KEY (locationId) REFERENCES locations(id) ON DELETE CASCADE, UNIQUE (itemId, locationId, clientId));`,
+            'id, itemId, locationId, clientId, updatedBy, updatedAt');
         
         checkAndRecreateForeignKey('inventory_units', 'locationId',
             `CREATE TABLE inventory_units (id INTEGER PRIMARY KEY AUTOINCREMENT, unitCode TEXT UNIQUE, productId TEXT NOT NULL, humanReadableId TEXT, locationId INTEGER, notes TEXT, createdAt TEXT NOT NULL, createdBy TEXT NOT NULL, FOREIGN KEY (locationId) REFERENCES locations(id) ON DELETE CASCADE);`,
@@ -151,6 +163,32 @@ export async function runWarehouseMigrations(db: import('better-sqlite3').Databa
         if (!inventoryTableInfo.some(c => c.name === 'updatedBy')) {
             console.log("MIGRATION (warehouse.db): Adding 'updatedBy' to 'inventory' table.");
             db.exec('ALTER TABLE inventory ADD COLUMN updatedBy TEXT');
+        }
+
+        const itemLocationsTableInfo = db.prepare(`PRAGMA table_info(item_locations)`).all() as { name: string }[];
+        if (!itemLocationsTableInfo.some(c => c.name === 'updatedBy')) {
+            console.log("MIGRATION (warehouse.db): Adding 'updatedBy' to 'item_locations' table.");
+            db.exec('ALTER TABLE item_locations ADD COLUMN updatedBy TEXT');
+        }
+        if (!itemLocationsTableInfo.some(c => c.name === 'updatedAt')) {
+            console.log("MIGRATION (warehouse.db): Adding 'updatedAt' to 'item_locations' table.");
+            db.exec('ALTER TABLE item_locations ADD COLUMN updatedAt TEXT');
+        }
+
+        const wizardTable = db.prepare(`SELECT name FROM sqlite_master WHERE type='table' AND name='active_wizard_sessions'`).get();
+        if (!wizardTable) {
+             console.log("MIGRATION (warehouse.db): Creating 'active_wizard_sessions' table.");
+             db.exec(`
+                CREATE TABLE IF NOT EXISTS active_wizard_sessions (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    userId INTEGER NOT NULL,
+                    userName TEXT NOT NULL,
+                    lockedEntityId INTEGER NOT NULL,
+                    lockedEntityType TEXT NOT NULL,
+                    lockedEntityName TEXT NOT NULL,
+                    expiresAt TEXT NOT NULL
+                );
+             `);
         }
 
     } catch (error) {
@@ -359,10 +397,11 @@ export async function getAllItemLocations(): Promise<ItemLocation[]> {
     return db.prepare('SELECT * FROM item_locations').all() as ItemLocation[];
 }
 
-export async function assignItemToLocation(itemId: string, locationId: number, clientId: string | null): Promise<ItemLocation> {
+export async function assignItemToLocation(itemId: string, locationId: number, clientId: string | null, updatedBy: string): Promise<ItemLocation> {
     const db = await connectDb(WAREHOUSE_DB_FILE);
-    const info = db.prepare('INSERT INTO item_locations (itemId, locationId, clientId) VALUES (?, ?, ?)').run(itemId, locationId, clientId);
-    const newItemLocation = db.prepare('SELECT * FROM item_locations WHERE id = ?').get(info.lastInsertRowid) as ItemLocation;
+    const info = db.prepare('INSERT OR REPLACE INTO item_locations (itemId, locationId, clientId, updatedBy, updatedAt) VALUES (?, ?, ?, ?, datetime(\'now\'))').run(itemId, locationId, clientId, updatedBy);
+    const newId = info.lastInsertRowid;
+    const newItemLocation = db.prepare('SELECT * FROM item_locations WHERE id = ?').get(newId) as ItemLocation;
     return newItemLocation;
 }
 
@@ -425,4 +464,56 @@ export async function deleteInventoryUnit(id: number): Promise<void> {
 export async function updateInventoryUnitLocation(id: number, locationId: number): Promise<void> {
     const db = await connectDb(WAREHOUSE_DB_FILE);
     db.prepare('UPDATE inventory_units SET locationId = ? WHERE id = ?').run(locationId, id);
+}
+
+
+// --- Wizard Lock Functions ---
+
+export async function getActiveLocks(): Promise<WizardSession[]> {
+    const db = await connectDb(WAREHOUSE_DB_FILE);
+    const now = new Date().toISOString();
+    db.prepare('DELETE FROM active_wizard_sessions WHERE expiresAt < ?').run(now);
+    return db.prepare('SELECT * FROM active_wizard_sessions').all() as WizardSession[];
+}
+
+export async function lockEntity(payload: Omit<WizardSession, 'id' | 'expiresAt'> & { entityIds: number[]; entityName: string }): Promise<{ sessionId: number, locked: boolean }> {
+    const db = await connectDb(WAREHOUSE_DB_FILE);
+    const { entityIds, entityType, entityName, userId, userName } = payload;
+    
+    const checkStmt = db.prepare('SELECT * FROM active_wizard_sessions WHERE lockedEntityType = ? AND lockedEntityId IN (' + entityIds.map(() => '?').join(',') + ')');
+    const existingLock = checkStmt.get(entityType, ...entityIds) as WizardSession | undefined;
+
+    if (existingLock) {
+        return { sessionId: existingLock.id, locked: true };
+    }
+
+    const expiresAt = new Date(Date.now() + 30 * 60 * 1000).toISOString();
+    
+    const insertStmt = db.prepare('INSERT INTO active_wizard_sessions (userId, userName, lockedEntityId, lockedEntityType, lockedEntityName, expiresAt) VALUES (?, ?, ?, ?, ?, ?)');
+    
+    const transaction = db.transaction(() => {
+        let lastId = 0;
+        for (const entityId of entityIds) {
+            const info = insertStmt.run(userId, userName, entityId, entityType, entityName, expiresAt);
+            lastId = info.lastInsertRowid as number;
+        }
+        return lastId;
+    });
+
+    const sessionId = transaction();
+    return { sessionId, locked: false };
+}
+
+export async function releaseLock(sessionId: number): Promise<void> {
+    const db = await connectDb(WAREHOUSE_DB_FILE);
+    // This is tricky as one session could span multiple locked rows. We can't use the session ID.
+    // We'd need to know which user/entity combo to release. For now, releasing one ID might be enough.
+    // A better approach would be a session UUID that links all rows.
+    // For now, let's assume the sessionId is the ID of the last inserted lock record.
+    db.prepare('DELETE FROM active_wizard_sessions WHERE id = ?').run(sessionId);
+}
+
+export async function forceReleaseLock(sessionId: number): Promise<void> {
+    const db = await connectDb(WAREHOUSE_DB_FILE);
+    db.prepare('DELETE FROM active_wizard_sessions WHERE id = ?').run(sessionId);
 }

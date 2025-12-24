@@ -25,7 +25,8 @@ import { useDebounce } from 'use-debounce';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
+import { es } from 'date-fns/locale';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Checkbox } from '@/components/ui/checkbox';
 import jsPDF from "jspdf";
@@ -187,7 +188,7 @@ export default function AssignItemPage() {
 
         setIsSubmitting(true);
         try {
-            const newAssignment = await assignItemToLocation(selectedProductId, parseInt(selectedLocationId, 10), selectedClientId);
+            const newAssignment = await assignItemToLocation(selectedProductId, parseInt(selectedLocationId, 10), selectedClientId, user.name);
             setAllAssignments(prev => [newAssignment, ...prev]);
             
             toast({ title: "Asignación Creada", description: "La asociación ha sido guardada." });
@@ -382,6 +383,7 @@ export default function AssignItemPage() {
                                     <TableHead>Producto</TableHead>
                                     <TableHead>Cliente</TableHead>
                                     <TableHead>Ubicación Asignada</TableHead>
+                                    <TableHead>Última Actualización</TableHead>
                                     <TableHead className="text-right">Acciones</TableHead>
                                 </TableRow>
                             </TableHeader>
@@ -398,6 +400,14 @@ export default function AssignItemPage() {
                                             </TableCell>
                                             <TableCell>{client?.name || <span className="italic text-muted-foreground">General</span>}</TableCell>
                                             <TableCell>{locationString}</TableCell>
+                                            <TableCell className="text-xs text-muted-foreground">
+                                                {a.updatedBy ? (
+                                                    <>
+                                                        <div>{a.updatedBy}</div>
+                                                        <div>{format(parseISO(a.updatedAt!), 'dd/MM/yyyy HH:mm', { locale: es })}</div>
+                                                    </>
+                                                ) : 'N/A'}
+                                            </TableCell>
                                             <TableCell className="text-right">
                                                 <Button variant="ghost" size="icon" onClick={() => handlePrintRackLabel(a)}>
                                                     <Printer className="h-4 w-4 text-blue-600" />
@@ -426,7 +436,7 @@ export default function AssignItemPage() {
                                     );
                                 }) : (
                                     <TableRow>
-                                        <TableCell colSpan={4} className="text-center h-24 text-muted-foreground">
+                                        <TableCell colSpan={5} className="text-center h-24 text-muted-foreground">
                                             {debouncedGlobalFilter ? 'No se encontraron asignaciones con ese filtro.' : 'No hay asignaciones creadas.'}
                                         </TableCell>
                                     </TableRow>

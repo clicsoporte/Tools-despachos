@@ -25,8 +25,12 @@ import {
     deleteInventoryUnit as deleteInventoryUnitServer,
     getInventoryUnitById as getInventoryUnitByIdServer,
     addBulkLocations as addBulkLocationsServer,
+    getActiveLocks as getActiveLocksServer,
+    lockEntity as lockEntityServer,
+    releaseLock as releaseLockServer,
+    forceReleaseLock as forceReleaseLockServer,
 } from './db';
-import type { WarehouseSettings, WarehouseLocation, WarehouseInventoryItem, MovementLog, ItemLocation, InventoryUnit } from '@/modules/core/types';
+import type { WarehouseSettings, WarehouseLocation, WarehouseInventoryItem, MovementLog, ItemLocation, InventoryUnit, WizardSession } from '@/modules/core/types';
 import { logInfo, logWarn } from '@/modules/core/lib/logger';
 
 export const getWarehouseSettings = async (): Promise<WarehouseSettings> => getWarehouseSettingsServer();
@@ -74,7 +78,7 @@ export const updateInventory = async(itemId: string, locationId: number, quantit
 // --- Simple Mode Actions ---
 export const getItemLocations = async (itemId: string): Promise<ItemLocation[]> => getItemLocationsServer(itemId);
 export const getAllItemLocations = async (): Promise<ItemLocation[]> => getAllItemLocationsServer();
-export const assignItemToLocation = async (itemId: string, locationId: number, clientId: string | null): Promise<ItemLocation> => assignItemToLocationServer(itemId, locationId, clientId);
+export const assignItemToLocation = async (itemId: string, locationId: number, clientId: string | null, updatedBy: string): Promise<ItemLocation> => assignItemToLocationServer(itemId, locationId, clientId, updatedBy);
 
 export async function unassignItemFromLocation(itemLocationId: number): Promise<void> {
     await logInfo(`Item location mapping with ID ${itemLocationId} was removed.`);
@@ -90,3 +94,9 @@ export const addInventoryUnit = async (unit: Omit<InventoryUnit, 'id' | 'created
 export const getInventoryUnits = async (): Promise<InventoryUnit[]> => getInventoryUnitsServer();
 export const deleteInventoryUnit = async (id: number): Promise<void> => deleteInventoryUnitServer(id);
 export const getInventoryUnitById = async (id: string | number): Promise<InventoryUnit | null> => getInventoryUnitByIdServer(id);
+
+// --- Wizard Lock Actions ---
+export const getActiveLocks = async (): Promise<WizardSession[]> => getActiveLocksServer();
+export const lockEntity = async (payload: Omit<WizardSession, 'id' | 'lockedEntityName' | 'expiresAt'> & { entityIds: number[]; entityName: string }): Promise<{ sessionId: number, locked: boolean }> => lockEntityServer(payload);
+export const releaseLock = async (sessionId: number): Promise<void> => releaseLockServer(sessionId);
+export const forceReleaseLock = async (sessionId: number): Promise<void> => forceReleaseLockServer(sessionId);
