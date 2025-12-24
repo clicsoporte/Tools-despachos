@@ -78,7 +78,7 @@ export async function initializeWarehouseDb(db: import('better-sqlite3').Databas
             userId INTEGER NOT NULL,
             userName TEXT NOT NULL,
             lockedEntityIds TEXT NOT NULL,
-            lockedEntityName TEXT NOT NULL,
+            entityName TEXT NOT NULL,
             expiresAt TEXT NOT NULL
         );
     `;
@@ -183,16 +183,20 @@ export async function runWarehouseMigrations(db: import('better-sqlite3').Databa
                     userId INTEGER NOT NULL,
                     userName TEXT NOT NULL,
                     lockedEntityIds TEXT NOT NULL,
-                    lockedEntityName TEXT NOT NULL,
+                    entityName TEXT NOT NULL,
                     expiresAt TEXT NOT NULL
                 );
              `);
         } else {
             const wizardTableInfo = db.prepare(`PRAGMA table_info(active_wizard_sessions)`).all() as { name: string }[];
             const wizardColumns = new Set(wizardTableInfo.map(c => c.name));
-            if (!wizardColumns.has('lockedEntityName')) {
-                console.log("MIGRATION (warehouse.db): Adding 'lockedEntityName' to 'active_wizard_sessions' table.");
-                db.exec('ALTER TABLE active_wizard_sessions ADD COLUMN lockedEntityName TEXT NOT NULL DEFAULT \'unknown\'');
+            if (!wizardColumns.has('entityName')) {
+                console.log("MIGRATION (warehouse.db): Adding 'entityName' to 'active_wizard_sessions' table.");
+                db.exec('ALTER TABLE active_wizard_sessions ADD COLUMN entityName TEXT NOT NULL DEFAULT \'unknown\'');
+            }
+            if (wizardColumns.has('lockedEntityName')) {
+                 console.log("MIGRATION (warehouse.db): Renaming 'lockedEntityName' to 'entityName' in 'active_wizard_sessions' table.");
+                 db.exec('ALTER TABLE active_wizard_sessions RENAME COLUMN lockedEntityName TO entityName');
             }
         }
     } catch (error) {
@@ -484,9 +488,9 @@ export async function getActiveLocks(): Promise<WizardSession[]> {
     }));
 }
 
-export async function lockEntity(payload: Omit<WizardSession, 'id' | 'expiresAt' | 'lockedEntityIds'> & { entityIds: number[] }): Promise<{ sessionId: number, locked: boolean }> {
+export async function lockEntity(payload: Omit<WizardSession, 'id' | 'expiresAt'> & { entityIds: number[] }): Promise<{ sessionId: number, locked: boolean }> {
     const db = await connectDb(WAREHOUSE_DB_FILE);
-    const { entityIds, lockedEntityName, userId, userName } = payload;
+    const { entityIds, entityName, userId, userName } = payload;
     
     // This SQL query finds if any of the requested IDs are already present in any active session.
     const conflictingLock = db.prepare(`
@@ -502,8 +506,8 @@ export async function lockEntity(payload: Omit<WizardSession, 'id' | 'expiresAt'
     const expiresAt = new Date(Date.now() + 30 * 60 * 1000).toISOString();
     
     const info = db.prepare(
-        'INSERT INTO active_wizard_sessions (userId, userName, lockedEntityIds, lockedEntityName, expiresAt) VALUES (?, ?, ?, ?, ?)'
-    ).run(userId, userName, JSON.stringify(entityIds), lockedEntityName, expiresAt);
+        'INSERT INTO active_wizard_sessions (userId, userName, lockedEntityIds, entityName, expiresAt) VALUES (?, ?, ?, ?, ?)'
+    ).run(userId, userName, JSON.stringify(entityIds), entityName, expiresAt);
 
     const sessionId = info.lastInsertRowid as number;
     return { sessionId, locked: false };
