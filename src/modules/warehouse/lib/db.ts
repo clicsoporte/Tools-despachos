@@ -476,11 +476,12 @@ export async function getActiveLocks(): Promise<WizardSession[]> {
     return db.prepare('SELECT * FROM active_wizard_sessions').all() as WizardSession[];
 }
 
-export async function lockEntity(payload: Omit<WizardSession, 'id' | 'expiresAt'> & { entityIds: number[]; entityName: string }): Promise<{ sessionId: number, locked: boolean }> {
+export async function lockEntity(payload: Omit<WizardSession, 'id' | 'expiresAt' | 'lockedEntityIds'> & { entityIds: number[]; entityName: string }): Promise<{ sessionId: number, locked: boolean }> {
     const db = await connectDb(WAREHOUSE_DB_FILE);
-    const { entityIds, entityType, entityName, userId, userName } = payload;
+    const { entityIds, entityType, lockedEntityName, userId, userName } = payload;
     
-    const checkStmt = db.prepare('SELECT * FROM active_wizard_sessions WHERE lockedEntityType = ? AND lockedEntityId IN (' + entityIds.map(() => '?').join(',') + ')');
+    const placeholders = entityIds.map(() => '?').join(',');
+    const checkStmt = db.prepare(`SELECT * FROM active_wizard_sessions WHERE lockedEntityType = ? AND lockedEntityId IN (${placeholders})`);
     const existingLock = checkStmt.get(entityType, ...entityIds) as WizardSession | undefined;
 
     if (existingLock) {
@@ -494,7 +495,7 @@ export async function lockEntity(payload: Omit<WizardSession, 'id' | 'expiresAt'
     const transaction = db.transaction(() => {
         let lastId = 0;
         for (const entityId of entityIds) {
-            const info = insertStmt.run(userId, userName, entityId, entityType, entityName, expiresAt);
+            const info = insertStmt.run(userId, userName, entityId, entityType, lockedEntityName, expiresAt);
             lastId = info.lastInsertRowid as number;
         }
         return lastId;

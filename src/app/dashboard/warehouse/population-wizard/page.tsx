@@ -30,7 +30,7 @@ const renderLocationPathAsString = (locationId: number, locations: WarehouseLoca
     let current: WarehouseLocation | undefined = locations.find(l => l.id === locationId);
     while (current) {
         path.unshift(current);
-        current = current.parentId ? locations.find(l => l.id === current.parentId) : undefined;
+        current = current?.parentId ? locations.find(l => l.id === current.parentId) : undefined;
     }
     return path.map(l => l.name).join(' > ');
 };
@@ -123,7 +123,7 @@ export default function PopulationWizardPage() {
             const { sessionId: newSessionId, locked } = await lockEntity({
                 entityType: 'level',
                 entityIds: Array.from(selectedLevelIds),
-                entityName: `${rackLevels[0]?.parentId ? renderLocationPathAsString(rackLevels[0].parentId, allLocations) : ''} > ${levelNames}`,
+                lockedEntityName: `${rackLevels[0]?.parentId ? renderLocationPathAsString(rackLevels[0].parentId, allLocations) : ''} > ${levelNames}`,
                 userId: user.id,
                 userName: user.name,
             });

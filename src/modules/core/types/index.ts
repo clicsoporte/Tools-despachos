@@ -663,7 +663,7 @@ export type WizardSession = {
     id: number;
     userId: number;
     userName: string;
-    lockedEntityId: number;
+    lockedEntityIds: number[];
     lockedEntityType: 'rack' | 'level';
     lockedEntityName: string;
     expiresAt: string;
