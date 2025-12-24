@@ -486,25 +486,30 @@ export async function getActiveLocks(): Promise<WizardSession[]> {
 
 export async function lockEntity(payload: Omit<WizardSession, 'id' | 'expiresAt'>): Promise<{ sessionId: number, locked: boolean }> {
     const db = await connectDb(WAREHOUSE_DB_FILE);
-    const { entityIds, entityName, userId, userName } = payload;
+    const { lockedEntityIds, entityName, userId, userName } = payload;
     
-    const placeholders = entityIds.map(() => '?').join(',');
-    const conflictingLock = db.prepare(`
-        SELECT s.id
-        FROM active_wizard_sessions s, json_each(s.lockedEntityIds) as item
-        WHERE item.value IN (${placeholders}) AND s.expiresAt > datetime('now')
-        LIMIT 1
-    `).get(...entityIds) as { id: number } | undefined;
+    const placeholders = lockedEntityIds.map(() => '?').join(',');
+    const activeLocks = db.prepare(`SELECT lockedEntityIds FROM active_wizard_sessions WHERE expiresAt > datetime('now')`).all() as { lockedEntityIds: string }[];
     
-    if (conflictingLock) {
-        return { sessionId: conflictingLock.id, locked: true };
+    const allLockedIds = new Set<number>();
+    activeLocks.forEach(lock => {
+        try {
+            const ids: number[] = JSON.parse(lock.lockedEntityIds);
+            ids.forEach(id => allLockedIds.add(id));
+        } catch {}
+    });
+
+    const conflict = lockedEntityIds.some(id => allLockedIds.has(id));
+
+    if (conflict) {
+        return { sessionId: -1, locked: true };
     }
 
     const expiresAt = new Date(Date.now() + 30 * 60 * 1000).toISOString();
     
     const info = db.prepare(
         'INSERT INTO active_wizard_sessions (userId, userName, lockedEntityIds, entityName, expiresAt) VALUES (?, ?, ?, ?, ?)'
-    ).run(userId, userName, JSON.stringify(entityIds), entityName, expiresAt);
+    ).run(userId, userName, JSON.stringify(lockedEntityIds), entityName, expiresAt);
 
     const sessionId = info.lastInsertRowid as number;
     return { sessionId, locked: false };
