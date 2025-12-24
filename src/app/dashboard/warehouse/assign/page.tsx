@@ -274,24 +274,25 @@ export default function AssignItemPage() {
             currentY += (productCodeLines.length * 100);
     
             doc.setFont("Helvetica", "normal");
-            doc.setFontSize(36);
+            doc.setFontSize(48);
             const descriptionLines = doc.splitTextToSize(product.description, pageWidth - 80);
             doc.text(descriptionLines, pageWidth / 2, currentY + 40, { align: "center" });
     
             const bottomY = pageHeight - 40;
-            doc.setFontSize(18);
             
             if (client) {
+              doc.setFontSize(22);
               doc.setFont("Helvetica", "bold");
               doc.text("Cliente:", 40, bottomY - 60);
               doc.setFont("Helvetica", "normal");
               doc.text(client.name, 120, bottomY - 60);
             }
             
+            doc.setFontSize(32);
             doc.setFont("Helvetica", "bold");
-            doc.text("Ubicación:", 40, bottomY - 30);
+            doc.text("Ubicación:", 40, bottomY - 20);
             doc.setFont("Helvetica", "normal");
-            doc.text(locationString, 130, bottomY - 30);
+            doc.text(locationString, 160, bottomY - 20);
     
             doc.setFontSize(9);
             doc.setTextColor(150);
