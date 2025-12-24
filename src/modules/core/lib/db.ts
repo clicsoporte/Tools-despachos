@@ -50,7 +50,8 @@ export async function initializeMainDatabase(db: import('better-sqlite3').Databa
             recentActivity TEXT,
             securityQuestion TEXT,
             securityAnswer TEXT,
-            forcePasswordChange BOOLEAN DEFAULT FALSE
+            forcePasswordChange BOOLEAN DEFAULT FALSE,
+            activeWizardSession TEXT
         );
         CREATE TABLE IF NOT EXISTS roles (
             id TEXT PRIMARY KEY,
@@ -291,6 +292,11 @@ async function checkAndApplyMigrations(db: import('better-sqlite3').Database) {
         if (!userColumns.has('forcePasswordChange')) {
             console.log("MIGRATION: Adding forcePasswordChange to users table.");
             db.exec(`ALTER TABLE users ADD COLUMN forcePasswordChange BOOLEAN DEFAULT FALSE`);
+        }
+
+        if (!userColumns.has('activeWizardSession')) {
+            console.log("MIGRATION: Adding activeWizardSession to users table.");
+            db.exec(`ALTER TABLE users ADD COLUMN activeWizardSession TEXT`);
         }
 
         const companyTableInfo = db.prepare(`PRAGMA table_info(company_settings)`).all() as { name: string }[];
@@ -1603,4 +1609,20 @@ export async function runSingleModuleMigration(moduleId: string): Promise<void> 
 // Wrapper to solve re-export issue
 export async function confirmPlannerModification(orderId: number, updatedBy: string): Promise<ProductionOrder> {
     return await confirmPlannerModificationServer(orderId, updatedBy);
+}
+
+export async function saveWizardSession(userId: number, sessionData: any): Promise<void> {
+    const db = await connectDb();
+    db.prepare(`UPDATE users SET activeWizardSession = ? WHERE id = ?`).run(JSON.stringify(sessionData), userId);
+}
+
+export async function clearWizardSession(userId: number): Promise<void> {
+    const db = await connectDb();
+    db.prepare(`UPDATE users SET activeWizardSession = NULL WHERE id = ?`).run(userId);
+}
+
+export async function getActiveWizardSession(userId: number): Promise<any | null> {
+    const db = await connectDb();
+    const row = db.prepare(`SELECT activeWizardSession FROM users WHERE id = ?`).get(userId) as { activeWizardSession: string | null } | undefined;
+    return row?.activeWizardSession ? JSON.parse(row.activeWizardSession) : null;
 }

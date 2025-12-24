@@ -23,6 +23,7 @@ export type User = {
   securityQuestion?: string;
   securityAnswer?: string;
   forcePasswordChange?: boolean | number;
+  activeWizardSession?: string | null;
 };
 
 /**
@@ -662,13 +663,11 @@ export type AuditResult = {
 };
 
 export type WizardSession = {
-    id: number;
-    userId: number;
-    userName: string;
-    lockedEntityIds: number[];
-    entityName: string;
-    expiresAt: string;
+    rackId: number;
+    levelIds: number[];
+    currentIndex: number;
 };
+
 
 // --- Suggestion Box Types ---
 export type Suggestion = {

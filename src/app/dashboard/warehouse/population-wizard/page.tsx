@@ -13,8 +13,8 @@ import { useToast } from '@/modules/core/hooks/use-toast';
 import { usePageTitle } from '@/modules/core/hooks/usePageTitle';
 import { useAuthorization } from '@/modules/core/hooks/useAuthorization';
 import { logError, logInfo } from '@/modules/core/lib/logger';
-import { getLocations, getChildLocations, lockEntity, releaseLock, assignItemToLocation } from '@/modules/warehouse/lib/actions';
-import type { Product, WarehouseLocation } from '@/modules/core/types';
+import { getLocations, getChildLocations, lockEntity, releaseLock, assignItemToLocation, getActiveWizardSession, saveWizardSession, clearWizardSession } from '@/modules/warehouse/lib/actions';
+import type { Product, WarehouseLocation, WizardSession } from '@/modules/core/types';
 import { useAuth } from '@/modules/core/hooks/useAuth';
 import { SearchInput } from '@/components/ui/search-input';
 import { Loader2, CheckCircle, Play, ArrowRight, ArrowLeft, LogOut } from 'lucide-react';
@@ -23,7 +23,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { Progress } from '@/components/ui/progress';
 
-type WizardStep = 'setup' | 'populating' | 'finished';
+type WizardStep = 'setup' | 'populating' | 'finished' | 'resume';
 
 const renderLocationPathAsString = (locationId: number, locations: WarehouseLocation[]): string => {
     if (!locationId) return '';
@@ -49,12 +49,10 @@ export default function PopulationWizardPage() {
     const [wizardStep, setWizardStep] = useState<WizardStep>('setup');
     const [allLocations, setAllLocations] = useState<WarehouseLocation[]>([]);
     
-    // Setup state
     const [selectedRackId, setSelectedRackId] = useState<number | null>(null);
     const [rackLevels, setRackLevels] = useState<WarehouseLocation[]>([]);
     const [selectedLevelIds, setSelectedLevelIds] = useState<Set<number>>(new Set());
 
-    // Populating state
     const [locationsToPopulate, setLocationsToPopulate] = useState<WarehouseLocation[]>([]);
     const [currentIndex, setCurrentIndex] = useState(0);
     const [productSearch, setProductSearch] = useState('');
@@ -62,6 +60,7 @@ export default function PopulationWizardPage() {
     const [lastAssignment, setLastAssignment] = useState<{ location: string; product: string; code: string; } | null>(null);
 
     const [debouncedProductSearch] = useDebounce(productSearch, 300);
+    const [existingSession, setExistingSession] = useState<WizardSession | null>(null);
 
     const rackOptions = useMemo(() => 
         allLocations.filter(l => l.type === 'rack').map(r => ({ value: String(r.id), label: `${r.name} (${r.code})` })),
@@ -82,16 +81,25 @@ export default function PopulationWizardPage() {
         const loadInitial = async () => {
             setIsLoading(true);
             try {
-                const locs = await getLocations();
+                const [locs, session] = await Promise.all([
+                    getLocations(),
+                    user ? getActiveWizardSession(user.id) : Promise.resolve(null)
+                ]);
                 setAllLocations(locs);
+                if (session) {
+                    setExistingSession(session);
+                    setWizardStep('resume');
+                }
             } catch (err: any) {
-                toast({ title: 'Error', description: 'No se pudieron cargar las ubicaciones.', variant: 'destructive' });
+                toast({ title: 'Error', description: 'No se pudieron cargar los datos iniciales.', variant: 'destructive' });
             } finally {
                 setIsLoading(false);
             }
         };
-        loadInitial();
-    }, [setTitle, toast]);
+        if (user) {
+            loadInitial();
+        }
+    }, [setTitle, toast, user]);
 
     const handleSelectRack = async (rackIdStr: string) => {
         const id = Number(rackIdStr);
@@ -125,18 +133,11 @@ export default function PopulationWizardPage() {
             toast({ title: 'Error de Datos', description: 'Los datos de ubicación no se cargaron correctamente. Intenta seleccionar el rack de nuevo.', variant: 'destructive' });
             return;
         }
-
+        
         setIsLoading(true);
 
         try {
-            const levelNames = Array.from(selectedLevelIds).map(id => rackLevels.find(l => l.id === id)?.name || '').join(', ');
-            const rackName = rackLevels[0]?.parentId ? renderLocationPathAsString(rackLevels[0].parentId, allLocations) : '';
-            const entityName = `${rackName} > ${levelNames}`;
-            
-            const { locked } = await lockEntity({
-                entityIds: Array.from(selectedLevelIds),
-                userName: user.name,
-            });
+            const { locked } = await lockEntity({ entityIds: Array.from(selectedLevelIds), userName: user.name });
 
             if (locked) {
                  toast({ title: 'Niveles ya en uso', description: 'Algunos de los niveles seleccionados están siendo poblados por otro usuario.', variant: 'destructive' });
@@ -146,8 +147,11 @@ export default function PopulationWizardPage() {
             }
 
             const childLocations = await getChildLocations(Array.from(selectedLevelIds));
-            
             setLocationsToPopulate(childLocations.sort((a,b) => a.code.localeCompare(b.code, undefined, { numeric: true })));
+            
+            const sessionData: WizardSession = { rackId: selectedRackId, levelIds: Array.from(selectedLevelIds), currentIndex: 0 };
+            await saveWizardSession(user.id, sessionData);
+
             setCurrentIndex(0);
             setWizardStep('populating');
             
@@ -177,8 +181,13 @@ export default function PopulationWizardPage() {
             }
         }
         setProductSearch('');
-        if (currentIndex < locationsToPopulate.length - 1) {
-            setCurrentIndex(prev => prev + 1);
+        const nextIndex = currentIndex + 1;
+        
+        if (nextIndex < locationsToPopulate.length) {
+            setCurrentIndex(nextIndex);
+            if (user) {
+                await saveWizardSession(user.id, { rackId: selectedRackId, levelIds: Array.from(selectedLevelIds), currentIndex: nextIndex });
+            }
         } else {
             await handleFinishWizard();
         }
@@ -194,12 +203,17 @@ export default function PopulationWizardPage() {
         assignAndNext(); // No product ID, just move to next
     };
 
-    const handlePrevious = () => {
-        setCurrentIndex(prev => Math.max(0, prev - 1));
+    const handlePrevious = async () => {
+        const prevIndex = Math.max(0, currentIndex - 1);
+        setCurrentIndex(prevIndex);
+        if (user) {
+            await saveWizardSession(user.id, { rackId: selectedRackId, levelIds: Array.from(selectedLevelIds), currentIndex: prevIndex });
+        }
     };
 
     const handleFinishWizard = async () => {
-        if (selectedLevelIds.size > 0) {
+        if (user) {
+            await clearWizardSession(user.id);
             await releaseLock(Array.from(selectedLevelIds));
         }
         setWizardStep('finished');
@@ -212,7 +226,34 @@ export default function PopulationWizardPage() {
         setLocationsToPopulate([]);
         setCurrentIndex(0);
         setLastAssignment(null);
+        setExistingSession(null);
         setWizardStep('setup');
+    };
+
+    const abandonSession = async () => {
+        if(user && existingSession) {
+            await clearWizardSession(user.id);
+            await releaseLock(existingSession.levelIds);
+        }
+        resetWizard();
+    };
+
+    const resumeSession = async () => {
+        if (!user || !existingSession) return;
+        setIsLoading(true);
+        try {
+            await handleSelectRack(String(existingSession.rackId));
+            setSelectedLevelIds(new Set(existingSession.levelIds));
+            const childLocations = await getChildLocations(existingSession.levelIds);
+            setLocationsToPopulate(childLocations.sort((a,b) => a.code.localeCompare(b.code, undefined, { numeric: true })));
+            setCurrentIndex(existingSession.currentIndex);
+            setWizardStep('populating');
+        } catch (error: any) {
+            toast({ title: 'Error al Reanudar', description: 'No se pudo cargar la sesión. Puede que necesites abandonarla y empezar de nuevo.', variant: 'destructive'});
+            resetWizard();
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -281,6 +322,24 @@ export default function PopulationWizardPage() {
                  </Card>
             )}
 
+            {wizardStep === 'resume' && (
+                <Card className="w-full max-w-md">
+                    <CardHeader>
+                        <CardTitle>Sesión en Progreso</CardTitle>
+                        <CardDescription>
+                            Tienes una sesión de poblado sin terminar.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <p>¿Deseas continuar donde la dejaste o abandonarla para empezar de nuevo?</p>
+                    </CardContent>
+                    <CardFooter className="justify-between">
+                        <Button variant="destructive" onClick={abandonSession}>Abandonar</Button>
+                        <Button onClick={resumeSession}>Continuar Sesión</Button>
+                    </CardFooter>
+                </Card>
+            )}
+
             {wizardStep === 'populating' && (
                 <Card className="w-full max-w-lg">
                     <CardHeader>
@@ -333,7 +392,7 @@ export default function PopulationWizardPage() {
                         <CheckCircle className="mx-auto h-16 w-16 text-green-500"/>
                         <CardTitle className="mt-4 text-2xl">Sesión Finalizada</CardTitle>
                         <CardDescription>
-                            El poblado guiado ha terminado y el tramo ha sido liberado.
+                            El poblado guiado ha terminado y los niveles han sido liberados.
                         </CardDescription>
                     </CardHeader>
                     <CardContent>

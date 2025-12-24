@@ -1,4 +1,3 @@
-
 /**
  * @fileoverview Defines the expected database schema for the main intratool.db.
  * This is used by the central database audit system to verify integrity.
@@ -7,7 +6,7 @@
 import type { ExpectedSchema } from '@/modules/core/types';
 
 export const mainDbSchema: ExpectedSchema = {
-    'users': ['id', 'name', 'email', 'password', 'phone', 'whatsapp', 'erpAlias', 'avatar', 'role', 'recentActivity', 'securityQuestion', 'securityAnswer', 'forcePasswordChange'],
+    'users': ['id', 'name', 'email', 'password', 'phone', 'whatsapp', 'erpAlias', 'avatar', 'role', 'recentActivity', 'securityQuestion', 'securityAnswer', 'forcePasswordChange', 'activeWizardSession'],
     'roles': ['id', 'name', 'permissions'],
     'company_settings': ['id', 'name', 'taxId', 'address', 'phone', 'email', 'logoUrl', 'systemName', 'quotePrefix', 'nextQuoteNumber', 'decimalPlaces', 'quoterShowTaxId', 'searchDebounceTime', 'syncWarningHours', 'lastSyncTimestamp', 'importMode', 'customerFilePath', 'productFilePath', 'exemptionFilePath', 'stockFilePath', 'locationFilePath', 'cabysFilePath', 'supplierFilePath', 'erpPurchaseOrderHeaderFilePath', 'erpPurchaseOrderLineFilePath'],
     'logs': ['id', 'timestamp', 'type', 'message', 'details'],
