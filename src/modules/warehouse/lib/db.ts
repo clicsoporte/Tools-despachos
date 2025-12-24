@@ -78,7 +78,7 @@ export async function initializeWarehouseDb(db: import('better-sqlite3').Databas
             userId INTEGER NOT NULL,
             userName TEXT NOT NULL,
             lockedEntityIds TEXT NOT NULL,
-            lockedEntityName TEXT NOT NULL,
+            entityName TEXT NOT NULL,
             expiresAt TEXT NOT NULL
         );
     `;
@@ -183,41 +183,11 @@ export async function runWarehouseMigrations(db: import('better-sqlite3').Databa
                     userId INTEGER NOT NULL,
                     userName TEXT NOT NULL,
                     lockedEntityIds TEXT NOT NULL,
-                    lockedEntityName TEXT NOT NULL,
+                    entityName TEXT NOT NULL,
                     expiresAt TEXT NOT NULL
                 );
              `);
-        } else {
-            const wizardTableInfo = db.prepare(`PRAGMA table_info(active_wizard_sessions)`).all() as { name: string }[];
-            const wizardColumns = new Set(wizardTableInfo.map(c => c.name));
-            if (!wizardColumns.has('lockedEntityIds')) {
-                db.exec('ALTER TABLE active_wizard_sessions ADD COLUMN lockedEntityIds TEXT');
-                // Potentially migrate old lockedEntityId to new column here if needed.
-                // For simplicity, we are assuming a fresh start for this feature.
-                // You might run: db.exec('UPDATE active_wizard_sessions SET lockedEntityIds = JSON_ARRAY(lockedEntityId)');
-            }
-             if (wizardColumns.has('lockedEntityId') || wizardColumns.has('lockedEntityType')) {
-                console.log("MIGRATION (warehouse.db): Recreating 'active_wizard_sessions' table with new schema.");
-                db.transaction(() => {
-                    const tempCreate = `CREATE TABLE active_wizard_sessions_temp (id INTEGER, userId INTEGER, userName TEXT, lockedEntityIds TEXT, lockedEntityName TEXT, expiresAt TEXT);`;
-                    db.exec(tempCreate);
-                    // No data migration as the structure is fundamentally changing
-                    db.exec('DROP TABLE active_wizard_sessions;');
-                    db.exec(`
-                        CREATE TABLE active_wizard_sessions (
-                            id INTEGER PRIMARY KEY AUTOINCREMENT,
-                            userId INTEGER NOT NULL,
-                            userName TEXT NOT NULL,
-                            lockedEntityIds TEXT NOT NULL,
-                            lockedEntityName TEXT NOT NULL,
-                            expiresAt TEXT NOT NULL
-                        );
-                    `);
-                    db.exec('DROP TABLE active_wizard_sessions_temp;');
-                })();
-            }
         }
-
     } catch (error) {
         console.error("Error during warehouse migrations:", error);
         logError("Error during warehouse migrations", { error: (error as Error).message });
@@ -507,9 +477,9 @@ export async function getActiveLocks(): Promise<WizardSession[]> {
     }));
 }
 
-export async function lockEntity(payload: Omit<WizardSession, 'id' | 'expiresAt' > & { entityIds: number[] }): Promise<{ sessionId: number, locked: boolean }> {
+export async function lockEntity(payload: Omit<WizardSession, 'id' | 'expiresAt' | 'lockedEntityIds'> & { entityIds: number[] }): Promise<{ sessionId: number, locked: boolean }> {
     const db = await connectDb(WAREHOUSE_DB_FILE);
-    const { entityIds, lockedEntityName, userId, userName } = payload;
+    const { entityIds, entityName, userId, userName } = payload;
     
     const allLocks = await getActiveLocks(); // This already cleans up expired locks
     const requestedIds = new Set(entityIds);
@@ -525,8 +495,8 @@ export async function lockEntity(payload: Omit<WizardSession, 'id' | 'expiresAt'
     const expiresAt = new Date(Date.now() + 30 * 60 * 1000).toISOString();
     
     const info = db.prepare(
-        'INSERT INTO active_wizard_sessions (userId, userName, lockedEntityIds, lockedEntityName, expiresAt) VALUES (?, ?, ?, ?, ?)'
-    ).run(userId, userName, JSON.stringify(entityIds), lockedEntityName, expiresAt);
+        'INSERT INTO active_wizard_sessions (userId, userName, lockedEntityIds, entityName, expiresAt) VALUES (?, ?, ?, ?, ?)'
+    ).run(userId, userName, JSON.stringify(entityIds), entityName, expiresAt);
 
     const sessionId = info.lastInsertRowid as number;
     return { sessionId, locked: false };

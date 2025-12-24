@@ -33,8 +33,7 @@ const renderLocationPathAsString = (locationId: number, locations: WarehouseLoca
     while (current) {
         path.unshift(current);
         const parentId = current.parentId;
-        if (!parentId) break;
-        current = locations.find(l => l.id === parentId);
+        current = parentId ? locations.find(l => l.id === parentId) : undefined;
     }
     return path.map(l => l.name).join(' > ');
 };
@@ -128,7 +127,7 @@ export default function PopulationWizardPage() {
 
             const { sessionId: newSessionId, locked } = await lockEntity({
                 entityIds: Array.from(selectedLevelIds),
-                lockedEntityName: `${rackName} > ${levelNames}`,
+                entityName: `${rackName} > ${levelNames}`,
                 userId: user.id,
                 userName: user.name,
             });
