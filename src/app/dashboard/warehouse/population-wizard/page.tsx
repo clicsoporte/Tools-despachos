@@ -128,7 +128,7 @@ export default function PopulationWizardPage() {
 
             const { sessionId: newSessionId, locked } = await lockEntity({
                 entityIds: Array.from(selectedLevelIds),
-                entityName: `${rackName} > ${levelNames}`,
+                lockedEntityName: `${rackName} > ${levelNames}`,
                 userId: user.id,
                 userName: user.name,
             });

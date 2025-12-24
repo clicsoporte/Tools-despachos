@@ -98,7 +98,7 @@ export const getInventoryUnitById = async (id: string | number): Promise<Invento
 
 // --- Wizard Lock Actions ---
 export const getActiveLocks = async (): Promise<WizardSession[]> => getActiveLocksServer();
-export const lockEntity = async (payload: Omit<WizardSession, 'id' | 'expiresAt'> & { entityIds: number[] }): Promise<{ sessionId: number, locked: boolean }> => lockEntityServer(payload);
+export const lockEntity = async (payload: Omit<WizardSession, 'id' | 'expiresAt' | 'lockedEntityIds'> & { entityIds: number[]; }): Promise<{ sessionId: number, locked: boolean }> => lockEntityServer(payload);
 export const releaseLock = async (sessionId: number): Promise<void> => releaseLockServer(sessionId);
 export const forceReleaseLock = async (sessionId: number): Promise<void> => forceReleaseLockServer(sessionId);
 export const getChildLocations = async (parentIds: number[]): Promise<WarehouseLocation[]> => getChildLocationsServer(parentIds);

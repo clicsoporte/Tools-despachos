@@ -664,7 +664,7 @@ export type WizardSession = {
     userId: number;
     userName: string;
     lockedEntityIds: number[];
-    entityName: string;
+    lockedEntityName: string;
     expiresAt: string;
 };
 
