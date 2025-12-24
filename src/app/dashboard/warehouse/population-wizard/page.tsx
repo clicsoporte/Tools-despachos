@@ -128,6 +128,18 @@ export default function PopulationWizardPage() {
             toast({ title: 'Selección Incompleta', description: 'Por favor, selecciona un rack y al menos un nivel para continuar.', variant: 'destructive' });
             return;
         }
+
+        // --- Guard Clauses to prevent runtime errors ---
+        if (!rackLevels || !Array.isArray(rackLevels) || rackLevels.length === 0) {
+            toast({ title: 'Error de Datos', description: 'No se encontraron los niveles para el rack seleccionado. Por favor, vuelve a seleccionarlo.', variant: 'destructive' });
+            return;
+        }
+        if (!allLocations || !Array.isArray(allLocations)) {
+            toast({ title: 'Error de Carga', description: 'Los datos de ubicaciones no se han cargado correctamente. Intenta refrescar la página.', variant: 'destructive' });
+            return;
+        }
+        // --- End of Guard Clauses ---
+
         setIsLoading(true);
 
         try {

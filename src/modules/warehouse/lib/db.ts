@@ -486,20 +486,12 @@ export async function getActiveLocks(): Promise<WizardSession[]> {
 
 export async function lockEntity(payload: Omit<WizardSession, 'id' | 'expiresAt'>): Promise<{ sessionId: number, locked: boolean }> {
     const db = await connectDb(WAREHOUSE_DB_FILE);
-    const { lockedEntityIds, entityName, userId, userName } = payload;
+    const { entityIds, entityName, userId, userName } = payload;
     
-    const placeholders = lockedEntityIds.map(() => '?').join(',');
-    const activeLocks = db.prepare(`SELECT lockedEntityIds FROM active_wizard_sessions WHERE expiresAt > datetime('now')`).all() as { lockedEntityIds: string }[];
-    
-    const allLockedIds = new Set<number>();
-    activeLocks.forEach(lock => {
-        try {
-            const ids: number[] = JSON.parse(lock.lockedEntityIds);
-            ids.forEach(id => allLockedIds.add(id));
-        } catch {}
-    });
-
-    const conflict = lockedEntityIds.some(id => allLockedIds.has(id));
+    // Correctly check for conflicts for ANY of the requested IDs
+    const activeLocks = await getActiveLocks();
+    const allCurrentlyLockedIds = new Set<number>(activeLocks.flatMap(lock => lock.lockedEntityIds));
+    const conflict = entityIds.some(id => allCurrentlyLockedIds.has(id));
 
     if (conflict) {
         return { sessionId: -1, locked: true };
@@ -509,7 +501,7 @@ export async function lockEntity(payload: Omit<WizardSession, 'id' | 'expiresAt'
     
     const info = db.prepare(
         'INSERT INTO active_wizard_sessions (userId, userName, lockedEntityIds, entityName, expiresAt) VALUES (?, ?, ?, ?, ?)'
-    ).run(userId, userName, JSON.stringify(lockedEntityIds), entityName, expiresAt);
+    ).run(userId, userName, JSON.stringify(entityIds), entityName, expiresAt);
 
     const sessionId = info.lastInsertRowid as number;
     return { sessionId, locked: false };
