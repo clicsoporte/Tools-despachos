@@ -116,9 +116,9 @@ export default function PopulationWizardPage() {
         setSelectedLevelIds(prev => {
             const newSet = new Set(prev);
             if (newSet.has(levelId)) {
-                newSet.delete(id);
+                newSet.delete(levelId);
             } else {
-                newSet.add(id);
+                newSet.add(levelId);
             }
             return newSet;
         });

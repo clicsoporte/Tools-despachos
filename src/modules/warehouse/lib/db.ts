@@ -446,7 +446,7 @@ export async function getActiveLocks(): Promise<WarehouseLocation[]> {
     return db.prepare('SELECT * FROM locations WHERE isLocked = 1').all() as WarehouseLocation[];
 }
 
-export async function lockEntity(payload: { entityIds: number[], userName: string }): Promise<{ locked: boolean }> {
+export async function lockEntity(payload: { entityIds: number[]; userName: string; lockedEntityName: string; }): Promise<{ locked: boolean }> {
     const db = await connectDb(WAREHOUSE_DB_FILE);
     const { entityIds, userName } = payload;
 
