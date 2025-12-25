@@ -12,8 +12,9 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/modules/core/hooks/use-toast';
 import { usePageTitle } from '@/modules/core/hooks/usePageTitle';
 import { useAuthorization } from '@/modules/core/hooks/useAuthorization';
-import { logError, logInfo } from '@/modules/core/lib/logger';
-import { getLocations, getChildLocations, lockEntity, releaseLock, assignItemToLocation, getActiveWizardSession, saveWizardSession, clearWizardSession } from '@/modules/warehouse/lib/actions';
+import { logError } from '@/modules/core/lib/logger';
+import { getLocations, getChildLocations, lockEntity, releaseLock, assignItemToLocation } from '@/modules/warehouse/lib/actions';
+import { getActiveWizardSession, saveWizardSession, clearWizardSession } from '@/modules/core/lib/db';
 import type { Product, WarehouseLocation, WizardSession } from '@/modules/core/types';
 import { useAuth } from '@/modules/core/hooks/useAuth';
 import { SearchInput } from '@/components/ui/search-input';
@@ -115,9 +116,9 @@ export default function PopulationWizardPage() {
         setSelectedLevelIds(prev => {
             const newSet = new Set(prev);
             if (newSet.has(levelId)) {
-                newSet.delete(levelId);
+                newSet.delete(id);
             } else {
-                newSet.add(levelId);
+                newSet.add(id);
             }
             return newSet;
         });
@@ -137,7 +138,14 @@ export default function PopulationWizardPage() {
         setIsLoading(true);
 
         try {
-            const { locked } = await lockEntity({ entityIds: Array.from(selectedLevelIds), userName: user.name });
+            const levelNames = Array.from(selectedLevelIds).map(id => rackLevels.find(l => l.id === id)?.name || '').join(', ');
+            const rackName = allLocations.find(l => l.id === selectedRackId)?.name || 'Rack desconocido';
+
+            const { locked } = await lockEntity({
+                entityIds: Array.from(selectedLevelIds),
+                userName: user.name,
+                lockedEntityName: `${rackName} > ${levelNames}`
+            });
 
             if (locked) {
                  toast({ title: 'Niveles ya en uso', description: 'Algunos de los niveles seleccionados están siendo poblados por otro usuario.', variant: 'destructive' });
