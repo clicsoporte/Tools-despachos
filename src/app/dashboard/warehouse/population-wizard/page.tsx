@@ -12,7 +12,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/modules/core/hooks/use-toast';
 import { usePageTitle } from '@/modules/core/hooks/usePageTitle';
 import { useAuthorization } from '@/modules/core/hooks/useAuthorization';
-import { logError } from '@/modules/core/lib/logger';
+import { logError, logInfo } from '@/modules/core/lib/logger';
 import { getLocations, getChildLocations, lockEntity, releaseLock, assignItemToLocation } from '@/modules/warehouse/lib/actions';
 import { getActiveWizardSession, saveWizardSession, clearWizardSession } from '@/modules/core/lib/db';
 import type { Product, WarehouseLocation, WizardSession } from '@/modules/core/types';
@@ -59,13 +59,23 @@ export default function PopulationWizardPage() {
     const [productSearch, setProductSearch] = useState('');
     const [isProductSearchOpen, setProductSearchOpen] = useState(false);
     const [lastAssignment, setLastAssignment] = useState<{ location: string; product: string; code: string; } | null>(null);
+    
+    const [rackSearchTerm, setRackSearchTerm] = useState('');
+    const [isRackSearchOpen, setIsRackSearchOpen] = useState(false);
 
     const [debouncedProductSearch] = useDebounce(productSearch, 300);
+    const [debouncedRackSearch] = useDebounce(rackSearchTerm, 300);
     const [existingSession, setExistingSession] = useState<WizardSession | null>(null);
 
-    const rackOptions = useMemo(() => 
-        allLocations.filter(l => l.type === 'rack').map(r => ({ value: String(r.id), label: `${r.name} (${r.code})` })),
-    [allLocations]);
+    const rackOptions = useMemo(() => {
+        if (!debouncedRackSearch && !isRackSearchOpen) return allLocations.filter(l => l.type === 'rack').map(r => ({ value: String(r.id), label: `${r.name} (${r.code})` }));
+
+        return allLocations
+            .filter(l => l.type === 'rack' && 
+                (l.name.toLowerCase().includes(debouncedRackSearch.toLowerCase()) || l.code.toLowerCase().includes(debouncedRackSearch.toLowerCase()))
+            )
+            .map(r => ({ value: String(r.id), label: `${r.name} (${r.code})` }));
+    }, [allLocations, debouncedRackSearch, isRackSearchOpen]);
     
     const productOptions = useMemo(() => {
         if (!debouncedProductSearch) return [];
@@ -105,6 +115,12 @@ export default function PopulationWizardPage() {
     const handleSelectRack = async (rackIdStr: string) => {
         const id = Number(rackIdStr);
         setSelectedRackId(id);
+        const selectedRack = allLocations.find(l => l.id === id);
+        if (selectedRack) {
+            setRackSearchTerm(`${selectedRack.name} (${selectedRack.code})`);
+        }
+        setIsRackSearchOpen(false);
+
         const allLocs = await getLocations(); // Re-fetch to get latest lock status
         setAllLocations(allLocs);
         const levels = allLocs.filter(l => l.parentId === id);
@@ -235,6 +251,7 @@ export default function PopulationWizardPage() {
         setCurrentIndex(0);
         setLastAssignment(null);
         setExistingSession(null);
+        setRackSearchTerm('');
         setWizardStep('setup');
     };
 
@@ -290,13 +307,10 @@ export default function PopulationWizardPage() {
                                 options={rackOptions}
                                 onSelect={handleSelectRack}
                                 placeholder="Busca un rack por nombre o código..."
-                                value={selectedRackId ? rackOptions.find(r => r.value === String(selectedRackId))?.label || '' : ''}
-                                onValueChange={(val) => {
-                                    const rack = rackOptions.find(r => r.label.toLowerCase().includes(val.toLowerCase()));
-                                    if(rack) handleSelectRack(rack.value);
-                                }}
-                                open={false}
-                                onOpenChange={()=>{}}
+                                value={rackSearchTerm}
+                                onValueChange={setRackSearchTerm}
+                                open={isRackSearchOpen}
+                                onOpenChange={setIsRackSearchOpen}
                             />
                         </div>
                         {rackLevels.length > 0 && (
