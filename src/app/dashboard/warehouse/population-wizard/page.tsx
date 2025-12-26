@@ -209,7 +209,7 @@ export default function PopulationWizardPage() {
         
         if (nextIndex < locationsToPopulate.length) {
             setCurrentIndex(nextIndex);
-            if (user) {
+            if (user && selectedRackId !== null) {
                 await saveWizardSession(user.id, { rackId: selectedRackId, levelIds: Array.from(selectedLevelIds), currentIndex: nextIndex });
             }
         } else {
@@ -230,7 +230,7 @@ export default function PopulationWizardPage() {
     const handlePrevious = async () => {
         const prevIndex = Math.max(0, currentIndex - 1);
         setCurrentIndex(prevIndex);
-        if (user) {
+        if (user && selectedRackId !== null) {
             await saveWizardSession(user.id, { rackId: selectedRackId, levelIds: Array.from(selectedLevelIds), currentIndex: prevIndex });
         }
     };

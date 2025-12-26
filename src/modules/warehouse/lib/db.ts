@@ -156,13 +156,6 @@ export async function runWarehouseMigrations(db: import('better-sqlite3').Databa
         if (!locationsTableInfo.some(c => c.name === 'isLocked')) db.exec('ALTER TABLE locations ADD COLUMN isLocked INTEGER DEFAULT 0');
         if (!locationsTableInfo.some(c => c.name === 'lockedBy')) db.exec('ALTER TABLE locations ADD COLUMN lockedBy TEXT');
 
-        // Clean up the old, now unused sessions table if it exists
-        const wizardTable = db.prepare(`SELECT name FROM sqlite_master WHERE type='table' AND name='active_wizard_sessions'`).get();
-        if (wizardTable) {
-            console.log("MIGRATION (warehouse.db): Dropping unused 'active_wizard_sessions' table.");
-            db.exec('DROP TABLE active_wizard_sessions');
-        }
-
     } catch (error) {
         console.error("Error during warehouse migrations:", error);
         logError("Error during warehouse migrations", { error: (error as Error).message });
@@ -314,15 +307,31 @@ export async function getInventory(dateRange?: DateRange): Promise<WarehouseInve
     return db.prepare('SELECT * FROM inventory ORDER BY lastUpdated DESC').all() as WarehouseInventoryItem[];
 }
 
-export async function updateInventory(itemId: string, locationId: number, quantity: number, updatedBy: string): Promise<void> {
+export async function updateInventory(itemId: string, locationId: number, newQuantity: number, updatedBy: string): Promise<void> {
     const db = await connectDb(WAREHOUSE_DB_FILE);
-     db.prepare(
-        `INSERT INTO inventory (itemId, locationId, quantity, lastUpdated, updatedBy) 
-         VALUES (?, ?, ?, datetime('now'), ?)
-         ON CONFLICT(itemId, locationId) 
-         DO UPDATE SET quantity = ?, updatedBy = ?, lastUpdated = datetime('now')`
-    ).run(itemId, locationId, quantity, updatedBy, quantity, updatedBy);
+    
+    const transaction = db.transaction(() => {
+        const currentInventory = db.prepare('SELECT quantity FROM inventory WHERE itemId = ? AND locationId = ?').get(itemId, locationId) as { quantity: number } | undefined;
+        const oldQuantity = currentInventory?.quantity ?? 0;
+        const difference = newQuantity - oldQuantity;
+
+        if (difference !== 0) {
+            db.prepare(
+                `INSERT INTO inventory (itemId, locationId, quantity, lastUpdated, updatedBy) 
+                 VALUES (?, ?, ?, datetime('now'), ?)
+                 ON CONFLICT(itemId, locationId) 
+                 DO UPDATE SET quantity = ?, updatedBy = ?, lastUpdated = datetime('now')`
+            ).run(itemId, locationId, newQuantity, updatedBy, newQuantity, updatedBy);
+
+            db.prepare(
+                'INSERT INTO movements (itemId, quantity, fromLocationId, toLocationId, timestamp, userId, notes) VALUES (?, ?, ?, ?, datetime(\'now\'), (SELECT id FROM main.users WHERE name = ?), ?)'
+            ).run(itemId, difference, null, locationId, updatedBy, `Ajuste de inventario físico. Conteo: ${newQuantity}`);
+        }
+    });
+
+    transaction();
 }
+
 
 export async function logMovement(movement: Omit<MovementLog, 'id' | 'timestamp'>): Promise<void> {
     const db = await connectDb(WAREHOUSE_DB_FILE);
