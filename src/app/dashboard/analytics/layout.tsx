@@ -1,4 +1,3 @@
-
 /**
  * @fileoverview Layout for the new Analytics section.
  * This layout ensures that any child pages within the /analytics route
@@ -13,5 +12,7 @@ export default function AnalyticsLayout({
 }: {
   children: ReactNode;
 }) {
+    // This layout is no longer necessary as we are using route groups.
+    // It will be removed in a future cleanup step.
     return <>{children}</>;
 }
