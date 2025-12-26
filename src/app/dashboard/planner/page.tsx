@@ -13,7 +13,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { FilePlus, Loader2, FilterX, CalendarIcon, ChevronLeft, ChevronRight, RefreshCcw, MoreVertical, History, Undo2, Check, PackageCheck, XCircle, Pencil, AlertTriangle, User as UserIcon, MessageSquarePlus, FileDown, Play, Pause, Wrench, Hourglass, FileSpreadsheet, Send, ShoppingBag } from 'lucide-react';
+import { FilePlus, Loader2, FilterX, CalendarIcon, ChevronLeft, ChevronRight, RefreshCcw, MoreVertical, History, Undo2, Check, PackageCheck, XCircle, Pencil, AlertTriangle, User as UserIcon, MessageSquarePlus, FileDown, Play, Pause, Wrench, Hourglass, FileSpreadsheet, Send, ShoppingBag, Filter } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -27,6 +27,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { MultiSelectFilter } from '@/components/ui/multi-select-filter';
 import { DialogColumnSelector } from '@/components/ui/dialog-column-selector';
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger, SheetFooter } from '@/components/ui/sheet';
 
 
 /**
@@ -42,7 +43,7 @@ export default function PlannerPage() {
         isAuthorized,
     } = usePlanner();
 
-    if (isAuthorized === null || (isAuthorized && state.isLoading)) {
+    if (!selectors.isReady) {
         return (
             <main className="flex-1 p-4 md:p-6">
                 <div className="flex justify-between items-center mb-6">
@@ -66,6 +67,10 @@ export default function PlannerPage() {
                 </div>
             </main>
         )
+    }
+
+    if(isAuthorized === false) {
+        return null;
     }
 
     const renderOrderCard = (order: ProductionOrder) => {
@@ -209,7 +214,7 @@ export default function PlannerPage() {
                         
                         {(order.deliveredQuantity !== null && order.deliveredQuantity !== undefined) && (
                              <>
-                                <div className="space-y-1"><p className="font-semibold text-muted-foreground">Cant. Entregada</p><p className="font-bold text-lg text-green-600">{order.deliveredQuantity.toLocaleString()}</p></div>
+                                <div className="space-y-1"><p className="font-semibold text-muted-foreground">Cant. Producida</p><p className="font-bold text-lg text-green-600">{order.deliveredQuantity.toLocaleString()}</p></div>
                                 <div className="space-y-1"><p className="font-semibold text-muted-foreground">Cant. Defectuosa</p><p className="font-bold text-lg text-red-600">{(order.defectiveQuantity ?? 0).toLocaleString()}</p></div>
                                 <div className="space-y-1">
                                     <p className="font-semibold text-muted-foreground">Diferencia Neta</p>
@@ -272,6 +277,61 @@ export default function PlannerPage() {
             </Card>
         );
     }
+    
+    const renderFilters = () => (
+        <div className="space-y-4">
+            <Input placeholder="Buscar por Nº orden, cliente o producto..." value={state.searchTerm} onChange={(e) => actions.setSearchTerm(e.target.value)} className="w-full" />
+            <MultiSelectFilter
+                title="Estado"
+                options={Object.entries(selectors.statusConfig).map(([key, { label }]) => ({ value: key, label }))}
+                selectedValues={state.statusFilter}
+                onSelectedChange={actions.setStatusFilter}
+            />
+            <MultiSelectFilter
+                title="Clasificación"
+                options={selectors.classifications.map(c => ({ value: c, label: c }))}
+                selectedValues={state.classificationFilter}
+                onSelectedChange={actions.setClassificationFilter}
+            />
+            <Popover>
+                <PopoverTrigger asChild>
+                    <Button variant={"outline"} className={cn("w-full justify-start text-left font-normal", !state.dateFilter && "text-muted-foreground")}>
+                        <CalendarIcon className="mr-2 h-4 w-4" />{state.dateFilter?.from ? (state.dateFilter.to ? (`${format(state.dateFilter.from, "LLL dd, y")} - ${format(state.dateFilter.to, "LLL dd, y")}`) : (format(state.dateFilter.from, "LLL dd, y"))) : (<span>Filtrar por fecha</span>)}
+                    </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar mode="range" selected={state.dateFilter} onSelect={actions.setDateFilter} />
+                </PopoverContent>
+            </Popover>
+            <DialogColumnSelector
+                allColumns={selectors.availableColumns}
+                visibleColumns={state.visibleColumns}
+                onColumnChange={actions.handleColumnVisibilityChange}
+                onSave={actions.handleSaveColumnVisibility}
+            />
+            <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <Button variant="outline" className="w-full"><FileDown className="mr-2 h-4 w-4"/>Exportar</Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                    <DropdownMenuItem onSelect={() => actions.handleExportPDF('portrait')}><FileDown className="mr-2 h-4 w-4" /> Exportar a PDF</DropdownMenuItem>
+                    <DropdownMenuItem onSelect={actions.handleExportExcel}><FileSpreadsheet className="mr-2 h-4 w-4" /> Exportar a Excel</DropdownMenuItem>
+                </DropdownMenuContent>
+            </DropdownMenu>
+            <Button variant="ghost" onClick={() => { actions.setSearchTerm(''); actions.setStatusFilter([]); actions.setClassificationFilter([]); actions.setDateFilter(undefined); actions.setShowOnlyMyOrders(true); }} className="w-full">
+                <FilterX className="mr-2 h-4 w-4" />Limpiar
+            </Button>
+            <div className="flex items-center space-x-2 pt-4">
+                <Checkbox 
+                    id="show-only-my-orders" 
+                    checked={state.showOnlyMyOrders} 
+                    onCheckedChange={(checked) => actions.setShowOnlyMyOrders(checked as boolean)}
+                    disabled={!state.showOnlyMyOrders && !selectors.hasPermission('planner:read:all')}
+                />
+                <Label htmlFor="show-only-my-orders" className="font-normal">Mostrar solo mis órdenes</Label>
+            </div>
+        </div>
+    );
     
     return (
         <main className="flex-1 flex flex-col p-4 md:p-6">
@@ -371,57 +431,36 @@ export default function PlannerPage() {
                         )}
                     </div>
                 </div>
-                <Card>
-                    <CardContent className="p-4 space-y-4">
+                {/* Desktop Filters */}
+                <Card className="hidden md:block">
+                    <CardContent className="p-4">
                         <div className="flex flex-col md:flex-row gap-4">
-                            <Input placeholder="Buscar por Nº orden, cliente o producto..." value={state.searchTerm} onChange={(e) => actions.setSearchTerm(e.target.value)} className="max-w-sm" />
-                            <MultiSelectFilter
-                                title="Estado"
-                                options={Object.entries(selectors.statusConfig).map(([key, { label }]) => ({ value: key, label }))}
-                                selectedValues={state.statusFilter}
-                                onSelectedChange={actions.setStatusFilter}
-                            />
-                            <MultiSelectFilter
-                                title="Clasificación"
-                                options={selectors.classifications.map(c => ({ value: c, label: c }))}
-                                selectedValues={state.classificationFilter}
-                                onSelectedChange={actions.setClassificationFilter}
-                            />
-                            <Popover><PopoverTrigger asChild><Button variant={"outline"} className={cn("w-full md:w-[240px] justify-start text-left font-normal", !state.dateFilter && "text-muted-foreground")}><CalendarIcon className="mr-2 h-4 w-4" />{state.dateFilter?.from ? (state.dateFilter.to ? (`${format(state.dateFilter.from, "LLL dd, y")} - ${format(state.dateFilter.to, "LLL dd, y")}`) : (format(state.dateFilter.from, "LLL dd, y"))) : (<span>Filtrar por fecha</span>)}</Button></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="range" selected={state.dateFilter} onSelect={actions.setDateFilter} /></PopoverContent></Popover>
-                            <DialogColumnSelector
-                                allColumns={selectors.availableColumns}
-                                visibleColumns={state.visibleColumns}
-                                onColumnChange={actions.handleColumnVisibilityChange}
-                                onSave={actions.handleSaveColumnVisibility}
-                            />
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Button variant="outline"><FileDown className="mr-2 h-4 w-4"/>Exportar</Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                    <DropdownMenuItem onSelect={() => actions.handleExportPDF('portrait')}>
-                                        <FileDown className="mr-2 h-4 w-4" /> Exportar a PDF
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem onSelect={actions.handleExportExcel}>
-                                        <FileSpreadsheet className="mr-2 h-4 w-4" /> Exportar a Excel
-                                    </DropdownMenuItem>
-                                </DropdownMenuContent>
-                            </DropdownMenu>
-                            <Button variant="ghost" onClick={() => { actions.setSearchTerm(''); actions.setStatusFilter([]); actions.setClassificationFilter([]); actions.setDateFilter(undefined); actions.setShowOnlyMyOrders(true); }}><FilterX className="mr-2 h-4 w-4" />Limpiar</Button>
-                        </div>
-                        <div className="flex flex-wrap items-center gap-4">
-                            <div className="flex items-center space-x-2">
-                                <Checkbox 
-                                    id="show-only-my-orders" 
-                                    checked={state.showOnlyMyOrders} 
-                                    onCheckedChange={(checked) => actions.setShowOnlyMyOrders(checked as boolean)}
-                                    disabled={!state.showOnlyMyOrders && !selectors.hasPermission('planner:read:all')}
-                                />
-                                <Label htmlFor="show-only-my-orders" className="font-normal">Mostrar solo mis órdenes</Label>
-                            </div>
+                            {renderFilters()}
                         </div>
                     </CardContent>
                 </Card>
+                 {/* Mobile Filters */}
+                 <div className="md:hidden">
+                    <Sheet>
+                        <SheetTrigger asChild>
+                            <Button variant="outline" className="w-full">
+                                <Filter className="mr-2 h-4 w-4"/>
+                                Filtros y Acciones
+                            </Button>
+                        </SheetTrigger>
+                        <SheetContent>
+                            <SheetHeader>
+                                <SheetTitle>Filtros y Acciones</SheetTitle>
+                                <SheetDescription>
+                                    Aplica filtros para refinar tu búsqueda de órdenes.
+                                </SheetDescription>
+                            </SheetHeader>
+                            <div className="py-4">
+                                {renderFilters()}
+                            </div>
+                        </SheetContent>
+                    </Sheet>
+                 </div>
             </div>
             
             <div className="flex-1 overflow-auto space-y-4 pt-2">
@@ -501,7 +540,7 @@ export default function PlannerPage() {
                         {state.newStatus === 'completed' && (
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
-                                    <Label htmlFor="status-delivered-quantity">Cantidad Entregada</Label>
+                                    <Label htmlFor="status-delivered-quantity">Cantidad Producida</Label>
                                     <Input id="status-delivered-quantity" type="number" value={state.deliveredQuantity} onChange={(e) => actions.setDeliveredQuantity(e.target.value)} placeholder={`Solicitada: ${state.orderToUpdate?.quantity.toLocaleString()}`} />
                                 </div>
                                 <div className="space-y-2">

@@ -1,4 +1,3 @@
-
 // This file was restored to its stable version.
 // The previous content was causing compilation issues.
 'use client';
@@ -15,7 +14,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { FilePlus, Loader2, Check, MoreVertical, History, RefreshCcw, AlertTriangle, Undo2, PackageCheck, Truck, XCircle, Home, Pencil, FilterX, CalendarIcon, Users, User as UserIcon, ChevronLeft, ChevronRight, Layers, Lightbulb, FileDown, FileSpreadsheet, Info, Send, ShoppingBag, DollarSign } from 'lucide-react';
+import { FilePlus, Loader2, Check, MoreVertical, History, RefreshCcw, AlertTriangle, Undo2, PackageCheck, Truck, XCircle, Home, Pencil, FilterX, CalendarIcon, Users, User as UserIcon, ChevronLeft, ChevronRight, Layers, Lightbulb, FileDown, FileSpreadsheet, Info, Send, ShoppingBag, DollarSign, Filter } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
@@ -30,6 +29,7 @@ import type { PurchaseRequest, PurchaseRequestHistoryEntry, RequestNotePayload, 
 import Link from 'next/link';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 
 
 const HighlightedText = ({ text, highlight }: { text: string; highlight: string }) => {
@@ -101,19 +101,19 @@ export default function PurchaseRequestPage() {
         const daysRemaining = selectors.getDaysRemaining(request.requiredDate);
         
         const changeStatusActions = [
-            { check: permissions.canSendToReview, action: () => actions.openStatusDialog(request, 'purchasing-review'), label: 'Enviar a Revisión', icon: <Send className="mr-2"/>, className: 'text-cyan-600' },
-            { check: permissions.canGoBackToPending, action: () => actions.openStatusDialog(request, 'pending'), label: 'Devolver a Pendiente', icon: <Undo2 className="mr-2"/>, className: 'text-orange-600' },
-            { check: permissions.canSendToApproval, action: () => actions.openStatusDialog(request, 'pending-approval'), label: 'Enviar a Aprobación', icon: <ShoppingBag className="mr-2"/>, className: 'text-orange-600' },
-            { check: permissions.canGoBackToReview, action: () => actions.openStatusDialog(request, 'purchasing-review'), label: 'Devolver a Revisión', icon: <Undo2 className="mr-2"/>, className: 'text-orange-600' },
-            { check: permissions.canApprove, action: () => actions.openStatusDialog(request, 'approved'), label: 'Aprobar', icon: <Check className="mr-2"/>, className: 'text-green-600' },
-            { check: permissions.canOrder, action: () => actions.openStatusDialog(request, 'ordered'), label: 'Marcar como Ordenada', icon: <Truck className="mr-2"/>, className: 'text-blue-600' },
-            { check: permissions.canRevertToApproved, action: () => actions.openStatusDialog(request, 'approved'), label: 'Revertir a Aprobada', icon: <Undo2 className="mr-2"/>, className: 'text-orange-600' },
-            { check: permissions.canReceiveInWarehouse, action: () => actions.openStatusDialog(request, 'received-in-warehouse'), label: 'Recibir en Bodega', icon: <Home className="mr-2"/>, className: 'text-teal-600' },
-            { check: permissions.canEnterToErp, action: () => actions.openStatusDialog(request, 'entered-erp'), label: 'Ingresar a ERP', icon: <PackageCheck className="mr-2"/>, className: 'text-indigo-600' },
-            { check: permissions.canRequestUnapproval, action: () => actions.openAdminActionDialog(request, 'unapproval-request'), label: 'Solicitar Desaprobación', icon: <AlertTriangle className="mr-2"/>, className: 'text-orange-600 font-bold' },
-            { check: permissions.canCancelPending, action: () => actions.openStatusDialog(request, 'canceled'), label: 'Cancelar Solicitud', icon: <XCircle className="mr-2"/>, className: 'text-red-600' },
-            { check: permissions.canRequestCancel, action: () => actions.openAdminActionDialog(request, 'cancellation-request'), label: 'Solicitar Cancelación', icon: <XCircle className="mr-2"/>, className: 'text-red-600' },
-            { check: permissions.canReopen, action: () => { actions.setRequestToUpdate(request); actions.setReopenDialogOpen(true); }, label: 'Reabrir', icon: <Undo2 className="mr-2"/>, className: 'text-orange-600' }
+            { check: permissions.canSendToReview.allowed, action: () => actions.openStatusDialog(request, 'purchasing-review'), label: 'Enviar a Revisión', icon: <Send className="mr-2"/>, className: 'text-cyan-600' },
+            { check: permissions.canGoBackToPending.allowed, action: () => actions.openStatusDialog(request, 'pending'), label: 'Devolver a Pendiente', icon: <Undo2 className="mr-2"/>, className: 'text-orange-600' },
+            { check: permissions.canSendToApproval.allowed, action: () => actions.openStatusDialog(request, 'pending-approval'), label: 'Enviar a Aprobación', icon: <ShoppingBag className="mr-2"/>, className: 'text-orange-600' },
+            { check: permissions.canGoBackToReview.allowed, action: () => actions.openStatusDialog(request, 'purchasing-review'), label: 'Devolver a Revisión', icon: <Undo2 className="mr-2"/>, className: 'text-orange-600' },
+            { check: permissions.canApprove.allowed, action: () => actions.openStatusDialog(request, 'approved'), label: 'Aprobar', icon: <Check className="mr-2"/>, className: 'text-green-600' },
+            { check: permissions.canOrder.allowed, action: () => actions.openStatusDialog(request, 'ordered'), label: 'Marcar como Ordenada', icon: <Truck className="mr-2"/>, className: 'text-blue-600' },
+            { check: permissions.canRevertToApproved.allowed, action: () => actions.openStatusDialog(request, 'approved'), label: 'Revertir a Aprobada', icon: <Undo2 className="mr-2"/>, className: 'text-orange-600' },
+            { check: permissions.canReceiveInWarehouse.allowed, action: () => actions.openStatusDialog(request, 'received-in-warehouse'), label: 'Recibir en Bodega', icon: <Home className="mr-2"/>, className: 'text-teal-600' },
+            { check: permissions.canEnterToErp.allowed, action: () => actions.openStatusDialog(request, 'entered-erp'), label: 'Ingresar a ERP', icon: <PackageCheck className="mr-2"/>, className: 'text-indigo-600' },
+            { check: permissions.canRequestUnapproval.allowed, action: () => actions.openAdminActionDialog(request, 'unapproval-request'), label: 'Solicitar Desaprobación', icon: <AlertTriangle className="mr-2"/>, className: 'text-orange-600 font-bold' },
+            { check: permissions.canCancelPending.allowed, action: () => actions.openStatusDialog(request, 'canceled'), label: 'Cancelar Solicitud', icon: <XCircle className="mr-2"/>, className: 'text-red-600' },
+            { check: permissions.canRequestCancel.allowed, action: () => actions.openAdminActionDialog(request, 'cancellation-request'), label: 'Solicitar Cancelación', icon: <XCircle className="mr-2"/>, className: 'text-red-600' },
+            { check: permissions.canReopen.allowed, action: () => { actions.setRequestToUpdate(request); actions.setReopenDialogOpen(true); }, label: 'Reabrir', icon: <Undo2 className="mr-2"/>, className: 'text-orange-600' }
         ];
 
         return (
@@ -160,7 +160,7 @@ export default function PurchaseRequestPage() {
                                     <DropdownMenuContent align="end">
                                         <DropdownMenuLabel>Acciones de Solicitud</DropdownMenuLabel>
                                         <DropdownMenuSeparator />
-                                        <DropdownMenuItem onSelect={() => { actions.setRequestToEdit(request); actions.setEditRequestDialogOpen(true); }} disabled={!permissions.canEdit}>
+                                        <DropdownMenuItem onSelect={() => { actions.setRequestToEdit(request); actions.setEditRequestDialogOpen(true); }} disabled={!permissions.canEdit.allowed}>
                                             <Pencil className="mr-2"/> Editar Solicitud
                                         </DropdownMenuItem>
                                         {selectors.hasPermission('requests:notes:add') && <DropdownMenuItem onSelect={() => actions.openAddNoteDialog(request)}><Pencil className="mr-2"/> Añadir Nota</DropdownMenuItem>}
@@ -170,7 +170,7 @@ export default function PurchaseRequestPage() {
                                         <DropdownMenuSeparator />
                                         {changeStatusActions.filter(a => a.check).length > 0 ? (
                                             changeStatusActions.filter(a => a.check).map((action, index) => (
-                                                <DropdownMenuItem key={index} onSelect={action.action} className={action.className} disabled={!action.check}>
+                                                <DropdownMenuItem key={index} onSelect={action.action} className={action.className}>
                                                     {action.icon} {action.label}
                                                 </DropdownMenuItem>
                                             ))
@@ -280,6 +280,29 @@ export default function PurchaseRequestPage() {
             </Card>
         );
     }
+    
+    const renderFilters = () => (
+        <div className="space-y-4">
+            <Input placeholder="Buscar por Nº solicitud, cliente, producto o pedido ERP..." value={searchTerm} onChange={(e) => actions.setSearchTerm(e.target.value)} className="w-full" />
+            <Select value={statusFilter} onValueChange={actions.setStatusFilter}><SelectTrigger className="w-full"><SelectValue placeholder="Filtrar por estado..." /></SelectTrigger><SelectContent><SelectItem value="all">Todos los Estados</SelectItem>{Object.entries(selectors.statusConfig).map(([key, { label }]: [string, { label: string }]) => (<SelectItem key={key} value={key}>{label}</SelectItem>))}</SelectContent></Select>
+            <Select value={classificationFilter} onValueChange={actions.setClassificationFilter}><SelectTrigger className="w-full"><SelectValue placeholder="Filtrar por clasificación..." /></SelectTrigger><SelectContent><SelectItem value="all">Todas las Clasificaciones</SelectItem>{selectors.classifications.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent></Select>
+            <Popover><PopoverTrigger asChild><Button variant={"outline"} className={cn("w-full justify-start text-left font-normal", !dateFilter && "text-muted-foreground")}><CalendarIcon className="mr-2 h-4 w-4" />{dateFilter?.from ? (dateFilter.to ? (`${format(dateFilter.from, "LLL dd, y")} - ${format(dateFilter.to, "LLL dd, y")}`) : (format(dateFilter.from, "LLL dd, y"))) : (<span>Filtrar por fecha</span>)}</Button></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="range" selected={dateFilter} onSelect={actions.setDateFilter} /></PopoverContent></Popover>
+            <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <Button variant="outline" className="w-full"><FileDown className="mr-2 h-4 w-4"/>Exportar</Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                    <DropdownMenuItem onSelect={() => actions.handleExportPDF('portrait')}><FileDown className="mr-2 h-4 w-4" /> Exportar a PDF</DropdownMenuItem>
+                    <DropdownMenuItem onSelect={actions.handleExportExcel}><FileSpreadsheet className="mr-2 h-4 w-4" /> Exportar a Excel</DropdownMenuItem>
+                </DropdownMenuContent>
+            </DropdownMenu>
+            <Button variant="ghost" onClick={() => { actions.setSearchTerm(''); actions.setStatusFilter('all'); actions.setClassificationFilter('all'); actions.setDateFilter(undefined); actions.setShowOnlyMyRequests(true); }} className="w-full"><FilterX className="mr-2 h-4 w-4" />Limpiar</Button>
+            <div className="flex items-center space-x-2 pt-4">
+                <Checkbox id="show-only-my-requests" checked={showOnlyMyRequests} onCheckedChange={(checked) => actions.setShowOnlyMyRequests(checked as boolean)} disabled={!showOnlyMyRequests && !selectors.hasPermission('requests:read:all')}/>
+                <Label htmlFor="show-only-my-requests" className="font-normal">Mostrar solo mis solicitudes</Label>
+            </div>
+        </div>
+    );
 
     return (
         <main className="flex-1 flex flex-col p-4 md:p-6">
@@ -378,47 +401,36 @@ export default function PurchaseRequestPage() {
                      )}
                     </div>
                 </div>
-                <Card>
-                    <CardContent className="p-4 space-y-4">
+                {/* Desktop Filters */}
+                <Card className="hidden md:block">
+                    <CardContent className="p-4">
                         <div className="flex flex-col md:flex-row gap-4">
-                            <Input placeholder="Buscar por Nº solicitud, cliente, producto o pedido ERP..." value={searchTerm} onChange={(e) => actions.setSearchTerm(e.target.value)} className="max-w-sm" />
-                            <Select value={statusFilter} onValueChange={actions.setStatusFilter}><SelectTrigger className="w-full md:w-[180px]"><SelectValue placeholder="Filtrar por estado..." /></SelectTrigger><SelectContent><SelectItem value="all">Todos los Estados</SelectItem>{Object.entries(selectors.statusConfig).map(([key, { label }]: [string, { label: string }]) => (<SelectItem key={key} value={key}>{label}</SelectItem>))}</SelectContent></Select>
-                            <Select value={classificationFilter} onValueChange={actions.setClassificationFilter}><SelectTrigger className="w-full md:w-[240px]"><SelectValue placeholder="Filtrar por clasificación..." /></SelectTrigger><SelectContent><SelectItem value="all">Todas las Clasificaciones</SelectItem>{selectors.classifications.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent></Select>
-                            <Popover><PopoverTrigger asChild><Button variant={"outline"} className={cn("w-full md:w-[240px] justify-start text-left font-normal", !dateFilter && "text-muted-foreground")}><CalendarIcon className="mr-2 h-4 w-4" />{dateFilter?.from ? (dateFilter.to ? (`${format(dateFilter.from, "LLL dd, y")} - ${format(dateFilter.to, "LLL dd, y")}`) : (format(dateFilter.from, "LLL dd, y"))) : (<span>Filtrar por fecha</span>)}</Button></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="range" selected={dateFilter} onSelect={actions.setDateFilter} /></PopoverContent></Popover>
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Button variant="outline"><FileDown className="mr-2 h-4 w-4"/>Exportar</Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                    <DropdownMenuItem onSelect={() => actions.handleExportPDF('portrait')}>
-                                        <FileDown className="mr-2 h-4 w-4" /> Exportar a PDF
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem onSelect={actions.handleExportExcel}>
-                                        <FileSpreadsheet className="mr-2 h-4 w-4" /> Exportar a Excel
-                                    </DropdownMenuItem>
-                                </DropdownMenuContent>
-                            </DropdownMenu>
-                            <Button variant="ghost" onClick={() => { actions.setSearchTerm(''); actions.setStatusFilter('all'); actions.setClassificationFilter('all'); actions.setDateFilter(undefined); actions.setShowOnlyMyRequests(true); }}><FilterX className="mr-2 h-4 w-4" />Limpiar</Button>
-                        </div>
-                        <div className="flex flex-wrap items-center gap-4">
-                            {viewingArchived && (
-                                <div className="flex items-center gap-2">
-                                    <Label htmlFor="page-size">Registros por página:</Label>
-                                    <Select value={String(pageSize)} onValueChange={(value) => actions.setPageSize(Number(value))}><SelectTrigger id="page-size" className="w-[100px]"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="50">50</SelectItem><SelectItem value="100">100</SelectItem><SelectItem value="200">200</SelectItem></SelectContent></Select>
-                                </div>
-                            )}
-                            <div className="flex items-center space-x-2">
-                                <Checkbox 
-                                    id="show-only-my-requests" 
-                                    checked={showOnlyMyRequests} 
-                                    onCheckedChange={(checked) => actions.setShowOnlyMyRequests(checked as boolean)}
-                                    disabled={!showOnlyMyRequests && !selectors.hasPermission('requests:read:all')}
-                                />
-                                <Label htmlFor="show-only-my-requests" className="font-normal">Mostrar solo mis solicitudes</Label>
-                            </div>
+                           {renderFilters()}
                         </div>
                     </CardContent>
                 </Card>
+                {/* Mobile Filters */}
+                <div className="md:hidden">
+                    <Sheet>
+                        <SheetTrigger asChild>
+                            <Button variant="outline" className="w-full">
+                                <Filter className="mr-2 h-4 w-4" />
+                                Filtros y Acciones
+                            </Button>
+                        </SheetTrigger>
+                        <SheetContent>
+                            <SheetHeader>
+                                <SheetTitle>Filtros y Acciones</SheetTitle>
+                                <SheetDescription>
+                                    Aplica filtros para refinar tu búsqueda de solicitudes.
+                                </SheetDescription>
+                            </SheetHeader>
+                            <div className="py-4">
+                               {renderFilters()}
+                            </div>
+                        </SheetContent>
+                    </Sheet>
+                </div>
             </div>
             
             <div className="flex-1 overflow-auto pt-2 space-y-4">
@@ -459,3 +471,4 @@ export default function PurchaseRequestPage() {
     
 
     
+
