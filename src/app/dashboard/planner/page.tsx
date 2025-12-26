@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import React from 'react';
@@ -28,6 +29,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { MultiSelectFilter } from '@/components/ui/multi-select-filter';
 import { DialogColumnSelector } from '@/components/ui/dialog-column-selector';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger, SheetFooter } from '@/components/ui/sheet';
+import { useAuth } from '@/modules/core/hooks/useAuth';
 
 
 /**
@@ -42,8 +44,9 @@ export default function PlannerPage() {
         selectors,
         isAuthorized,
     } = usePlanner();
+    const { isReady } = useAuth();
 
-    if (!selectors.isReady) {
+    if (!isReady) {
         return (
             <main className="flex-1 p-4 md:p-6">
                 <div className="flex justify-between items-center mb-6">
