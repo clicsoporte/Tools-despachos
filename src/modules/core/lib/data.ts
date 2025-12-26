@@ -60,6 +60,7 @@ export const initialCompany: Company = {
     phone: "+50640000630",
     email: "facturacion@clicsoporte.com",
     systemName: "Clic-Tools",
+    publicUrl: "",
     quotePrefix: "COT-",
     nextQuoteNumber: 1,
     decimalPlaces: 2,
