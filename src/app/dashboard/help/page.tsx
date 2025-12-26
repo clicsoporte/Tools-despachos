@@ -90,6 +90,7 @@ import {
   ClipboardList,
   Wand2,
   Lock,
+  LockKeyhole,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -311,6 +312,13 @@ export default function HelpPage() {
                 <p>
                 Para mejorar la seguridad y la autonomía del usuario, el sistema ahora incluye un flujo completo para recuperar el acceso a una cuenta.
                 </p>
+                 <Alert variant="destructive">
+                    <LockKeyhole className="h-4 w-4" />
+                    <AlertTitle>¡Mejora de Seguridad Próximamente!</AlertTitle>
+                    <AlertDescription>
+                       El sistema de autenticación se está fortaleciendo para usar cookies seguras en lugar de almacenamiento local. Este cambio, que se implementará en la v2.1.0, hará que el proceso sea aún más seguro.
+                    </AlertDescription>
+                </Alert>
 
                 <h4 className="font-semibold text-lg pt-2 border-t">Configuración para Administradores</h4>
                 <ul className="list-disc space-y-3 pl-6">
@@ -639,6 +647,9 @@ export default function HelpPage() {
                     <li>
                         <strong>Búsqueda Rápida (<QrCode className="inline h-4 w-4"/>):</strong> Una interfaz simple, ideal para celulares, que permite escanear un código QR o buscar rápidamente un artículo para ver su ubicación e inventario.
                     </li>
+                     <li>
+                        <strong>Asistente de Poblado (<Wand2 className="inline h-4 w-4 text-indigo-500" />):</strong> Permite poblar masivamente las ubicaciones de un rack de forma guiada, ideal para el ingreso de mercadería nueva. Incluye un sistema para retomar sesiones interrumpidas.
+                    </li>
                     <li>
                         <strong>Asignar Ubicación a Producto (<PackagePlus className="inline h-4 w-4" />):</strong> Permite crear un &quot;catálogo&quot; indicando en qué ubicación física se almacena un producto específico de un cliente. Es ideal para productos que siempre van en el mismo lugar.
                     </li>
@@ -656,6 +667,9 @@ export default function HelpPage() {
                     </li>
                     <li>
                         <strong>Gestión de Unidades (QR) (<QrCode className="inline h-4 w-4"/>):</strong> Úsalo para crear identificadores únicos para unidades físicas (ej. una tarima, un lote). El sistema genera un código QR que puedes imprimir y pegar en la unidad para rastrearla fácilmente.
+                    </li>
+                     <li>
+                        <strong>Gestión de Bloqueos (<Lock className="inline h-4 w-4"/>):</strong> Una herramienta administrativa para ver qué ubicaciones están siendo pobladas con el asistente y liberar bloqueos si un usuario deja una sesión abandonada.
                     </li>
                 </ul>
             </div>
@@ -831,22 +845,7 @@ export default function HelpPage() {
         icon: <ListChecks className="mr-4 h-6 w-6 text-fuchsia-600" />,
         content: (
              <div className="space-y-4">
-                <h4 className="font-semibold text-lg">Versión 2.0.0 <Badge variant="secondary">Actual</Badge></h4>
-                <p className="text-sm text-muted-foreground">Lanzamiento: Julio 2024</p>
-                <ul className="list-disc space-y-3 pl-6">
-                    <li>
-                        <strong>Auditoría General y Estabilización:</strong> Se refactorizó la lógica de carga y autenticación para eliminar condiciones de carrera y &quot;parpadeos&quot; en la interfaz. Se activó la funcionalidad completa para solicitudes de cancelación/desaprobación en el centro de notificaciones. Se corrigió el comportamiento de los permisos de visibilidad total (`read:all`) en Planificador y Compras. Se consolidó código duplicado (hook de sugerencias de compra) y se eliminaron archivos huérfanos.
-                    </li>
-                    <li>
-                        <strong>Mejora de Usabilidad (Tooltips):</strong> Se añadieron mensajes de ayuda (tooltips) a los botones de acción desactivados en los módulos de Planificador y Solicitudes de Compra. Ahora, los usuarios pueden ver por qué una acción no está disponible (ej: &quot;Se requiere asignar una máquina&quot;), mejorando la claridad y reduciendo la frustración.
-                    </li>
-                     <li>
-                        <strong>Incidente de Iconos (Resuelto):</strong> Se diagnosticó y corrigió un problema visual donde los iconos de las tarjetas de herramientas perdieron sus colores únicos después de un cambio de arquitectura. <strong>Causa:</strong> Al refactorizar el componente `ToolCard` para asegurar la renderización de un icono faltante, se omitió la lógica que asignaba los colores de fondo dinámicos. <strong>Solución:</strong> Se actualizó `ToolCard` para aceptar nuevamente una propiedad `bgColor` y se restauraron las definiciones de color en el archivo `data.ts`, devolviendo la identidad visual a cada herramienta.
-                    </li>
-                    <li>
-                        <strong>Solución de Icono Blanco (Resuelto):</strong> Se identificó y solucionó un problema recurrente donde el icono de una nueva herramienta (&quot;Gestionar Bloqueos&quot;) aparecía en blanco. La causa era que la clase de color de fondo (`bg-slate-500`) no estaba incluida en la `safelist` del archivo `tailwind.config.ts`, provocando que Tailwind la eliminara durante la compilación. Se añadió la clase a la lista para asegurar su disponibilidad.
-                    </li>
-                </ul>
+                <p>Para ver un historial detallado de todos los cambios, mejoras y correcciones de errores en cada versión, por favor consulta el archivo `CHANGELOG.md` en la raíz del proyecto. Este archivo es la fuente de verdad sobre la evolución de la aplicación.</p>
             </div>
         )
     }
