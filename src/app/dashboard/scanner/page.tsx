@@ -13,7 +13,7 @@ import { usePageTitle } from '@/modules/core/hooks/usePageTitle';
 import { getInventoryUnitById, getLocations, getItemLocations } from '@/modules/warehouse/lib/actions';
 import type { InventoryUnit, Product, WarehouseLocation, StockInfo, ItemLocation } from '@/modules/core/types';
 import { useAuth } from '@/modules/core/hooks/useAuth';
-import { AlertCircle, QrCode, Package, MapPin, Warehouse, ChevronRight, Building, Waypoints, Box, Layers, Loader2 } from 'lucide-react';
+import { AlertCircle, QrCode, Package, MapPin, Warehouse, ChevronRight, Building, Waypoints, Box, Layers, Loader2, Archive } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 
 const LocationIcon = ({ type }: { type: WarehouseLocation['type'] }) => {
@@ -22,7 +22,7 @@ const LocationIcon = ({ type }: { type: WarehouseLocation['type'] }) => {
         case 'zone': return <Waypoints className="h-5 w-5 text-muted-foreground" />;
         case 'rack': return <Box className="h-5 w-5 text-muted-foreground" />;
         case 'shelf': return <Layers className="h-5 w-5 text-muted-foreground" />;
-        case 'bin': return <div className="h-5 w-5 text-muted-foreground font-bold text-center">B</div>;
+        case 'bin': return <Archive className="h-5 w-5 text-muted-foreground" />;
         default: return <MapPin className="h-5 w-5 text-muted-foreground" />;
     }
 };

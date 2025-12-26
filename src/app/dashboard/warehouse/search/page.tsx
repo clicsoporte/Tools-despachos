@@ -16,7 +16,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { getWarehouseData, addInventoryUnit } from '@/modules/warehouse/lib/actions';
 import { syncAllData } from '@/modules/core/lib/actions';
 import type { WarehouseLocation, WarehouseInventoryItem, Product, StockInfo, StockSettings, ItemLocation, Customer, InventoryUnit, WarehouseSettings } from '@/modules/core/types';
-import { Search, MapPin, Package, Building, Waypoints, Box, Layers, Warehouse as WarehouseIcon, RefreshCw, Loader2, Info, User, ChevronRight, Printer, Filter } from 'lucide-react';
+import { Search, MapPin, Package, Building, Waypoints, Box, Layers, Warehouse as WarehouseIcon, RefreshCw, Loader2, Info, User, ChevronRight, Printer, Filter, Archive } from 'lucide-react';
 import { useDebounce } from 'use-debounce';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/modules/core/hooks/use-toast';
@@ -76,7 +76,7 @@ const LocationIcon = ({ type }: { type: WarehouseLocation['type'] }) => {
         case 'zone': return <Waypoints className="h-5 w-5 text-muted-foreground" />;
         case 'rack': return <Box className="h-5 w-5 text-muted-foreground" />;
         case 'shelf': return <Layers className="h-5 w-5 text-muted-foreground" />;
-        case 'bin': return <div className="h-5 w-5 text-muted-foreground font-bold text-center">B</div>;
+        case 'bin': return <Archive className="h-5 w-5 text-muted-foreground" />;
         default: return <MapPin className="h-5 w-5 text-muted-foreground" />;
     }
 };
