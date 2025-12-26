@@ -53,7 +53,7 @@ export const availableColumns = [
 ];
 
 export function usePhysicalInventoryReport() {
-    const { isAuthorized } = useAuthorization(['warehouse:access', 'analytics:physical-inventory-report:read']);
+    const { isAuthorized } = useAuthorization(['analytics:physical-inventory-report:read']);
     const { setTitle } = usePageTitle();
     const { toast } = useToast();
     const { companyData, user, products } = useAuth();
