@@ -9,7 +9,6 @@ import { logError } from '@/modules/core/lib/logger';
 import path from 'path';
 
 const WAREHOUSE_DB_FILE = 'warehouse.db';
-const MAIN_DB_FILE_PATH = path.join(process.cwd(), 'dbs', 'intratool.db');
 
 // This function is automatically called when the database is first created.
 export async function initializeWarehouseDb(db: import('better-sqlite3').Database) {
@@ -310,34 +309,34 @@ export async function getInventory(dateRange?: DateRange): Promise<WarehouseInve
 }
 
 export async function updateInventory(itemId: string, locationId: number, newQuantity: number, updatedBy: string): Promise<void> {
-    const db = await connectDb(WAREHOUSE_DB_FILE);
+    const mainDb = await connectDb(); // Connect to the main database
+    const userResult = mainDb.prepare('SELECT id FROM users WHERE name = ?').get(updatedBy) as { id: number } | undefined;
+
+    if (!userResult) {
+        throw new Error(`User '${updatedBy}' not found in main database.`);
+    }
+    const userId = userResult.id;
+    
+    // Now, connect to the warehouse database for the transaction
+    const warehouseDb = await connectDb(WAREHOUSE_DB_FILE);
     
     try {
-        db.prepare(`ATTACH DATABASE '${MAIN_DB_FILE_PATH}' AS main`).run();
-
-        const transaction = db.transaction(() => {
-            const currentInventory = db.prepare('SELECT quantity FROM inventory WHERE itemId = ? AND locationId = ?').get(itemId, locationId) as { quantity: number } | undefined;
+        const transaction = warehouseDb.transaction(() => {
+            const currentInventory = warehouseDb.prepare('SELECT quantity FROM inventory WHERE itemId = ? AND locationId = ?').get(itemId, locationId) as { quantity: number } | undefined;
             const oldQuantity = currentInventory?.quantity ?? 0;
             const difference = newQuantity - oldQuantity;
 
             if (difference !== 0) {
-                db.prepare(
+                warehouseDb.prepare(
                     `INSERT INTO inventory (itemId, locationId, quantity, lastUpdated, updatedBy) 
                      VALUES (?, ?, ?, datetime('now'), ?)
                      ON CONFLICT(itemId, locationId) 
                      DO UPDATE SET quantity = ?, updatedBy = ?, lastUpdated = datetime('now')`
                 ).run(itemId, locationId, newQuantity, updatedBy, newQuantity, updatedBy);
 
-                const getUserIdStmt = db.prepare('SELECT id FROM main.users WHERE name = ?');
-                const userResult = getUserIdStmt.get(updatedBy) as { id: number } | undefined;
-
-                if (!userResult) {
-                    throw new Error(`User '${updatedBy}' not found in main database.`);
-                }
-
-                db.prepare(
+                warehouseDb.prepare(
                     'INSERT INTO movements (itemId, quantity, fromLocationId, toLocationId, timestamp, userId, notes) VALUES (?, ?, ?, ?, datetime(\'now\'), ?, ?)'
-                ).run(itemId, difference, null, locationId, userResult.id, `Ajuste de inventario físico. Conteo: ${newQuantity}`);
+                ).run(itemId, difference, null, locationId, userId, `Ajuste de inventario físico. Conteo: ${newQuantity}`);
             }
         });
 
@@ -345,13 +344,6 @@ export async function updateInventory(itemId: string, locationId: number, newQua
     } catch(error) {
         logError('Error in updateInventory transaction', { error: (error as Error).message });
         throw error;
-    } finally {
-        // Always detach the database
-        try {
-            db.prepare('DETACH DATABASE main').run();
-        } catch(detachError) {
-            logError('Failed to detach main database', { error: (detachError as Error).message });
-        }
     }
 }
 
