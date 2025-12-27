@@ -226,7 +226,7 @@ export const useRequests = () => {
         statusFilter: "all",
         classificationFilter: "all",
         dateFilter: undefined,
-        showOnlyMyRequests: !hasPermission('requests:read:all'),
+        showOnlyMyRequests: true,
         clientSearchTerm: "",
         isClientSearchOpen: false,
         itemSearchTerm: "",
@@ -1067,7 +1067,7 @@ export const useRequests = () => {
 
                 return searchMatch && statusMatch && classificationMatch && dateMatch && myRequestsMatch;
             });
-        }, [state.viewingArchived, state.activeRequests, state.archivedRequests, debouncedSearchTerm, state.statusFilter, state.classificationFilter, products, state.dateFilter, state.showOnlyMyRequests, currentUser, hasPermission]),
+        }, [state.viewingArchived, state.activeRequests, state.archivedRequests, debouncedSearchTerm, state.statusFilter, state.classificationFilter, products, state.dateFilter, state.showOnlyMyRequests, currentUser]),
         stockLevels: authStockLevels,
         visibleErpOrderLines: useMemo(() => {
             if (!state.showOnlyShortageItems) {
