@@ -6,8 +6,10 @@
 import { connectDb, getAllStock as getAllStockFromMain, getStockSettings as getStockSettingsFromMain } from '@/modules/core/lib/db';
 import type { WarehouseLocation, WarehouseInventoryItem, MovementLog, WarehouseSettings, StockSettings, StockInfo, ItemLocation, InventoryUnit, DateRange } from '@/modules/core/types';
 import { logError } from '@/modules/core/lib/logger';
+import path from 'path';
 
 const WAREHOUSE_DB_FILE = 'warehouse.db';
+const MAIN_DB_FILE_PATH = path.join(process.cwd(), 'dbs', 'intratool.db');
 
 // This function is automatically called when the database is first created.
 export async function initializeWarehouseDb(db: import('better-sqlite3').Database) {
@@ -310,26 +312,47 @@ export async function getInventory(dateRange?: DateRange): Promise<WarehouseInve
 export async function updateInventory(itemId: string, locationId: number, newQuantity: number, updatedBy: string): Promise<void> {
     const db = await connectDb(WAREHOUSE_DB_FILE);
     
-    const transaction = db.transaction(() => {
-        const currentInventory = db.prepare('SELECT quantity FROM inventory WHERE itemId = ? AND locationId = ?').get(itemId, locationId) as { quantity: number } | undefined;
-        const oldQuantity = currentInventory?.quantity ?? 0;
-        const difference = newQuantity - oldQuantity;
+    try {
+        db.prepare(`ATTACH DATABASE '${MAIN_DB_FILE_PATH}' AS main`).run();
 
-        if (difference !== 0) {
-            db.prepare(
-                `INSERT INTO inventory (itemId, locationId, quantity, lastUpdated, updatedBy) 
-                 VALUES (?, ?, ?, datetime('now'), ?)
-                 ON CONFLICT(itemId, locationId) 
-                 DO UPDATE SET quantity = ?, updatedBy = ?, lastUpdated = datetime('now')`
-            ).run(itemId, locationId, newQuantity, updatedBy, newQuantity, updatedBy);
+        const transaction = db.transaction(() => {
+            const currentInventory = db.prepare('SELECT quantity FROM inventory WHERE itemId = ? AND locationId = ?').get(itemId, locationId) as { quantity: number } | undefined;
+            const oldQuantity = currentInventory?.quantity ?? 0;
+            const difference = newQuantity - oldQuantity;
 
-            db.prepare(
-                'INSERT INTO movements (itemId, quantity, fromLocationId, toLocationId, timestamp, userId, notes) VALUES (?, ?, ?, ?, datetime(\'now\'), (SELECT id FROM main.users WHERE name = ?), ?)'
-            ).run(itemId, difference, null, locationId, updatedBy, `Ajuste de inventario físico. Conteo: ${newQuantity}`);
+            if (difference !== 0) {
+                db.prepare(
+                    `INSERT INTO inventory (itemId, locationId, quantity, lastUpdated, updatedBy) 
+                     VALUES (?, ?, ?, datetime('now'), ?)
+                     ON CONFLICT(itemId, locationId) 
+                     DO UPDATE SET quantity = ?, updatedBy = ?, lastUpdated = datetime('now')`
+                ).run(itemId, locationId, newQuantity, updatedBy, newQuantity, updatedBy);
+
+                const getUserIdStmt = db.prepare('SELECT id FROM main.users WHERE name = ?');
+                const userResult = getUserIdStmt.get(updatedBy) as { id: number } | undefined;
+
+                if (!userResult) {
+                    throw new Error(`User '${updatedBy}' not found in main database.`);
+                }
+
+                db.prepare(
+                    'INSERT INTO movements (itemId, quantity, fromLocationId, toLocationId, timestamp, userId, notes) VALUES (?, ?, ?, ?, datetime(\'now\'), ?, ?)'
+                ).run(itemId, difference, null, locationId, userResult.id, `Ajuste de inventario físico. Conteo: ${newQuantity}`);
+            }
+        });
+
+        transaction();
+    } catch(error) {
+        logError('Error in updateInventory transaction', { error: (error as Error).message });
+        throw error;
+    } finally {
+        // Always detach the database
+        try {
+            db.prepare('DETACH DATABASE main').run();
+        } catch(detachError) {
+            logError('Failed to detach main database', { error: (detachError as Error).message });
         }
-    });
-
-    transaction();
+    }
 }
 
 
