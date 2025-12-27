@@ -109,13 +109,13 @@ export default function ManageLocationsPage() {
     const [locationToDelete, setLocationToDelete] = useState<WarehouseLocation | null>(null);
 
     const [isWizardOpen, setWizardOpen] = useState(false);
-    const [wizardData, setWizardData] = useState({ name: '', prefix: '', levels: '', positions: '', depth: '' });
+    const [wizardData, setWizardData] = useState({ name: '', prefix: '', levels: '', positions: '', depth: '', parentId: null as number | null });
     const [cloneData, setCloneData] = useState({ sourceRackId: '', newName: '', newPrefix: '' });
 
     const fetchAllData = useCallback(async () => {
         setIsLoading(true);
-        if (isAuthorized) {
-            await logInfo(`User ${user?.name} accessed Manage Locations page.`);
+        if (isAuthorized && user) {
+            await logInfo(`User ${user.name} accessed Manage Locations page.`);
         }
         try {
             const [settingsData, locationsData] = await Promise.all([
@@ -221,7 +221,8 @@ export default function ManageLocationsPage() {
                 prefix: wizardData.prefix,
                 levels: Number(wizardData.levels),
                 positions: Number(wizardData.positions),
-                depth: Number(wizardData.depth)
+                depth: Number(wizardData.depth),
+                parentId: wizardData.parentId
             };
             await addBulkLocations({ type: 'rack', params });
             toast({ title: '¡Rack Creado!', description: `Se generaron las ubicaciones para ${wizardData.name}.` });
@@ -393,6 +394,18 @@ export default function ManageLocationsPage() {
                             <AccordionItem value="item-1">
                                 <AccordionTrigger>Crear Nuevo Rack desde Cero</AccordionTrigger>
                                 <AccordionContent className="pt-4 space-y-4">
+                                     <div className="space-y-2">
+                                        <Label htmlFor="wiz-parent">Ubicación Padre (Bodega/Zona)</Label>
+                                        <Select value={wizardData.parentId ? String(wizardData.parentId) : ''} onValueChange={val => setWizardData(p => ({...p, parentId: val ? Number(val) : null}))}>
+                                            <SelectTrigger><SelectValue placeholder="Seleccionar (opcional, si no es raíz)"/></SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="">(Ninguno)</SelectItem>
+                                                {locations.filter(l => l.type !== 'shelf' && l.type !== 'bin').map(opt => (
+                                                    <SelectItem key={opt.id} value={String(opt.id)}>{opt.name} ({opt.code})</SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
                                     <div className="grid grid-cols-2 gap-4">
                                         <div className="space-y-2">
                                             <Label htmlFor="wiz-name">Nombre Base del Rack</Label>

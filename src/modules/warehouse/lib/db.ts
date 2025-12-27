@@ -4,7 +4,7 @@
 "use server";
 
 import { connectDb, getAllStock as getAllStockFromMain, getStockSettings as getStockSettingsFromMain } from '@/modules/core/lib/db';
-import type { WarehouseLocation, WarehouseInventoryItem, MovementLog, WarehouseSettings, StockSettings, StockInfo, ItemLocation, InventoryUnit, DateRange } from '@/modules/core/types';
+import type { WarehouseLocation, WarehouseInventoryItem, MovementLog, WarehouseSettings, StockSettings, StockInfo, ItemLocation, InventoryUnit, DateRange, User } from '@/modules/core/types';
 import { logError } from '@/modules/core/lib/logger';
 import path from 'path';
 
@@ -216,9 +216,9 @@ export async function addBulkLocations(payload: { type: 'rack' | 'clone'; params
 
     const transaction = db.transaction(() => {
         if (type === 'rack') {
-            const { name, prefix, levels, positions, depth } = params;
+            const { name, prefix, levels, positions, depth, parentId } = params;
             const rackType = settings.locationLevels.find(l => l.name.toLowerCase().includes('rack'))?.type || 'rack';
-            const info = db.prepare('INSERT INTO locations (name, code, type, parentId) VALUES (?, ?, ?, NULL)').run(name, prefix, rackType);
+            const info = db.prepare('INSERT INTO locations (name, code, type, parentId) VALUES (?, ?, ?, ?)').run(name, prefix, rackType, parentId || null);
             const rackId = info.lastInsertRowid as number;
 
             for (let i = 0; i < levels; i++) {
@@ -308,17 +308,11 @@ export async function getInventory(dateRange?: DateRange): Promise<WarehouseInve
     return db.prepare('SELECT * FROM inventory ORDER BY lastUpdated DESC').all() as WarehouseInventoryItem[];
 }
 
-export async function updateInventory(itemId: string, locationId: number, newQuantity: number, userId: number): Promise<void> {
+export async function updateInventory(itemId: string, locationId: number, newQuantity: number, user: User): Promise<void> {
     const warehouseDb = await connectDb(WAREHOUSE_DB_FILE);
     
     try {
         const transaction = warehouseDb.transaction(() => {
-            const userResult = warehouseDb.prepare(`ATTACH DATABASE '${path.join(process.cwd(), 'dbs', 'intratool.db')}' AS main; SELECT name FROM main.users WHERE id = ?`).get(userId) as { name: string } | undefined;
-            if(!userResult) {
-                throw new Error(`User with ID ${userId} not found.`);
-            }
-            const updatedBy = userResult.name;
-
             const currentInventory = warehouseDb.prepare('SELECT quantity FROM inventory WHERE itemId = ? AND locationId = ?').get(itemId, locationId) as { quantity: number } | undefined;
             const oldQuantity = currentInventory?.quantity ?? 0;
             const difference = newQuantity - oldQuantity;
@@ -329,18 +323,17 @@ export async function updateInventory(itemId: string, locationId: number, newQua
                      VALUES (?, ?, ?, datetime('now'), ?)
                      ON CONFLICT(itemId, locationId) 
                      DO UPDATE SET quantity = ?, updatedBy = ?, lastUpdated = datetime('now')`
-                ).run(itemId, locationId, newQuantity, updatedBy, newQuantity, updatedBy);
+                ).run(itemId, locationId, newQuantity, user.name, newQuantity, user.name);
 
                 warehouseDb.prepare(
                     'INSERT INTO movements (itemId, quantity, fromLocationId, toLocationId, timestamp, userId, notes) VALUES (?, ?, ?, ?, datetime(\'now\'), ?, ?)'
-                ).run(itemId, difference, null, locationId, userId, `Ajuste de inventario físico. Conteo: ${newQuantity}`);
+                ).run(itemId, difference, null, locationId, user.id, `Ajuste de inventario físico. Conteo: ${newQuantity}`);
             }
-             warehouseDb.exec('DETACH DATABASE main;');
         });
 
         transaction();
     } catch(error) {
-        logError('Error in updateInventory transaction', { error: (error as Error).message });
+        logError('Error in updateInventory transaction', { error: (error as Error).message, user: user.name });
         throw error;
     }
 }

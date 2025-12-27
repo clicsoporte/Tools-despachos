@@ -81,9 +81,9 @@ export async function deleteLocation(id: number, userName: string): Promise<void
 export const getInventoryForItem = async (itemId: string): Promise<WarehouseInventoryItem[]> => getInventoryForItemServer(itemId);
 export const logMovement = async (movement: Omit<MovementLog, 'id'|'timestamp'>): Promise<void> => logMovementServer(movement);
 
-export const updateInventory = async(itemId: string, locationId: number, quantity: number, userId: number): Promise<void> => {
-    if (!userId) throw new Error("User must be authenticated to update inventory.");
-    return updateInventoryServer(itemId, locationId, quantity, userId);
+export const updateInventory = async(itemId: string, locationId: number, quantity: number, user: User): Promise<void> => {
+    if (!user) throw new Error("User must be authenticated to update inventory.");
+    return updateInventoryServer(itemId, locationId, quantity, user);
 };
 
 // --- Simple Mode Actions ---
