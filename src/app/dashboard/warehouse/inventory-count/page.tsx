@@ -134,7 +134,7 @@ export default function InventoryCountPage() {
 
         setIsSubmitting(true);
         try {
-            await updateInventory(selectedProductId, parseInt(selectedLocationId, 10), quantity, user);
+            await updateInventory(selectedProductId, parseInt(selectedLocationId, 10), quantity, user.id);
             
             toast({ title: "Conteo Guardado", description: `Se registró un inventario de ${quantity} para el producto.` });
             
