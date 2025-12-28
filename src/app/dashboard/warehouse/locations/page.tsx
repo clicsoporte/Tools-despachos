@@ -26,6 +26,8 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/modules/core/hooks/useAuth';
 
 const emptyLocation: Omit<WarehouseLocation, 'id'> = { name: '', code: '', type: 'building', parentId: null };
+const initialWizardState = { name: '', prefix: '', levels: '', positions: '', depth: '', parentId: null as number | null };
+const initialCloneState = { sourceRackId: '', newName: '', newPrefix: '' };
 
 function LocationTree({ locations, onEdit, onDelete }: { locations: WarehouseLocation[], onEdit: (loc: WarehouseLocation) => void, onDelete: (loc: WarehouseLocation) => void }) {
     const [openNodes, setOpenNodes] = useState<Set<number>>(() => {
@@ -109,8 +111,8 @@ export default function ManageLocationsPage() {
     const [locationToDelete, setLocationToDelete] = useState<WarehouseLocation | null>(null);
 
     const [isWizardOpen, setWizardOpen] = useState(false);
-    const [wizardData, setWizardData] = useState({ name: '', prefix: '', levels: '', positions: '', depth: '', parentId: null as number | null });
-    const [cloneData, setCloneData] = useState({ sourceRackId: '', newName: '', newPrefix: '' });
+    const [wizardData, setWizardData] = useState(initialWizardState);
+    const [cloneData, setCloneData] = useState(initialCloneState);
 
     const fetchAllData = useCallback(async () => {
         setIsLoading(true);
@@ -229,6 +231,7 @@ export default function ManageLocationsPage() {
             await addBulkLocations({ type: 'rack', params });
             toast({ title: '¡Rack Creado!', description: `Se generaron las ubicaciones para ${wizardData.name}.` });
             setWizardOpen(false);
+            setWizardData(initialWizardState);
             await fetchAllData(); // Refresh the location list
         } catch (error: any) {
             logError('Failed to generate from wizard', { error: error.message });
@@ -245,6 +248,7 @@ export default function ManageLocationsPage() {
             await addBulkLocations({ type: 'clone', params: cloneData });
             toast({ title: '¡Rack Clonado!', description: `La estructura de ${cloneData.newName} ha sido creada.` });
             setWizardOpen(false);
+            setCloneData(initialCloneState);
             await fetchAllData(); // Refresh the location list
         } catch (error: any) {
             logError('Failed to clone rack', { error: error.message });

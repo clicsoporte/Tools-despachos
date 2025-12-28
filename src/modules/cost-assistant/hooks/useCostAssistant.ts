@@ -9,7 +9,7 @@ import { usePageTitle } from '@/modules/core/hooks/usePageTitle';
 import { useAuthorization } from '@/modules/core/hooks/useAuthorization';
 import type { CostAssistantLine, ProcessedInvoiceInfo, CostAnalysisDraft, CostAssistantSettings } from '@/modules/core/types';
 import { processInvoiceXmls, getCostAssistantSettings, saveCostAssistantSettings, getAllDrafts, saveDraft, deleteDraft, exportForERP, cleanupExportFile } from '../lib/actions';
-import { logError } from '@/modules/core/lib/logger';
+import { logError, logInfo } from '@/modules/core/lib/logger';
 import { useAuth } from '@/modules/core/hooks/useAuth';
 
 const parseDecimal = (str: any): number => {
@@ -70,6 +70,7 @@ export const useCostAssistant = () => {
         setTitle("Asistente de Costos");
         const loadSettings = async () => {
             if (user) {
+                logInfo('User accessed Cost Assistant module', { user: user.name });
                 const settings = await getCostAssistantSettings(user.id);
                 const completeVisibility = { ...initialColumnVisibility, ...settings.columnVisibility };
                 setState(prevState => ({ 

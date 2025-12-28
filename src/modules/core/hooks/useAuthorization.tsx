@@ -8,6 +8,7 @@
 import { useEffect, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/modules/core/hooks/useAuth';
+import { logInfo } from '../lib/logger';
 
 type UseAuthorizationReturn = {
   isAuthorized: boolean | null;
@@ -42,10 +43,10 @@ export function useAuthorization(requiredPermissions: string[] = []): UseAuthori
         // This effect is now simplified. The main redirect logic is in DashboardLayout.
         // It's kept in case specific pages need to react to authorization changes in the future,
         // but it no longer handles the primary redirection responsibility.
-        if (isReady && !isAuthorized) {
-            // Optional: Log an access attempt or handle specific page logic
+        if (isReady && isAuthorized && user) {
+            // This is a good place to log module access if needed.
         }
-    }, [isAuthorized, isReady]);
+    }, [isAuthorized, isReady, user]);
 
     return { isAuthorized, hasPermission, userPermissions };
 }

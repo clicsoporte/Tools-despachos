@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
@@ -15,7 +14,7 @@ import { Loader2, Search, ShieldCheck, ShieldX } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { format, parseISO, isValid } from 'date-fns';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { logError } from '@/modules/core/lib/logger';
+import { logError, logInfo } from '@/modules/core/lib/logger';
 import { SearchInput } from '@/components/ui/search-input';
 import { cn } from '@/lib/utils';
 import { useDebounce } from 'use-debounce';
@@ -235,10 +234,10 @@ const HaciendaExemptionCard = ({ data, products }: { data: EnrichedExemptionInfo
 
 
 export default function HaciendaQueryPage() {
-    useAuthorization(['hacienda:query']);
+    const { isAuthorized } = useAuthorization(['hacienda:query']);
     const { setTitle } = usePageTitle();
     const { toast } = useToast();
-    const { customers, products, isReady } = useAuth();
+    const { user, customers, products, isReady } = useAuth();
     
     const [exemptions, setExemptions] = useState<Exemption[]>([]);
     
@@ -262,6 +261,9 @@ export default function HaciendaQueryPage() {
     useEffect(() => {
         setTitle("Consultas a Hacienda");
         const loadLocalData = async () => {
+            if (user && isAuthorized) {
+                logInfo('User accessed Hacienda module', { user: user.name });
+            }
             try {
                 const exemptionsData = await getAllExemptions();
                 setExemptions(exemptionsData);
@@ -269,15 +271,17 @@ export default function HaciendaQueryPage() {
                 toast({ title: "Error de carga", description: "No se pudieron cargar los datos locales de exoneraciones.", variant: "destructive" });
             }
         };
-        loadLocalData();
-    }, [setTitle, toast]);
+        if (isAuthorized) {
+            loadLocalData();
+        }
+    }, [setTitle, toast, isAuthorized, user]);
 
     const customerOptions = useMemo(() => {
         if (debouncedUnifiedSearch.length < 2) return [];
         const searchLower = debouncedUnifiedSearch.toLowerCase();
         return customers
             .filter(c => c.id.toLowerCase().includes(searchLower) || c.name.toLowerCase().includes(searchLower))
-            .map(c => ({ value: c.id, label: `${c.id} - ${c.name}` }));
+            .map(c => ({ value: c.id, label: `[${c.id}] - ${c.name}` }));
     }, [customers, debouncedUnifiedSearch]);
 
     const performTaxpayerSearch = async (id: string, setData: (data: HaciendaContributorInfo | null) => void) => {
@@ -385,6 +389,10 @@ export default function HaciendaQueryPage() {
                  </Card>
             </main>
         )
+    }
+    
+    if (!isAuthorized) {
+        return null;
     }
 
     return (
