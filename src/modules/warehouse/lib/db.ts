@@ -283,7 +283,7 @@ export async function updateLocation(location: WarehouseLocation): Promise<Wareh
     return updatedLocation;
 }
 
-export async function deleteLocation(id: number): Promise<void> {
+export async function deleteLocation(id: number, userName: string): Promise<void> {
     const db = await connectDb(WAREHOUSE_DB_FILE);
     db.prepare('DELETE FROM locations WHERE id = ?').run(id);
 }

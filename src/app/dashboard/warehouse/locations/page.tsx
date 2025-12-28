@@ -270,6 +270,10 @@ export default function ManageLocationsPage() {
             </main>
         );
     }
+    
+    if (!isAuthorized) {
+        return null;
+    }
 
     return (
         <main className="flex-1 p-4 md:p-6 lg:p-8">

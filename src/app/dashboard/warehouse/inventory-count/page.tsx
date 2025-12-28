@@ -79,10 +79,10 @@ export default function InventoryCountPage() {
     useEffect(() => {
         setTitle("Toma de Inventario Físico");
         if (isAuthorized) {
-            if (user) {
-                logInfo(`User ${user.name} accessed Inventory Count page.`);
-            }
             loadInitialData();
+            if (user) {
+                 logInfo(`User ${user.name} accessed Inventory Count page.`);
+            }
         }
     }, [setTitle, loadInitialData, isAuthorized, user]);
 
@@ -157,6 +157,10 @@ export default function InventoryCountPage() {
             setIsSubmitting(false);
         }
     };
+    
+    if (!isAuthorized) {
+        return null;
+    }
     
     if (isLoading) {
         return (
