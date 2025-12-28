@@ -10,7 +10,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/modules/core/hooks/use-toast';
-import { logError, logInfo } from '@/modules/core/lib/logger';
+import { logError, logInfo, logWarn } from '@/modules/core/lib/logger';
 import { usePageTitle } from '@/modules/core/hooks/usePageTitle';
 import { useAuthorization } from '@/modules/core/hooks/useAuthorization';
 import { getWarehouseSettings, saveWarehouseSettings, getLocations, addLocation, deleteLocation, updateLocation, addBulkLocations } from '@/modules/warehouse/lib/actions';
@@ -473,7 +473,7 @@ export default function ManageLocationsPage() {
                   <AlertDialog open={!!locationToDelete} onOpenChange={(open) => !open && setLocationToDelete(null)}>
                     <AlertDialogContent>
                         <AlertDialogHeader>
-                            <AlertDialogTitle>¿Eliminar "{locationToDelete?.name}"?</AlertDialogTitle>
+                            <AlertDialogTitle>{`¿Eliminar "${locationToDelete?.name}"?`}</AlertDialogTitle>
                             <AlertDialogDescription>
                                 Esta acción no se puede deshacer. Se eliminará la ubicación y TODAS las ubicaciones hijas que contenga. 
                                 El inventario asociado no se eliminará, pero quedará sin ubicación.
