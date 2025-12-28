@@ -403,10 +403,10 @@ export default function ManageLocationsPage() {
                                 <AccordionContent className="pt-4 space-y-4">
                                      <div className="space-y-2">
                                         <Label htmlFor="wiz-parent">Ubicación Padre (Bodega/Zona)</Label>
-                                        <Select value={wizardData.parentId ? String(wizardData.parentId) : ''} onValueChange={val => setWizardData(p => ({...p, parentId: val ? Number(val) : null}))}>
-                                            <SelectTrigger><SelectValue placeholder="Seleccionar (opcional, si no es raíz)"/></SelectTrigger>
+                                        <Select value={wizardData.parentId ? String(wizardData.parentId) : 'none'} onValueChange={val => setWizardData(p => ({...p, parentId: val === 'none' ? null : Number(val)}))}>
+                                            <SelectTrigger><SelectValue placeholder="Seleccionar (opcional, si es raíz)"/></SelectTrigger>
                                             <SelectContent>
-                                                <SelectItem value="">(Ninguno)</SelectItem>
+                                                <SelectItem value="none">(Ninguno - Nivel Raíz)</SelectItem>
                                                 {locations.filter(l => l.type !== 'shelf' && l.type !== 'bin').map(opt => (
                                                     <SelectItem key={opt.id} value={String(opt.id)}>{opt.name} ({opt.code})</SelectItem>
                                                 ))}
