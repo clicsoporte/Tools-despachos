@@ -285,25 +285,28 @@ export async function getOrders(options: {
     const archivedStatuses = `'${finalStatus}', 'canceled'`;
 
     // Fetch all active orders
-    const activeOrders: ProductionOrder[] = db.prepare(`
+    const activeOrdersRaw = db.prepare(`
         SELECT * FROM production_orders 
         WHERE status NOT IN (${archivedStatuses}) 
         ORDER BY requestDate DESC
-    `).all() as ProductionOrder[];
+    `).all() as any[];
     
     // Fetch paginated archived orders
-    const archivedOrders: ProductionOrder[] = db.prepare(`
+    const archivedOrdersRaw = db.prepare(`
         SELECT * FROM production_orders 
         WHERE status IN (${archivedStatuses}) 
         ORDER BY requestDate DESC 
         LIMIT ? OFFSET ?
-    `).all(pageSize, page * pageSize) as ProductionOrder[];
+    `).all(pageSize, page * pageSize) as any[];
         
     const totalArchivedCount = (db.prepare(`
         SELECT COUNT(*) as count 
         FROM production_orders 
         WHERE status IN (${archivedStatuses})
     `).get() as { count: number }).count;
+
+    const activeOrders = activeOrdersRaw.map(o => JSON.parse(JSON.stringify(o)));
+    const archivedOrders = archivedOrdersRaw.map(o => JSON.parse(JSON.stringify(o)));
 
     return { activeOrders, archivedOrders, totalArchivedCount };
 }
@@ -372,7 +375,7 @@ export async function addOrder(order: Omit<ProductionOrder, 'id' | 'consecutive'
 
     try {
         const createdOrder = transaction();
-        return createdOrder;
+        return JSON.parse(JSON.stringify(createdOrder));
     } catch (error: any) {
         logError("Failed to create order in DB transaction", { error: (error as Error).message });
         throw error;
@@ -443,7 +446,7 @@ export async function updateOrder(payload: UpdateProductionOrderPayload): Promis
     transaction();
     
     const updatedOrder = db.prepare('SELECT * FROM production_orders WHERE id = ?').get(orderId) as ProductionOrder;
-    return updatedOrder;
+    return JSON.parse(JSON.stringify(updatedOrder));
 }
 
 export async function confirmModification(orderId: number, updatedBy: string): Promise<ProductionOrder> {
@@ -457,7 +460,7 @@ export async function confirmModification(orderId: number, updatedBy: string): P
       .run(orderId, new Date().toISOString(), currentStatus, updatedBy, 'Modificación confirmada y alerta eliminada.');
       
     const updatedOrder = db.prepare('SELECT * FROM production_orders WHERE id = ?').get(orderId) as ProductionOrder;
-    return updatedOrder;
+    return JSON.parse(JSON.stringify(updatedOrder));
 }
 
 
@@ -511,7 +514,7 @@ export async function updateStatus(payload: UpdateStatusPayload): Promise<Produc
 
     transaction();
     const updatedOrder = db.prepare('SELECT * FROM production_orders WHERE id = ?').get(orderId) as ProductionOrder;
-    return updatedOrder;
+    return JSON.parse(JSON.stringify(updatedOrder));
 }
 
 export async function updateDetails(payload: UpdateOrderDetailsPayload): Promise<ProductionOrder> {
@@ -565,7 +568,7 @@ export async function updateDetails(payload: UpdateOrderDetailsPayload): Promise
     
     if (updates.length === 0) {
         const orderWithoutChanges = db.prepare('SELECT * FROM production_orders WHERE id = ?').get(orderId) as ProductionOrder;
-        return orderWithoutChanges;
+        return JSON.parse(JSON.stringify(orderWithoutChanges));
     };
 
     query += ` ${updates.join(', ')} WHERE id = @orderId`;
@@ -581,13 +584,14 @@ export async function updateDetails(payload: UpdateOrderDetailsPayload): Promise
 
     transaction();
     const updatedOrder = db.prepare('SELECT * FROM production_orders WHERE id = ?').get(orderId) as ProductionOrder;
-    return updatedOrder;
+    return JSON.parse(JSON.stringify(updatedOrder));
 }
 
 
 export async function getOrderHistory(orderId: number): Promise<ProductionOrderHistoryEntry[]> {
     const db = await connectDb(PLANNER_DB_FILE);
-    return db.prepare('SELECT * FROM production_order_history WHERE orderId = ? ORDER BY timestamp DESC').all(orderId) as ProductionOrderHistoryEntry[];
+    const history = db.prepare('SELECT * FROM production_order_history WHERE orderId = ? ORDER BY timestamp DESC').all(orderId) as ProductionOrderHistoryEntry[];
+    return JSON.parse(JSON.stringify(history));
 }
 
 export async function addNote(payload: PlannerNotePayload): Promise<ProductionOrder> {
@@ -609,7 +613,7 @@ export async function addNote(payload: PlannerNotePayload): Promise<ProductionOr
 
     transaction();
     const updatedOrder = db.prepare('SELECT * FROM production_orders WHERE id = ?').get(orderId) as ProductionOrder;
-    return updatedOrder;
+    return JSON.parse(JSON.stringify(updatedOrder));
 }
 
 export async function updatePendingAction(payload: AdministrativeActionPayload): Promise<ProductionOrder> {
@@ -635,7 +639,8 @@ export async function updatePendingAction(payload: AdministrativeActionPayload):
     });
     
     transaction();
-    return db.prepare('SELECT * FROM production_orders WHERE id = ?').get(entityId) as ProductionOrder;
+    const updatedOrder = db.prepare('SELECT * FROM production_orders WHERE id = ?').get(entityId) as ProductionOrder;
+    return JSON.parse(JSON.stringify(updatedOrder));
 }
 
 export async function getUserByName(name: string): Promise<User | null> {
@@ -681,7 +686,7 @@ export async function getCompletedOrdersByDateRange(dateRange: DateRange): Promi
         return completionDate >= dateRange.from! && completionDate <= toDate;
     });
 
-    return filteredOrders;
+    return JSON.parse(JSON.stringify(filteredOrders));
 }
 
     

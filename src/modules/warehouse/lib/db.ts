@@ -198,7 +198,8 @@ export async function saveWarehouseSettings(settings: WarehouseSettings): Promis
 
 export async function getLocations(): Promise<WarehouseLocation[]> {
     const db = await connectDb(WAREHOUSE_DB_FILE);
-    return db.prepare('SELECT * FROM locations ORDER BY parentId, name').all() as WarehouseLocation[];
+    const locations = db.prepare('SELECT * FROM locations ORDER BY parentId, name').all() as WarehouseLocation[];
+    return JSON.parse(JSON.stringify(locations));
 }
 
 export async function addLocation(location: Omit<WarehouseLocation, 'id'>): Promise<WarehouseLocation> {
@@ -299,13 +300,15 @@ export async function getInventory(dateRange?: DateRange): Promise<WarehouseInve
     if (dateRange?.from) {
         const toDate = dateRange.to || new Date();
         toDate.setHours(23, 59, 59, 999);
-        return db.prepare(`
+        const inventory = db.prepare(`
             SELECT * FROM inventory 
             WHERE lastUpdated BETWEEN ? AND ?
             ORDER BY lastUpdated DESC
         `).all(dateRange.from.toISOString(), toDate.toISOString()) as WarehouseInventoryItem[];
+        return JSON.parse(JSON.stringify(inventory));
     }
-    return db.prepare('SELECT * FROM inventory ORDER BY lastUpdated DESC').all() as WarehouseInventoryItem[];
+    const inventory = db.prepare('SELECT * FROM inventory ORDER BY lastUpdated DESC').all() as WarehouseInventoryItem[];
+    return JSON.parse(JSON.stringify(inventory));
 }
 
 export async function updateInventory(itemId: string, locationId: number, newQuantity: number, userId: number): Promise<void> {
@@ -381,12 +384,14 @@ export async function getMovements(itemId?: string): Promise<MovementLog[]> {
 
 export async function getItemLocations(itemId: string): Promise<ItemLocation[]> {
     const db = await connectDb(WAREHOUSE_DB_FILE);
-    return db.prepare('SELECT * FROM item_locations WHERE itemId = ?').all(itemId) as ItemLocation[];
+    const itemLocations = db.prepare('SELECT * FROM item_locations WHERE itemId = ?').all(itemId) as ItemLocation[];
+    return JSON.parse(JSON.stringify(itemLocations));
 }
 
 export async function getAllItemLocations(): Promise<ItemLocation[]> {
     const db = await connectDb(WAREHOUSE_DB_FILE);
-    return db.prepare('SELECT * FROM item_locations').all() as ItemLocation[];
+    const itemLocations = db.prepare('SELECT * FROM item_locations').all() as ItemLocation[];
+    return JSON.parse(JSON.stringify(itemLocations));
 }
 
 export async function assignItemToLocation(itemId: string, locationId: number, clientId: string | null, updatedBy: string): Promise<ItemLocation> {
@@ -436,16 +441,19 @@ export async function addInventoryUnit(unit: Omit<InventoryUnit, 'id' | 'created
 
 export async function getInventoryUnits(): Promise<InventoryUnit[]> {
     const db = await connectDb(WAREHOUSE_DB_FILE);
-    return db.prepare('SELECT * FROM inventory_units ORDER BY createdAt DESC LIMIT 100').all() as InventoryUnit[];
+    const units = db.prepare('SELECT * FROM inventory_units ORDER BY createdAt DESC LIMIT 100').all() as InventoryUnit[];
+    return JSON.parse(JSON.stringify(units));
 }
 
 export async function getInventoryUnitById(id: string | number): Promise<InventoryUnit | null> {
     const db = await connectDb(WAREHOUSE_DB_FILE);
     const searchTerm = String(id).toUpperCase();
     if (searchTerm.startsWith('U')) {
-        return db.prepare('SELECT * FROM inventory_units WHERE UPPER(unitCode) = ?').get(searchTerm) as InventoryUnit | null;
+        const unit = db.prepare('SELECT * FROM inventory_units WHERE UPPER(unitCode) = ?').get(searchTerm) as InventoryUnit | null;
+        return unit ? JSON.parse(JSON.stringify(unit)) : null;
     }
-    return db.prepare('SELECT * FROM inventory_units WHERE id = ?').get(id) as InventoryUnit | null;
+    const unit = db.prepare('SELECT * FROM inventory_units WHERE id = ?').get(id) as InventoryUnit | null;
+    return unit ? JSON.parse(JSON.stringify(unit)) : null;
 }
 
 export async function deleteInventoryUnit(id: number): Promise<void> {
@@ -463,7 +471,8 @@ export async function updateInventoryUnitLocation(id: number, locationId: number
 
 export async function getActiveLocks(): Promise<WarehouseLocation[]> {
     const db = await connectDb(WAREHOUSE_DB_FILE);
-    return db.prepare('SELECT * FROM locations WHERE isLocked = 1').all() as WarehouseLocation[];
+    const locks = db.prepare('SELECT * FROM locations WHERE isLocked = 1').all() as WarehouseLocation[];
+    return JSON.parse(JSON.stringify(locks));
 }
 
 export async function lockEntity(payload: { entityIds: number[]; userName: string; lockedEntityName: string; }): Promise<{ locked: boolean }> {
@@ -503,5 +512,6 @@ export async function getChildLocations(parentIds: number[]): Promise<WarehouseL
     const db = await connectDb(WAREHOUSE_DB_FILE);
     if (parentIds.length === 0) return [];
     const placeholders = parentIds.map(() => '?').join(',');
-    return db.prepare(`SELECT * FROM locations WHERE parentId IN (${placeholders})`).all(...parentIds) as WarehouseLocation[];
+    const locations = db.prepare(`SELECT * FROM locations WHERE parentId IN (${placeholders})`).all(...parentIds) as WarehouseLocation[];
+    return JSON.parse(JSON.stringify(locations));
 }

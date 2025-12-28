@@ -448,7 +448,8 @@ export async function getCompanySettings(): Promise<Company | null> {
             // Manually handle boolean conversion from integer
             settings.quoterShowTaxId = Boolean(settings.quoterShowTaxId);
         }
-        return settings as Company | null;
+        // Use JSON.parse(JSON.stringify()) to serialize and deserialize the data, converting Date objects to strings
+        return settings ? JSON.parse(JSON.stringify(settings)) : null;
     } catch (error) {
         console.error("Failed to get company settings:", error);
         return null;
@@ -526,7 +527,11 @@ export async function getLogs(filters: {type?: 'operational' | 'system' | 'all';
         query += ' ORDER BY timestamp DESC LIMIT 500';
 
         const logs = db.prepare(query).all(...params) as LogEntry[];
-        return logs.map(log => ({...log, details: log.details ? JSON.parse(log.details) : null}));
+        const serializedLogs = logs.map(log => ({
+            ...log,
+            details: log.details ? JSON.parse(log.details) : null
+        }));
+        return JSON.parse(JSON.stringify(serializedLogs));
     } catch (error) {
         console.error("Failed to get logs from database", error);
         return [];
@@ -664,7 +669,8 @@ export async function saveAllCustomers(customers: Customer[]): Promise<void> {
 export async function getAllProducts(): Promise<Product[]> {
     const db = await connectDb();
     try {
-        return db.prepare('SELECT * FROM products').all() as Product[];
+        const products = db.prepare('SELECT * FROM products').all() as Product[];
+        return JSON.parse(JSON.stringify(products));
     } catch (error) {
         console.error("Failed to get all products:", error);
         return [];
@@ -725,7 +731,8 @@ export async function saveAllSuppliers(suppliers: Supplier[]): Promise<void> {
 export async function getAllExemptions(): Promise<Exemption[]> {
     const db = await connectDb();
     try {
-        return db.prepare('SELECT * FROM exemptions').all() as Exemption[];
+        const exemptions = db.prepare('SELECT * FROM exemptions').all() as Exemption[];
+        return JSON.parse(JSON.stringify(exemptions));
     } catch (error) {
         console.error("Failed to get all exemptions:", error);
         return [];
@@ -803,11 +810,12 @@ export async function getAllQuoteDrafts(userId: number): Promise<QuoteDraft[]> {
     const db = await connectDb();
     try {
         const drafts = db.prepare('SELECT * FROM quote_drafts WHERE userId = ? ORDER BY createdAt DESC').all(userId) as any[];
-        return drafts.map(draft => ({
+        const serializedDrafts = drafts.map(draft => ({
             ...draft,
             lines: draft.lines ? JSON.parse(draft.lines) : [],
             totals: draft.totals ? JSON.parse(draft.totals) : {},
         }));
+        return JSON.parse(JSON.stringify(serializedDrafts));
     } catch (error) {
         console.error("Failed to get all quote drafts:", error);
         return [];
@@ -1111,12 +1119,14 @@ export async function getCabysCatalog(): Promise<{ code: string; description: st
 
 export async function getSuggestions(): Promise<Suggestion[]> {
   const db = await connectDb();
-  return db.prepare('SELECT * FROM suggestions ORDER BY timestamp DESC').all() as Suggestion[];
+  const suggestions = db.prepare('SELECT * FROM suggestions ORDER BY timestamp DESC').all() as Suggestion[];
+  return JSON.parse(JSON.stringify(suggestions));
 }
 
 export async function getUnreadSuggestions(): Promise<Suggestion[]> {
     const db = await connectDb();
-    return db.prepare('SELECT * FROM suggestions WHERE isRead = 0 ORDER BY timestamp DESC').all() as Suggestion[];
+    const suggestions = db.prepare('SELECT * FROM suggestions WHERE isRead = 0 ORDER BY timestamp DESC').all() as Suggestion[];
+    return JSON.parse(JSON.stringify(suggestions));
 }
 
 export async function getUnreadSuggestionsCount(): Promise<number> {
@@ -1190,7 +1200,7 @@ export async function getStockSettings(): Promise<StockSettings> {
                 settings.warehouses = JSON.parse(row.value);
             }
         }
-        return settings;
+        return JSON.parse(JSON.stringify(settings));
     } catch (error) {
         console.error("Error getting stock settings:", error);
         return { warehouses: [] }; // Return default on error
@@ -1241,7 +1251,7 @@ export async function backupAllForUpdate(): Promise<void> {
 export async function listAllUpdateBackups(): Promise<UpdateBackupInfo[]> {
     if (!fs.existsSync(backupDir)) return [];
     const files = fs.readdirSync(backupDir);
-    return files.map(file => {
+    const backupInfo = files.map(file => {
         const parts = file.split('_');
         const date = parts[0];
         const version = parts[1]?.startsWith('v') ? parts[1].substring(1) : 'unknown';
@@ -1256,6 +1266,7 @@ export async function listAllUpdateBackups(): Promise<UpdateBackupInfo[]> {
             version: version
         };
     }).sort((a, b) => b.date.localeCompare(a.date));
+    return JSON.parse(JSON.stringify(backupInfo));
 }
 
 export async function restoreDatabase(moduleId: string, backupFile: File): Promise<void> {
@@ -1446,7 +1457,8 @@ export async function saveAllErpPurchaseOrderLines(lines: ErpPurchaseOrderLine[]
 export async function getAllErpPurchaseOrderHeaders(): Promise<ErpPurchaseOrderHeader[]> {
     const db = await connectDb();
     try {
-        return db.prepare('SELECT * FROM erp_purchase_order_headers').all() as ErpPurchaseOrderHeader[];
+        const headers = db.prepare('SELECT * FROM erp_purchase_order_headers').all() as ErpPurchaseOrderHeader[];
+        return JSON.parse(JSON.stringify(headers));
     } catch (error) {
         console.error("Failed to get all ERP purchase order headers:", error);
         return [];
@@ -1473,7 +1485,8 @@ export async function createNotification(notification: Omit<Notification, 'id' |
 
 export async function getNotifications(userId: number): Promise<Notification[]> {
   const db = await connectDb();
-  return db.prepare('SELECT * FROM notifications WHERE userId = ? ORDER BY timestamp DESC').all(userId) as Notification[];
+  const notifications = db.prepare('SELECT * FROM notifications WHERE userId = ? ORDER BY timestamp DESC').all(userId) as Notification[];
+  return JSON.parse(JSON.stringify(notifications));
 }
 
 export async function markNotificationsAsRead(notificationIds: number[], userId: number): Promise<void> {
@@ -1485,7 +1498,8 @@ export async function markNotificationsAsRead(notificationIds: number[], userId:
 
 export async function getNotificationById(id: number): Promise<Notification | null> {
     const db = await connectDb();
-    return db.prepare('SELECT * FROM notifications WHERE id = ?').get(id) as Notification | null;
+    const notification = db.prepare('SELECT * FROM notifications WHERE id = ?').get(id) as Notification | null;
+    return notification ? JSON.parse(JSON.stringify(notification)) : null;
 }
 
 export async function deleteNotificationById(id: number): Promise<void> {
@@ -1584,7 +1598,7 @@ export async function runDatabaseAudit(userName: string): Promise<AuditResult[]>
         await logInfo(`Auditoría de base de datos completada con éxito por ${userName}.`, { user: userName });
     }
     
-    return results;
+    return JSON.parse(JSON.stringify(results));
 }
 
 export async function runSingleModuleMigration(moduleId: string): Promise<void> {
