@@ -21,6 +21,7 @@ export async function initializeWarehouseDb(db: import('better-sqlite3').Databas
             parentId INTEGER,
             isLocked INTEGER DEFAULT 0,
             lockedBy TEXT,
+            lockedBySessionId TEXT,
             FOREIGN KEY (parentId) REFERENCES locations(id) ON DELETE CASCADE
         );
 
@@ -124,8 +125,8 @@ export async function runWarehouseMigrations(db: import('better-sqlite3').Databa
         };
 
         checkAndRecreateForeignKey('locations', 'parentId', 
-            `CREATE TABLE locations (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, code TEXT UNIQUE NOT NULL, type TEXT NOT NULL, parentId INTEGER, isLocked INTEGER DEFAULT 0, lockedBy TEXT, FOREIGN KEY (parentId) REFERENCES locations(id) ON DELETE CASCADE);`,
-            'id, name, code, type, parentId, isLocked, lockedBy');
+            `CREATE TABLE locations (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, code TEXT UNIQUE NOT NULL, type TEXT NOT NULL, parentId INTEGER, isLocked INTEGER DEFAULT 0, lockedBy TEXT, lockedBySessionId TEXT, FOREIGN KEY (parentId) REFERENCES locations(id) ON DELETE CASCADE);`,
+            'id, name, code, type, parentId, isLocked, lockedBy, lockedBySessionId');
         
         checkAndRecreateForeignKey('inventory', 'locationId',
             `CREATE TABLE inventory (id INTEGER PRIMARY KEY AUTOINCREMENT, itemId TEXT NOT NULL, locationId INTEGER NOT NULL, quantity REAL NOT NULL DEFAULT 0, lastUpdated TEXT NOT NULL, updatedBy TEXT, FOREIGN KEY (locationId) REFERENCES locations(id) ON DELETE CASCADE, UNIQUE (itemId, locationId));`,
@@ -156,6 +157,7 @@ export async function runWarehouseMigrations(db: import('better-sqlite3').Databa
         const locationsTableInfo = db.prepare(`PRAGMA table_info(locations)`).all() as { name: string }[];
         if (!locationsTableInfo.some(c => c.name === 'isLocked')) db.exec('ALTER TABLE locations ADD COLUMN isLocked INTEGER DEFAULT 0');
         if (!locationsTableInfo.some(c => c.name === 'lockedBy')) db.exec('ALTER TABLE locations ADD COLUMN lockedBy TEXT');
+        if (!locationsTableInfo.some(c => c.name === 'lockedBySessionId')) db.exec('ALTER TABLE locations ADD COLUMN lockedBySessionId TEXT');
 
     } catch (error) {
         console.error("Error during warehouse migrations:", error);
@@ -483,20 +485,22 @@ export async function getActiveLocks(): Promise<WarehouseLocation[]> {
     return JSON.parse(JSON.stringify(locks));
 }
 
-export async function lockEntity(payload: { entityIds: number[]; userName: string; lockedEntityName: string; }): Promise<{ locked: boolean }> {
+export async function lockEntity(payload: { entityIds: number[]; userName: string; userId: number; }): Promise<{ locked: boolean }> {
     const db = await connectDb(WAREHOUSE_DB_FILE);
-    const { entityIds, userName } = payload;
+    const { entityIds, userName, userId } = payload;
+    const sessionId = String(userId); // Use user ID as the session ID
 
     const transaction = db.transaction(() => {
         const placeholders = entityIds.map(() => '?').join(',');
         const conflictingLocks = db.prepare(`SELECT id, lockedBy FROM locations WHERE id IN (${placeholders}) AND isLocked = 1`).all(...entityIds) as { id: number; lockedBy: string }[];
         
         if (conflictingLocks.length > 0) {
+            logWarn('Lock attempt failed, entity already locked', { conflictingLocks, user: userName });
             return { locked: true };
         }
 
-        const stmt = db.prepare(`UPDATE locations SET isLocked = 1, lockedBy = ? WHERE id IN (${placeholders})`);
-        stmt.run(userName, ...entityIds);
+        const stmt = db.prepare(`UPDATE locations SET isLocked = 1, lockedBy = ?, lockedBySessionId = ? WHERE id IN (${placeholders})`);
+        stmt.run(userName, sessionId, ...entityIds);
         
         return { locked: false };
     });
@@ -504,16 +508,18 @@ export async function lockEntity(payload: { entityIds: number[]; userName: strin
     return transaction();
 }
 
-export async function releaseLock(entityIds: number[]): Promise<void> {
+export async function releaseLock(entityIds: number[], userId: number): Promise<void> {
     const db = await connectDb(WAREHOUSE_DB_FILE);
     if (entityIds.length === 0) return;
     const placeholders = entityIds.map(() => '?').join(',');
-    db.prepare(`UPDATE locations SET isLocked = 0, lockedBy = NULL WHERE id IN (${placeholders})`).run(...entityIds);
+    const sessionId = String(userId);
+    // Only release locks that belong to the current user's session
+    db.prepare(`UPDATE locations SET isLocked = 0, lockedBy = NULL, lockedBySessionId = NULL WHERE id IN (${placeholders}) AND lockedBySessionId = ?`).run(...entityIds, sessionId);
 }
 
 export async function forceReleaseLock(locationId: number): Promise<void> {
     const db = await connectDb(WAREHOUSE_DB_FILE);
-    db.prepare('UPDATE locations SET isLocked = 0, lockedBy = NULL WHERE id = ?').run(locationId);
+    db.prepare('UPDATE locations SET isLocked = 0, lockedBy = NULL, lockedBySessionId = NULL WHERE id = ?').run(locationId);
 }
 
 export async function getChildLocations(parentIds: number[]): Promise<WarehouseLocation[]> {

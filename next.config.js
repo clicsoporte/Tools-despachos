@@ -18,23 +18,6 @@ const nextConfig = {
       bodySizeLimit: '50mb',
     },
   },
-  typescript: {
-    ignoreBuildErrors: true,
-  },
-  async redirects() {
-    return [
-      {
-        source: '/dashboard/settings',
-        destination: '/dashboard/profile',
-        permanent: true,
-      },
-      {
-        source: '/dashboard/admin/settings',
-        destination: '/dashboard/profile',
-        permanent: true,
-      },
-    ]
-  },
 };
 
 module.exports = nextConfig;
