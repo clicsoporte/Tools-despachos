@@ -28,7 +28,6 @@ export default function WarehouseDashboardPage() {
             switch (tool.id) {
                 case 'warehouse-search':
                 case 'warehouse-search-simple':
-                case 'population-wizard':
                     return hasPermission('warehouse:access');
                 case 'receiving-wizard':
                     return hasPermission('warehouse:receiving:create');
@@ -40,8 +39,6 @@ export default function WarehouseDashboardPage() {
                     return hasPermission('warehouse:units:manage');
                 case 'warehouse-locations':
                     return hasPermission('warehouse:locations:manage');
-                case 'scanner-lookup':
-                    return hasPermission('warehouse:access');
                 case 'lock-management':
                     return hasPermission('warehouse:locks:manage');
                 default:

@@ -24,6 +24,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
 import jsPDF from "jspdf";
 import QRCode from 'qrcode';
+import jsbarcode from 'jsbarcode';
 import { format } from 'date-fns';
 
 const initialNewUnitState = {
@@ -193,10 +194,12 @@ export default function ManageUnitsPage() {
         const product = products.find(p => p.id === unit.productId);
         const location = allLocations.find(l => l.id === unit.locationId);
         
-        const scanUrl = `${window.location.origin}/dashboard/scanner?unitId=${unit.unitCode}`;
-        
         try {
-            const qrCodeDataUrl = await QRCode.toDataURL(scanUrl, { errorCorrectionLevel: 'H', width: 200 });
+            const qrCodeDataUrl = await QRCode.toDataURL(unit.productId, { errorCorrectionLevel: 'H', width: 200 });
+
+            const barcodeCanvas = document.createElement('canvas');
+            jsbarcode(barcodeCanvas, unit.productId, { format: 'CODE128', displayValue: true, fontSize: 14 });
+            const barcodeDataUrl = barcodeCanvas.toDataURL('image/png');
 
             const doc = new jsPDF({
                 orientation: 'landscape',
@@ -204,36 +207,23 @@ export default function ManageUnitsPage() {
                 format: [4, 3] // 4x3 inch label
             });
 
-            doc.addImage(qrCodeDataUrl, 'PNG', 0.2, 0.2, 1.5, 1.5);
-            
-            doc.setFontSize(14);
-            doc.setFont('Helvetica', 'bold');
-            doc.text(`Producto: ${product?.id || 'N/A'}`, 1.8, 0.4);
-            
-            doc.setFontSize(10);
-            doc.setFont('Helvetica', 'normal');
-            const descLines = doc.splitTextToSize(product?.description || 'Descripción no disponible', 1.9);
-            doc.text(descLines, 1.8, 0.6);
+            doc.addImage(qrCodeDataUrl, 'PNG', 0.2, 0.2, 1.2, 1.2);
+            doc.addImage(barcodeDataUrl, 'PNG', 0.2, 1.5, 1.2, 0.5);
+            doc.setFontSize(10).text(unit.unitCode!, 0.8, 2.2, { align: 'center' });
 
-            doc.setFontSize(12);
-            doc.setFont('Helvetica', 'bold');
-            doc.text(`Lote/ID: ${unit.humanReadableId || 'N/A'}`, 1.8, 1.3);
-
-            doc.setFontSize(10);
-            doc.text(`Ubicación Sugerida:`, 0.2, 2.0);
-            doc.setFontSize(12);
-            doc.setFont('Helvetica', 'bold');
-            doc.text(renderLocationPathAsString(location?.id || 0, allLocations), 0.2, 2.2);
-
-            doc.setFontSize(8);
-            doc.text(`ID Interno: ${unit.unitCode}`, 0.2, 2.8);
-            doc.text(`Creado: ${format(new Date(unit.createdAt), 'dd/MM/yyyy')}`, 1.8, 2.8);
+            doc.setFontSize(12).setFont('Helvetica', 'bold').text(`Producto: ${product?.id || 'N/A'}`, 1.6, 0.4);
+            doc.setFontSize(9).setFont('Helvetica', 'normal').text(doc.splitTextToSize(product?.description || 'Descripción no disponible', 2.2), 1.6, 0.6);
+            doc.setFontSize(10).setFont('Helvetica', 'bold').text(`Lote/ID: ${unit.humanReadableId || 'N/A'}`, 1.6, 1.2);
+            doc.text(`Documento: ${unit.documentId || 'N/A'}`, 1.6, 1.4);
+            doc.text(`Ubicación:`, 1.6, 1.8);
+            doc.setFontSize(8).setFont('Helvetica', 'normal').text(renderLocationPathAsString(location?.id || 0, allLocations), 1.6, 1.95);
+            doc.setFontSize(8).text(`Creado: ${format(new Date(unit.createdAt), 'dd/MM/yyyy')} por ${user?.name || 'Sistema'}`, 3.8, 2.8, { align: 'right' });
 
             doc.save(`etiqueta_unidad_${unit.unitCode}.pdf`);
 
         } catch (err) {
             console.error(err);
-            toast({ title: 'Error al generar QR', description: 'No se pudo crear la imagen del código QR.', variant: 'destructive'});
+            toast({ title: 'Error al generar QR/Barcode', description: 'No se pudo crear la imagen del código.', variant: 'destructive'});
         }
     };
     
