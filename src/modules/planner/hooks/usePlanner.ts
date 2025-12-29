@@ -1,3 +1,4 @@
+
 /**
  * @fileoverview Custom hook `usePlanner` for managing the state and logic of the Production Planner page.
  * This hook encapsulates all state and actions for the planner, keeping the UI component clean.
@@ -561,7 +562,7 @@ export const usePlanner = () => {
                     inventory: stock,
                 };
 
-                const existingActive = state.activeOrders?.filter(o => o.productId === product.id);
+                const existingActive = state.activeOrders.filter(o => o.productId === product.id);
                 updateState({ activeOrdersForSelectedProduct: existingActive });
 
                 if (state.orderToEdit) {
