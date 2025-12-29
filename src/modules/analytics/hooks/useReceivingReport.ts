@@ -163,12 +163,13 @@ export function useReceivingReport() {
         if (!locationId) return 'N/A';
         const path: string[] = [];
         let current: WarehouseLocation | undefined = state.allLocations.find(l => l.id === locationId);
-        while(current) {
+        
+        while (current) {
             path.unshift(current.name);
             if (current.parentId) {
                 current = state.allLocations.find(l => l.id === current.parentId);
             } else {
-                current = undefined;
+                break; // Exit loop if no parentId
             }
         }
         return path.join(' > ');
