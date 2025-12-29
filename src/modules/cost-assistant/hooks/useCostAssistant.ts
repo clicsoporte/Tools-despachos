@@ -337,26 +337,40 @@ export const useCostAssistant = () => {
     };
 
     const linesWithCalculatedCosts = useMemo(() => {
-        const totalItems = state.lines.reduce((sum, line) => sum + line.quantity, 0);
+        const totalInvoiceValue = state.lines.reduce((sum, line) => sum + (line.xmlUnitCost * line.quantity), 0);
         const totalAdditionalCosts = state.transportCost + state.otherCosts;
 
         return state.lines.map(line => {
-            let costBase = line.xmlUnitCost;
-            if (state.discountHandling === 'customer' && line.discountAmount > 0 && line.quantity > 0) {
-                costBase -= (line.discountAmount / line.quantity);
+            if (line.isCostEdited) {
+                // If cost is manually edited, calculations are based on that edited cost
+                const sellPriceWithoutTax = line.unitCostWithoutTax / (1 - line.margin);
+                const finalSellPrice = sellPriceWithoutTax * (1 + line.taxRate);
+                const profitPerLine = (sellPriceWithoutTax - line.unitCostWithoutTax) * line.quantity;
+                return { ...line, sellPriceWithoutTax, finalSellPrice, profitPerLine };
             }
+
+            let baseUnitCost = line.xmlUnitCost;
+
+            // Apply discount to base cost if option is selected
+            if (state.discountHandling === 'customer' && line.discountAmount > 0 && line.quantity > 0) {
+                baseUnitCost -= (line.discountAmount / line.quantity);
+            }
+
+            // Prorate additional costs based on the line's value relative to the total invoice value
+            const lineTotalValue = line.xmlUnitCost * line.quantity;
+            const proratedAdditionalCost = totalInvoiceValue > 0 ? (lineTotalValue / totalInvoiceValue) * totalAdditionalCosts : 0;
+            const additionalCostPerUnit = line.quantity > 0 ? proratedAdditionalCost / line.quantity : 0;
             
-            const proportionalAdditionalCostPerUnit = (totalItems > 0 && line.quantity > 0) ? (totalAdditionalCosts / totalItems) : 0;
-            const finalUnitCost = line.isCostEdited ? line.unitCostWithoutTax : costBase + proportionalAdditionalCostPerUnit;
-            
-            const sellPriceWithoutTax = finalUnitCost / (1 - line.margin);
+            const finalUnitCostWithoutTax = baseUnitCost + additionalCostPerUnit;
+
+            const sellPriceWithoutTax = finalUnitCostWithoutTax / (1 - line.margin);
             const finalSellPrice = sellPriceWithoutTax * (1 + line.taxRate);
-            const profitPerLine = (sellPriceWithoutTax - finalUnitCost) * line.quantity;
+            const profitPerLine = (sellPriceWithoutTax - finalUnitCostWithoutTax) * line.quantity;
 
             return {
                 ...line,
-                unitCostWithoutTax: finalUnitCost,
-                displayUnitCost: line.isCostEdited ? line.displayUnitCost : String(finalUnitCost.toFixed(4)),
+                unitCostWithoutTax: finalUnitCostWithoutTax,
+                displayUnitCost: String(finalUnitCostWithoutTax.toFixed(4)),
                 finalSellPrice,
                 sellPriceWithoutTax,
                 profitPerLine,
