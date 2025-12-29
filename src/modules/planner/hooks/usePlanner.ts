@@ -561,7 +561,7 @@ export const usePlanner = () => {
                     inventory: stock,
                 };
 
-                const existingActive = state.activeOrders.filter(o => o.productId === product.id);
+                const existingActive = state.activeOrders?.filter(o => o.productId === product.id);
                 updateState({ activeOrdersForSelectedProduct: existingActive });
 
                 if (state.orderToEdit) {
