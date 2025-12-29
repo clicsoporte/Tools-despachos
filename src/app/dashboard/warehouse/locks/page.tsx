@@ -19,7 +19,7 @@ import { Loader2, RefreshCw, Unlock } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export default function LockManagementPage() {
-    useAuthorization(['warehouse:locks:manage']);
+    const { hasPermission } = useAuthorization(['warehouse:locks:manage']);
     const { setTitle } = usePageTitle();
     const { toast } = useToast();
     const [isLoading, setIsLoading] = useState(true);
@@ -41,8 +41,10 @@ export default function LockManagementPage() {
 
     useEffect(() => {
         setTitle("Gestión de Bloqueos de Almacén");
-        fetchLocks();
-    }, [setTitle, fetchLocks]);
+        if (hasPermission) {
+            fetchLocks();
+        }
+    }, [setTitle, fetchLocks, hasPermission]);
 
     const handleReleaseLock = async (locationId: number) => {
         setIsReleasing(locationId);
@@ -64,6 +66,10 @@ export default function LockManagementPage() {
                  <Skeleton className="h-64 w-full max-w-4xl mx-auto" />
             </main>
         )
+    }
+
+    if (!hasPermission) {
+        return null;
     }
 
     return (

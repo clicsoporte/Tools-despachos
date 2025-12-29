@@ -10,7 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Loader2, PackageCheck, Search, CheckCircle, ArrowRight, List } from 'lucide-react';
+import { Loader2, PackageCheck, Search, CheckCircle, ArrowRight, List, ArrowLeft } from 'lucide-react';
 import { useReceivingWizard } from '@/modules/warehouse/hooks/useReceivingWizard';
 import { SearchInput } from '@/components/ui/search-input';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
