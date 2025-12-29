@@ -8,7 +8,7 @@ import { useToast } from '@/modules/core/hooks/use-toast';
 import { usePageTitle } from '@/modules/core/hooks/usePageTitle';
 import { useAuthorization } from '@/modules/core/hooks/useAuthorization';
 import { logError } from '@/modules/core/lib/logger';
-import { getLocations, getItemLocations, addInventoryUnit, getSelectableLocations } from '@/modules/warehouse/lib/actions';
+import { getLocations, getAllItemLocations, addInventoryUnit, getSelectableLocations } from '@/modules/warehouse/lib/actions';
 import type { Product, WarehouseLocation, ItemLocation } from '@/modules/core/types';
 import { useAuth } from '@/modules/core/hooks/useAuth';
 import { useDebounce } from 'use-debounce';
