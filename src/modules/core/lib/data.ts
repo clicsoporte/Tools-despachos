@@ -37,6 +37,7 @@ import {
   ClipboardCheck,
   Wand2,
   Lock,
+  PackageCheck,
 } from "lucide-react";
 
 /**
@@ -148,12 +149,12 @@ export const warehouseTools: Tool[] = [
         bgColor: 'bg-blue-600',
     },
     {
-        id: "warehouse-search-simple",
-        name: "Búsqueda Rápida (Móvil)",
-        description: "Interfaz optimizada para búsquedas rápidas en celulares y tablets.",
-        href: "/dashboard/warehouse/search/simple",
-        icon: QrCode,
-        bgColor: 'bg-sky-600',
+        id: 'receiving-wizard',
+        name: 'Asistente de Recepción',
+        description: 'Registrar producto terminado o compras y generar etiquetas.',
+        href: '/dashboard/warehouse/receiving',
+        icon: PackageCheck,
+        bgColor: 'bg-emerald-600',
     },
     {
         id: 'population-wizard',
@@ -194,6 +195,14 @@ export const warehouseTools: Tool[] = [
         href: "/dashboard/warehouse/locations",
         icon: Map,
         bgColor: 'bg-purple-600',
+    },
+     {
+        id: "scanner-lookup",
+        name: "Consulta por Código",
+        description: "Buscar manualmente una unidad por su código único.",
+        href: "/dashboard/scanner",
+        icon: QrCode,
+        bgColor: 'bg-sky-600',
     },
     {
         id: 'lock-management',

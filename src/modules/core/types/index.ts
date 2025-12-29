@@ -512,6 +512,7 @@ export type InventoryUnit = {
     unitCode?: string; // e.g., 'U00001'
     productId: string;
     humanReadableId?: string; // e.g. a lot number
+    documentId?: string; // e.g. a delivery note
     locationId: number | null;
     notes?: string;
     createdAt: string;

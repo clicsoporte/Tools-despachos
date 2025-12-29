@@ -52,6 +52,7 @@ export async function initializeWarehouseDb(db: import('better-sqlite3').Databas
             unitCode TEXT UNIQUE,
             productId TEXT NOT NULL,
             humanReadableId TEXT,
+            documentId TEXT,
             locationId INTEGER,
             notes TEXT,
             createdAt TEXT NOT NULL,
@@ -137,8 +138,8 @@ export async function runWarehouseMigrations(db: import('better-sqlite3').Databa
             'id, itemId, locationId, clientId, updatedBy, updatedAt');
         
         checkAndRecreateForeignKey('inventory_units', 'locationId',
-            `CREATE TABLE inventory_units (id INTEGER PRIMARY KEY AUTOINCREMENT, unitCode TEXT UNIQUE, productId TEXT NOT NULL, humanReadableId TEXT, locationId INTEGER, notes TEXT, createdAt TEXT NOT NULL, createdBy TEXT NOT NULL, FOREIGN KEY (locationId) REFERENCES locations(id) ON DELETE CASCADE);`,
-            'id, unitCode, productId, humanReadableId, locationId, notes, createdAt, createdBy');
+            `CREATE TABLE inventory_units (id INTEGER PRIMARY KEY AUTOINCREMENT, unitCode TEXT UNIQUE, productId TEXT NOT NULL, humanReadableId TEXT, documentId TEXT, locationId INTEGER, notes TEXT, createdAt TEXT NOT NULL, createdBy TEXT NOT NULL, FOREIGN KEY (locationId) REFERENCES locations(id) ON DELETE CASCADE);`,
+            'id, unitCode, productId, humanReadableId, documentId, locationId, notes, createdAt, createdBy');
         
         const movementsCreateSql = `CREATE TABLE movements (id INTEGER PRIMARY KEY AUTOINCREMENT, itemId TEXT NOT NULL, quantity REAL NOT NULL, fromLocationId INTEGER, toLocationId INTEGER, timestamp TEXT NOT NULL, userId INTEGER NOT NULL, notes TEXT, FOREIGN KEY (fromLocationId) REFERENCES locations(id) ON DELETE CASCADE, FOREIGN KEY (toLocationId) REFERENCES locations(id) ON DELETE CASCADE);`;
         
@@ -158,6 +159,10 @@ export async function runWarehouseMigrations(db: import('better-sqlite3').Databa
         if (!locationsTableInfo.some(c => c.name === 'isLocked')) db.exec('ALTER TABLE locations ADD COLUMN isLocked INTEGER DEFAULT 0');
         if (!locationsTableInfo.some(c => c.name === 'lockedBy')) db.exec('ALTER TABLE locations ADD COLUMN lockedBy TEXT');
         if (!locationsTableInfo.some(c => c.name === 'lockedBySessionId')) db.exec('ALTER TABLE locations ADD COLUMN lockedBySessionId TEXT');
+
+        const unitsTableInfo = db.prepare(`PRAGMA table_info(inventory_units)`).all() as { name: string }[];
+        if (!unitsTableInfo.some(c => c.name === 'documentId')) db.exec('ALTER TABLE inventory_units ADD COLUMN documentId TEXT');
+
 
     } catch (error) {
         console.error("Error during warehouse migrations:", error);
@@ -431,10 +436,11 @@ export async function addInventoryUnit(unit: Omit<InventoryUnit, 'id' | 'created
             ...unit,
             createdAt: new Date().toISOString(),
             unitCode: unitCode,
-            humanReadableId: unit.humanReadableId || null
+            humanReadableId: unit.humanReadableId || null,
+            documentId: unit.documentId || null,
         };
         const info = db.prepare(
-            'INSERT INTO inventory_units (unitCode, productId, humanReadableId, locationId, notes, createdAt, createdBy) VALUES (@unitCode, @productId, @humanReadableId, @locationId, @notes, @createdAt, @createdBy)'
+            'INSERT INTO inventory_units (unitCode, productId, humanReadableId, documentId, locationId, notes, createdAt, createdBy) VALUES (@unitCode, @productId, @humanReadableId, @documentId, @locationId, @notes, @createdAt, @createdBy)'
         ).run(newUnitData);
         
         const newId = info.lastInsertRowid as number;
@@ -458,11 +464,14 @@ export async function getInventoryUnits(): Promise<InventoryUnit[]> {
 export async function getInventoryUnitById(id: string | number): Promise<InventoryUnit | null> {
     const db = await connectDb(WAREHOUSE_DB_FILE);
     const searchTerm = String(id).toUpperCase();
+    
+    let unit: InventoryUnit | null | undefined;
+    
     if (searchTerm.startsWith('U')) {
-        const unit = db.prepare('SELECT * FROM inventory_units WHERE UPPER(unitCode) = ?').get(searchTerm) as InventoryUnit | null;
-        return unit ? JSON.parse(JSON.stringify(unit)) : null;
+        unit = db.prepare('SELECT * FROM inventory_units WHERE UPPER(unitCode) = ?').get(searchTerm) as InventoryUnit | undefined;
+    } else {
+        unit = db.prepare('SELECT * FROM inventory_units WHERE id = ?').get(id) as InventoryUnit | undefined;
     }
-    const unit = db.prepare('SELECT * FROM inventory_units WHERE id = ?').get(id) as InventoryUnit | null;
     return unit ? JSON.parse(JSON.stringify(unit)) : null;
 }
 
