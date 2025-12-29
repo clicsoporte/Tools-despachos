@@ -38,6 +38,7 @@ import {
   Wand2,
   Lock,
   PackageCheck,
+  ClipboardList,
 } from "lucide-react";
 
 /**
@@ -218,7 +219,7 @@ export const allAdminPermissions = [
     "dashboard:access", "quotes:create", "quotes:generate", "quotes:drafts:create", "quotes:drafts:read", "quotes:drafts:delete",
     "requests:read", "requests:read:all", "requests:create", "requests:create:duplicate", "requests:edit:pending", "requests:edit:approved", "requests:reopen", "requests:notes:add", "requests:status:review", "requests:status:pending-approval", "requests:status:approve", "requests:status:ordered", "requests:status:received-in-warehouse", "requests:status:entered-erp", "requests:status:cancel", "requests:status:unapproval-request", "requests:status:unapproval-request:approve", "requests:status:revert-to-approved",
     "planner:read", "planner:read:all", "planner:create", "planner:edit:pending", "planner:edit:approved", "planner:reopen", "planner:receive", "planner:status:review", "planner:status:pending-approval", "planner:status:approve", "planner:status:in-progress", "planner:status:on-hold", "planner:status:completed", "planner:status:cancel", "planner:status:cancel-approved", "planner:status:unapprove-request", "planner:status:unapprove-request:approve", "planner:priority:update", "planner:machine:assign", "planner:schedule",
-    "analytics:read", "analytics:purchase-suggestions:read", "analytics:purchase-report:read", "analytics:production-report:read", "analytics:transits-report:read", "analytics:user-permissions:read", "analytics:physical-inventory-report:read",
+    "analytics:read", "analytics:purchase-suggestions:read", "analytics:purchase-report:read", "analytics:production-report:read", "analytics:transits-report:read", "analytics:user-permissions:read", "analytics:physical-inventory-report:read", "analytics:receiving-report:read",
     "cost-assistant:access", "cost-assistant:drafts:read-write", "users:create", "users:read", "users:update", "users:delete",
     "roles:create", "roles:read", "roles:update", "roles:delete", "admin:settings:general", "admin:settings:api", "admin:settings:planner", "admin:settings:requests", "admin:settings:warehouse", "admin:settings:stock", "admin:settings:cost-assistant",
     "admin:suggestions:read", "admin:import:run", "admin:import:files", "admin:import:sql", "admin:import:sql-config",
@@ -288,7 +289,7 @@ export const permissionGroups = {
     "Asistente de Costos": ["cost-assistant:access", "cost-assistant:drafts:read-write"],
     "Gestión de Almacenes": ["warehouse:access", "warehouse:receiving:create", "warehouse:inventory:assign", "warehouse:locations:manage", "warehouse:units:manage", "warehouse:locks:manage"],
     "Consultas Hacienda": ["hacienda:query"],
-    "Analíticas y Reportes": ["analytics:read", "analytics:purchase-suggestions:read", "analytics:purchase-report:read", "analytics:production-report:read", "analytics:transits-report:read", "analytics:user-permissions:read", "analytics:physical-inventory-report:read"],
+    "Analíticas y Reportes": ["analytics:read", "analytics:purchase-suggestions:read", "analytics:purchase-report:read", "analytics:production-report:read", "analytics:transits-report:read", "analytics:user-permissions:read", "analytics:physical-inventory-report:read", "analytics:receiving-report:read"],
     "Gestión de Usuarios": ["users:create", "users:read", "users:update", "users:delete"],
     "Gestión de Roles": ["roles:create", "roles:read", "roles:update", "roles:delete"],
     "Administración del Sistema": [
@@ -310,7 +311,7 @@ export const permissionTranslations: { [key: string]: string } = {
     "cost-assistant:access": "Asist. Costos: Acceso", "cost-assistant:drafts:read-write": "Asist. Costos: Guardar Borradores",
     "warehouse:access": "Almacén: Acceso General", "warehouse:receiving:create": "Almacén: Registrar Recepción", "warehouse:inventory:assign": "Almacén: Asignar Inventario", "warehouse:locations:manage": "Almacén: Gestionar Ubicaciones", "warehouse:units:manage": "Almacén: Gestionar Unidades (QR)", "warehouse:locks:manage": "Almacén: Gestionar Bloqueos",
     "hacienda:query": "Hacienda: Realizar Consultas",
-    "analytics:read": "Analíticas: Acceso", "analytics:purchase-suggestions:read": "Analíticas: Sugerencias Compra", "analytics:purchase-report:read": "Analíticas: Reporte Compras", "analytics:production-report:read": "Analíticas: Reporte Producción", "analytics:transits-report:read": "Analíticas: Reporte Tránsitos", "analytics:user-permissions:read": "Analíticas: Reporte Permisos", "analytics:physical-inventory-report:read": "Analíticas: Reporte Inv. Físico",
+    "analytics:read": "Analíticas: Acceso", "analytics:purchase-suggestions:read": "Analíticas: Sugerencias Compra", "analytics:purchase-report:read": "Analíticas: Reporte Compras", "analytics:production-report:read": "Analíticas: Reporte Producción", "analytics:transits-report:read": "Analíticas: Reporte Tránsitos", "analytics:user-permissions:read": "Analíticas: Reporte Permisos", "analytics:physical-inventory-report:read": "Analíticas: Reporte Inv. Físico", "analytics:receiving-report:read": "Analíticas: Reporte Recepciones",
     "users:create": "Usuarios: Crear", "users:read": "Usuarios: Leer", "users:update": "Usuarios: Actualizar", "users:delete": "Usuarios: Eliminar",
     "roles:create": "Roles: Crear", "roles:read": "Roles: Leer", "roles:update": "Roles: Actualizar", "roles:delete": "Roles: Eliminar",
     "admin:settings:general": "Admin: Config. General", "admin:settings:api": "Admin: Config. de API", "admin:settings:planner": "Admin: Config. Planificador", "admin:settings:requests": "Admin: Config. Compras", "admin:settings:warehouse": "Admin: Config. Almacenes", "admin:settings:stock": "Admin: Config. Inventario", "admin:settings:cost-assistant": "Admin: Config. Asist. Costos",
@@ -345,6 +346,7 @@ export const analyticsPermissions = [
     "analytics:transits-report:read",
     "analytics:user-permissions:read",
     "analytics:physical-inventory-report:read",
+    "analytics:receiving-report:read",
 ];
 
 
@@ -506,6 +508,14 @@ export const analyticsTools: Tool[] = [
         href: "/dashboard/analytics/physical-inventory-report",
         icon: ClipboardCheck,
         bgColor: "bg-cyan-600",
+    },
+    {
+        id: "receiving-report",
+        name: "Reporte de Recepciones",
+        description: "Auditar las recepciones de mercadería registradas en el sistema.",
+        href: "/dashboard/analytics/receiving-report",
+        icon: ClipboardList,
+        bgColor: "bg-teal-600",
     },
     {
         id: "user-permissions",

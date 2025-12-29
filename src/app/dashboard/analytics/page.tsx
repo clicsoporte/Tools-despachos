@@ -43,6 +43,9 @@ export default function AnalyticsDashboardPage() {
             if (tool.id === 'physical-inventory-report') {
                 return hasPermission('analytics:physical-inventory-report:read');
             }
+            if (tool.id === 'receiving-report') {
+                return hasPermission('analytics:receiving-report:read');
+            }
             // Add other tool checks here as they are created
             return true;
         });
