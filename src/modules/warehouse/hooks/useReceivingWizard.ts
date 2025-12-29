@@ -156,7 +156,7 @@ export const useReceivingWizard = () => {
         if (state.step === 'select_location') {
             updateState({ step: 'select_product', selectedProduct: null, productSearchTerm: '' });
         } else {
-            updateState({ step: 'select_location', newLocationId: null, locationSearchTerm: '' });
+            updateState({ step: 'confirm_suggested', newLocationId: null, locationSearchTerm: '' });
         }
     };
     
@@ -186,7 +186,7 @@ export const useReceivingWizard = () => {
             const unitData = {
                 productId: state.selectedProduct.id,
                 locationId: state.newLocationId,
-                quantity: parseFloat(state.quantity),
+                quantity: parseFloat(state.quantity) || 0, // Pass the quantity
                 humanReadableId: state.humanReadableId,
                 documentId: state.documentId,
                 createdBy: user.name,
