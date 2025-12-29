@@ -164,7 +164,7 @@ export default function ReceivingWizardPage() {
                             {lastCreatedUnit && (
                                 <>
                                     <p className="text-muted-foreground">
-                                        Se registró la unidad <strong>{lastCreatedUnit.unitCode}</strong> para el producto <strong>{state.selectedProduct?.description}</strong> en la ubicación <strong>{selectors.renderLocationPath(lastCreatedUnit.locationId)}</strong>.
+                                        Se registró la unidad <strong>{lastCreatedUnit.unitCode}</strong> para el producto <strong>{state.selectedProduct?.description}</strong> en la ubicación <strong>{selectors.renderLocationPath(lastCreatedUnit.locationId || 0)}</strong>.
                                     </p>
                                     <div className='flex gap-2 justify-center'>
                                         <Button onClick={() => actions.handlePrintLabel(lastCreatedUnit)} variant="outline">

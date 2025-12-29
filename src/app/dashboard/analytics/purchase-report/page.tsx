@@ -169,7 +169,6 @@ export default function PurchaseReportPage() {
                                     visibleColumns={visibleColumns}
                                     onColumnChange={actions.handleColumnVisibilityChange}
                                     onSave={actions.savePreferences}
-                                    onClose={() => {}}
                                 />
                                 <Button onClick={actions.handleExportExcel} variant="outline" disabled={isLoading || selectors.filteredSuggestions.length === 0}><FileSpreadsheet className="mr-2 h-4 w-4" />Exportar a Excel</Button>
                             </div>

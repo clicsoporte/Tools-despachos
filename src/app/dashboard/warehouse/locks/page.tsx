@@ -17,11 +17,13 @@ import { getActiveLocks, forceReleaseLock } from '@/modules/warehouse/lib/action
 import type { WarehouseLocation } from '@/modules/core/types';
 import { Loader2, RefreshCw, Unlock } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useAuth } from '@/modules/core/hooks/useAuth';
 
 export default function LockManagementPage() {
     const { hasPermission } = useAuthorization(['warehouse:locks:manage']);
     const { setTitle } = usePageTitle();
     const { toast } = useToast();
+    const { user } = useAuth();
     const [isLoading, setIsLoading] = useState(true);
     const [isReleasing, setIsReleasing] = useState<number | null>(null);
     const [locks, setLocks] = useState<WarehouseLocation[]>([]);
@@ -60,16 +62,16 @@ export default function LockManagementPage() {
         }
     };
     
+    if (!hasPermission) {
+        return null;
+    }
+
     if (isLoading) {
         return (
             <main className="flex-1 p-4 md:p-6 lg:p-8">
                  <Skeleton className="h-64 w-full max-w-4xl mx-auto" />
             </main>
         )
-    }
-
-    if (!hasPermission) {
-        return null;
     }
 
     return (

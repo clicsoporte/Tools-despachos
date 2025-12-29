@@ -156,7 +156,7 @@ export default function ManageUnitsPage() {
 
         setIsSubmitting(true);
         try {
-            const createdUnit = await addInventoryUnit({ ...newUnit, createdBy: user.name, quantity: 1 }); // Default quantity to 1 for this context
+            const createdUnit = await addInventoryUnit({ ...newUnit, createdBy: user.name });
             setInventoryUnits(prev => [createdUnit, ...prev]);
             
             toast({ title: "Unidad Creada", description: `Se ha creado la unidad ${createdUnit.unitCode} para ${createdUnit.productId}.` });
