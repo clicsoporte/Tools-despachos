@@ -21,7 +21,7 @@ import { generateDocument } from '@/modules/core/lib/pdf-generator';
 
 export type SortKey = 'productId' | 'physicalCount' | 'erpStock' | 'difference' | 'lastCountDate' | 'locationName' | 'updatedBy';
 export type SortDirection = 'asc' | 'desc';
-export type DifferenceFilter = 'all' | 'with-difference' | 'shortage' | 'surplus';
+export type DifferenceFilter = 'all' | 'with-difference' | 'shortage' | 'surplus' | 'empty-locations';
 
 
 const normalizeText = (text: string | null | undefined): string => {
@@ -32,6 +32,7 @@ const normalizeText = (text: string | null | undefined): string => {
 interface State {
     isLoading: boolean;
     reportData: PhysicalInventoryComparisonItem[];
+    allSelectableLocations: WarehouseLocation[];
     dateRange: DateRange;
     searchTerm: string;
     classificationFilter: string[];
@@ -63,6 +64,7 @@ export function usePhysicalInventoryReport() {
     const [state, setState] = useState<State>({
         isLoading: false,
         reportData: [],
+        allSelectableLocations: [],
         dateRange: {
             from: startOfDay(subDays(new Date(), 7)),
             to: new Date(),
@@ -85,7 +87,10 @@ export function usePhysicalInventoryReport() {
         updateState({ isLoading: true });
         try {
             const data = await getPhysicalInventoryReportData({ dateRange: state.dateRange });
-            updateState({ reportData: data });
+            updateState({ 
+                reportData: data.comparisonData, 
+                allSelectableLocations: data.allLocations 
+            });
         } catch (error: any) {
             logError("Failed to fetch physical inventory report data", { error: error.message });
             toast({ title: "Error al Generar Reporte", description: error.message, variant: "destructive" });
@@ -118,6 +123,38 @@ export function usePhysicalInventoryReport() {
     const sortedData = useMemo(() => {
         let data = [...state.reportData];
 
+        if (state.differenceFilter === 'empty-locations') {
+            const countedLocationIds = new Set(state.reportData.map(item => item.locationId));
+            const emptyLocations = state.allSelectableLocations
+                .filter(loc => !countedLocationIds.has(loc.id))
+                .map(loc => ({
+                    productId: 'N/A',
+                    productDescription: 'Ubicación Vacía',
+                    locationId: loc.id,
+                    locationName: loc.name,
+                    locationCode: loc.code,
+                    physicalCount: 0,
+                    erpStock: 0,
+                    difference: 0,
+                    lastCountDate: '',
+                    updatedBy: 'N/A',
+                    assignedLocationPath: 'N/A',
+                }));
+            data = emptyLocations;
+        } else {
+             switch (state.differenceFilter) {
+                case 'with-difference':
+                    data = data.filter(item => item.difference !== 0);
+                    break;
+                case 'shortage':
+                    data = data.filter(item => item.difference < 0);
+                    break;
+                case 'surplus':
+                    data = data.filter(item => item.difference > 0);
+                    break;
+            }
+        }
+
         if (debouncedSearchTerm) {
             const lowercasedFilter = normalizeText(debouncedSearchTerm);
             data = data.filter(item =>
@@ -128,23 +165,11 @@ export function usePhysicalInventoryReport() {
             );
         }
 
-        if (state.classificationFilter.length > 0) {
+        if (state.classificationFilter.length > 0 && state.differenceFilter !== 'empty-locations') {
             data = data.filter(item => {
                 const product = products.find(p => p.id === item.productId);
                 return product && state.classificationFilter.includes(product.classification);
             });
-        }
-        
-        switch (state.differenceFilter) {
-            case 'with-difference':
-                data = data.filter(item => item.difference !== 0);
-                break;
-            case 'shortage':
-                data = data.filter(item => item.difference < 0);
-                break;
-            case 'surplus':
-                data = data.filter(item => item.difference > 0);
-                break;
         }
         
         data.sort((a, b) => {
@@ -154,6 +179,8 @@ export function usePhysicalInventoryReport() {
 
             if (typeof valA === 'string' && typeof valB === 'string') {
                 if (state.sortKey === 'lastCountDate') {
+                    if (!valA) return 1 * direction;
+                    if (!valB) return -1 * direction;
                     return (new Date(valA).getTime() - new Date(valB).getTime()) * direction;
                 }
                 return valA.localeCompare(valB) * direction;
@@ -165,7 +192,7 @@ export function usePhysicalInventoryReport() {
         });
 
         return data;
-    }, [state.reportData, debouncedSearchTerm, state.sortKey, state.sortDirection, state.classificationFilter, state.differenceFilter, products]);
+    }, [state.reportData, state.allSelectableLocations, debouncedSearchTerm, state.sortKey, state.sortDirection, state.classificationFilter, state.differenceFilter, products]);
 
     const handleSort = (key: SortKey) => {
         if (state.sortKey === key) {
@@ -200,7 +227,7 @@ export function usePhysicalInventoryReport() {
             'Stock ERP': item.erpStock,
             'Diferencia': item.difference,
             'Contado Por': item.updatedBy,
-            'Fecha Conteo': format(parseISO(item.lastCountDate), 'dd/MM/yyyy HH:mm', { locale: es }),
+            'Fecha Conteo': item.lastCountDate ? format(parseISO(item.lastCountDate), 'dd/MM/yyyy HH:mm', { locale: es }) : 'N/A',
         }));
 
         exportToExcel({
@@ -223,7 +250,7 @@ export function usePhysicalInventoryReport() {
             item.erpStock.toLocaleString(),
             item.difference.toLocaleString(),
             item.updatedBy,
-            format(parseISO(item.lastCountDate), 'dd/MM/yy HH:mm')
+            item.lastCountDate ? format(parseISO(item.lastCountDate), 'dd/MM/yy HH:mm') : 'N/A',
         ]);
         const doc = generateDocument({
             docTitle: "Reporte de Comparación de Inventario", docId: '', companyData,

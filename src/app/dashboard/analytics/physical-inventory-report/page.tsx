@@ -87,6 +87,7 @@ export default function PhysicalInventoryReportPage() {
                                 <SelectItem value="with-difference">Solo con Diferencias</SelectItem>
                                 <SelectItem value="shortage">Solo Faltantes (Físico &lt; ERP)</SelectItem>
                                 <SelectItem value="surplus">Solo Sobrantes (Físico &gt; ERP)</SelectItem>
+                                <SelectItem value="empty-locations">Solo Ubicaciones Vacías</SelectItem>
                             </SelectContent>
                         </Select>
                         <MultiSelectFilter title="Clasificación" options={classifications.map(c => ({ value: c, label: c }))} selectedValues={classificationFilter} onSelectedChange={actions.setClassificationFilter} className="w-full sm:w-auto" />
@@ -146,7 +147,7 @@ export default function PhysicalInventoryReportPage() {
                                                 </TableCell>
                                             )}
                                             {visibleColumns.includes('updatedBy') && <TableCell>{item.updatedBy}</TableCell>}
-                                            {visibleColumns.includes('lastCountDate') && <TableCell className="text-xs text-muted-foreground">{format(parseISO(item.lastCountDate), 'dd/MM/yy HH:mm')}</TableCell>}
+                                            {visibleColumns.includes('lastCountDate') && <TableCell className="text-xs text-muted-foreground">{item.lastCountDate ? format(parseISO(item.lastCountDate), 'dd/MM/yy HH:mm') : 'N/A'}</TableCell>}
                                         </TableRow>
                                     ))
                                 ) : (

@@ -202,6 +202,14 @@ export async function getLocations(): Promise<WarehouseLocation[]> {
     return JSON.parse(JSON.stringify(locations));
 }
 
+export async function getSelectableLocations(): Promise<WarehouseLocation[]> {
+    const db = await connectDb(WAREHOUSE_DB_FILE);
+    const allLocations = db.prepare('SELECT * FROM locations').all() as WarehouseLocation[];
+    const parentIds = new Set(allLocations.map(l => l.parentId).filter(Boolean));
+    const selectable = allLocations.filter(l => !parentIds.has(l.id));
+    return JSON.parse(JSON.stringify(selectable));
+}
+
 export async function addLocation(location: Omit<WarehouseLocation, 'id'>): Promise<WarehouseLocation> {
     const db = await connectDb(WAREHOUSE_DB_FILE);
     const { name, code, type, parentId } = location;
