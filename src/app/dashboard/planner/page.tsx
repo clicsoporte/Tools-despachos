@@ -484,13 +484,13 @@ export default function PlannerPage() {
 
             {state.totalItems > state.pageSize && (
                  <div className="flex items-center justify-center space-x-2 py-4">
-                    <Button variant="outline" size="sm" onClick={() => actions.setCurrentPage((p) => p - 1)} disabled={state.currentPage === 0}>
+                    <Button variant="outline" size="sm" onClick={() => actions.setCurrentPage((p: number) => p - 1)} disabled={state.currentPage === 0}>
                         <ChevronLeft className="mr-2 h-4 w-4" />Anterior
                     </Button>
                     <span className="text-sm text-muted-foreground">
                         Página {state.currentPage + 1} de {Math.ceil(state.totalItems / state.pageSize)}
                     </span>
-                    <Button variant="outline" size="sm" onClick={() => actions.setCurrentPage((p) => p + 1)} disabled={(state.currentPage + 1) * state.pageSize >= state.totalItems}>
+                    <Button variant="outline" size="sm" onClick={() => actions.setCurrentPage((p: number) => p + 1)} disabled={(state.currentPage + 1) * state.pageSize >= state.totalItems}>
                         Siguiente<ChevronRight className="ml-2 h-4 w-4" />
                     </Button>
                 </div>
