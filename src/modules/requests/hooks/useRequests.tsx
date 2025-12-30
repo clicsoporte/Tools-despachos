@@ -22,7 +22,8 @@ import { getAllErpPurchaseOrderHeaders, getAllErpPurchaseOrderLines } from '@/mo
 import type { 
     PurchaseRequest, PurchaseRequestStatus, PurchaseRequestPriority, 
     PurchaseRequestHistoryEntry, RequestSettings, Company, DateRange, 
-    AdministrativeAction, AdministrativeActionPayload, StockInfo, ErpOrderHeader, ErpOrderLine, User, RequestNotePayload, UserPreferences, PurchaseSuggestion, ErpPurchaseOrderHeader as ErpPOHeader } from '../../core/types';
+    AdministrativeAction, AdministrativeActionPayload, StockInfo, ErpOrderHeader, ErpOrderLine, User, RequestNotePayload, UserPreferences, PurchaseSuggestion, PurchaseRequestPriority as PurchaseRequestPriorityType, ErpPurchaseOrderHeader as ErpPOHeader, Product, ErpPurchaseOrderLine
+} from '../../core/types';
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { useAuth } from '@/modules/core/hooks/useAuth';
@@ -30,10 +31,7 @@ import { useDebounce } from 'use-debounce';
 import { generateDocument } from '@/modules/core/lib/pdf-generator';
 import { getDaysRemaining as getSimpleDaysRemaining } from '@/modules/core/lib/time-utils';
 import { exportToExcel } from '@/modules/core/lib/excel-export';
-import { AlertTriangle, Undo2, ChevronsLeft, ChevronsRight, Send, ShoppingBag } from 'lucide-react';
-import type { RowInput } from 'jspdf-autotable';
-import { useSearchParams } from 'next/navigation';
-import { usePageTitle } from '@/modules/core/hooks/usePageTitle';
+import { useRouter } from 'next/navigation';
 
 
 const normalizeText = (text: string | null | undefined): string => {
@@ -154,7 +152,7 @@ type State = {
     isAddNoteDialogOpen: boolean;
     notePayload: RequestNotePayload | null;
     erpPoHeaders: ErpPOHeader[];
-    erpPoLines: ErpOrderLine[];
+    erpPoLines: ErpPurchaseOrderLine[];
     isTransitsDialogOpen: boolean;
     activeTransits: { itemId: string; itemDescription: string; transits: any[] } | null;
     isCostAnalysisDialogOpen: boolean;
@@ -907,7 +905,7 @@ export const useRequests = () => {
         },
         handleDetailUpdate: async (requestId: number, details: { priority: PurchaseRequestPriority }) => {
             if (!currentUser) return;
-            const updated = await updateRequestDetails({ requestId, ...details, updatedBy: currentUser.name });
+            const updated = await updateRequestDetailsServer({ requestId, ...details, updatedBy: currentUser.name });
             updateState({ 
                 activeRequests: state.activeRequests.map(o => o.id === requestId ? sanitizeRequest(updated) : o),
                 archivedRequests: state.archivedRequests.map(o => o.id === requestId ? sanitizeRequest(updated) : o)
@@ -985,7 +983,7 @@ export const useRequests = () => {
         setEditRequestDialogOpen: (isOpen: boolean) => updateState({ isEditRequestDialogOpen: isOpen }),
         setViewingArchived: (isArchived: boolean) => updateState({ viewingArchived: isArchived, archivedPage: 0 }),
         setArchivedPage: (updater: (prev: number) => number) => updateState({ archivedPage: updater(state.archivedPage) }),
-        setPageSize: (size: number) => updateState({ pageSize: size, currentPage: 0 }),
+        setPageSize: (size: number) => updateState({ rowsPerPage: size }),
         setRequestToEdit: (request: PurchaseRequest | null) => updateState({ requestToEdit: request }),
         setSearchTerm: (term: string) => updateState({ searchTerm: term }),
         setStatusFilter: (filter: string) => updateState({ statusFilter: filter }),
@@ -1101,3 +1099,5 @@ export const useRequests = () => {
         isAuthorized
     };
 }
+
+    
