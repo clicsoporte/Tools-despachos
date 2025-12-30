@@ -11,7 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger, DialogClose } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger, AlertDialogFooter } from "@/components/ui/alert-dialog";
-import { Pagination, PaginationContent, PaginationEllipsis, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
 import { useToast } from '@/modules/core/hooks/use-toast';
 import { usePageTitle } from '@/modules/core/hooks/usePageTitle';
 import { useAuthorization } from '@/modules/core/hooks/useAuthorization';
@@ -20,7 +20,7 @@ import { getLocations, getAllItemLocations, assignItemToLocation, unassignItemFr
 import type { Product, Customer, WarehouseLocation, ItemLocation, Company } from '@/modules/core/types';
 import { useAuth } from '@/modules/core/hooks/useAuth';
 import { SearchInput } from '@/components/ui/search-input';
-import { Loader2, Trash2, Printer, List, PlusCircle, Search } from 'lucide-react';
+import { Loader2, Trash2, Printer, List, PlusCircle, Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useDebounce } from 'use-debounce';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Label } from '@/components/ui/label';
@@ -28,7 +28,7 @@ import { Input } from '@/components/ui/input';
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Checkbox } from '@/components/ui/checkbox';
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import jsPDF from "jspdf";
 import QRCode from 'qrcode';
 
@@ -45,8 +45,6 @@ const renderLocationPathAsString = (locationId: number, locations: WarehouseLoca
     }
     return path.map(l => l.name).join(' > ');
 };
-
-const ROWS_PER_PAGE = 25;
 
 export default function AssignItemPage() {
     useAuthorization(['warehouse:inventory:assign']);
@@ -75,6 +73,7 @@ export default function AssignItemPage() {
     
     const [globalFilter, setGlobalFilter] = useState('');
     const [currentPage, setCurrentPage] = useState(0);
+    const [rowsPerPage, setRowsPerPage] = useState(10);
 
     const [debouncedProductSearch] = useDebounce(productSearchTerm, companyData?.searchDebounceTime ?? 500);
     const [debouncedClientSearch] = useDebounce(clientSearchTerm, companyData?.searchDebounceTime ?? 500);
@@ -237,14 +236,19 @@ export default function AssignItemPage() {
             );
         });
     }, [allAssignments, debouncedGlobalFilter, authProducts, authCustomers, allLocations]);
+
+    // Reset page to 0 when filter changes
+    useEffect(() => {
+        setCurrentPage(0);
+    }, [debouncedGlobalFilter, rowsPerPage]);
     
     const paginatedAssignments = useMemo(() => {
-        const start = currentPage * ROWS_PER_PAGE;
-        const end = start + ROWS_PER_PAGE;
+        const start = currentPage * rowsPerPage;
+        const end = start + rowsPerPage;
         return filteredAssignments.slice(start, end);
-    }, [filteredAssignments, currentPage]);
+    }, [filteredAssignments, currentPage, rowsPerPage]);
 
-    const totalPages = Math.ceil(filteredAssignments.length / ROWS_PER_PAGE);
+    const totalPages = Math.ceil(filteredAssignments.length / rowsPerPage);
 
     const handlePrintRackLabel = async (assignment: ItemLocation) => {
         const product = authProducts.find(p => p.id === assignment.itemId);
@@ -381,92 +385,98 @@ export default function AssignItemPage() {
                         </div>
                     </CardHeader>
                     <CardContent>
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Producto</TableHead>
-                                    <TableHead>Cliente</TableHead>
-                                    <TableHead>Ubicación Asignada</TableHead>
-                                    <TableHead>Última Actualización</TableHead>
-                                    <TableHead className="text-right">Acciones</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {paginatedAssignments.length > 0 ? paginatedAssignments.map(a => {
-                                    const product = authProducts.find(p => p.id === a.itemId);
-                                    const client = authCustomers.find(c => c.id === a.clientId);
-                                    const locationString = renderLocationPathAsString(a.locationId, allLocations);
-                                    return (
-                                        <TableRow key={a.id}>
-                                            <TableCell className="font-medium">
-                                                <div>{product?.description || 'Producto no encontrado'}</div>
-                                                <div className="text-xs text-muted-foreground">{product?.id}</div>
-                                            </TableCell>
-                                            <TableCell>{client?.name || <span className="italic text-muted-foreground">General</span>}</TableCell>
-                                            <TableCell>{locationString}</TableCell>
-                                            <TableCell className="text-xs text-muted-foreground">
-                                                {a.updatedBy ? (
-                                                    <>
-                                                        <div>{a.updatedBy}</div>
-                                                        <div>{format(parseISO(a.updatedAt!), 'dd/MM/yyyy HH:mm', { locale: es })}</div>
-                                                    </>
-                                                ) : 'N/A'}
-                                            </TableCell>
-                                            <TableCell className="text-right">
-                                                <Button variant="ghost" size="icon" onClick={() => handlePrintRackLabel(a)}>
-                                                    <Printer className="h-4 w-4 text-blue-600" />
-                                                </Button>
-                                                <AlertDialog>
-                                                    <AlertDialogTrigger asChild>
-                                                        <Button variant="ghost" size="icon" disabled={isSubmitting}>
-                                                            <Trash2 className="h-4 w-4 text-destructive" />
-                                                        </Button>
-                                                    </AlertDialogTrigger>
-                                                    <AlertDialogContent>
-                                                      <AlertDialogHeader>
-                                                        <AlertDialogTitle>¿Confirmar eliminación?</AlertDialogTitle>
-                                                        <AlertDialogDescription>
-                                                          Esta acción eliminará la asignación permanentemente. No se puede deshacer.
-                                                        </AlertDialogDescription>
-                                                      </AlertDialogHeader>
-                                                      <AlertDialogFooter>
-                                                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                                        <AlertDialogAction onClick={() => handleDeleteAssignment(a.id!)}>Eliminar</AlertDialogAction>
-                                                      </AlertDialogFooter>
-                                                    </AlertDialogContent>
-                                                </AlertDialog>
+                        <div className="border rounded-md">
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Producto</TableHead>
+                                        <TableHead>Cliente</TableHead>
+                                        <TableHead>Ubicación Asignada</TableHead>
+                                        <TableHead>Última Actualización</TableHead>
+                                        <TableHead className="text-right">Acciones</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {paginatedAssignments.length > 0 ? paginatedAssignments.map(a => {
+                                        const product = authProducts.find(p => p.id === a.itemId);
+                                        const client = authCustomers.find(c => c.id === a.clientId);
+                                        const locationString = renderLocationPathAsString(a.locationId, allLocations);
+                                        return (
+                                            <TableRow key={a.id}>
+                                                <TableCell className="font-medium">
+                                                    <div>{product?.description || 'Producto no encontrado'}</div>
+                                                    <div className="text-xs text-muted-foreground">{product?.id}</div>
+                                                </TableCell>
+                                                <TableCell>{client?.name || <span className="italic text-muted-foreground">General</span>}</TableCell>
+                                                <TableCell>{locationString}</TableCell>
+                                                <TableCell className="text-xs text-muted-foreground">
+                                                    {a.updatedBy ? (
+                                                        <>
+                                                            <div>{a.updatedBy}</div>
+                                                            <div>{format(parseISO(a.updatedAt!), 'dd/MM/yyyy HH:mm', { locale: es })}</div>
+                                                        </>
+                                                    ) : 'N/A'}
+                                                </TableCell>
+                                                <TableCell className="text-right">
+                                                    <Button variant="ghost" size="icon" onClick={() => handlePrintRackLabel(a)}>
+                                                        <Printer className="h-4 w-4 text-blue-600" />
+                                                    </Button>
+                                                    <AlertDialog>
+                                                        <AlertDialogTrigger asChild>
+                                                            <Button variant="ghost" size="icon" disabled={isSubmitting}>
+                                                                <Trash2 className="h-4 w-4 text-destructive" />
+                                                            </Button>
+                                                        </AlertDialogTrigger>
+                                                        <AlertDialogContent>
+                                                          <AlertDialogHeader>
+                                                            <AlertDialogTitle>¿Confirmar eliminación?</AlertDialogTitle>
+                                                            <AlertDialogDescription>
+                                                              Esta acción eliminará la asignación permanentemente. No se puede deshacer.
+                                                            </AlertDialogDescription>
+                                                          </AlertDialogHeader>
+                                                          <AlertDialogFooter>
+                                                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                                            <AlertDialogAction onClick={() => handleDeleteAssignment(a.id!)}>Eliminar</AlertDialogAction>
+                                                          </AlertDialogFooter>
+                                                        </AlertDialogContent>
+                                                    </AlertDialog>
+                                                </TableCell>
+                                            </TableRow>
+                                        );
+                                    }) : (
+                                        <TableRow>
+                                            <TableCell colSpan={5} className="text-center h-24 text-muted-foreground">
+                                                {debouncedGlobalFilter ? 'No se encontraron asignaciones con ese filtro.' : 'No hay asignaciones creadas.'}
                                             </TableCell>
                                         </TableRow>
-                                    );
-                                }) : (
-                                    <TableRow>
-                                        <TableCell colSpan={5} className="text-center h-24 text-muted-foreground">
-                                            {debouncedGlobalFilter ? 'No se encontraron asignaciones con ese filtro.' : 'No hay asignaciones creadas.'}
-                                        </TableCell>
-                                    </TableRow>
-                                )}
-                            </TableBody>
-                        </Table>
+                                    )}
+                                </TableBody>
+                            </Table>
+                        </div>
                     </CardContent>
-                    {totalPages > 1 && (
-                        <CardFooter>
-                            <Pagination>
-                                <PaginationContent>
-                                    <PaginationItem>
-                                        <PaginationPrevious href="#" onClick={(e) => { e.preventDefault(); setCurrentPage(p => Math.max(0, p - 1)); }} className={currentPage === 0 ? "pointer-events-none opacity-50" : undefined}/>
-                                    </PaginationItem>
-                                    {[...Array(totalPages)].map((_, i) => (
-                                        <PaginationItem key={i}>
-                                            <PaginationLink href="#" isActive={i === currentPage} onClick={(e) => { e.preventDefault(); setCurrentPage(i); }}>
-                                                {i + 1}
-                                            </PaginationLink>
-                                        </PaginationItem>
-                                    ))}
-                                    <PaginationItem>
-                                        <PaginationNext href="#" onClick={(e) => { e.preventDefault(); setCurrentPage(p => Math.min(totalPages - 1, p + 1)); }} className={currentPage === totalPages - 1 ? "pointer-events-none opacity-50" : undefined}/>
-                                    </PaginationItem>
-                                </PaginationContent>
-                            </Pagination>
+                    {totalPages > 0 && (
+                        <CardFooter className="flex w-full items-center justify-between pt-4">
+                             <div className="text-sm text-muted-foreground">
+                                Total de {filteredAssignments.length} asignacion(es).
+                            </div>
+                            <div className="flex items-center gap-4">
+                                <div className="flex items-center gap-2">
+                                    <Label htmlFor="rows-per-page">Filas:</Label>
+                                    <Select value={String(rowsPerPage)} onValueChange={(value) => setRowsPerPage(Number(value))}>
+                                        <SelectTrigger id="rows-per-page" className="w-20"><SelectValue /></SelectTrigger>
+                                        <SelectContent>{[10, 25, 50, 100].map(size => <SelectItem key={size} value={String(size)}>{size}</SelectItem>)}</SelectContent>
+                                    </Select>
+                                </div>
+                                <span className="text-sm text-muted-foreground">Página {currentPage + 1} de {totalPages}</span>
+                                <div className="flex items-center gap-2">
+                                    <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setCurrentPage(p => Math.max(0, p - 1))} disabled={currentPage === 0}>
+                                        <ChevronLeft className="h-4 w-4" />
+                                    </Button>
+                                    <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setCurrentPage(p => Math.min(totalPages - 1, p + 1))} disabled={currentPage >= totalPages - 1}>
+                                        <ChevronRight className="h-4 w-4" />
+                                    </Button>
+                                </div>
+                            </div>
                         </CardFooter>
                     )}
                 </Card>
