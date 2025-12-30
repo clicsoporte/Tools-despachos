@@ -109,14 +109,13 @@ type State = {
     requests: PurchaseRequest[];
     viewingArchived: boolean;
     currentPage: number;
-    totalActive: number;
-    totalArchived: number;
+    totalItems: number;
     requestSettings: RequestSettings | null;
     companyData: Company | null;
     newRequest: Omit<PurchaseRequest, 'id' | 'consecutive' | 'requestDate' | 'status' | 'reopened' | 'requestedBy' | 'deliveredQuantity' | 'receivedInWarehouseBy' | 'receivedDate' | 'previousStatus' | 'lastModifiedAt' | 'lastModifiedBy' | 'hasBeenModified' | 'approvedBy' | 'lastStatusUpdateBy' | 'lastStatusUpdateNotes'>;
     requestToEdit: PurchaseRequest | null;
     searchTerm: string;
-    statusFilter: string;
+    statusFilter: string[];
     classificationFilter: string;
     dateFilter: DateRange | undefined;
     showOnlyMyRequests: boolean;
@@ -214,14 +213,13 @@ export const useRequests = () => {
         requests: [],
         viewingArchived: false,
         currentPage: 0,
-        totalActive: 0,
-        totalArchived: 0,
+        totalItems: 0,
         requestSettings: null,
         companyData: null,
         newRequest: emptyRequest,
         requestToEdit: null,
         searchTerm: "",
-        statusFilter: "all",
+        statusFilter: [],
         classificationFilter: "all",
         dateFilter: undefined,
         showOnlyMyRequests: true,
@@ -309,8 +307,7 @@ export const useRequests = () => {
                 erpPoHeaders: poHeaders,
                 erpPoLines: poLines,
                 requests: requestsData.requests.map(sanitizeRequest),
-                totalActive: requestsData.totalActive,
-                totalArchived: requestsData.totalArchived,
+                totalItems: requestsData.totalCount,
             });
 
         } catch (error) {
@@ -1007,6 +1004,8 @@ export const useRequests = () => {
             }
         },
         // setters
+        setViewingArchived: (isArchived: boolean) => updateState({ viewingArchived: isArchived, currentPage: 0 }),
+        setCurrentPage: (page: number | ((p: number) => number)) => updateState({ currentPage: typeof page === 'function' ? page(state.currentPage) : page }),
         setNewRequestDialogOpen: (isOpen: boolean) => updateState({ 
             isNewRequestDialogOpen: isOpen, 
             newRequest: { ...emptyRequest, requiredDate: new Date().toISOString().split('T')[0], requiresCurrency: true }, 
@@ -1015,7 +1014,7 @@ export const useRequests = () => {
         }),
         setEditRequestDialogOpen: (isOpen: boolean) => updateState({ isEditRequestDialogOpen: isOpen }),
         setRequestToEdit: (request: PurchaseRequest | null) => updateState({ requestToEdit: request }),
-        setStatusFilter: (filter: string) => updateState({ statusFilter: filter, currentPage: 0 }),
+        setStatusFilter: (filter: string[]) => updateState({ statusFilter: filter, currentPage: 0 }),
         setClassificationFilter: (filter: string) => updateState({ classificationFilter: filter, currentPage: 0 }),
         setShowOnlyMyRequests: (show: boolean) => {
             if (!show && !hasPermission('requests:read:all')) {

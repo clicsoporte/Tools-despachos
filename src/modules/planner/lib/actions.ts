@@ -32,12 +32,14 @@ import { getStatusConfig } from './utils';
  * @returns A promise that resolves to the orders and total archived count.
  */
 export async function getProductionOrders(options: { 
-    page?: number; 
-    pageSize?: number;
-    filters?: {
+    page: number; 
+    pageSize: number;
+    isArchived: boolean;
+    filters: {
         searchTerm?: string;
-        status?: string;
+        status?: string[];
         classification?: string;
+        showOnlyMy?: string;
         dateRange?: DateRange;
     };
 }): Promise<{ activeOrders: ProductionOrder[], archivedOrders: ProductionOrder[], totalArchivedCount: number }> {

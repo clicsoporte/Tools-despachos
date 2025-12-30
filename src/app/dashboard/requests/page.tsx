@@ -1,3 +1,4 @@
+
 // This file was restored to its stable version.
 // The previous content was causing compilation issues.
 'use client';
@@ -25,7 +26,7 @@ import { SearchInput } from '@/components/ui/search-input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Calendar } from '@/components/ui/calendar';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import type { PurchaseRequest, PurchaseRequestHistoryEntry, RequestNotePayload, PurchaseRequestPriority, ErpOrderHeader, ErpOrderLine, User, ErpPurchaseOrderHeader, ErpPurchaseOrderLine as ErpPOLine } from '@/modules/core/types';
+import type { PurchaseRequest, PurchaseRequestHistoryEntry, RequestNotePayload, PurchaseRequestPriority, ErpOrderHeader, ErpOrderLine, User, ErpPurchaseOrderHeader as ErpPOHeader, ErpPurchaseOrderLine as ErpPOLine } from '@/modules/core/types';
 import Link from 'next/link';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -62,7 +63,7 @@ export default function PurchaseRequestPage() {
 
     const {
         isLoading, isSubmitting, isNewRequestDialogOpen, isEditRequestDialogOpen, viewingArchived,
-        currentPage, totalActive, totalArchived, requestSettings, newRequest, requestToEdit,
+        currentPage, totalItems, requestSettings, newRequest, requestToEdit,
         searchTerm, statusFilter, classificationFilter, dateFilter, showOnlyMyRequests,
         clientSearchTerm, isClientSearchOpen, itemSearchTerm, isItemSearchOpen,
         isStatusDialogOpen, requestToUpdate, newStatus, statusUpdateNotes, deliveredQuantity,
@@ -201,7 +202,7 @@ export default function PurchaseRequestPage() {
                         </div>
                          <div className="space-y-1">
                             <p className="font-semibold text-muted-foreground">Prioridad</p>
-                            <Select value={request.priority} onValueChange={(value: PurchaseRequestPriority) => actions.handleDetailUpdate(request.id, { priority: value })}>
+                            <Select value={request.priority} onValueChange={(value: PurchaseRequestPriorityType) => actions.handleDetailUpdate(request.id, { priority: value })}>
                                 <SelectTrigger className={cn("h-8 w-32 border-0 focus:ring-0", selectors.priorityConfig[request.priority]?.className)}>
                                     <SelectValue />
                                 </SelectTrigger>
@@ -315,8 +316,8 @@ export default function PurchaseRequestPage() {
                     <div className="flex items-center gap-2 md:gap-4 flex-wrap">
                         <Button variant="outline" onClick={() => actions.loadInitialData(true)} disabled={isLoading || state.isRefreshing}>{state.isRefreshing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCcw className="mr-2 h-4 w-4" />}Refrescar</Button>
                         <div className="flex items-center gap-1">
-                            <Button variant={viewingArchived ? "outline" : "secondary"} onClick={() => actions.setViewingArchived(false)}>Activas</Button>
-                            <Button variant={viewingArchived ? "secondary" : "outline"} onClick={() => actions.setViewingArchived(true)}>Archivadas</Button>
+                            <Button variant={viewingArchived ? "outline" : "secondary"} onClick={() => actions.setViewingArchived(false)}>Activas ({state.totalActive})</Button>
+                            <Button variant={viewingArchived ? "secondary" : "outline"} onClick={() => actions.setViewingArchived(true)}>Archivadas ({state.totalArchived})</Button>
                         </div>
                         <Dialog open={isErpOrderModalOpen} onOpenChange={actions.setErpOrderModalOpen}>
                             <DialogTrigger asChild>
@@ -501,6 +502,7 @@ export default function PurchaseRequestPage() {
     
 
     
+
 
 
 

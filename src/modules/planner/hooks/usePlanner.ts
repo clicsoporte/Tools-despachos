@@ -183,8 +183,8 @@ export const usePlanner = () => {
             updateState({
                 plannerSettings: settingsData,
                 dynamicStatusConfig: newDynamicConfig,
-                orders: ordersResponse.orders,
-                totalItems: ordersResponse.totalCount,
+                orders: state.viewingArchived ? ordersResponse.archivedOrders : ordersResponse.activeOrders,
+                totalItems: state.viewingArchived ? ordersResponse.totalArchivedCount : ordersResponse.activeOrders.length, // Simplified total for active
             });
 
         } catch (error) {
