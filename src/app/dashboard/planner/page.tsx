@@ -450,8 +450,8 @@ export default function PlannerPage() {
                                 </SheetDescription>
                             </SheetHeader>
                             <div className="py-4 space-y-4">
-                                {renderFilters()}
-                                <Separator />
+                               {renderFilters()}
+                               <Separator />
                                 <div className="flex items-center space-x-2 pt-4">
                                     <Checkbox 
                                         id="show-only-my-orders" 
@@ -482,11 +482,17 @@ export default function PlannerPage() {
                 )}
             </div>
 
-             {state.viewingArchived && state.totalArchived > state.pageSize && (
+            {state.totalItems > state.pageSize && (
                  <div className="flex items-center justify-center space-x-2 py-4">
-                    <Button variant="outline" size="sm" onClick={() => actions.setArchivedPage(p => p - 1)} disabled={state.archivedPage === 0}><ChevronLeft className="mr-2 h-4 w-4" />Anterior</Button>
-                    <span className="text-sm text-muted-foreground">Página {state.archivedPage + 1} de {Math.ceil(state.totalArchived / state.pageSize)}</span>
-                    <Button variant="outline" size="sm" onClick={() => actions.setArchivedPage(p => p + 1)} disabled={(state.archivedPage + 1) * state.pageSize >= state.totalArchived}>Siguiente<ChevronRight className="ml-2 h-4 w-4" /></Button>
+                    <Button variant="outline" size="sm" onClick={() => actions.setCurrentPage(p => p - 1)} disabled={state.currentPage === 0}>
+                        <ChevronLeft className="mr-2 h-4 w-4" />Anterior
+                    </Button>
+                    <span className="text-sm text-muted-foreground">
+                        Página {state.currentPage + 1} de {Math.ceil(state.totalItems / state.pageSize)}
+                    </span>
+                    <Button variant="outline" size="sm" onClick={() => actions.setCurrentPage(p => p + 1)} disabled={(state.currentPage + 1) * state.pageSize >= state.totalItems}>
+                        Siguiente<ChevronRight className="ml-2 h-4 w-4" />
+                    </Button>
                 </div>
             )}
             

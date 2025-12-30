@@ -256,48 +256,64 @@ export async function saveSettings(settings: RequestSettings): Promise<void> {
 }
 
 
-export async function getRequests(options: { 
-    page?: number; 
-    pageSize?: number;
-}): Promise<{ requests: PurchaseRequest[], totalArchivedCount: number }> {
+export async function getRequests(options: {
+    page: number; 
+    pageSize: number;
+    isArchived: boolean;
+    filters: {
+        searchTerm?: string;
+        status?: string[];
+        classification?: string;
+        showOnlyMy?: string;
+        dateRange?: DateRange;
+    };
+}): Promise<{ requests: PurchaseRequest[], totalCount: number }> {
     const db = await connectDb(REQUESTS_DB_FILE);
-    
+    const { page, pageSize, isArchived, filters } = options;
+
     const settings = await getSettings();
     const finalStatus = settings.useErpEntry ? 'entered-erp' : (settings.useWarehouseReception ? 'received-in-warehouse' : 'ordered');
-    const archivedStatuses = `'${finalStatus}', 'canceled'`;
+    const archivedStatuses = [`'${finalStatus}'`, `'canceled'`];
 
-    if (options.page !== undefined && options.pageSize !== undefined) {
-        const { page, pageSize } = options;
-        const archivedRequestsRaw = db.prepare(`
-            SELECT * FROM purchase_requests 
-            WHERE status IN (${archivedStatuses}) 
-            ORDER BY requestDate DESC 
-            LIMIT ? OFFSET ?
-        `).all(pageSize, page * pageSize) as any[];
+    let query = `SELECT * FROM purchase_requests`;
+    let countQuery = `SELECT COUNT(*) as count FROM purchase_requests`;
+    const whereClauses: string[] = [];
+    const params: any[] = [];
+    const countParams: any[] = [];
 
-        const activeRequestsRaw = db.prepare(`
-            SELECT * FROM purchase_requests
-            WHERE status NOT IN (${archivedStatuses})
-            ORDER BY requestDate DESC
-        `).all() as any[];
-        
-        const totalArchivedCount = (db.prepare(`
-            SELECT COUNT(*) as count 
-            FROM purchase_requests 
-            WHERE status IN (${archivedStatuses})
-        `).get() as { count: number }).count;
-        
-        const activeRequests = activeRequestsRaw.map(sanitizeRequest);
-        const archivedRequests = archivedRequestsRaw.map(sanitizeRequest);
-        
-        return { requests: [...activeRequests, ...archivedRequests], totalArchivedCount };
+    if (isArchived) {
+        whereClauses.push(`status IN (${archivedStatuses.join(',')})`);
+    } else {
+        whereClauses.push(`status NOT IN (${archivedStatuses.join(',')})`);
     }
-    
-    const allRequestsRaw = db.prepare(`SELECT * FROM purchase_requests ORDER BY requestDate DESC`).all() as any[];
-    const allRequests = allRequestsRaw.map(sanitizeRequest);
-    const totalArchivedCount = allRequests.filter((r: PurchaseRequest) => archivedStatuses.includes(`'${r.status}'`)).length;
 
-    return { requests: allRequests, totalArchivedCount };
+    if (filters.searchTerm) {
+        whereClauses.push(`(consecutive LIKE ? OR clientName LIKE ? OR itemDescription LIKE ? OR itemId LIKE ? OR erpOrderNumber LIKE ?)`);
+        const searchTermParam = `%${filters.searchTerm}%`;
+        params.push(searchTermParam, searchTermParam, searchTermParam, searchTermParam, searchTermParam);
+        countParams.push(searchTermParam, searchTermParam, searchTermParam, searchTermParam, searchTermParam);
+    }
+
+    if (filters.status && filters.status.length > 0) {
+        whereClauses.push(`status IN (${filters.status.map(() => '?').join(',')})`);
+        params.push(...filters.status);
+        countParams.push(...filters.status);
+    }
+
+    if (whereClauses.length > 0) {
+        query += ` WHERE ${whereClauses.join(' AND ')}`;
+        countQuery += ` WHERE ${whereClauses.join(' AND ')}`;
+    }
+
+    const totalCount = (db.prepare(countQuery).get(...countParams) as { count: number }).count;
+    
+    query += ' ORDER BY requestDate DESC LIMIT ? OFFSET ?';
+    params.push(pageSize, page * pageSize);
+
+    const requestsRaw = db.prepare(query).all(...params) as any[];
+    const requests = requestsRaw.map(sanitizeRequest);
+
+    return { requests, totalCount };
 }
 
 export async function addRequest(request: Omit<PurchaseRequest, 'id' | 'consecutive' | 'requestDate' | 'status' | 'reopened' | 'requestedBy' | 'deliveredQuantity' | 'receivedInWarehouseBy' | 'receivedDate' | 'previousStatus' | 'lastModifiedAt' | 'lastModifiedBy' | 'hasBeenModified' | 'approvedBy' | 'lastStatusUpdateBy' | 'lastStatusUpdateNotes'>, requestedBy: string): Promise<PurchaseRequest> {

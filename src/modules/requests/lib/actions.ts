@@ -45,12 +45,12 @@ export async function getPurchaseRequests(options: {
     isArchived: boolean;
     filters: {
         searchTerm?: string;
-        status?: string;
+        status?: string[];
         classification?: string;
         showOnlyMy?: string;
         dateRange?: DateRange;
     };
-}): Promise<{ requests: PurchaseRequest[], totalActive: number; totalArchived: number }> {
+}): Promise<{ requests: PurchaseRequest[], totalCount: number }> {
     return getRequests(options);
 }
 

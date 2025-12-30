@@ -104,7 +104,7 @@ export const usePlanner = () => {
         orders: [] as ProductionOrder[],
         viewingArchived: false,
         currentPage: 0,
-        pageSize: 50,
+        pageSize: 10,
         totalItems: 0,
         plannerSettings: null as PlannerSettings | null,
         newOrder: emptyOrder,
@@ -165,8 +165,8 @@ export const usePlanner = () => {
                 getProductionOrders({
                     page: state.currentPage,
                     pageSize: state.pageSize,
+                    isArchived: state.viewingArchived,
                     filters: {
-                        isArchived: state.viewingArchived,
                         searchTerm: debouncedSearchTerm,
                         status: state.statusFilter,
                         classification: state.classificationFilter,
@@ -263,7 +263,7 @@ export const usePlanner = () => {
         setNewOrderDialogOpen: (isOpen: boolean) => updateState({ isNewOrderDialogOpen: isOpen, activeOrdersForSelectedProduct: [] }),
         setEditOrderDialogOpen: (isOpen: boolean) => updateState({ isEditOrderDialogOpen: isOpen }),
         setViewingArchived: (isArchived: boolean) => updateState({ viewingArchived: isArchived, currentPage: 0 }),
-        setCurrentPage: (page: number) => updateState({ currentPage: page }),
+        setCurrentPage: (page: number | ((p: number) => number)) => updateState({ currentPage: typeof page === 'function' ? page(state.currentPage) : page }),
         setPageSize: (size: number) => updateState({ pageSize: size, currentPage: 0 }),
         setNewOrder: (partialOrder: Partial<typeof state.newOrder>) => {
             updateState({ newOrder: { ...state.newOrder, ...partialOrder } });
