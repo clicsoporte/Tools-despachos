@@ -10,7 +10,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import path from 'path';
 import fs from 'fs';
-import { Readable } from 'stream';
+
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 
 const TEMP_EXPORT_DIR = path.join(process.cwd(), 'temp_files', 'exports');
 

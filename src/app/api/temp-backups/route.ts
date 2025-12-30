@@ -10,7 +10,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import path from 'path';
 import fs from 'fs';
-import { Readable } from 'stream';
+
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 
 const UPDATE_BACKUP_DIR = 'update_backups';
 const dbDirectory = path.join(process.cwd(), 'dbs');

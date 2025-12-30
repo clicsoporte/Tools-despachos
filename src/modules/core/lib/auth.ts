@@ -14,12 +14,6 @@ import { logInfo, logWarn, logError } from './logger';
 import { headers } from 'next/headers';
 import { getExchangeRate, getEmailSettings } from './api-actions';
 import { NewUserSchema, UserSchema } from './auth-schemas';
-import { confirmModification as confirmPlannerModificationServer } from '../../planner/lib/db';
-import { initializePlannerDb, runPlannerMigrations } from '../../planner/lib/db';
-import { initializeRequestsDb, runRequestMigrations } from '../../requests/lib/db';
-import { initializeWarehouseDb, runWarehouseMigrations } from '../../warehouse/lib/db';
-import { initializeCostAssistantDb, runCostAssistantMigrations } from '../../cost-assistant/lib/db';
-import { DB_MODULES } from './db-modules';
 
 const SALT_ROUNDS = 10;
 
