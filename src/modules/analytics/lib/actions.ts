@@ -3,7 +3,7 @@
  */
 'use server';
 
-import { getOrders as getPlannerOrders, getPlannerSettings } from '@/modules/planner/lib/db';
+import { getOrders as getPlannerOrders, getPlannerSettings, getCompletedOrdersByDateRange } from '@/modules/planner/lib/db';
 import { getAllRoles, getAllSuppliers, getAllStock } from '@/modules/core/lib/db';
 import { getAllUsersForReport } from '@/modules/core/lib/auth';
 import type { DateRange, ProductionOrder, PlannerSettings, ProductionOrderHistoryEntry, Product, User, Role, ErpPurchaseOrderLine, ErpPurchaseOrderHeader, Supplier, StockInfo, PhysicalInventoryComparisonItem, ItemLocation, WarehouseLocation, InventoryUnit } from '@/modules/core/types';
@@ -24,58 +24,6 @@ interface ReportFilters {
 interface FullProductionReportData {
     reportData: ProductionReportData;
     plannerSettings: PlannerSettings;
-}
-
-/**
- * Fetches completed production orders within a given date range.
- * This function is used by the production report.
- * @param dateRange - The date range to filter orders by their completion date.
- * @returns A promise that resolves to an array of production orders with their history.
- */
-export async function getCompletedOrdersByDateRange(dateRange: DateRange): Promise<(ProductionOrder & { history: ProductionOrderHistoryEntry[] })[]> {
-    const db = await connectDb(PLANNER_DB_FILE);
-    if (!dateRange.from) {
-        throw new Error("Date 'from' is required.");
-    }
-    const toDate = dateRange.to || new Date();
-    toDate.setHours(23, 59, 59, 999);
-
-    const settings = await getPlannerSettings();
-    const finalStatuses = ['completed', 'received-in-warehouse'];
-    const finalStatusPlaceholders = finalStatuses.map(() => '?').join(',');
-    
-    const completedOrders = db.prepare(`
-        SELECT DISTINCT p.* 
-        FROM production_orders p
-        JOIN production_order_history h ON p.id = h.orderId
-        WHERE h.status IN (${finalStatusPlaceholders})
-        AND h.timestamp BETWEEN ? AND ?
-    `).all(...finalStatuses, dateRange.from.toISOString(), toDate.toISOString()) as ProductionOrder[];
-
-    if (completedOrders.length === 0) {
-        return [];
-    }
-
-    const orderIds = completedOrders.map(o => o.id);
-    const placeholders = orderIds.map(() => '?').join(',');
-    const allHistory = db.prepare(`
-        SELECT * FROM production_order_history WHERE orderId IN (${placeholders}) ORDER BY timestamp ASC
-    `).all(...orderIds) as ProductionOrderHistoryEntry[];
-
-    const historyMap = new Map<number, ProductionOrderHistoryEntry[]>();
-    allHistory.forEach(h => {
-        if (!historyMap.has(h.orderId)) {
-            historyMap.set(h.orderId, []);
-        }
-        historyMap.get(h.orderId)!.push(h);
-    });
-
-    const result = completedOrders.map(order => ({
-        ...order,
-        history: historyMap.get(order.id) || []
-    }));
-
-    return JSON.parse(JSON.stringify(result));
 }
 
 /**

@@ -281,7 +281,7 @@ export async function getOrders(options: {
     filters: {
         searchTerm?: string;
         status?: string[];
-        classification?: string[];
+        classification?: string;
         showOnlyMy?: string;
         dateRange?: DateRange;
     };
@@ -633,16 +633,18 @@ export async function getCompletedOrdersByDateRange(dateRange: DateRange): Promi
     const toDate = dateRange.to || new Date();
     toDate.setHours(23, 59, 59, 999);
 
-    // Get orders completed within the date range
+    const settings = await getPlannerSettings();
+    const finalStatuses = ['completed', 'received-in-warehouse'];
+    const finalStatusPlaceholders = finalStatuses.map(() => '?').join(',');
+    
     const completedOrders = db.prepare(`
         SELECT DISTINCT p.* 
         FROM production_orders p
         JOIN production_order_history h ON p.id = h.orderId
-        WHERE h.status IN ('completed', 'received-in-warehouse')
+        WHERE h.status IN (${finalStatusPlaceholders})
         AND h.timestamp BETWEEN ? AND ?
-    `).all(dateRange.from.toISOString(), toDate.toISOString()) as ProductionOrder[];
+    `).all(...finalStatuses, dateRange.from.toISOString(), toDate.toISOString()) as ProductionOrder[];
 
-    // Fetch history for each of those orders
     if (completedOrders.length === 0) {
         return [];
     }

@@ -21,7 +21,7 @@ import { getAllErpPurchaseOrderHeaders, getAllErpPurchaseOrderLines } from '@/mo
 import type { 
     PurchaseRequest, PurchaseRequestStatus, PurchaseRequestPriority, 
     PurchaseRequestHistoryEntry, RequestSettings, Company, DateRange, 
-    AdministrativeAction, AdministrativeActionPayload, StockInfo, ErpOrderHeader, ErpOrderLine, User, RequestNotePayload, UserPreferences, PurchaseSuggestion, Product, ErpPurchaseOrderHeader 
+    AdministrativeAction, AdministrativeActionPayload, StockInfo, ErpOrderHeader, ErpOrderLine, User, RequestNotePayload, UserPreferences, PurchaseSuggestion, Product, ErpPurchaseOrderHeader as ErpPOHeader, ErpPurchaseOrderLine
 } from '../../core/types';
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -109,7 +109,8 @@ type State = {
     requests: PurchaseRequest[];
     viewingArchived: boolean;
     currentPage: number;
-    totalItems: number;
+    totalActive: number;
+    totalArchived: number;
     requestSettings: RequestSettings | null;
     companyData: Company | null;
     newRequest: Omit<PurchaseRequest, 'id' | 'consecutive' | 'requestDate' | 'status' | 'reopened' | 'requestedBy' | 'deliveredQuantity' | 'receivedInWarehouseBy' | 'receivedDate' | 'previousStatus' | 'lastModifiedAt' | 'lastModifiedBy' | 'hasBeenModified' | 'approvedBy' | 'lastStatusUpdateBy' | 'lastStatusUpdateNotes'>;
@@ -150,7 +151,7 @@ type State = {
     contextInfoData: PurchaseRequest | null;
     isAddNoteDialogOpen: boolean;
     notePayload: RequestNotePayload | null;
-    erpPoHeaders: ErpPurchaseOrderHeader[];
+    erpPoHeaders: ErpPOHeader[];
     erpPoLines: ErpPurchaseOrderLine[];
     isTransitsDialogOpen: boolean;
     activeTransits: { itemId: string; itemDescription: string; transits: any[] } | null;
@@ -213,7 +214,8 @@ export const useRequests = () => {
         requests: [],
         viewingArchived: false,
         currentPage: 0,
-        totalItems: 0,
+        totalActive: 0,
+        totalArchived: 0,
         requestSettings: null,
         companyData: null,
         newRequest: emptyRequest,
@@ -307,7 +309,8 @@ export const useRequests = () => {
                 erpPoHeaders: poHeaders,
                 erpPoLines: poLines,
                 requests: requestsData.requests.map(sanitizeRequest),
-                totalItems: state.viewingArchived ? requestsData.totalArchived : requestsData.totalActive,
+                totalActive: requestsData.totalActive,
+                totalArchived: requestsData.totalArchived,
             });
 
         } catch (error) {
@@ -915,8 +918,7 @@ export const useRequests = () => {
             if (!state.notePayload || !state.notePayload.notes.trim() || !currentUser) return;
             updateState({ isSubmitting: true });
             try {
-                const payload = { ...state.notePayload, updatedBy: currentUser.name };
-                const updatedRequest = await addNoteServer(payload);
+                const updatedRequest = await addNoteToRequest(state.notePayload);
                 toast({ title: "Nota Añadida" });
                 setState(prevState => ({
                     ...prevState,
@@ -1075,9 +1077,9 @@ export const useRequests = () => {
         classifications: useMemo(() => Array.from(new Set(products.map(p => p.classification).filter(Boolean))), [products]),
         filteredRequests: state.requests,
         stockLevels: authStockLevels,
-        totalItems: state.totalItems,
-        totalActive: useMemo(() => state.viewingArchived ? state.totalItems : state.requests.length, [state.viewingArchived, state.requests, state.totalItems]),
-        totalArchived: useMemo(() => state.viewingArchived ? state.requests.length : state.totalItems, [state.viewingArchived, state.requests, state.totalItems]),
+        totalItems: state.viewingArchived ? state.totalArchived : state.totalActive,
+        totalActive: state.totalActive,
+        totalArchived: state.totalArchived,
         visibleErpOrderLines: useMemo(() => {
             if (!state.showOnlyShortageItems) {
                 return state.erpOrderLines;
