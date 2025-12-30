@@ -20,7 +20,7 @@ import { WarehouseSettings, WarehouseLocation } from '@/modules/core/types';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { Separator } from '@/components/ui/separator';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/modules/core/hooks/useAuth';
@@ -28,6 +28,76 @@ import { useAuth } from '@/modules/core/hooks/useAuth';
 const emptyLocation: Omit<WarehouseLocation, 'id'> = { name: '', code: '', type: 'building', parentId: null };
 const initialWizardState = { name: '', prefix: '', levels: '', positions: '', depth: '', parentId: null as number | null };
 const initialCloneState = { sourceRackId: '', newName: '', newPrefix: '' };
+
+
+interface LocationFormProps {
+    location: Partial<WarehouseLocation>;
+    allLocations: WarehouseLocation[];
+    settings: WarehouseSettings;
+    onSave: (location: Partial<WarehouseLocation>) => void;
+    onCancel: () => void;
+    isEditing: boolean;
+}
+
+function LocationForm({ location, allLocations, settings, onSave, onCancel, isEditing }: LocationFormProps) {
+    const [formData, setFormData] = useState(location);
+
+    useEffect(() => {
+        setFormData(location);
+    }, [location]);
+
+    const handleChange = (field: keyof WarehouseLocation, value: any) => {
+        setFormData(prev => ({ ...prev, [field]: value }));
+    };
+
+    const parentLocationOptions = allLocations
+        .filter(l => l.id !== formData?.id)
+        .map(l => ({ value: String(l.id), label: `${l.name} (${l.code})` }));
+
+    return (
+        <form onSubmit={(e) => { e.preventDefault(); onSave(formData); }}>
+            <div className="space-y-4 py-4">
+                <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="loc-name">Nombre</Label>
+                        <Input id="loc-name" value={formData.name || ''} onChange={e => handleChange('name', e.target.value)} required />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="loc-code">Código Único</Label>
+                        <Input id="loc-code" value={formData.code || ''} onChange={e => handleChange('code', e.target.value)} required />
+                    </div>
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="loc-type">Tipo de Ubicación (Nivel)</Label>
+                    <Select value={formData.type || ''} onValueChange={(val) => handleChange('type', val)}>
+                        <SelectTrigger><SelectValue/></SelectTrigger>
+                        <SelectContent>
+                            {settings.locationLevels?.map((level, index) => (
+                                <SelectItem key={level.type} value={level.type}>Nivel {index+1}: {level.name}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="loc-parent">Ubicación Padre (Opcional)</Label>
+                    <Select value={formData.parentId ? String(formData.parentId) : 'none'} onValueChange={(val) => handleChange('parentId', val === 'none' ? null : Number(val))}>
+                        <SelectTrigger><SelectValue placeholder="Sin padre (Nivel Raíz)"/></SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="none">Sin padre (Nivel Raíz)</SelectItem>
+                            {parentLocationOptions.map(opt => (
+                                <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </div>
+            </div>
+            <DialogFooter>
+                <Button variant="ghost" type="button" onClick={onCancel}>Cancelar</Button>
+                <Button type="submit"><Save className="mr-2"/> Guardar</Button>
+            </DialogFooter>
+        </form>
+    );
+}
 
 function LocationTree({ locations, onEdit, onDelete }: { locations: WarehouseLocation[], onEdit: (loc: WarehouseLocation) => void, onDelete: (loc: WarehouseLocation) => void }) {
     const [openNodes, setOpenNodes] = useState<Set<number>>(() => {
@@ -97,7 +167,6 @@ export default function ManageLocationsPage() {
     const { setTitle } = usePageTitle();
     const { toast } = useToast();
     const { user } = useAuth();
-    const router = useRouter();
     
     const [settings, setSettings] = useState<WarehouseSettings | null>(null);
     const [locations, setLocations] = useState<WarehouseLocation[]>([]);
@@ -163,19 +232,19 @@ export default function ManageLocationsPage() {
         }
     };
 
-    const handleSaveLocation = async () => {
-        if (!currentLocation.name || !currentLocation.code || !currentLocation.type) {
+    const handleSaveLocation = async (locationData: Partial<WarehouseLocation>) => {
+        if (!locationData.name || !locationData.code || !locationData.type) {
             toast({ title: "Datos incompletos", variant: "destructive" });
             return;
         }
 
         try {
-            if (isEditingLocation && currentLocation.id) {
-                const updatedLoc = await updateLocation(currentLocation as WarehouseLocation);
+            if (isEditingLocation && locationData.id) {
+                const updatedLoc = await updateLocation(locationData as WarehouseLocation);
                 setLocations(prev => prev.map(l => l.id === updatedLoc.id ? updatedLoc : l));
                 toast({ title: "Ubicación Actualizada" });
             } else {
-                const newLoc = await addLocation(currentLocation as Omit<WarehouseLocation, 'id'>);
+                const newLoc = await addLocation(locationData as Omit<WarehouseLocation, 'id'>);
                 setLocations(prev => [...prev, newLoc]);
                 toast({ title: "Ubicación Creada" });
             }
@@ -253,10 +322,6 @@ export default function ManageLocationsPage() {
         }
     };
     
-    const parentLocationOptions = locations
-        .filter(l => l.id !== currentLocation?.id)
-        .map(l => ({ value: String(l.id), label: `${l.name} (${l.code})` }));
-
     const rackOptions = locations
         .filter(l => l.type === 'rack')
         .map(l => ({ value: String(l.id), label: `${l.name} (${l.code})` }));
@@ -349,45 +414,14 @@ export default function ManageLocationsPage() {
                                 {isEditingLocation ? "Modifica los detalles de esta ubicación." : "Crea una nueva ubicación en tu almacén."}
                             </DialogDescription>
                         </DialogHeader>
-                        <div className="space-y-4 py-4">
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <Label htmlFor="loc-name">Nombre</Label>
-                                    <Input id="loc-name" value={currentLocation.name || ''} onChange={e => setCurrentLocation(p => ({...p, name: e.target.value}))} />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="loc-code">Código Único</Label>
-                                    <Input id="loc-code" value={currentLocation.code || ''} onChange={e => setCurrentLocation(p => ({...p, code: e.target.value}))} />
-                                </div>
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="loc-type">Tipo de Ubicación (Nivel)</Label>
-                                <Select value={currentLocation.type || ''} onValueChange={(val) => setCurrentLocation(p => ({...p, type: val as string}))}>
-                                    <SelectTrigger><SelectValue/></SelectTrigger>
-                                    <SelectContent>
-                                        {settings.locationLevels?.map((level, index) => (
-                                            <SelectItem key={level.type} value={level.type}>Nivel {index+1}: {level.name}</SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="loc-parent">Ubicación Padre (Opcional)</Label>
-                                <Select value={String(currentLocation.parentId || 'none')} onValueChange={(val) => setCurrentLocation(p => ({...p, parentId: val === 'none' ? null : Number(val)}))}>
-                                    <SelectTrigger><SelectValue placeholder="Sin padre (Nivel Raíz)"/></SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="none">Sin padre (Nivel Raíz)</SelectItem>
-                                        {parentLocationOptions.map(opt => (
-                                            <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                        </div>
-                        <DialogFooter>
-                            <Button variant="ghost" onClick={() => setLocationFormOpen(false)}>Cancelar</Button>
-                            <Button onClick={handleSaveLocation}><Save className="mr-2"/> Guardar</Button>
-                        </DialogFooter>
+                         <LocationForm 
+                            location={currentLocation}
+                            allLocations={locations}
+                            settings={settings}
+                            onSave={handleSaveLocation}
+                            onCancel={() => setLocationFormOpen(false)}
+                            isEditing={isEditingLocation}
+                         />
                     </DialogContent>
                  </Dialog>
 
