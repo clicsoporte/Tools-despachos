@@ -37,13 +37,14 @@ export async function getProductionOrders(options: {
     filters: {
         searchTerm?: string;
         status?: string[];
-        classification?: string;
+        classification?: string[];
         showOnlyMy?: string;
         dateRange?: DateRange;
     };
 }): Promise<{ activeOrders: ProductionOrder[], archivedOrders: ProductionOrder[], totalActiveCount: number, totalArchivedCount: number }> {
     return getOrders(options);
 }
+
 
 /**
  * Saves a new production order.
