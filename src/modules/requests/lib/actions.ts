@@ -1,3 +1,4 @@
+
 /**
  * @fileoverview Client-side functions for interacting with the request module's server-side DB functions.
  * This abstraction layer ensures components only call client-safe functions.
@@ -50,7 +51,7 @@ export async function getPurchaseRequests(options: {
         showOnlyMy?: string;
         dateRange?: DateRange;
     };
-}): Promise<{ requests: PurchaseRequest[], totalCount: number }> {
+}): Promise<{ requests: PurchaseRequest[], totalActive: number, totalArchived: number }> {
     return getRequests(options);
 }
 

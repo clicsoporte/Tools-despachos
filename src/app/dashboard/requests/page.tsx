@@ -26,7 +26,7 @@ import { SearchInput } from '@/components/ui/search-input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Calendar } from '@/components/ui/calendar';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import type { PurchaseRequest, PurchaseRequestHistoryEntry, RequestNotePayload, PurchaseRequestPriority, ErpOrderHeader, ErpOrderLine, User, ErpPurchaseOrderHeader as ErpPOHeader, ErpPurchaseOrderLine as ErpPOLine } from '@/modules/core/types';
+import type { PurchaseRequest, PurchaseRequestHistoryEntry, RequestNotePayload, PurchaseRequestPriority, ErpOrderHeader, ErpOrderLine, User, ErpPurchaseOrderLine, ErpPurchaseOrderHeader as ErpPOHeader } from '@/modules/core/types';
 import Link from 'next/link';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -34,6 +34,7 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTr
 import { useAuth } from '@/modules/core/hooks/useAuth';
 import { Separator } from '@/components/ui/separator';
 import { usePageTitle } from '@/modules/core/hooks/usePageTitle';
+import { MultiSelectFilter } from '@/components/ui/multi-select-filter';
 
 
 const HighlightedText = ({ text, highlight }: { text: string; highlight: string }) => {
@@ -202,7 +203,7 @@ export default function PurchaseRequestPage() {
                         </div>
                          <div className="space-y-1">
                             <p className="font-semibold text-muted-foreground">Prioridad</p>
-                            <Select value={request.priority} onValueChange={(value: PurchaseRequestPriorityType) => actions.handleDetailUpdate(request.id, { priority: value })}>
+                            <Select value={request.priority} onValueChange={(value: PurchaseRequestPriority) => actions.handleDetailUpdate(request.id, { priority: value })}>
                                 <SelectTrigger className={cn("h-8 w-32 border-0 focus:ring-0", selectors.priorityConfig[request.priority]?.className)}>
                                     <SelectValue />
                                 </SelectTrigger>
@@ -292,7 +293,13 @@ export default function PurchaseRequestPage() {
     const renderFilters = () => (
         <div className="flex flex-col md:flex-row gap-4 items-center">
             <Input placeholder="Buscar por Nº solicitud, cliente, producto o pedido ERP..." value={searchTerm} onChange={(e) => actions.setSearchTerm(e.target.value)} className="w-full md:w-64" />
-            <Select value={statusFilter} onValueChange={actions.setStatusFilter}><SelectTrigger className="w-full md:w-[180px]"><SelectValue placeholder="Filtrar por estado..." /></SelectTrigger><SelectContent><SelectItem value="all">Todos los Estados</SelectItem>{Object.entries(selectors.statusConfig).map(([key, { label }]: [string, { label: string }]) => (<SelectItem key={key} value={key}>{label}</SelectItem>))}</SelectContent></Select>
+            <MultiSelectFilter
+                title="Estado"
+                options={Object.entries(selectors.statusConfig).map(([key, { label }]) => ({ value: key, label }))}
+                selectedValues={state.statusFilter}
+                onSelectedChange={actions.setStatusFilter}
+                className="w-full md:w-auto"
+            />
             <Select value={classificationFilter} onValueChange={actions.setClassificationFilter}><SelectTrigger className="w-full md:w-[240px]"><SelectValue placeholder="Filtrar por clasificación..." /></SelectTrigger><SelectContent><SelectItem value="all">Todas las Clasificaciones</SelectItem>{selectors.classifications.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent></Select>
             <Popover><PopoverTrigger asChild><Button variant={"outline"} className={cn("w-full md:w-auto justify-start text-left font-normal", !dateFilter && "text-muted-foreground")}><CalendarIcon className="mr-2 h-4 w-4" />{dateFilter?.from ? (dateFilter.to ? (`${format(dateFilter.from, "LLL dd, y")} - ${format(dateFilter.to, "LLL dd, y")}`) : (format(dateFilter.from, "LLL dd, y"))) : (<span>Filtrar por fecha</span>)}</Button></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><Calendar mode="range" selected={dateFilter} onSelect={actions.setDateFilter} /></PopoverContent></Popover>
             <DropdownMenu>
@@ -304,7 +311,7 @@ export default function PurchaseRequestPage() {
                     <DropdownMenuItem onSelect={actions.handleExportExcel}><FileSpreadsheet className="mr-2 h-4 w-4" /> Exportar a Excel</DropdownMenuItem>
                 </DropdownMenuContent>
             </DropdownMenu>
-            <Button variant="ghost" onClick={() => { actions.setSearchTerm(''); actions.setStatusFilter('all'); actions.setClassificationFilter('all'); actions.setDateFilter(undefined); actions.setShowOnlyMyRequests(true); }} className="w-full md:w-auto"><FilterX className="mr-2 h-4 w-4" />Limpiar</Button>
+            <Button variant="ghost" onClick={() => { actions.setSearchTerm(''); actions.setStatusFilter([]); actions.setClassificationFilter('all'); actions.setDateFilter(undefined); actions.setShowOnlyMyRequests(true); }} className="w-full md:w-auto"><FilterX className="mr-2 h-4 w-4" />Limpiar</Button>
         </div>
     );
 
@@ -316,8 +323,8 @@ export default function PurchaseRequestPage() {
                     <div className="flex items-center gap-2 md:gap-4 flex-wrap">
                         <Button variant="outline" onClick={() => actions.loadInitialData(true)} disabled={isLoading || state.isRefreshing}>{state.isRefreshing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCcw className="mr-2 h-4 w-4" />}Refrescar</Button>
                         <div className="flex items-center gap-1">
-                            <Button variant={viewingArchived ? "outline" : "secondary"} onClick={() => actions.setViewingArchived(false)}>Activas ({state.totalActive})</Button>
-                            <Button variant={viewingArchived ? "secondary" : "outline"} onClick={() => actions.setViewingArchived(true)}>Archivadas ({state.totalArchived})</Button>
+                            <Button variant={viewingArchived ? "outline" : "secondary"} onClick={() => actions.setViewingArchived(false)}>Activas ({selectors.totalActive})</Button>
+                            <Button variant={viewingArchived ? "secondary" : "outline"} onClick={() => actions.setViewingArchived(true)}>Archivadas ({selectors.totalArchived})</Button>
                         </div>
                         <Dialog open={isErpOrderModalOpen} onOpenChange={actions.setErpOrderModalOpen}>
                             <DialogTrigger asChild>
@@ -457,15 +464,15 @@ export default function PurchaseRequestPage() {
                 )}
             </div>
 
-             {state.totalItems > state.rowsPerPage && (
+             {selectors.totalItems > state.rowsPerPage && (
                  <div className="flex items-center justify-center space-x-2 py-4">
                     <Button variant="outline" size="sm" onClick={() => actions.setCurrentPage((p: number) => p - 1)} disabled={currentPage === 0}>
                         <ChevronLeft className="mr-2 h-4 w-4" />Anterior
                     </Button>
                     <span className="text-sm text-muted-foreground">
-                        Página {currentPage + 1} de {Math.ceil(state.totalItems / state.rowsPerPage)}
+                        Página {currentPage + 1} de {Math.ceil(selectors.totalItems / state.rowsPerPage)}
                     </span>
-                    <Button variant="outline" size="sm" onClick={() => actions.setCurrentPage((p: number) => p + 1)} disabled={(currentPage + 1) * state.rowsPerPage >= state.totalItems}>
+                    <Button variant="outline" size="sm" onClick={() => actions.setCurrentPage((p: number) => p + 1)} disabled={(currentPage + 1) * state.rowsPerPage >= selectors.totalItems}>
                         Siguiente<ChevronRight className="ml-2 h-4 w-4" />
                     </Button>
                 </div>
@@ -502,6 +509,7 @@ export default function PurchaseRequestPage() {
     
 
     
+
 
 
 
