@@ -15,7 +15,7 @@ import { logError, logInfo } from '@/modules/core/lib/logger';
 import { 
     getPurchaseRequests, savePurchaseRequest, updatePurchaseRequest, 
     updatePurchaseRequestStatus, getRequestHistory, getRequestSettings, 
-    updatePendingAction, getErpOrderData, addNoteToRequest, updateRequestDetails, 
+    updatePendingAction, getErpOrderData, addNoteToRequest, updateRequestDetails as updateRequestDetailsServer, 
     saveCostAnalysis as saveCostAnalysisAction
 } from '@/modules/requests/lib/actions';
 import { getAllErpPurchaseOrderHeaders, getAllErpPurchaseOrderLines } from '@/modules/core/lib/db';
@@ -31,7 +31,9 @@ import { useDebounce } from 'use-debounce';
 import { generateDocument } from '@/modules/core/lib/pdf-generator';
 import { getDaysRemaining as getSimpleDaysRemaining } from '@/modules/core/lib/time-utils';
 import { exportToExcel } from '@/modules/core/lib/excel-export';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { usePageTitle } from '@/modules/core/hooks/usePageTitle';
+import type { RowInput } from 'jspdf-autotable';
 
 
 const normalizeText = (text: string | null | undefined): string => {
@@ -158,6 +160,7 @@ type State = {
     isCostAnalysisDialogOpen: boolean;
     analysisCost: string;
     analysisSalePrice: string;
+    rowsPerPage: number;
 };
 
 // Helper function to ensure complex fields are in the correct format (array).
@@ -263,6 +266,7 @@ export const useRequests = () => {
         isCostAnalysisDialogOpen: false,
         analysisCost: '',
         analysisSalePrice: '',
+        rowsPerPage: 10,
     });
     
     const [debouncedSearchTerm] = useDebounce(state.searchTerm, state.companyData?.searchDebounceTime ?? 500);
