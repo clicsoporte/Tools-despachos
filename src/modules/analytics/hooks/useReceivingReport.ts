@@ -207,7 +207,7 @@ export function useReceivingReport() {
                     case 'unitCode': return item.unitCode;
                     case 'documentId': return item.documentId || 'N/A';
                     case 'locationPath': return getLocationPath(item.locationId);
-                    case 'quantity': return (item as any).quantity || 1;
+                    case 'quantity': return (item as any).quantity ?? 1;
                     case 'createdBy': return item.createdBy;
                     default: return '';
                 }
@@ -235,7 +235,7 @@ export function useReceivingReport() {
                     case 'unitCode': cellValue = item.unitCode || 'N/A'; break;
                     case 'documentId': cellValue = item.documentId || 'N/A'; break;
                     case 'locationPath': cellValue = getLocationPath(item.locationId); break;
-                    case 'quantity': cellValue = String((item as any).quantity || 1); break;
+                    case 'quantity': return String((item as any).quantity ?? 1);
                     case 'createdBy': cellValue = item.createdBy; break;
                     default: cellValue = '';
                 }

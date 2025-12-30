@@ -131,7 +131,7 @@ export default function ReceivingReportPage() {
                                             {visibleColumns.includes('unitCode') && <TableCell className="font-mono text-xs">{item.unitCode}</TableCell>}
                                             {visibleColumns.includes('documentId') && <TableCell>{item.documentId || 'N/A'}</TableCell>}
                                             {visibleColumns.includes('locationPath') && <TableCell className="text-xs">{selectors.getLocationPath(item.locationId)}</TableCell>}
-                                            {visibleColumns.includes('quantity') && <TableCell className="font-bold">{(item as any).quantity || 1}</TableCell>}
+                                            {visibleColumns.includes('quantity') && <TableCell className="font-bold">{item.quantity ?? 1}</TableCell>}
                                             {visibleColumns.includes('createdBy') && <TableCell>{item.createdBy}</TableCell>}
                                         </TableRow>
                                     ))

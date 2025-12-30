@@ -54,6 +54,7 @@ export async function initializeWarehouseDb(db: import('better-sqlite3').Databas
             humanReadableId TEXT,
             documentId TEXT,
             locationId INTEGER,
+            quantity REAL DEFAULT 1,
             notes TEXT,
             createdAt TEXT NOT NULL,
             createdBy TEXT NOT NULL,
@@ -138,8 +139,8 @@ export async function runWarehouseMigrations(db: import('better-sqlite3').Databa
             'id, itemId, locationId, clientId, updatedBy, updatedAt');
         
         checkAndRecreateForeignKey('inventory_units', 'locationId',
-            `CREATE TABLE inventory_units (id INTEGER PRIMARY KEY AUTOINCREMENT, unitCode TEXT UNIQUE, productId TEXT NOT NULL, humanReadableId TEXT, documentId TEXT, locationId INTEGER, notes TEXT, createdAt TEXT NOT NULL, createdBy TEXT NOT NULL, FOREIGN KEY (locationId) REFERENCES locations(id) ON DELETE CASCADE);`,
-            'id, unitCode, productId, humanReadableId, documentId, locationId, notes, createdAt, createdBy');
+            `CREATE TABLE inventory_units (id INTEGER PRIMARY KEY AUTOINCREMENT, unitCode TEXT UNIQUE, productId TEXT NOT NULL, humanReadableId TEXT, documentId TEXT, locationId INTEGER, quantity REAL DEFAULT 1, notes TEXT, createdAt TEXT NOT NULL, createdBy TEXT NOT NULL, FOREIGN KEY (locationId) REFERENCES locations(id) ON DELETE CASCADE);`,
+            'id, unitCode, productId, humanReadableId, documentId, locationId, quantity, notes, createdAt, createdBy');
         
         const movementsCreateSql = `CREATE TABLE movements (id INTEGER PRIMARY KEY AUTOINCREMENT, itemId TEXT NOT NULL, quantity REAL NOT NULL, fromLocationId INTEGER, toLocationId INTEGER, timestamp TEXT NOT NULL, userId INTEGER NOT NULL, notes TEXT, FOREIGN KEY (fromLocationId) REFERENCES locations(id) ON DELETE CASCADE, FOREIGN KEY (toLocationId) REFERENCES locations(id) ON DELETE CASCADE);`;
         
@@ -162,6 +163,7 @@ export async function runWarehouseMigrations(db: import('better-sqlite3').Databa
 
         const unitsTableInfo = db.prepare(`PRAGMA table_info(inventory_units)`).all() as { name: string }[];
         if (!unitsTableInfo.some(c => c.name === 'documentId')) db.exec('ALTER TABLE inventory_units ADD COLUMN documentId TEXT');
+        if (!unitsTableInfo.some(c => c.name === 'quantity')) db.exec('ALTER TABLE inventory_units ADD COLUMN quantity REAL DEFAULT 1');
 
 
     } catch (error) {
@@ -479,9 +481,10 @@ export async function addInventoryUnit(unit: Omit<InventoryUnit, 'id' | 'created
             unitCode: unitCode,
             humanReadableId: unit.humanReadableId || null,
             documentId: unit.documentId || null,
+            quantity: unit.quantity ?? 1,
         };
         const info = db.prepare(
-            'INSERT INTO inventory_units (unitCode, productId, humanReadableId, documentId, locationId, notes, createdAt, createdBy) VALUES (@unitCode, @productId, @humanReadableId, @documentId, @locationId, @notes, @createdAt, @createdBy)'
+            'INSERT INTO inventory_units (unitCode, productId, humanReadableId, documentId, locationId, quantity, notes, createdAt, createdBy) VALUES (@unitCode, @productId, @humanReadableId, @documentId, @locationId, @quantity, @notes, @createdAt, @createdBy)'
         ).run(newUnitData);
         
         const newId = info.lastInsertRowid as number;

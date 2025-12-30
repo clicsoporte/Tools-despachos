@@ -219,7 +219,7 @@ export const useReceivingWizard = () => {
             const unitData = {
                 productId: state.selectedProduct.id,
                 locationId: state.newLocationId,
-                quantity: parseFloat(state.quantity) || 0,
+                quantity: parseFloat(state.quantity) || 1,
                 humanReadableId: state.humanReadableId,
                 documentId: state.documentId,
                 createdBy: user.name,
