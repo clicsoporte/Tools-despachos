@@ -31,6 +31,8 @@ export default function WarehouseDashboardPage() {
                     return hasPermission('warehouse:access');
                 case 'receiving-wizard':
                     return hasPermission('warehouse:receiving:create');
+                case 'population-wizard': // <-- This line was missing
+                    return hasPermission('warehouse:receiving:create'); // Re-using the same permission
                 case 'assign-item':
                     return hasPermission('warehouse:inventory:assign');
                 case 'inventory-count':
