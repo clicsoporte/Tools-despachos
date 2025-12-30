@@ -9,6 +9,7 @@ import type { ProductionOrder, PlannerSettings, UpdateStatusPayload, UpdateOrder
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { logError } from '../../core/lib/logger';
+import { getAllProducts } from '@/modules/core/lib/db';
 
 const PLANNER_DB_FILE = 'planner.db';
 
@@ -274,18 +275,18 @@ export async function saveSettings(settings: PlannerSettings): Promise<void> {
 }
 
 
-export async function getOrders(options: { 
-    page: number; 
+export async function getOrders(options: {
+    page: number;
     pageSize: number;
     isArchived: boolean;
     filters: {
         searchTerm?: string;
         status?: string[];
-        classification?: string;
+        classification?: string[];
         showOnlyMy?: string;
         dateRange?: DateRange;
     };
-}): Promise<{ activeOrders: ProductionOrder[], archivedOrders: ProductionOrder[], totalActiveCount: number, totalArchivedCount: number }> {
+}): Promise<{ activeOrders: ProductionOrder[]; archivedOrders: ProductionOrder[]; totalActiveCount: number; totalArchivedCount: number; }> {
     const db = await connectDb(PLANNER_DB_FILE);
     const { page, pageSize, isArchived, filters } = options;
 
@@ -293,54 +294,70 @@ export async function getOrders(options: {
     const finalStatus = settings.useWarehouseReception ? 'received-in-warehouse' : 'completed';
     const archivedStatuses = [`'${finalStatus}'`, `'canceled'`];
 
-    const buildQueryParts = (isArchivedQuery: boolean) => {
+    const buildQueryParts = async (isArchivedQuery: boolean) => {
         let whereClauses: string[] = [];
         let queryParams: any[] = [];
         
         if (isArchivedQuery) {
-            whereClauses.push(`status IN (${archivedStatuses.join(',')})`);
+            whereClauses.push(`po.status IN (${archivedStatuses.join(',')})`);
         } else {
-            whereClauses.push(`status NOT IN (${archivedStatuses.join(',')})`);
+            whereClauses.push(`po.status NOT IN (${archivedStatuses.join(',')})`);
         }
 
         if (filters.searchTerm) {
-            whereClauses.push(`(consecutive LIKE ? OR customerName LIKE ? OR productDescription LIKE ? OR productId LIKE ?)`);
+            whereClauses.push(`(po.consecutive LIKE ? OR po.customerName LIKE ? OR po.productDescription LIKE ? OR po.productId LIKE ?)`);
             const searchTermParam = `%${filters.searchTerm}%`;
             queryParams.push(searchTermParam, searchTermParam, searchTermParam, searchTermParam);
         }
 
         if (filters.status && filters.status.length > 0) {
-            whereClauses.push(`status IN (${filters.status.map(() => '?').join(',')})`);
+            whereClauses.push(`po.status IN (${filters.status.map(() => '?').join(',')})`);
             queryParams.push(...filters.status);
         }
         
         if (filters.showOnlyMy) {
-            whereClauses.push(`requestedBy = ?`);
+            whereClauses.push(`po.requestedBy = ?`);
             queryParams.push(filters.showOnlyMy);
         }
 
         if (filters.dateRange?.from) {
-            whereClauses.push("requestDate >= ?");
+            whereClauses.push("po.requestDate >= ?");
             queryParams.push(filters.dateRange.from.toISOString());
         }
         if (filters.dateRange?.to) {
             const toDate = new Date(filters.dateRange.to);
             toDate.setHours(23, 59, 59, 999);
-            whereClauses.push("requestDate <= ?");
+            whereClauses.push("po.requestDate <= ?");
             queryParams.push(toDate.toISOString());
         }
 
-        return { whereClause: whereClauses.join(' AND '), params: queryParams };
+        let fromClause = 'production_orders po';
+        if (filters.classification && filters.classification.length > 0) {
+            // This requires a temporary connection to the main DB to get product info
+            // This is not ideal but necessary for filtering across DBs
+            const mainDb = await connectDb();
+            const productIds = mainDb.prepare(`SELECT id FROM products WHERE classification IN (${filters.classification.map(() => '?').join(',')})`).all(...filters.classification).map((p: any) => p.id);
+            if (productIds.length > 0) {
+                whereClauses.push(`po.productId IN (${productIds.map(() => '?').join(',')})`);
+                queryParams.push(...productIds);
+            } else {
+                // If no products match the classification, return no results
+                whereClauses.push('1 = 0');
+            }
+        }
+
+
+        return { whereClause: whereClauses.join(' AND '), params: queryParams, fromClause };
     };
 
-    const activeQueryParts = buildQueryParts(false);
-    const archivedQueryParts = buildQueryParts(true);
+    const activeQueryParts = await buildQueryParts(false);
+    const archivedQueryParts = await buildQueryParts(true);
 
-    const totalActiveCount = (db.prepare(`SELECT COUNT(*) as count FROM production_orders WHERE ${activeQueryParts.whereClause}`).get(...activeQueryParts.params) as { count: number }).count;
-    const totalArchivedCount = (db.prepare(`SELECT COUNT(*) as count FROM production_orders WHERE ${archivedQueryParts.whereClause}`).get(...archivedQueryParts.params) as { count: number }).count;
+    const totalActiveCount = (db.prepare(`SELECT COUNT(*) as count FROM ${activeQueryParts.fromClause} WHERE ${activeQueryParts.whereClause}`).get(...activeQueryParts.params) as { count: number }).count;
+    const totalArchivedCount = (db.prepare(`SELECT COUNT(*) as count FROM ${archivedQueryParts.fromClause} WHERE ${archivedQueryParts.whereClause}`).get(...archivedQueryParts.params) as { count: number }).count;
     
     const targetQueryParts = isArchived ? archivedQueryParts : activeQueryParts;
-    let finalQuery = `SELECT * FROM production_orders WHERE ${targetQueryParts.whereClause} ORDER BY requestDate DESC LIMIT ? OFFSET ?`;
+    let finalQuery = `SELECT * FROM ${targetQueryParts.fromClause} WHERE ${targetQueryParts.whereClause} ORDER BY requestDate DESC LIMIT ? OFFSET ?`;
     let finalParams = [...targetQueryParts.params, pageSize, page * pageSize];
     
     const ordersRaw = db.prepare(finalQuery).all(...finalParams) as any[];
@@ -633,7 +650,6 @@ export async function getCompletedOrdersByDateRange(dateRange: DateRange): Promi
     const toDate = dateRange.to || new Date();
     toDate.setHours(23, 59, 59, 999);
 
-    const settings = await getPlannerSettings();
     const finalStatuses = ['completed', 'received-in-warehouse'];
     const finalStatusPlaceholders = finalStatuses.map(() => '?').join(',');
     

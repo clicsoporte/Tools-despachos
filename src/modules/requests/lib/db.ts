@@ -1,3 +1,4 @@
+
 /**
  * @fileoverview Server-side functions for the purchase requests database.
  */
@@ -256,8 +257,8 @@ export async function saveSettings(settings: RequestSettings): Promise<void> {
 }
 
 
-export async function getRequests(options: { 
-    page: number; 
+export async function getRequests(options: {
+    page: number;
     pageSize: number;
     isArchived: boolean;
     filters: {
@@ -267,7 +268,7 @@ export async function getRequests(options: {
         showOnlyMy?: string;
         dateRange?: DateRange;
     };
-}): Promise<{ requests: PurchaseRequest[], totalCount: number }> {
+}): Promise<{ requests: PurchaseRequest[], totalActive: number, totalArchived: number }> {
     const db = await connectDb(REQUESTS_DB_FILE);
     const { page, pageSize, isArchived, filters } = options;
 
@@ -275,51 +276,49 @@ export async function getRequests(options: {
     const finalStatus = settings.useErpEntry ? 'entered-erp' : (settings.useWarehouseReception ? 'received-in-warehouse' : 'ordered');
     const archivedStatuses = [`'${finalStatus}'`, `'canceled'`];
 
-    let query = `SELECT * FROM purchase_requests`;
-    let countQuery = `SELECT COUNT(*) as count FROM purchase_requests`;
-    const whereClauses: string[] = [];
-    const params: any[] = [];
-    const countParams: any[] = [];
+    const buildQueryParts = (isArchivedQuery: boolean) => {
+        let whereClauses: string[] = [];
+        let queryParams: any[] = [];
+        
+        if (isArchivedQuery) {
+            whereClauses.push(`status IN (${archivedStatuses.join(',')})`);
+        } else {
+            whereClauses.push(`status NOT IN (${archivedStatuses.join(',')})`);
+        }
 
-    if (isArchived) {
-        whereClauses.push(`status IN (${archivedStatuses.join(',')})`);
-    } else {
-        whereClauses.push(`status NOT IN (${archivedStatuses.join(',')})`);
-    }
+        if (filters.searchTerm) {
+            whereClauses.push(`(consecutive LIKE ? OR clientName LIKE ? OR itemDescription LIKE ? OR itemId LIKE ? OR erpOrderNumber LIKE ?)`);
+            const searchTermParam = `%${filters.searchTerm}%`;
+            queryParams.push(searchTermParam, searchTermParam, searchTermParam, searchTermParam, searchTermParam);
+        }
 
-    if (filters.searchTerm) {
-        whereClauses.push(`(consecutive LIKE ? OR clientName LIKE ? OR itemDescription LIKE ? OR itemId LIKE ? OR erpOrderNumber LIKE ?)`);
-        const searchTermParam = `%${filters.searchTerm}%`;
-        params.push(searchTermParam, searchTermParam, searchTermParam, searchTermParam, searchTermParam);
-        countParams.push(searchTermParam, searchTermParam, searchTermParam, searchTermParam, searchTermParam);
-    }
+        if (filters.status && filters.status.length > 0) {
+            whereClauses.push(`status IN (${filters.status.map(() => '?').join(',')})`);
+            queryParams.push(...filters.status);
+        }
+        
+        if (filters.showOnlyMy) {
+            whereClauses.push(`requestedBy = ?`);
+            queryParams.push(filters.showOnlyMy);
+        }
 
-    if (filters.status && filters.status.length > 0) {
-        whereClauses.push(`status IN (${filters.status.map(() => '?').join(',')})`);
-        params.push(...filters.status);
-        countParams.push(...filters.status);
-    }
+        return { whereClause: whereClauses.join(' AND '), params: queryParams };
+    };
+
+    const activeQueryParts = buildQueryParts(false);
+    const archivedQueryParts = buildQueryParts(true);
+
+    const totalActive = (db.prepare(`SELECT COUNT(*) as count FROM purchase_requests WHERE ${activeQueryParts.whereClause}`).get(...activeQueryParts.params) as { count: number }).count;
+    const totalArchived = (db.prepare(`SELECT COUNT(*) as count FROM purchase_requests WHERE ${archivedQueryParts.whereClause}`).get(...archivedQueryParts.params) as { count: number }).count;
     
-    if (filters.showOnlyMy) {
-        whereClauses.push(`requestedBy = ?`);
-        params.push(filters.showOnlyMy);
-        countParams.push(filters.showOnlyMy);
-    }
-
-    if (whereClauses.length > 0) {
-        query += ` WHERE ${whereClauses.join(' AND ')}`;
-        countQuery += ` WHERE ${whereClauses.join(' AND ')}`;
-    }
-
-    const totalCount = (db.prepare(countQuery).get(...countParams) as { count: number }).count;
+    const targetQueryParts = isArchived ? archivedQueryParts : activeQueryParts;
+    let finalQuery = `SELECT * FROM purchase_requests WHERE ${targetQueryParts.whereClause} ORDER BY requestDate DESC LIMIT ? OFFSET ?`;
+    let finalParams = [...targetQueryParts.params, pageSize, page * pageSize];
     
-    query += ' ORDER BY requestDate DESC LIMIT ? OFFSET ?';
-    params.push(pageSize, page * pageSize);
-
-    const requestsRaw = db.prepare(query).all(...params) as any[];
+    const requestsRaw = db.prepare(finalQuery).all(...finalParams) as any[];
     const requests = requestsRaw.map(sanitizeRequest);
 
-    return { requests, totalCount };
+    return { requests, totalActive, totalArchived };
 }
 
 export async function addRequest(request: Omit<PurchaseRequest, 'id' | 'consecutive' | 'requestDate' | 'status' | 'reopened' | 'requestedBy' | 'deliveredQuantity' | 'receivedInWarehouseBy' | 'receivedDate' | 'previousStatus' | 'lastModifiedAt' | 'lastModifiedBy' | 'hasBeenModified' | 'approvedBy' | 'lastStatusUpdateBy' | 'lastStatusUpdateNotes'>, requestedBy: string): Promise<PurchaseRequest> {
