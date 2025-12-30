@@ -543,6 +543,7 @@ export type Warehouse = {
     name: string;
     isDefault: boolean;
     isVisible: boolean;
+    color: string;
 };
 
 export type StockSettings = {

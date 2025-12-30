@@ -28,6 +28,7 @@ import { MultiSelectFilter } from '@/components/ui/multi-select-filter';
 import jsPDF from "jspdf";
 import QRCode from 'qrcode';
 import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
 
 type SearchableItem = {
   id: string;
@@ -408,7 +409,10 @@ export default function WarehouseSearchPage() {
                                                  <div className="space-y-2">
                                                     {warehouseEntries.map(entry => (
                                                         <div key={entry.whId} className="flex justify-between items-center p-2 border rounded-md">
-                                                            <span>{entry.warehouse?.name} ({entry.whId})</span>
+                                                            <span className="flex items-center gap-2">
+                                                                <span className="h-3 w-3 rounded-full" style={{ backgroundColor: entry.warehouse?.color || '#CCCCCC' }}></span>
+                                                                {entry.warehouse?.name} ({entry.whId})
+                                                            </span>
                                                             <span className="font-bold text-lg">{entry.qty.toLocaleString()}</span>
                                                         </div>
                                                     ))}

@@ -16,12 +16,16 @@ import { logError, logInfo } from '@/modules/core/lib/logger';
 import { usePageTitle } from '@/modules/core/hooks/usePageTitle';
 import { useAuthorization } from '@/modules/core/hooks/useAuthorization';
 import { getWarehouseSettings, saveWarehouseSettings, getLocations, addLocation, deleteLocation, updateLocation, addBulkLocations, getStockSettings, saveStockSettings } from '@/modules/warehouse/lib/actions';
-import { Save, PlusCircle, Trash2 } from 'lucide-react';
+import { Save, PlusCircle, Trash2, Palette } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { WarehouseSettings, StockSettings, Warehouse } from '@/modules/core/types';
 import { Separator } from '@/components/ui/separator';
 import { useRouter } from 'next/navigation';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { cn } from '@/lib/utils';
+
+const defaultColors = [ '#8884d8', '#82ca9d', '#ffc658', '#ff8042', '#ff7300', '#0088fe', '#00c49f', '#ffbb28', '#F44336', '#9C27B0', '#3F51B5', '#009688' ];
 
 export default function WarehouseSettingsPage() {
     useAuthorization(['admin:settings:warehouse', 'admin:settings:stock']);
@@ -32,7 +36,7 @@ export default function WarehouseSettingsPage() {
     const [warehouseSettings, setWarehouseSettings] = useState<WarehouseSettings | null>(null);
     const [stockSettings, setStockSettings] = useState<StockSettings | null>(null);
     const [isLoading, setIsLoading] = useState(true);
-    const [newWarehouse, setNewWarehouse] = useState<Warehouse>({ id: "", name: "", isDefault: false, isVisible: true });
+    const [newWarehouse, setNewWarehouse] = useState<Warehouse>({ id: "", name: "", isDefault: false, isVisible: true, color: '#CCCCCC' });
 
     const fetchAllData = useCallback(async () => {
         setIsLoading(true);
@@ -45,6 +49,8 @@ export default function WarehouseSettingsPage() {
             if (!sSettings.warehouses) {
                 sSettings.warehouses = [];
             }
+            // Ensure every warehouse has a color
+            sSettings.warehouses = sSettings.warehouses.map(w => ({...w, color: w.color || '#CCCCCC'}));
             setStockSettings(sSettings);
         } catch (error) {
             logError('Failed to fetch warehouse/stock config data', { error });
@@ -91,7 +97,7 @@ export default function WarehouseSettingsPage() {
         }
         
         setStockSettings(prev => prev ? { ...prev, warehouses } : null);
-        setNewWarehouse({ id: "", name: "", isDefault: false, isVisible: true });
+        setNewWarehouse({ id: "", name: "", isDefault: false, isVisible: true, color: '#CCCCCC' });
     };
     
     const handleWarehouseChange = (id: string, field: keyof Warehouse, value: any) => {
@@ -161,13 +167,16 @@ export default function WarehouseSettingsPage() {
                         <div className="space-y-4 rounded-lg border p-4">
                             <h3 className="font-semibold">Gestión de Bodegas (para desglose de stock ERP)</h3>
                             <CardDescription className="mb-4">
-                                Define las bodegas que existen en tu ERP para que el sistema pueda mostrar el desglose de inventario correctamente.
+                                Define las bodegas que existen en tu ERP para que el sistema pueda mostrar el desglose de inventario correctamente. Asigna un color para una fácil identificación visual.
                             </CardDescription>
                             <div className="max-h-60 overflow-y-auto pr-2 space-y-2">
                             {stockSettings.warehouses.map(wh => (
-                                    <div key={wh.id} className="flex items-center justify-between rounded-lg border p-3">
+                                    <div key={wh.id} className="grid grid-cols-[1fr_auto] items-center gap-4 rounded-lg border p-3">
                                         <div>
-                                            <p className="font-medium">{wh.name} (<span className="font-mono">{wh.id}</span>)</p>
+                                            <p className="font-medium flex items-center gap-2">
+                                                <span className="h-3 w-3 rounded-full" style={{ backgroundColor: wh.color }}></span>
+                                                {wh.name} (<span className="font-mono">{wh.id}</span>)
+                                            </p>
                                             <div className="flex items-center gap-4 mt-2">
                                                 <div className="flex items-center space-x-2">
                                                     <Checkbox id={`default-${wh.id}`} checked={wh.isDefault} onCheckedChange={(checked) => handleWarehouseChange(wh.id, 'isDefault', checked)} />
@@ -179,19 +188,44 @@ export default function WarehouseSettingsPage() {
                                                 </div>
                                             </div>
                                         </div>
-                                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleDeleteWarehouse(wh.id)}>
-                                            <Trash2 className="h-4 w-4 text-destructive" />
-                                        </Button>
+                                        <div className="flex items-center gap-2">
+                                            <Input
+                                                type="text"
+                                                value={wh.color}
+                                                onChange={(e) => handleWarehouseChange(wh.id, 'color', e.target.value)}
+                                                className="w-24 h-8"
+                                            />
+                                            <Popover>
+                                                <PopoverTrigger asChild>
+                                                    <Button variant="outline" size="icon" className="h-8 w-8"><Palette className="h-4 w-4" /></Button>
+                                                </PopoverTrigger>
+                                                <PopoverContent className="w-48 p-2">
+                                                    <div className="grid grid-cols-4 gap-2">
+                                                        {defaultColors.map(color => (
+                                                            <button
+                                                                key={color}
+                                                                className={cn("h-8 w-8 rounded-full border", color === wh.color && "ring-2 ring-ring")}
+                                                                style={{ backgroundColor: color }}
+                                                                onClick={() => handleWarehouseChange(wh.id, 'color', color)}
+                                                            />
+                                                        ))}
+                                                    </div>
+                                                </PopoverContent>
+                                            </Popover>
+                                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleDeleteWarehouse(wh.id)}>
+                                                <Trash2 className="h-4 w-4 text-destructive" />
+                                            </Button>
+                                        </div>
                                     </div>
                                 ))}
                             </div>
                             <Separator />
-                            <div className="flex items-end gap-2 pt-2">
-                                <div className="grid flex-1 gap-2">
+                            <div className="grid grid-cols-[1fr_1fr_auto] items-end gap-2 pt-2">
+                                <div className="grid gap-2">
                                     <Label htmlFor="warehouse-id">ID Bodega (desde ERP)</Label>
                                     <Input id="warehouse-id" value={newWarehouse.id} onChange={(e) => setNewWarehouse(prev => ({ ...prev, id: e.target.value }))} placeholder="Ej: 01" />
                                 </div>
-                                <div className="grid flex-1 gap-2">
+                                <div className="grid gap-2">
                                     <Label htmlFor="warehouse-name">Nombre Bodega</Label>
                                     <Input id="warehouse-name" value={newWarehouse.name} onChange={(e) => setNewWarehouse(prev => ({ ...prev, name: e.target.value }))} placeholder="Ej: Bodega Principal" />
                                 </div>
