@@ -26,16 +26,21 @@ const dbDirectory = path.join(process.cwd(), 'dbs');
  * @returns {Promise<NextResponse>} A response object containing the file stream or an error.
  */
 export async function GET(request: NextRequest) {
+    // Note: The client-side `getCurrentUser` is a placeholder for session validation.
+    // In a real-world scenario, this check should be done via server-side session
+    // validation (e.g., parsing an encrypted cookie or using Next-Auth).
+    // For this LAN app, we proceed but add a server-side permission check.
     const user = await getCurrentUser();
     if (!user) {
-        return new NextResponse('No autorizado. Sesión no válida.', { status: 401 });
+        return new NextResponse('Unauthorized: No active session.', { status: 401 });
     }
 
-    const hasPerm = await hasPermission(user.id, 'admin:maintenance:backup');
-    if (!hasPerm) {
-        return new NextResponse('Acceso denegado.', { status: 403 });
+    // Server-side permission check
+    const canAccessBackups = await hasPermission(user.id, 'admin:maintenance:backup');
+    if (!canAccessBackups) {
+        return new NextResponse('Forbidden: You do not have permission to download backups.', { status: 403 });
     }
-
+    
     const { searchParams } = new URL(request.url);
     const fileName = searchParams.get('file');
 
