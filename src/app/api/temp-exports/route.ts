@@ -10,6 +10,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import path from 'path';
 import fs from 'fs';
+import { Readable } from 'stream';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -47,13 +48,8 @@ export async function GET(request: NextRequest) {
         const stats = fs.statSync(filePath);
         const dataStream = fs.createReadStream(filePath);
         
-        const readableStream = new ReadableStream({
-            start(controller) {
-                dataStream.on('data', (chunk) => controller.enqueue(chunk));
-                dataStream.on('end', () => controller.close());
-                dataStream.on('error', (err) => controller.error(err));
-            },
-        });
+        // Use Node.js Readable stream and cast it for NextResponse
+        const readableStream = Readable.toWeb(dataStream) as ReadableStream<Uint8Array>;
 
         const headers = new Headers();
         // Set a generic content type for Excel files
@@ -61,7 +57,7 @@ export async function GET(request: NextRequest) {
         headers.set('Content-Disposition', `attachment; filename="${sanitizedFileName}"`);
         headers.set('Content-Length', String(stats.size));
 
-        return new NextResponse(readableStream as any, { status: 200, headers });
+        return new NextResponse(readableStream, { status: 200, headers });
 
     } catch (error: any) {
         console.error(`Failed to read export file: ${error.message}`);
