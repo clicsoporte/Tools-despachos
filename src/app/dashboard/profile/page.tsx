@@ -29,6 +29,7 @@ import { useDropzone } from "react-dropzone";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Camera } from "lucide-react";
 import { useAuth } from "@/modules/core/hooks/useAuth";
+import { getInitials } from "@/lib/utils";
 
 /**
  * Renders the user profile settings page.
@@ -174,11 +175,6 @@ export default function ProfilePage() {
             variant: "destructive"
         });
     }
-  };
-
-  const getInitials = (name: string) => {
-    if (!name) return "";
-    return name.split(" ").map((n) => n[0]).join("").substring(0, 2).toUpperCase();
   };
   
   if (!isReady || !user) {

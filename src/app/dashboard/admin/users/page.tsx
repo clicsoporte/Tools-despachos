@@ -66,6 +66,7 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useAuthorization } from "@/modules/core/hooks/useAuthorization";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Checkbox } from "@/components/ui/checkbox";
+import { getInitials } from "@/lib/utils";
 
 type NewUserForm = Omit<User, 'id' | 'avatar' | 'recentActivity' | 'securityQuestion' | 'securityAnswer'> & {
     password: string;
@@ -83,12 +84,6 @@ const emptyUser: NewUserForm = {
     erpAlias: "",
     forcePasswordChange: true,
 }
-
-const getInitials = (name: string) => {
-    if (!name) return "";
-    return name.split(" ").map((n) => n[0]).join("").substring(0, 2).toUpperCase();
-};
-
 
 /**
  * Renders the user management page.

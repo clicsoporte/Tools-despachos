@@ -11,6 +11,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import path from 'path';
 import fs from 'fs';
 import { Readable } from 'stream';
+import { getCurrentUser } from '@/modules/core/lib/auth-client';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -23,6 +24,11 @@ const TEMP_EXPORT_DIR = path.join(process.cwd(), 'temp_files', 'exports');
  * @returns {Promise<NextResponse>} A response object containing the file stream or an error.
  */
 export async function GET(request: NextRequest) {
+    const user = await getCurrentUser();
+    if (!user) {
+        return new NextResponse('No autorizado. Por favor, inicie sesión de nuevo.', { status: 401 });
+    }
+
     const { searchParams } = new URL(request.url);
     const fileName = searchParams.get('file');
 

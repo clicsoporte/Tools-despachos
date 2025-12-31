@@ -11,6 +11,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import path from 'path';
 import fs from 'fs';
 import { Readable } from 'stream';
+import { getCurrentUser } from '@/modules/core/lib/auth-client';
+import { hasPermission as checkUserPermission } from '@/modules/core/lib/db';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -24,6 +26,16 @@ const dbDirectory = path.join(process.cwd(), 'dbs');
  * @returns {Promise<NextResponse>} A response object containing the file stream or an error.
  */
 export async function GET(request: NextRequest) {
+    const user = await getCurrentUser();
+    if (!user) {
+        return new NextResponse('No autorizado. Sesión no válida.', { status: 401 });
+    }
+
+    const hasPerm = await checkUserPermission(user.id, 'admin:maintenance:backup');
+    if (!hasPerm) {
+        return new NextResponse('Acceso denegado.', { status: 403 });
+    }
+
     const { searchParams } = new URL(request.url);
     const fileName = searchParams.get('file');
 
