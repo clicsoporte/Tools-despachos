@@ -331,33 +331,28 @@ export async function getOrders(options: {
             queryParams.push(toDate.toISOString());
         }
 
-        let fromClause = 'production_orders po';
         if (filters.classification && filters.classification.length > 0) {
-            // This requires a temporary connection to the main DB to get product info
-            // This is not ideal but necessary for filtering across DBs
             const mainDb = await connectDb();
             const productIds = mainDb.prepare(`SELECT id FROM products WHERE classification IN (${filters.classification.map(() => '?').join(',')})`).all(...filters.classification).map((p: any) => p.id);
             if (productIds.length > 0) {
                 whereClauses.push(`po.productId IN (${productIds.map(() => '?').join(',')})`);
                 queryParams.push(...productIds);
             } else {
-                // If no products match the classification, return no results
                 whereClauses.push('1 = 0');
             }
         }
 
-
-        return { whereClause: whereClauses.join(' AND '), params: queryParams, fromClause };
+        return { whereClause: whereClauses.join(' AND '), params: queryParams };
     };
 
     const activeQueryParts = await buildQueryParts(false);
     const archivedQueryParts = await buildQueryParts(true);
 
-    const totalActiveCount = (db.prepare(`SELECT COUNT(*) as count FROM ${activeQueryParts.fromClause} WHERE ${activeQueryParts.whereClause}`).get(...activeQueryParts.params) as { count: number }).count;
-    const totalArchivedCount = (db.prepare(`SELECT COUNT(*) as count FROM ${archivedQueryParts.fromClause} WHERE ${archivedQueryParts.whereClause}`).get(...archivedQueryParts.params) as { count: number }).count;
+    const totalActiveCount = (db.prepare(`SELECT COUNT(*) as count FROM production_orders po WHERE ${activeQueryParts.whereClause}`).get(...activeQueryParts.params) as { count: number }).count;
+    const totalArchivedCount = (db.prepare(`SELECT COUNT(*) as count FROM production_orders po WHERE ${archivedQueryParts.whereClause}`).get(...archivedQueryParts.params) as { count: number }).count;
     
     const targetQueryParts = isArchived ? archivedQueryParts : activeQueryParts;
-    let finalQuery = `SELECT * FROM ${targetQueryParts.fromClause} WHERE ${targetQueryParts.whereClause} ORDER BY requestDate DESC LIMIT ? OFFSET ?`;
+    let finalQuery = `SELECT * FROM production_orders po WHERE ${targetQueryParts.whereClause} ORDER BY requestDate DESC LIMIT ? OFFSET ?`;
     let finalParams = [...targetQueryParts.params, pageSize, page * pageSize];
     
     const ordersRaw = db.prepare(finalQuery).all(...finalParams) as any[];

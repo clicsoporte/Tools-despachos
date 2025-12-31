@@ -47,7 +47,7 @@ export default function PlannerPage() {
     const { isReady } = useAuth();
     const {
         isLoading, isSubmitting, isRefreshing, isNewOrderDialogOpen, isEditOrderDialogOpen, orders, viewingArchived,
-        currentPage, pageSize, totalItems, plannerSettings, newOrder, orderToEdit,
+        currentPage, pageSize, plannerSettings, newOrder, orderToEdit,
         searchTerm, statusFilter, classificationFilter, showOnlyMyOrders, dateFilter,
         customerSearchTerm, isCustomerSearchOpen, productSearchTerm, isProductSearchOpen,
         isStatusDialogOpen, orderToUpdate, newStatus, statusUpdateNotes, deliveredQuantity,
@@ -493,15 +493,15 @@ export default function PlannerPage() {
                 )}
             </div>
 
-            {totalItems > pageSize && (
+            {selectors.totalItems > pageSize && (
                  <div className="flex items-center justify-center space-x-2 py-4">
                     <Button variant="outline" size="sm" onClick={() => actions.setCurrentPage(p => p - 1)} disabled={currentPage === 0}>
                         <ChevronLeft className="mr-2 h-4 w-4" />Anterior
                     </Button>
                     <span className="text-sm text-muted-foreground">
-                        Página {currentPage + 1} de {Math.ceil(totalItems / pageSize)}
+                        Página {currentPage + 1} de {Math.ceil(selectors.totalItems / pageSize)}
                     </span>
-                    <Button variant="outline" size="sm" onClick={() => actions.setCurrentPage(p => p + 1)} disabled={(currentPage + 1) * pageSize >= totalItems}>
+                    <Button variant="outline" size="sm" onClick={() => actions.setCurrentPage(p => p + 1)} disabled={(currentPage + 1) * pageSize >= selectors.totalItems}>
                         Siguiente<ChevronRight className="ml-2 h-4 w-4" />
                     </Button>
                 </div>
@@ -691,4 +691,5 @@ export default function PlannerPage() {
         </main>
     );
 }
+
 
