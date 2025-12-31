@@ -106,6 +106,8 @@ export const usePlanner = () => {
         currentPage: 0,
         pageSize: 10,
         totalItems: 0,
+        totalActiveCount: 0,
+        totalArchivedCount: 0,
         plannerSettings: null as PlannerSettings | null,
         newOrder: emptyOrder,
         orderToEdit: null as ProductionOrder | null,
@@ -185,6 +187,8 @@ export const usePlanner = () => {
                 dynamicStatusConfig: newDynamicConfig,
                 orders: state.viewingArchived ? ordersResponse.archivedOrders : ordersResponse.activeOrders,
                 totalItems: state.viewingArchived ? ordersResponse.totalArchivedCount : ordersResponse.totalActiveCount,
+                totalActiveCount: ordersResponse.totalActiveCount,
+                totalArchivedCount: ordersResponse.totalArchivedCount,
             });
 
         } catch (error) {
@@ -779,7 +783,7 @@ export const usePlanner = () => {
 
     const selectors = {
         hasPermission,
-        priorityConfig: priorityConfig,
+        priorityConfig,
         statusConfig: state.dynamicStatusConfig,
         getOrderPermissions,
         getDaysRemaining: (dateStr: string) => getSimpleDaysRemaining(dateStr),
@@ -832,6 +836,9 @@ export const usePlanner = () => {
         , [products]),
         filteredOrders: state.orders,
         stockLevels: stockLevels,
+        totalItems: state.totalItems,
+        totalActiveCount: state.totalActiveCount,
+        totalArchivedCount: state.totalArchivedCount,
         availableColumns,
     };
 
