@@ -5,7 +5,7 @@
  */
 'use client';
 
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { usePageTitle } from '@/modules/core/hooks/usePageTitle';
 import { useAuthorization } from '@/modules/core/hooks/useAuthorization';
 import { useAuth } from '@/modules/core/hooks/useAuth';
@@ -80,6 +80,8 @@ export default function SimpleWarehouseSearchPage() {
     const { setTitle } = usePageTitle();
     const { toast } = useToast();
     const { user, companyData, products, customers, logout, isReady } = useAuth();
+    
+    const inputRef = useRef<HTMLInputElement>(null);
 
     const [isLoading, setIsLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
@@ -127,6 +129,17 @@ export default function SimpleWarehouseSearchPage() {
             setSelectedItem(null);
         }
     }, [debouncedSearchTerm, products]);
+    
+    const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            const searchLower = searchTerm.toLowerCase();
+            const exactMatch = products.find(p => p.id.toLowerCase() === searchLower);
+            setSelectedItem(exactMatch || null);
+            setSearchTerm(''); // Clear input for next scan
+            inputRef.current?.focus(); // Re-focus
+        }
+    };
 
     const searchResult = useMemo((): SearchResultItem | null => {
         if (!selectedItem) return null;
@@ -198,9 +211,11 @@ export default function SimpleWarehouseSearchPage() {
                     <div className="relative w-full">
                          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                         <Input
+                            ref={inputRef}
                             placeholder="Escanear o buscar código de producto..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
+                            onKeyDown={handleSearchKeyDown}
                             className="text-lg h-14 pl-10"
                             autoFocus
                         />
