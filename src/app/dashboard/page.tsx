@@ -11,6 +11,7 @@ import type { Tool } from "@/modules/core/types";
 import { Skeleton } from "@/components/ui/skeleton";
 import { usePageTitle } from "@/modules/core/hooks/usePageTitle";
 import { useAuth } from "@/modules/core/hooks/useAuth";
+import { useAuthorization } from "@/modules/core/hooks/useAuthorization";
 import { BarChartBig, Wrench } from "lucide-react";
 
 /**
@@ -19,7 +20,8 @@ import { BarChartBig, Wrench } from "lucide-react";
  * based on user permissions.
  */
 export default function DashboardPage() {
-  const { userRole, isReady } = useAuth();
+  const { isReady } = useAuth();
+  const { hasPermission } = useAuthorization();
   const { setTitle } = usePageTitle();
 
   useEffect(() => {
@@ -27,15 +29,13 @@ export default function DashboardPage() {
   }, [setTitle]);
 
   const visibleTools = useMemo(() => {
-    if (!userRole) return [];
+    if (!isReady) return [];
     
-    // Start with the main tools that are always visible
     let tools: Tool[] = [...mainTools];
 
-    const hasAdminAccess = userRole.id === 'admin';
-    const hasAnalyticsAccess = hasAdminAccess || userRole.permissions.some(p => analyticsPermissions.includes(p));
+    const hasAdminAccess = hasPermission('admin:access');
+    const hasAnalyticsAccess = hasPermission('analytics:read');
 
-    // If user has analytics access, add the card to navigate to the analytics section
     if (hasAnalyticsAccess) {
       tools.push({
         id: "analytics",
@@ -47,7 +47,6 @@ export default function DashboardPage() {
       });
     }
     
-    // If user is admin, add the card to navigate to the admin section
     if (hasAdminAccess) {
       tools.push({
         id: "admin-dashboard",
@@ -61,7 +60,7 @@ export default function DashboardPage() {
     
     return tools;
 
-  }, [userRole]);
+  }, [isReady, hasPermission]);
 
 
   if (!isReady) {

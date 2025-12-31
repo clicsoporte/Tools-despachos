@@ -238,7 +238,7 @@ export const initialRoles: Role[] = [
  */
 export const adminTools: Tool[] = [
     {
-        id: "user-management",
+        id: "users:read",
         name: "Gestión de Usuarios",
         description: "Añadir, editar y gestionar usuarios y sus roles.",
         href: "/dashboard/admin/users",
@@ -246,7 +246,7 @@ export const adminTools: Tool[] = [
         bgColor: 'bg-blue-500',
       },
       {
-        id: "role-management",
+        id: "roles:read",
         name: "Gestión de Roles",
         description: "Definir roles y asignar permisos granulares.",
         href: "/dashboard/admin/roles",
@@ -254,7 +254,7 @@ export const adminTools: Tool[] = [
         bgColor: 'bg-green-600',
       },
       {
-        id: "general-settings",
+        id: "admin:settings:general",
         name: "Configuración General",
         description: "Gestionar los datos de la empresa y logo.",
         href: "/dashboard/admin/general",
@@ -262,7 +262,7 @@ export const adminTools: Tool[] = [
         bgColor: 'bg-orange-500',
       },
       {
-        id: "email-settings",
+        id: "admin:settings:general",
         name: "Configuración de Correo",
         description: "Ajustes del servidor SMTP para enviar correos.",
         href: "/dashboard/admin/email",
@@ -270,7 +270,7 @@ export const adminTools: Tool[] = [
         bgColor: 'bg-purple-600',
       },
       {
-        id: "suggestions-viewer",
+        id: "admin:suggestions:read",
         name: "Buzón de Sugerencias",
         description: "Revisar el feedback enviado por los usuarios del sistema.",
         href: "/dashboard/admin/suggestions",
@@ -278,7 +278,7 @@ export const adminTools: Tool[] = [
         bgColor: 'bg-green-700',
       },
       {
-        id: "quoter-settings",
+        id: "admin:settings:general",
         name: "Config. Cotizador",
         description: "Gestionar prefijos y consecutivos del cotizador.",
         href: "/dashboard/admin/quoter", 
@@ -286,7 +286,7 @@ export const adminTools: Tool[] = [
         bgColor: 'bg-blue-600',
       },
       {
-        id: "cost-assistant-settings",
+        id: "admin:settings:cost-assistant",
         name: "Config. Asist. Costos",
         description: "Gestionar ajustes para el asistente de costos.",
         href: "/dashboard/admin/cost-assistant",
@@ -294,7 +294,7 @@ export const adminTools: Tool[] = [
         bgColor: 'bg-orange-500',
       },
       {
-        id: "import-data",
+        id: "admin:import:run",
         name: "Importar Datos",
         description: "Cargar clientes, productos, exoneraciones y...",
         href: "/dashboard/admin/import",
@@ -302,7 +302,7 @@ export const adminTools: Tool[] = [
         bgColor: 'bg-cyan-700',
       },
        {
-        id: "maintenance",
+        id: "admin:maintenance:backup",
         name: "Mantenimiento",
         description: "Backup, restauración y reseteo del sistema.",
         href: "/dashboard/admin/maintenance",
@@ -310,7 +310,7 @@ export const adminTools: Tool[] = [
         bgColor: 'bg-red-600',
       },
       {
-        id: "api-settings",
+        id: "admin:settings:api",
         name: "Configuración de API",
         description: "Gestionar URLs y claves de APIs externas.",
         href: "/dashboard/admin/api",
@@ -318,7 +318,7 @@ export const adminTools: Tool[] = [
         bgColor: 'bg-indigo-500',
       },
        {
-        id: "planner-settings",
+        id: "admin:settings:planner",
         name: "Config. Planificador",
         description: "Gestionar máquinas y otros ajustes del...",
         href: "/dashboard/admin/planner",
@@ -326,7 +326,7 @@ export const adminTools: Tool[] = [
         bgColor: 'bg-slate-600',
       },
        {
-        id: "requests-settings",
+        id: "admin:settings:requests",
         name: "Config. Compras",
         description: "Gestionar rutas y otros ajustes de compras.",
         href: "/dashboard/admin/requests",
@@ -334,7 +334,7 @@ export const adminTools: Tool[] = [
         bgColor: 'bg-amber-700',
       },
       {
-        id: "warehouse-settings",
+        id: "admin:settings:warehouse",
         name: "Config. Almacenes e Inventario",
         description: "Gestionar bodegas, unidades y jerarquía del almacén.",
         href: "/dashboard/admin/warehouse",
@@ -342,7 +342,7 @@ export const adminTools: Tool[] = [
         bgColor: 'bg-purple-600',
       },
       {
-        id: "log-viewer",
+        id: "admin:logs:read",
         name: "Visor de Eventos",
         description: "Revisar los registros y errores del sistema.",
         href: "/dashboard/admin/logs",
@@ -353,7 +353,7 @@ export const adminTools: Tool[] = [
 
 export const analyticsTools: Tool[] = [
     {
-        id: "purchase-suggestions",
+        id: "analytics:purchase-suggestions:read",
         name: "Sugerencias de Compra",
         description: "Analizar pedidos y stock para sugerir compras proactivas.",
         href: "/dashboard/analytics/purchase-suggestions",
@@ -361,7 +361,7 @@ export const analyticsTools: Tool[] = [
         bgColor: "bg-blue-600",
     },
     {
-        id: "purchase-report",
+        id: "analytics:purchase-report:read",
         name: "Reporte de Compras",
         description: "Visualizar y exportar un reporte histórico de compras.",
         href: "/dashboard/analytics/purchase-report",
@@ -369,7 +369,7 @@ export const analyticsTools: Tool[] = [
         bgColor: "bg-green-600",
     },
      {
-        id: "transits-report",
+        id: "analytics:transits-report:read",
         name: "Reporte de Tránsitos",
         description: "Monitorear órdenes de compra del ERP activas y en tránsito.",
         href: "/dashboard/analytics/transits-report",
@@ -377,7 +377,7 @@ export const analyticsTools: Tool[] = [
         bgColor: "bg-orange-500",
     },
     {
-        id: "production-report",
+        id: "analytics:production-report:read",
         name: "Reporte de Producción",
         description: "Analizar rendimiento y desperdicio de órdenes completadas.",
         href: "/dashboard/analytics/production-report",
@@ -385,7 +385,7 @@ export const analyticsTools: Tool[] = [
         bgColor: "bg-purple-600",
     },
     {
-        id: "physical-inventory-report",
+        id: "analytics:physical-inventory-report:read",
         name: "Reporte de Inventario Físico",
         description: "Comparar conteos físicos con el stock del ERP para encontrar diferencias.",
         href: "/dashboard/analytics/physical-inventory-report",
@@ -393,7 +393,7 @@ export const analyticsTools: Tool[] = [
         bgColor: "bg-cyan-600",
     },
     {
-        id: "receiving-report",
+        id: "analytics:receiving-report:read",
         name: "Reporte de Recepciones",
         description: "Auditar las recepciones de mercadería registradas en el sistema.",
         href: "/dashboard/analytics/receiving-report",
@@ -401,7 +401,7 @@ export const analyticsTools: Tool[] = [
         bgColor: "bg-teal-600",
     },
     {
-        id: "user-permissions",
+        id: "analytics:user-permissions:read",
         name: "Reporte de Permisos",
         description: "Auditar los permisos asignados a cada usuario según su rol.",
         href: "/dashboard/analytics/user-permissions",
