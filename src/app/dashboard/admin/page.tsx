@@ -56,7 +56,7 @@ export default function AdminDashboardPage() {
             </h2>
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {visibleTools.map((tool) => {
-                const isSuggestionsTool = tool.id === "suggestions-viewer";
+                const isSuggestionsTool = tool.id === "admin:suggestions:read";
                 const badgeCount = isSuggestionsTool ? unreadSuggestionsCount : 0;
                 return <ToolCard key={tool.id} tool={tool} badgeCount={badgeCount}/>
               })}

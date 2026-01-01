@@ -1,4 +1,3 @@
-
 /**
  * @fileoverview User profile settings page.
  * Allows the currently logged-in user to update their personal information,

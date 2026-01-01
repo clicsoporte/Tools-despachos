@@ -4,7 +4,6 @@
 'use client';
 
 import { mainTools } from "@/modules/core/lib/data";
-import { analyticsPermissions } from "@/modules/core/lib/permissions";
 import { ToolCard } from "@/components/dashboard/tool-card";
 import { useEffect, useMemo } from "react";
 import type { Tool } from "@/modules/core/types";
@@ -33,10 +32,7 @@ export default function DashboardPage() {
     
     let tools: Tool[] = [...mainTools];
 
-    const hasAdminAccess = hasPermission('admin:access');
-    const hasAnalyticsAccess = hasPermission('analytics:read');
-
-    if (hasAnalyticsAccess) {
+    if (hasPermission('analytics:read')) {
       tools.push({
         id: "analytics",
         name: "Analíticas",
@@ -47,7 +43,7 @@ export default function DashboardPage() {
       });
     }
     
-    if (hasAdminAccess) {
+    if (hasPermission('admin:access')) {
       tools.push({
         id: "admin-dashboard",
         name: "Configuración",
