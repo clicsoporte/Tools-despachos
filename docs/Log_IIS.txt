@@ -1,0 +1,595 @@
+ ▲ Next.js 14.2.35
+  - Local:        http://localhost:9003
+  - Environments: .env
+
+ ✓ Starting...
+ ✓ Ready in 1850ms
+ ○ Compiling /dashboard/admin/users ...
+ ✓ Compiled /dashboard/admin/users in 6.7s (2731 modules)
+ POST /dashboard/admin/users 200 in 7166ms
+ ✓ Compiled in 505ms (1013 modules)
+ POST /dashboard/admin/users 200 in 71ms
+ POST /dashboard/admin/users 200 in 66ms
+ POST /dashboard/admin/users 200 in 33ms
+ ✓ Compiled / in 486ms (2740 modules)
+ GET / 200 in 650ms
+ ⚠ Cross origin request detected from 192.168.1.14 to /_next/* resource. In a future major version of Next.js, you will need to explicitly configure "allowedDevOrigins" in next.config to allow this.
+Read more: https://nextjs.org/docs/app/api-reference/config/next-config-js/allowedDevOrigins
+ POST / 200 in 250ms
+ POST / 200 in 19ms
+ POST / 200 in 25ms
+ POST / 200 in 18ms
+ POST / 200 in 86ms
+ POST / 200 in 24ms
+Error during warehouse migrations: SqliteError: no such table: inventory_units
+    at Database.exec (C:\inetpub\wwwroot\clic-tools\node_modules\better-sqlite3\lib\methods\wrappers.js:9:14)
+    at runWarehouseMigrations (webpack-internal:///(action-browser)/./src/modules/warehouse/lib/db.ts:190:68)
+    at runMigrations (webpack-internal:///(action-browser)/./src/modules/core/lib/db.ts:234:19)
+    at connectDb (webpack-internal:///(action-browser)/./src/modules/core/lib/db.ts:301:15)
+    at getInitialAuthData (webpack-internal:///(action-browser)/./src/modules/core/lib/auth.ts:344:61)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:40:286
+    at async rk (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:38:8297)
+    at async ne (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:42:1256)
+    at async doRender (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\base-server.js:1427:30)
+    at async cacheEntry.responseCache.get.routeKind (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\base-server.js:1588:28)
+    at async DevServer.renderToResponseWithComponentsImpl (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\base-server.js:1496:28)
+    at async DevServer.renderPageComponent (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\base-server.js:1924:24)
+    at async DevServer.renderToResponseImpl (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\base-server.js:1962:32)
+    at async DevServer.pipeImpl (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\base-server.js:922:25)
+    at async NextNodeServer.handleCatchallRenderRequest (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\next-server.js:272:17)
+    at async DevServer.handleRequestImpl (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\base-server.js:818:17)
+    at async C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\dev\next-dev-server.js:339:20
+    at async Span.traceAsyncFn (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\trace\trace.js:154:20)
+    at async DevServer.handleRequest (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\dev\next-dev-server.js:336:24)
+    at async invokeRender (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\lib\router-server.js:179:21)
+    at async handleRequest (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\lib\router-server.js:359:24)
+    at async requestHandlerImpl (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\lib\router-server.js:383:13)
+    at async Server.requestListener (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\lib\start-server.js:141:13) {
+  code: 'SQLITE_ERROR'
+}
+ POST / 200 in 1516ms
+ POST / 200 in 37ms
+ POST / 200 in 27ms
+ ✓ Compiled /dashboard in 344ms (2799 modules)
+ ✓ Compiled /dashboard/admin in 240ms (2805 modules)
+ POST /dashboard/admin/users 200 in 54ms
+ POST /dashboard/admin/users 200 in 34ms
+ POST /dashboard/admin/users 200 in 32ms
+ POST /dashboard/admin/users 200 in 19ms
+ POST /dashboard/admin/users 200 in 28ms
+ POST /dashboard/admin/users 200 in 21ms
+ POST /dashboard/admin/users 200 in 19ms
+ ○ Compiling /dashboard/quoter ...
+ ✓ Compiled /dashboard/quoter in 1865ms (3274 modules)
+ POST /dashboard/quoter 200 in 59ms
+ POST /dashboard/quoter 200 in 11ms
+ ○ Compiling /dashboard/requests ...
+ ✓ Compiled /dashboard/requests in 4.2s (3848 modules)
+ POST /dashboard/requests 200 in 173ms
+ POST /dashboard/requests 200 in 14ms
+ POST /dashboard/requests 200 in 93ms
+ POST /dashboard/requests 200 in 108ms
+ POST /dashboard/requests 200 in 39ms
+ POST /dashboard/requests 200 in 34ms
+ POST /dashboard/requests 200 in 64ms
+ POST /dashboard/requests 200 in 72ms
+ ○ Compiling /dashboard/planner ...
+ ✓ Compiled /dashboard/planner in 598ms (3879 modules)
+ POST /dashboard/planner 200 in 43ms
+ ○ Compiling /dashboard/cost-assistant ...
+ ✓ Compiled /dashboard/cost-assistant in 764ms (3914 modules)
+ POST /dashboard/cost-assistant 200 in 60ms
+ POST /dashboard/cost-assistant 200 in 57ms
+ POST /dashboard/cost-assistant 200 in 39ms
+ POST /dashboard/cost-assistant 200 in 19ms
+ POST /dashboard/planner 200 in 25ms
+ POST /dashboard/planner 200 in 17ms
+ POST /dashboard/planner 200 in 23ms
+ POST /dashboard/planner 200 in 27ms
+ POST /dashboard/planner 200 in 22ms
+ POST /dashboard/planner 200 in 33ms
+ POST /dashboard/cost-assistant 200 in 40ms
+ POST /dashboard/cost-assistant 200 in 36ms
+ POST /dashboard/cost-assistant 200 in 20ms
+ POST /dashboard/cost-assistant 200 in 19ms
+ ✓ Compiled /dashboard/warehouse in 387ms (3925 modules)
+ ○ Compiling /dashboard/hacienda ...
+ ✓ Compiled /dashboard/hacienda in 511ms (3938 modules)
+ POST /dashboard/hacienda 200 in 33ms
+ POST /dashboard/hacienda 200 in 25ms
+ POST /dashboard/hacienda 200 in 37ms
+ POST /dashboard/hacienda 200 in 37ms
+ ○ Compiling /dashboard/help ...
+ ✓ Compiled /dashboard/help in 546ms (3982 modules)
+ ○ Compiling /dashboard/profile ...
+ ✓ Compiled /dashboard/profile in 674ms (4021 modules)
+ ✓ Compiled /dashboard/analytics in 485ms (4032 modules)
+ ○ Compiling /dashboard/warehouse/search/simple ...
+ ✓ Compiled /dashboard/warehouse/search/simple in 741ms (4147 modules)
+Error during warehouse migrations: SqliteError: no such table: inventory_units
+    at Database.exec (C:\inetpub\wwwroot\clic-tools\node_modules\better-sqlite3\lib\methods\wrappers.js:9:14)
+    at runWarehouseMigrations (webpack-internal:///(action-browser)/./src/modules/warehouse/lib/db.ts:190:68)
+    at runMigrations (webpack-internal:///(action-browser)/./src/modules/core/lib/db.ts:234:19)
+    at connectDb (webpack-internal:///(action-browser)/./src/modules/core/lib/db.ts:301:15)
+    at getWarehouseData (webpack-internal:///(action-browser)/./src/modules/warehouse/lib/db.ts:427:85)
+    at endpoint (webpack-internal:///(action-browser)/./node_modules/next/dist/build/webpack/loaders/next-flight-action-entry-loader.js?actions=%5B%5B%22C%3A%5C%5Cinetpub%5C%5Cwwwroot%5C%5Cclic-tools%5C%5Csrc%5C%5Cmodules%5C%5Ccore%5C%5Clib%5C%5Cauth.ts%22%2C%5B%22getAllUsersForReport%22%2C%22getAllUsers%22%2C%22saveAllUsers%22%2C%22getCurrentUser%22%2C%22sendPasswordRecoveryEmail%22%2C%22login%22%2C%22comparePasswords%22%2C%22getInitialAuthData%22%2C%22logout%22%2C%22addUser%22%2C%22hasPermission%22%5D%5D%2C%5B%22C%3A%5C%5Cinetpub%5C%5Cwwwroot%5C%5Cclic-tools%5C%5Csrc%5C%5Cmodules%5C%5Ccore%5C%5Clib%5C%5Csuggestions-actions.ts%22%2C%5B%22deleteSuggestion%22%2C%22getUnreadSuggestionsCount%22%2C%22getSuggestions%22%2C%22addSuggestion%22%2C%22markSuggestionAsRead%22%2C%22getUnreadSuggestions%22%5D%5D%2C%5B%22C%3A%5C%5Cinetpub%5C%5Cwwwroot%5C%5Cclic-tools%5C%5Csrc%5C%5Cmodules%5C%5Ccore%5C%5Clib%5C%5Capi-actions.ts%22%2C%5B%22getEmailSettings%22%2C%22getApiSettings%22%2C%22getExchangeRate%22%2C%22getExemptionStatus%22%5D%5D%2C%5B%22C%3A%5C%5Cinetpub%5C%5Cwwwroot%5C%5Cclic-tools%5C%5Csrc%5C%5Cmodules%5C%5Ccore%5C%5Clib%5C%5Cnotifications-actions.ts%22%2C%5B%22markNotificationAsRead%22%2C%22executeNotificationAction%22%2C%22createNotification%22%2C%22createNotificationForPermission%22%2C%22getNotificationsForUser%22%2C%22markAllNotificationsAsRead%22%5D%5D%2C%5B%22C%3A%5C%5Cinetpub%5C%5Cwwwroot%5C%5Cclic-tools%5C%5Csrc%5C%5Cmodules%5C%5Cwarehouse%5C%5Clib%5C%5Cdb.ts%22%2C%5B%22getInventoryUnits%22%2C%22deleteInventoryUnit%22%2C%22forceReleaseLock%22%2C%22unassignItemFromLocation%22%2C%22updateLocation%22%2C%22getWarehouseData%22%2C%22saveWarehouseSettings%22%2C%22getAllItemLocations%22%2C%22updateInventory%22%2C%22initializeWarehouseDb%22%2C%22lockEntity%22%2C%22getChildLocations%22%2C%22getInventoryForItem%22%2C%22addInventoryUnit%22%2C%22runWarehouseMigrations%22%2C%22getLocations%22%2C%22getInventoryUnitById%22%2C%22getInventory%22%2C%22getSelectableLocations%22%2C%22getItemLocations%22%2C%22getMovements%22%2C%22addLocation%22%2C%22deleteLocation%22%2C%22addBulkLocations%22%2C%22getWarehouseSettings%22%2C%22releaseLock%22%2C%22assignItemToLocation%22%2C%22updateInventoryUnitLocation%22%2C%22getActiveLocks%22%2C%22logMovement%22%5D%5D%2C%5B%22C%3A%5C%5Cinetpub%5C%5Cwwwroot%5C%5Cclic-tools%5C%5Csrc%5C%5Cmodules%5C%5Ccore%5C%5Clib%5C%5Cdb.ts%22%2C%5B%22getCurrentVersion%22%2C%22getAllErpPurchaseOrderLines%22%2C%22saveAllExemptions%22%2C%22deleteQuoteDraft%22%2C%22saveAllSuppliers%22%2C%22getApiSettings%22%2C%22runDatabaseAudit%22%2C%22saveSqlConfig%22%2C%22getAllExemptions%22%2C%22factoryReset%22%2C%22clearLogs%22%2C%22saveUserPreferences%22%2C%22getCabysCatalog%22%2C%22getCompanySettings%22%2C%22saveAllErpOrderHeaders%22%2C%22getActiveWizardSession%22%2C%22saveStockSettings%22%2C%22importAllDataFromFiles%22%2C%22getImportQueries%22%2C%22getUserCount%22%2C%22saveApiSettings%22%2C%22connectDb%22%2C%22saveAllErpOrderLines%22%2C%22getUserPreferences%22%2C%22saveWizardSession%22%2C%22getNotifications%22%2C%22createNotification%22%2C%22getAllSuppliers%22%2C%22saveImportQueries%22%2C%22initializeMainDatabase%22%2C%22getAllErpPurchaseOrderHeaders%22%2C%22getAllCustomers%22%2C%22getNotificationById%22%2C%22listAllUpdateBackups%22%2C%22deleteNotificationById%22%2C%22saveAllProducts%22%2C%22getUnreadSuggestions%22%2C%22markNotificationsAsRead%22%2C%22backupAllForUpdate%22%2C%22resetDefaultRoles%22%2C%22getSuggestions%22%2C%22saveAllStock%22%2C%22clearWizardSession%22%2C%22getAllQuoteDrafts%22%2C%22saveAllErpPurchaseOrderHeaders%22%2C%22saveAllErpPurchaseOrderLines%22%2C%22restoreDatabase%22%2C%22saveAllRoles%22%2C%22getStockSettings%22%2C%22getAllProducts%22%2C%22saveAllCustomers%22%2C%22markSuggestionAsRead%22%2C%22testSqlConnection%22%2C%22runSingleModuleMigration%22%2C%22addLog%22%2C%22getAllStock%22%2C%22saveQuoteDraft%22%2C%22getExemptionLaws%22%2C%22getDbModules%22%2C%22confirmPlannerModification%22%2C%22restoreAllFromUpdateBackup%22%2C%22getLogs%22%2C%22getUnreadSuggestionsCount%22%2C%22saveCompanySettings%22%2C%22importData%22%2C%22deleteSuggestion%22%2C%22runMainDbMigrations%22%2C%22getAllRoles%22%2C%22saveExemptionLaws%22%2C%22deleteOldUpdateBackups%22%2C%22importDataFromFile%22%5D%5D%2C%5B%22C%3A%5C%5Cinetpub%5C%5Cwwwroot%5C%5Cclic-tools%5C%5Csrc%5C%5Cmodules%5C%5Ccore%5C%5Clib%5C%5Clogger.ts%22%2C%5B%22logWarn%22%2C%22logInfo%22%2C%22getLogs%22%2C%22logError%22%2C%22clearLogs%22%5D%5D%2C%5B%22C%3A%5C%5Cinetpub%5C%5Cwwwroot%5C%5Cclic-tools%5C%5Csrc%5C%5Cmodules%5C%5Ccore%5C%5Clib%5C%5Cactions.ts%22%2C%5B%22syncAllData%22%2C%22shutdownServer%22%2C%22cleanupAllExportFiles%22%5D%5D%5D&__client_imported__=true!:143:17)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:40:286
+    at async rk (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:38:8297)
+    at async ne (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:42:1256)
+    at async doRender (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\base-server.js:1427:30)
+    at async cacheEntry.responseCache.get.routeKind (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\base-server.js:1588:28)
+    at async DevServer.renderToResponseWithComponentsImpl (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\base-server.js:1496:28)
+    at async DevServer.renderPageComponent (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\base-server.js:1924:24)
+    at async DevServer.renderToResponseImpl (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\base-server.js:1962:32)
+    at async DevServer.pipeImpl (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\base-server.js:922:25)
+    at async NextNodeServer.handleCatchallRenderRequest (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\next-server.js:272:17)
+    at async DevServer.handleRequestImpl (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\base-server.js:818:17)
+    at async C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\dev\next-dev-server.js:339:20
+    at async Span.traceAsyncFn (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\trace\trace.js:154:20)
+    at async DevServer.handleRequest (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\dev\next-dev-server.js:336:24)
+    at async invokeRender (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\lib\router-server.js:179:21)
+    at async handleRequest (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\lib\router-server.js:359:24)
+    at async requestHandlerImpl (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\lib\router-server.js:383:13)
+    at async Server.requestListener (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\lib\start-server.js:141:13) {
+  code: 'SQLITE_ERROR'
+}
+ POST /dashboard/warehouse/search/simple 200 in 79ms
+ POST /dashboard/warehouse/search/simple 200 in 50ms
+ ○ Compiling /dashboard/warehouse/search ...
+ ✓ Compiled /dashboard/warehouse/search in 800ms (4263 modules)
+Error during warehouse migrations: SqliteError: no such table: inventory_units
+    at Database.exec (C:\inetpub\wwwroot\clic-tools\node_modules\better-sqlite3\lib\methods\wrappers.js:9:14)
+    at runWarehouseMigrations (webpack-internal:///(action-browser)/./src/modules/warehouse/lib/db.ts:190:68)
+    at runMigrations (webpack-internal:///(action-browser)/./src/modules/core/lib/db.ts:234:19)
+    at connectDb (webpack-internal:///(action-browser)/./src/modules/core/lib/db.ts:301:15)
+    at getWarehouseData (webpack-internal:///(action-browser)/./src/modules/warehouse/lib/db.ts:427:85)
+    at endpoint (webpack-internal:///(action-browser)/./node_modules/next/dist/build/webpack/loaders/next-flight-action-entry-loader.js?actions=%5B%5B%22C%3A%5C%5Cinetpub%5C%5Cwwwroot%5C%5Cclic-tools%5C%5Csrc%5C%5Cmodules%5C%5Ccore%5C%5Clib%5C%5Cauth.ts%22%2C%5B%22getAllUsersForReport%22%2C%22getAllUsers%22%2C%22saveAllUsers%22%2C%22getCurrentUser%22%2C%22sendPasswordRecoveryEmail%22%2C%22login%22%2C%22comparePasswords%22%2C%22getInitialAuthData%22%2C%22logout%22%2C%22addUser%22%2C%22hasPermission%22%5D%5D%2C%5B%22C%3A%5C%5Cinetpub%5C%5Cwwwroot%5C%5Cclic-tools%5C%5Csrc%5C%5Cmodules%5C%5Ccore%5C%5Clib%5C%5Csuggestions-actions.ts%22%2C%5B%22deleteSuggestion%22%2C%22getUnreadSuggestionsCount%22%2C%22getSuggestions%22%2C%22addSuggestion%22%2C%22markSuggestionAsRead%22%2C%22getUnreadSuggestions%22%5D%5D%2C%5B%22C%3A%5C%5Cinetpub%5C%5Cwwwroot%5C%5Cclic-tools%5C%5Csrc%5C%5Cmodules%5C%5Ccore%5C%5Clib%5C%5Capi-actions.ts%22%2C%5B%22getEmailSettings%22%2C%22getApiSettings%22%2C%22getExchangeRate%22%2C%22getExemptionStatus%22%5D%5D%2C%5B%22C%3A%5C%5Cinetpub%5C%5Cwwwroot%5C%5Cclic-tools%5C%5Csrc%5C%5Cmodules%5C%5Ccore%5C%5Clib%5C%5Cnotifications-actions.ts%22%2C%5B%22markNotificationAsRead%22%2C%22executeNotificationAction%22%2C%22createNotification%22%2C%22createNotificationForPermission%22%2C%22getNotificationsForUser%22%2C%22markAllNotificationsAsRead%22%5D%5D%2C%5B%22C%3A%5C%5Cinetpub%5C%5Cwwwroot%5C%5Cclic-tools%5C%5Csrc%5C%5Cmodules%5C%5Cwarehouse%5C%5Clib%5C%5Cdb.ts%22%2C%5B%22getInventoryUnits%22%2C%22deleteInventoryUnit%22%2C%22forceReleaseLock%22%2C%22unassignItemFromLocation%22%2C%22updateLocation%22%2C%22getWarehouseData%22%2C%22saveWarehouseSettings%22%2C%22getAllItemLocations%22%2C%22updateInventory%22%2C%22initializeWarehouseDb%22%2C%22lockEntity%22%2C%22getChildLocations%22%2C%22getInventoryForItem%22%2C%22addInventoryUnit%22%2C%22runWarehouseMigrations%22%2C%22getLocations%22%2C%22getInventoryUnitById%22%2C%22getInventory%22%2C%22getSelectableLocations%22%2C%22getItemLocations%22%2C%22getMovements%22%2C%22addLocation%22%2C%22deleteLocation%22%2C%22addBulkLocations%22%2C%22getWarehouseSettings%22%2C%22releaseLock%22%2C%22assignItemToLocation%22%2C%22updateInventoryUnitLocation%22%2C%22getActiveLocks%22%2C%22logMovement%22%5D%5D%2C%5B%22C%3A%5C%5Cinetpub%5C%5Cwwwroot%5C%5Cclic-tools%5C%5Csrc%5C%5Cmodules%5C%5Ccore%5C%5Clib%5C%5Cdb.ts%22%2C%5B%22getCurrentVersion%22%2C%22getAllErpPurchaseOrderLines%22%2C%22saveAllExemptions%22%2C%22deleteQuoteDraft%22%2C%22saveAllSuppliers%22%2C%22getApiSettings%22%2C%22runDatabaseAudit%22%2C%22saveSqlConfig%22%2C%22getAllExemptions%22%2C%22factoryReset%22%2C%22clearLogs%22%2C%22saveUserPreferences%22%2C%22getCabysCatalog%22%2C%22getCompanySettings%22%2C%22saveAllErpOrderHeaders%22%2C%22getActiveWizardSession%22%2C%22saveStockSettings%22%2C%22importAllDataFromFiles%22%2C%22getImportQueries%22%2C%22getUserCount%22%2C%22saveApiSettings%22%2C%22connectDb%22%2C%22saveAllErpOrderLines%22%2C%22getUserPreferences%22%2C%22saveWizardSession%22%2C%22getNotifications%22%2C%22createNotification%22%2C%22getAllSuppliers%22%2C%22saveImportQueries%22%2C%22initializeMainDatabase%22%2C%22getAllErpPurchaseOrderHeaders%22%2C%22getAllCustomers%22%2C%22getNotificationById%22%2C%22listAllUpdateBackups%22%2C%22deleteNotificationById%22%2C%22saveAllProducts%22%2C%22getUnreadSuggestions%22%2C%22markNotificationsAsRead%22%2C%22backupAllForUpdate%22%2C%22resetDefaultRoles%22%2C%22getSuggestions%22%2C%22saveAllStock%22%2C%22clearWizardSession%22%2C%22getAllQuoteDrafts%22%2C%22saveAllErpPurchaseOrderHeaders%22%2C%22saveAllErpPurchaseOrderLines%22%2C%22restoreDatabase%22%2C%22saveAllRoles%22%2C%22getStockSettings%22%2C%22getAllProducts%22%2C%22saveAllCustomers%22%2C%22markSuggestionAsRead%22%2C%22testSqlConnection%22%2C%22runSingleModuleMigration%22%2C%22addLog%22%2C%22getAllStock%22%2C%22saveQuoteDraft%22%2C%22getExemptionLaws%22%2C%22getDbModules%22%2C%22confirmPlannerModification%22%2C%22restoreAllFromUpdateBackup%22%2C%22getLogs%22%2C%22getUnreadSuggestionsCount%22%2C%22saveCompanySettings%22%2C%22importData%22%2C%22deleteSuggestion%22%2C%22runMainDbMigrations%22%2C%22getAllRoles%22%2C%22saveExemptionLaws%22%2C%22deleteOldUpdateBackups%22%2C%22importDataFromFile%22%5D%5D%2C%5B%22C%3A%5C%5Cinetpub%5C%5Cwwwroot%5C%5Cclic-tools%5C%5Csrc%5C%5Cmodules%5C%5Ccore%5C%5Clib%5C%5Clogger.ts%22%2C%5B%22logWarn%22%2C%22logInfo%22%2C%22getLogs%22%2C%22logError%22%2C%22clearLogs%22%5D%5D%2C%5B%22C%3A%5C%5Cinetpub%5C%5Cwwwroot%5C%5Cclic-tools%5C%5Csrc%5C%5Cmodules%5C%5Ccore%5C%5Clib%5C%5Cactions.ts%22%2C%5B%22syncAllData%22%2C%22shutdownServer%22%2C%22cleanupAllExportFiles%22%5D%5D%5D&__client_imported__=true!:143:17)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:40:286
+    at async rk (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:38:8297)
+    at async ne (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:42:1256)
+    at async doRender (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\base-server.js:1427:30)
+    at async cacheEntry.responseCache.get.routeKind (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\base-server.js:1588:28)
+    at async DevServer.renderToResponseWithComponentsImpl (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\base-server.js:1496:28)
+    at async DevServer.renderPageComponent (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\base-server.js:1924:24)
+    at async DevServer.renderToResponseImpl (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\base-server.js:1962:32)
+    at async DevServer.pipeImpl (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\base-server.js:922:25)
+    at async NextNodeServer.handleCatchallRenderRequest (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\next-server.js:272:17)
+    at async DevServer.handleRequestImpl (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\base-server.js:818:17)
+    at async C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\dev\next-dev-server.js:339:20
+    at async Span.traceAsyncFn (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\trace\trace.js:154:20)
+    at async DevServer.handleRequest (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\dev\next-dev-server.js:336:24)
+    at async invokeRender (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\lib\router-server.js:179:21)
+    at async handleRequest (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\lib\router-server.js:359:24)
+    at async requestHandlerImpl (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\lib\router-server.js:383:13)
+    at async Server.requestListener (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\lib\start-server.js:141:13) {
+  code: 'SQLITE_ERROR'
+}
+ POST /dashboard/warehouse/search 200 in 66ms
+ POST /dashboard/warehouse/search 200 in 34ms
+ ○ Compiling /dashboard/warehouse/receiving ...
+ ✓ Compiled /dashboard/warehouse/receiving in 691ms (4284 modules)
+ POST /dashboard/warehouse 200 in 86ms
+ POST /dashboard/warehouse 200 in 15ms
+ POST /dashboard/warehouse 200 in 29ms
+Error during warehouse migrations: SqliteError: no such table: inventory_units
+    at Database.exec (C:\inetpub\wwwroot\clic-tools\node_modules\better-sqlite3\lib\methods\wrappers.js:9:14)
+    at runWarehouseMigrations (webpack-internal:///(action-browser)/./src/modules/warehouse/lib/db.ts:190:68)
+    at runMigrations (webpack-internal:///(action-browser)/./src/modules/core/lib/db.ts:234:19)
+    at connectDb (webpack-internal:///(action-browser)/./src/modules/core/lib/db.ts:301:15)
+    at getLocations (webpack-internal:///(action-browser)/./src/modules/warehouse/lib/db.ts:271:85)
+    at endpoint (webpack-internal:///(action-browser)/./node_modules/next/dist/build/webpack/loaders/next-flight-action-entry-loader.js?actions=%5B%5B%22C%3A%5C%5Cinetpub%5C%5Cwwwroot%5C%5Cclic-tools%5C%5Csrc%5C%5Cmodules%5C%5Ccore%5C%5Clib%5C%5Cauth.ts%22%2C%5B%22getAllUsersForReport%22%2C%22getAllUsers%22%2C%22saveAllUsers%22%2C%22getCurrentUser%22%2C%22sendPasswordRecoveryEmail%22%2C%22login%22%2C%22comparePasswords%22%2C%22getInitialAuthData%22%2C%22logout%22%2C%22addUser%22%2C%22hasPermission%22%5D%5D%2C%5B%22C%3A%5C%5Cinetpub%5C%5Cwwwroot%5C%5Cclic-tools%5C%5Csrc%5C%5Cmodules%5C%5Ccore%5C%5Clib%5C%5Csuggestions-actions.ts%22%2C%5B%22deleteSuggestion%22%2C%22getUnreadSuggestionsCount%22%2C%22getSuggestions%22%2C%22addSuggestion%22%2C%22markSuggestionAsRead%22%2C%22getUnreadSuggestions%22%5D%5D%2C%5B%22C%3A%5C%5Cinetpub%5C%5Cwwwroot%5C%5Cclic-tools%5C%5Csrc%5C%5Cmodules%5C%5Ccore%5C%5Clib%5C%5Capi-actions.ts%22%2C%5B%22getEmailSettings%22%2C%22getApiSettings%22%2C%22getExchangeRate%22%2C%22getExemptionStatus%22%5D%5D%2C%5B%22C%3A%5C%5Cinetpub%5C%5Cwwwroot%5C%5Cclic-tools%5C%5Csrc%5C%5Cmodules%5C%5Ccore%5C%5Clib%5C%5Cnotifications-actions.ts%22%2C%5B%22markNotificationAsRead%22%2C%22executeNotificationAction%22%2C%22createNotification%22%2C%22createNotificationForPermission%22%2C%22getNotificationsForUser%22%2C%22markAllNotificationsAsRead%22%5D%5D%2C%5B%22C%3A%5C%5Cinetpub%5C%5Cwwwroot%5C%5Cclic-tools%5C%5Csrc%5C%5Cmodules%5C%5Ccore%5C%5Clib%5C%5Clogger.ts%22%2C%5B%22logWarn%22%2C%22logInfo%22%2C%22getLogs%22%2C%22logError%22%2C%22clearLogs%22%5D%5D%2C%5B%22C%3A%5C%5Cinetpub%5C%5Cwwwroot%5C%5Cclic-tools%5C%5Csrc%5C%5Cmodules%5C%5Cwarehouse%5C%5Clib%5C%5Cdb.ts%22%2C%5B%22getInventoryUnits%22%2C%22deleteInventoryUnit%22%2C%22forceReleaseLock%22%2C%22unassignItemFromLocation%22%2C%22updateLocation%22%2C%22getWarehouseData%22%2C%22saveWarehouseSettings%22%2C%22getAllItemLocations%22%2C%22updateInventory%22%2C%22initializeWarehouseDb%22%2C%22lockEntity%22%2C%22getChildLocations%22%2C%22getInventoryForItem%22%2C%22addInventoryUnit%22%2C%22runWarehouseMigrations%22%2C%22getLocations%22%2C%22getInventoryUnitById%22%2C%22getInventory%22%2C%22getSelectableLocations%22%2C%22getItemLocations%22%2C%22getMovements%22%2C%22addLocation%22%2C%22deleteLocation%22%2C%22addBulkLocations%22%2C%22getWarehouseSettings%22%2C%22releaseLock%22%2C%22assignItemToLocation%22%2C%22updateInventoryUnitLocation%22%2C%22getActiveLocks%22%2C%22logMovement%22%5D%5D%2C%5B%22C%3A%5C%5Cinetpub%5C%5Cwwwroot%5C%5Cclic-tools%5C%5Csrc%5C%5Cmodules%5C%5Ccore%5C%5Clib%5C%5Cdb.ts%22%2C%5B%22getCurrentVersion%22%2C%22getAllErpPurchaseOrderLines%22%2C%22saveAllExemptions%22%2C%22deleteQuoteDraft%22%2C%22saveAllSuppliers%22%2C%22getApiSettings%22%2C%22runDatabaseAudit%22%2C%22saveSqlConfig%22%2C%22getAllExemptions%22%2C%22factoryReset%22%2C%22clearLogs%22%2C%22saveUserPreferences%22%2C%22getCabysCatalog%22%2C%22getCompanySettings%22%2C%22saveAllErpOrderHeaders%22%2C%22getActiveWizardSession%22%2C%22saveStockSettings%22%2C%22importAllDataFromFiles%22%2C%22getImportQueries%22%2C%22getUserCount%22%2C%22saveApiSettings%22%2C%22connectDb%22%2C%22saveAllErpOrderLines%22%2C%22getUserPreferences%22%2C%22saveWizardSession%22%2C%22getNotifications%22%2C%22createNotification%22%2C%22getAllSuppliers%22%2C%22saveImportQueries%22%2C%22initializeMainDatabase%22%2C%22getAllErpPurchaseOrderHeaders%22%2C%22getAllCustomers%22%2C%22getNotificationById%22%2C%22listAllUpdateBackups%22%2C%22deleteNotificationById%22%2C%22saveAllProducts%22%2C%22getUnreadSuggestions%22%2C%22markNotificationsAsRead%22%2C%22backupAllForUpdate%22%2C%22resetDefaultRoles%22%2C%22getSuggestions%22%2C%22saveAllStock%22%2C%22clearWizardSession%22%2C%22getAllQuoteDrafts%22%2C%22saveAllErpPurchaseOrderHeaders%22%2C%22saveAllErpPurchaseOrderLines%22%2C%22restoreDatabase%22%2C%22saveAllRoles%22%2C%22getStockSettings%22%2C%22getAllProducts%22%2C%22saveAllCustomers%22%2C%22markSuggestionAsRead%22%2C%22testSqlConnection%22%2C%22runSingleModuleMigration%22%2C%22addLog%22%2C%22getAllStock%22%2C%22saveQuoteDraft%22%2C%22getExemptionLaws%22%2C%22getDbModules%22%2C%22confirmPlannerModification%22%2C%22restoreAllFromUpdateBackup%22%2C%22getLogs%22%2C%22getUnreadSuggestionsCount%22%2C%22saveCompanySettings%22%2C%22importData%22%2C%22deleteSuggestion%22%2C%22runMainDbMigrations%22%2C%22getAllRoles%22%2C%22saveExemptionLaws%22%2C%22deleteOldUpdateBackups%22%2C%22importDataFromFile%22%5D%5D%2C%5B%22C%3A%5C%5Cinetpub%5C%5Cwwwroot%5C%5Cclic-tools%5C%5Csrc%5C%5Cmodules%5C%5Ccore%5C%5Clib%5C%5Cactions.ts%22%2C%5B%22syncAllData%22%2C%22shutdownServer%22%2C%22cleanupAllExportFiles%22%5D%5D%5D&__client_imported__=true!:143:17)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:40:286
+    at async rk (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:38:8297)
+    at async ne (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:42:1256)
+    at async doRender (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\base-server.js:1427:30)
+    at async cacheEntry.responseCache.get.routeKind (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\base-server.js:1588:28)
+    at async DevServer.renderToResponseWithComponentsImpl (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\base-server.js:1496:28)
+    at async DevServer.renderPageComponent (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\base-server.js:1924:24)
+    at async DevServer.renderToResponseImpl (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\base-server.js:1962:32)
+    at async DevServer.pipeImpl (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\base-server.js:922:25)
+    at async NextNodeServer.handleCatchallRenderRequest (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\next-server.js:272:17)
+    at async DevServer.handleRequestImpl (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\base-server.js:818:17)
+    at async C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\dev\next-dev-server.js:339:20
+    at async Span.traceAsyncFn (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\trace\trace.js:154:20)
+    at async DevServer.handleRequest (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\dev\next-dev-server.js:336:24)
+    at async invokeRender (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\lib\router-server.js:179:21)
+    at async handleRequest (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\lib\router-server.js:359:24)
+    at async requestHandlerImpl (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\lib\router-server.js:383:13)
+    at async Server.requestListener (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\lib\start-server.js:141:13) {
+  code: 'SQLITE_ERROR'
+}
+ POST /dashboard/warehouse/receiving 200 in 32ms
+ POST /dashboard/warehouse/receiving 200 in 11ms
+ POST /dashboard/warehouse/receiving 200 in 27ms
+ POST /dashboard/warehouse/receiving 200 in 15ms
+ ○ Compiling /dashboard/warehouse/population-wizard ...
+ ✓ Compiled /dashboard/warehouse/population-wizard in 629ms (4296 modules)
+Error during warehouse migrations: SqliteError: no such table: inventory_units
+    at Database.exec (C:\inetpub\wwwroot\clic-tools\node_modules\better-sqlite3\lib\methods\wrappers.js:9:14)
+    at runWarehouseMigrations (webpack-internal:///(action-browser)/./src/modules/warehouse/lib/db.ts:190:68)
+    at runMigrations (webpack-internal:///(action-browser)/./src/modules/core/lib/db.ts:234:19)
+    at connectDb (webpack-internal:///(action-browser)/./src/modules/core/lib/db.ts:301:15)
+    at getLocations (webpack-internal:///(action-browser)/./src/modules/warehouse/lib/db.ts:271:85)
+    at endpoint (webpack-internal:///(action-browser)/./node_modules/next/dist/build/webpack/loaders/next-flight-action-entry-loader.js?actions=%5B%5B%22C%3A%5C%5Cinetpub%5C%5Cwwwroot%5C%5Cclic-tools%5C%5Csrc%5C%5Cmodules%5C%5Ccore%5C%5Clib%5C%5Cauth.ts%22%2C%5B%22getAllUsersForReport%22%2C%22getAllUsers%22%2C%22saveAllUsers%22%2C%22getCurrentUser%22%2C%22sendPasswordRecoveryEmail%22%2C%22login%22%2C%22comparePasswords%22%2C%22getInitialAuthData%22%2C%22logout%22%2C%22addUser%22%2C%22hasPermission%22%5D%5D%2C%5B%22C%3A%5C%5Cinetpub%5C%5Cwwwroot%5C%5Cclic-tools%5C%5Csrc%5C%5Cmodules%5C%5Ccore%5C%5Clib%5C%5Csuggestions-actions.ts%22%2C%5B%22deleteSuggestion%22%2C%22getUnreadSuggestionsCount%22%2C%22getSuggestions%22%2C%22addSuggestion%22%2C%22markSuggestionAsRead%22%2C%22getUnreadSuggestions%22%5D%5D%2C%5B%22C%3A%5C%5Cinetpub%5C%5Cwwwroot%5C%5Cclic-tools%5C%5Csrc%5C%5Cmodules%5C%5Ccore%5C%5Clib%5C%5Capi-actions.ts%22%2C%5B%22getEmailSettings%22%2C%22getApiSettings%22%2C%22getExchangeRate%22%2C%22getExemptionStatus%22%5D%5D%2C%5B%22C%3A%5C%5Cinetpub%5C%5Cwwwroot%5C%5Cclic-tools%5C%5Csrc%5C%5Cmodules%5C%5Ccore%5C%5Clib%5C%5Cnotifications-actions.ts%22%2C%5B%22markNotificationAsRead%22%2C%22executeNotificationAction%22%2C%22createNotification%22%2C%22createNotificationForPermission%22%2C%22getNotificationsForUser%22%2C%22markAllNotificationsAsRead%22%5D%5D%2C%5B%22C%3A%5C%5Cinetpub%5C%5Cwwwroot%5C%5Cclic-tools%5C%5Csrc%5C%5Cmodules%5C%5Cwarehouse%5C%5Clib%5C%5Cdb.ts%22%2C%5B%22getInventoryUnits%22%2C%22deleteInventoryUnit%22%2C%22forceReleaseLock%22%2C%22unassignItemFromLocation%22%2C%22updateLocation%22%2C%22getWarehouseData%22%2C%22saveWarehouseSettings%22%2C%22getAllItemLocations%22%2C%22updateInventory%22%2C%22initializeWarehouseDb%22%2C%22lockEntity%22%2C%22getChildLocations%22%2C%22getInventoryForItem%22%2C%22addInventoryUnit%22%2C%22runWarehouseMigrations%22%2C%22getLocations%22%2C%22getInventoryUnitById%22%2C%22getInventory%22%2C%22getSelectableLocations%22%2C%22getItemLocations%22%2C%22getMovements%22%2C%22addLocation%22%2C%22deleteLocation%22%2C%22addBulkLocations%22%2C%22getWarehouseSettings%22%2C%22releaseLock%22%2C%22assignItemToLocation%22%2C%22updateInventoryUnitLocation%22%2C%22getActiveLocks%22%2C%22logMovement%22%5D%5D%2C%5B%22C%3A%5C%5Cinetpub%5C%5Cwwwroot%5C%5Cclic-tools%5C%5Csrc%5C%5Cmodules%5C%5Ccore%5C%5Clib%5C%5Cdb.ts%22%2C%5B%22getCurrentVersion%22%2C%22getAllErpPurchaseOrderLines%22%2C%22saveAllExemptions%22%2C%22deleteQuoteDraft%22%2C%22saveAllSuppliers%22%2C%22getApiSettings%22%2C%22runDatabaseAudit%22%2C%22saveSqlConfig%22%2C%22getAllExemptions%22%2C%22factoryReset%22%2C%22clearLogs%22%2C%22saveUserPreferences%22%2C%22getCabysCatalog%22%2C%22getCompanySettings%22%2C%22saveAllErpOrderHeaders%22%2C%22getActiveWizardSession%22%2C%22saveStockSettings%22%2C%22importAllDataFromFiles%22%2C%22getImportQueries%22%2C%22getUserCount%22%2C%22saveApiSettings%22%2C%22connectDb%22%2C%22saveAllErpOrderLines%22%2C%22getUserPreferences%22%2C%22saveWizardSession%22%2C%22getNotifications%22%2C%22createNotification%22%2C%22getAllSuppliers%22%2C%22saveImportQueries%22%2C%22initializeMainDatabase%22%2C%22getAllErpPurchaseOrderHeaders%22%2C%22getAllCustomers%22%2C%22getNotificationById%22%2C%22listAllUpdateBackups%22%2C%22deleteNotificationById%22%2C%22saveAllProducts%22%2C%22getUnreadSuggestions%22%2C%22markNotificationsAsRead%22%2C%22backupAllForUpdate%22%2C%22resetDefaultRoles%22%2C%22getSuggestions%22%2C%22saveAllStock%22%2C%22clearWizardSession%22%2C%22getAllQuoteDrafts%22%2C%22saveAllErpPurchaseOrderHeaders%22%2C%22saveAllErpPurchaseOrderLines%22%2C%22restoreDatabase%22%2C%22saveAllRoles%22%2C%22getStockSettings%22%2C%22getAllProducts%22%2C%22saveAllCustomers%22%2C%22markSuggestionAsRead%22%2C%22testSqlConnection%22%2C%22runSingleModuleMigration%22%2C%22addLog%22%2C%22getAllStock%22%2C%22saveQuoteDraft%22%2C%22getExemptionLaws%22%2C%22getDbModules%22%2C%22confirmPlannerModification%22%2C%22restoreAllFromUpdateBackup%22%2C%22getLogs%22%2C%22getUnreadSuggestionsCount%22%2C%22saveCompanySettings%22%2C%22importData%22%2C%22deleteSuggestion%22%2C%22runMainDbMigrations%22%2C%22getAllRoles%22%2C%22saveExemptionLaws%22%2C%22deleteOldUpdateBackups%22%2C%22importDataFromFile%22%5D%5D%2C%5B%22C%3A%5C%5Cinetpub%5C%5Cwwwroot%5C%5Cclic-tools%5C%5Csrc%5C%5Cmodules%5C%5Ccore%5C%5Clib%5C%5Clogger.ts%22%2C%5B%22logWarn%22%2C%22logInfo%22%2C%22getLogs%22%2C%22logError%22%2C%22clearLogs%22%5D%5D%2C%5B%22C%3A%5C%5Cinetpub%5C%5Cwwwroot%5C%5Cclic-tools%5C%5Csrc%5C%5Cmodules%5C%5Ccore%5C%5Clib%5C%5Cactions.ts%22%2C%5B%22syncAllData%22%2C%22shutdownServer%22%2C%22cleanupAllExportFiles%22%5D%5D%5D&__client_imported__=true!:143:17)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:40:286
+    at async rk (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:38:8297)
+    at async ne (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:42:1256)
+    at async doRender (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\base-server.js:1427:30)
+    at async cacheEntry.responseCache.get.routeKind (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\base-server.js:1588:28)
+    at async DevServer.renderToResponseWithComponentsImpl (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\base-server.js:1496:28)
+    at async DevServer.renderPageComponent (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\base-server.js:1924:24)
+    at async DevServer.renderToResponseImpl (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\base-server.js:1962:32)
+    at async DevServer.pipeImpl (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\base-server.js:922:25)
+    at async NextNodeServer.handleCatchallRenderRequest (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\next-server.js:272:17)
+    at async DevServer.handleRequestImpl (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\base-server.js:818:17)
+    at async C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\dev\next-dev-server.js:339:20
+    at async Span.traceAsyncFn (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\trace\trace.js:154:20)
+    at async DevServer.handleRequest (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\dev\next-dev-server.js:336:24)
+    at async invokeRender (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\lib\router-server.js:179:21)
+    at async handleRequest (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\lib\router-server.js:359:24)
+    at async requestHandlerImpl (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\lib\router-server.js:383:13)
+    at async Server.requestListener (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\lib\start-server.js:141:13) {
+  code: 'SQLITE_ERROR'
+}
+ POST /dashboard/warehouse/population-wizard 200 in 88ms
+ POST /dashboard/warehouse/population-wizard 200 in 31ms
+ POST /dashboard/warehouse/population-wizard 200 in 43ms
+ POST /dashboard/warehouse/population-wizard 200 in 21ms
+ ○ Compiling /dashboard/warehouse/assign ...
+ ✓ Compiled /dashboard/warehouse/assign in 699ms (4304 modules)
+Error during warehouse migrations: SqliteError: no such table: inventory_units
+    at Database.exec (C:\inetpub\wwwroot\clic-tools\node_modules\better-sqlite3\lib\methods\wrappers.js:9:14)
+    at runWarehouseMigrations (webpack-internal:///(action-browser)/./src/modules/warehouse/lib/db.ts:190:68)
+    at runMigrations (webpack-internal:///(action-browser)/./src/modules/core/lib/db.ts:234:19)
+    at connectDb (webpack-internal:///(action-browser)/./src/modules/core/lib/db.ts:301:15)
+    at getLocations (webpack-internal:///(action-browser)/./src/modules/warehouse/lib/db.ts:271:85)
+    at endpoint (webpack-internal:///(action-browser)/./node_modules/next/dist/build/webpack/loaders/next-flight-action-entry-loader.js?actions=%5B%5B%22C%3A%5C%5Cinetpub%5C%5Cwwwroot%5C%5Cclic-tools%5C%5Csrc%5C%5Cmodules%5C%5Ccore%5C%5Clib%5C%5Cauth.ts%22%2C%5B%22getAllUsersForReport%22%2C%22getAllUsers%22%2C%22saveAllUsers%22%2C%22getCurrentUser%22%2C%22sendPasswordRecoveryEmail%22%2C%22login%22%2C%22comparePasswords%22%2C%22getInitialAuthData%22%2C%22logout%22%2C%22addUser%22%2C%22hasPermission%22%5D%5D%2C%5B%22C%3A%5C%5Cinetpub%5C%5Cwwwroot%5C%5Cclic-tools%5C%5Csrc%5C%5Cmodules%5C%5Ccore%5C%5Clib%5C%5Csuggestions-actions.ts%22%2C%5B%22deleteSuggestion%22%2C%22getUnreadSuggestionsCount%22%2C%22getSuggestions%22%2C%22addSuggestion%22%2C%22markSuggestionAsRead%22%2C%22getUnreadSuggestions%22%5D%5D%2C%5B%22C%3A%5C%5Cinetpub%5C%5Cwwwroot%5C%5Cclic-tools%5C%5Csrc%5C%5Cmodules%5C%5Ccore%5C%5Clib%5C%5Capi-actions.ts%22%2C%5B%22getEmailSettings%22%2C%22getApiSettings%22%2C%22getExchangeRate%22%2C%22getExemptionStatus%22%5D%5D%2C%5B%22C%3A%5C%5Cinetpub%5C%5Cwwwroot%5C%5Cclic-tools%5C%5Csrc%5C%5Cmodules%5C%5Ccore%5C%5Clib%5C%5Cnotifications-actions.ts%22%2C%5B%22markNotificationAsRead%22%2C%22executeNotificationAction%22%2C%22createNotification%22%2C%22createNotificationForPermission%22%2C%22getNotificationsForUser%22%2C%22markAllNotificationsAsRead%22%5D%5D%2C%5B%22C%3A%5C%5Cinetpub%5C%5Cwwwroot%5C%5Cclic-tools%5C%5Csrc%5C%5Cmodules%5C%5Ccore%5C%5Clib%5C%5Clogger.ts%22%2C%5B%22logWarn%22%2C%22logInfo%22%2C%22getLogs%22%2C%22logError%22%2C%22clearLogs%22%5D%5D%2C%5B%22C%3A%5C%5Cinetpub%5C%5Cwwwroot%5C%5Cclic-tools%5C%5Csrc%5C%5Cmodules%5C%5Cwarehouse%5C%5Clib%5C%5Cdb.ts%22%2C%5B%22getInventoryUnits%22%2C%22deleteInventoryUnit%22%2C%22forceReleaseLock%22%2C%22unassignItemFromLocation%22%2C%22updateLocation%22%2C%22getWarehouseData%22%2C%22saveWarehouseSettings%22%2C%22getAllItemLocations%22%2C%22updateInventory%22%2C%22initializeWarehouseDb%22%2C%22lockEntity%22%2C%22getChildLocations%22%2C%22getInventoryForItem%22%2C%22addInventoryUnit%22%2C%22runWarehouseMigrations%22%2C%22getLocations%22%2C%22getInventoryUnitById%22%2C%22getInventory%22%2C%22getSelectableLocations%22%2C%22getItemLocations%22%2C%22getMovements%22%2C%22addLocation%22%2C%22deleteLocation%22%2C%22addBulkLocations%22%2C%22getWarehouseSettings%22%2C%22releaseLock%22%2C%22assignItemToLocation%22%2C%22updateInventoryUnitLocation%22%2C%22getActiveLocks%22%2C%22logMovement%22%5D%5D%2C%5B%22C%3A%5C%5Cinetpub%5C%5Cwwwroot%5C%5Cclic-tools%5C%5Csrc%5C%5Cmodules%5C%5Ccore%5C%5Clib%5C%5Cdb.ts%22%2C%5B%22getCurrentVersion%22%2C%22getAllErpPurchaseOrderLines%22%2C%22saveAllExemptions%22%2C%22deleteQuoteDraft%22%2C%22saveAllSuppliers%22%2C%22getApiSettings%22%2C%22runDatabaseAudit%22%2C%22saveSqlConfig%22%2C%22getAllExemptions%22%2C%22factoryReset%22%2C%22clearLogs%22%2C%22saveUserPreferences%22%2C%22getCabysCatalog%22%2C%22getCompanySettings%22%2C%22saveAllErpOrderHeaders%22%2C%22getActiveWizardSession%22%2C%22saveStockSettings%22%2C%22importAllDataFromFiles%22%2C%22getImportQueries%22%2C%22getUserCount%22%2C%22saveApiSettings%22%2C%22connectDb%22%2C%22saveAllErpOrderLines%22%2C%22getUserPreferences%22%2C%22saveWizardSession%22%2C%22getNotifications%22%2C%22createNotification%22%2C%22getAllSuppliers%22%2C%22saveImportQueries%22%2C%22initializeMainDatabase%22%2C%22getAllErpPurchaseOrderHeaders%22%2C%22getAllCustomers%22%2C%22getNotificationById%22%2C%22listAllUpdateBackups%22%2C%22deleteNotificationById%22%2C%22saveAllProducts%22%2C%22getUnreadSuggestions%22%2C%22markNotificationsAsRead%22%2C%22backupAllForUpdate%22%2C%22resetDefaultRoles%22%2C%22getSuggestions%22%2C%22saveAllStock%22%2C%22clearWizardSession%22%2C%22getAllQuoteDrafts%22%2C%22saveAllErpPurchaseOrderHeaders%22%2C%22saveAllErpPurchaseOrderLines%22%2C%22restoreDatabase%22%2C%22saveAllRoles%22%2C%22getStockSettings%22%2C%22getAllProducts%22%2C%22saveAllCustomers%22%2C%22markSuggestionAsRead%22%2C%22testSqlConnection%22%2C%22runSingleModuleMigration%22%2C%22addLog%22%2C%22getAllStock%22%2C%22saveQuoteDraft%22%2C%22getExemptionLaws%22%2C%22getDbModules%22%2C%22confirmPlannerModification%22%2C%22restoreAllFromUpdateBackup%22%2C%22getLogs%22%2C%22getUnreadSuggestionsCount%22%2C%22saveCompanySettings%22%2C%22importData%22%2C%22deleteSuggestion%22%2C%22runMainDbMigrations%22%2C%22getAllRoles%22%2C%22saveExemptionLaws%22%2C%22deleteOldUpdateBackups%22%2C%22importDataFromFile%22%5D%5D%2C%5B%22C%3A%5C%5Cinetpub%5C%5Cwwwroot%5C%5Cclic-tools%5C%5Csrc%5C%5Cmodules%5C%5Ccore%5C%5Clib%5C%5Cactions.ts%22%2C%5B%22syncAllData%22%2C%22shutdownServer%22%2C%22cleanupAllExportFiles%22%5D%5D%5D&__client_imported__=true!:143:17)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:40:286
+    at async rk (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:38:8297)
+    at async ne (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:42:1256)
+    at async doRender (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\base-server.js:1427:30)
+    at async cacheEntry.responseCache.get.routeKind (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\base-server.js:1588:28)
+    at async DevServer.renderToResponseWithComponentsImpl (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\base-server.js:1496:28)
+    at async DevServer.renderPageComponent (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\base-server.js:1924:24)
+    at async DevServer.renderToResponseImpl (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\base-server.js:1962:32)
+    at async DevServer.pipeImpl (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\base-server.js:922:25)
+    at async NextNodeServer.handleCatchallRenderRequest (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\next-server.js:272:17)
+    at async DevServer.handleRequestImpl (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\base-server.js:818:17)
+    at async C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\dev\next-dev-server.js:339:20
+    at async Span.traceAsyncFn (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\trace\trace.js:154:20)
+    at async DevServer.handleRequest (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\dev\next-dev-server.js:336:24)
+    at async invokeRender (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\lib\router-server.js:179:21)
+    at async handleRequest (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\lib\router-server.js:359:24)
+    at async requestHandlerImpl (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\lib\router-server.js:383:13)
+    at async Server.requestListener (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\lib\start-server.js:141:13) {
+  code: 'SQLITE_ERROR'
+}
+ POST /dashboard/warehouse/assign 200 in 62ms
+ POST /dashboard/warehouse/assign 200 in 13ms
+ POST /dashboard/warehouse/assign 200 in 14ms
+ POST /dashboard/warehouse/assign 200 in 33ms
+ ○ Compiling /dashboard/warehouse/inventory-count ...
+ ✓ Compiled /dashboard/warehouse/inventory-count in 634ms (4312 modules)
+Error during warehouse migrations: SqliteError: no such table: inventory_units
+    at Database.exec (C:\inetpub\wwwroot\clic-tools\node_modules\better-sqlite3\lib\methods\wrappers.js:9:14)
+    at runWarehouseMigrations (webpack-internal:///(action-browser)/./src/modules/warehouse/lib/db.ts:190:68)
+    at runMigrations (webpack-internal:///(action-browser)/./src/modules/core/lib/db.ts:234:19)
+    at connectDb (webpack-internal:///(action-browser)/./src/modules/core/lib/db.ts:301:15)
+    at getLocations (webpack-internal:///(action-browser)/./src/modules/warehouse/lib/db.ts:271:85)
+    at endpoint (webpack-internal:///(action-browser)/./node_modules/next/dist/build/webpack/loaders/next-flight-action-entry-loader.js?actions=%5B%5B%22C%3A%5C%5Cinetpub%5C%5Cwwwroot%5C%5Cclic-tools%5C%5Csrc%5C%5Cmodules%5C%5Ccore%5C%5Clib%5C%5Cauth.ts%22%2C%5B%22getAllUsersForReport%22%2C%22getAllUsers%22%2C%22saveAllUsers%22%2C%22getCurrentUser%22%2C%22sendPasswordRecoveryEmail%22%2C%22login%22%2C%22comparePasswords%22%2C%22getInitialAuthData%22%2C%22logout%22%2C%22addUser%22%2C%22hasPermission%22%5D%5D%2C%5B%22C%3A%5C%5Cinetpub%5C%5Cwwwroot%5C%5Cclic-tools%5C%5Csrc%5C%5Cmodules%5C%5Ccore%5C%5Clib%5C%5Csuggestions-actions.ts%22%2C%5B%22deleteSuggestion%22%2C%22getUnreadSuggestionsCount%22%2C%22getSuggestions%22%2C%22addSuggestion%22%2C%22markSuggestionAsRead%22%2C%22getUnreadSuggestions%22%5D%5D%2C%5B%22C%3A%5C%5Cinetpub%5C%5Cwwwroot%5C%5Cclic-tools%5C%5Csrc%5C%5Cmodules%5C%5Ccore%5C%5Clib%5C%5Capi-actions.ts%22%2C%5B%22getEmailSettings%22%2C%22getApiSettings%22%2C%22getExchangeRate%22%2C%22getExemptionStatus%22%5D%5D%2C%5B%22C%3A%5C%5Cinetpub%5C%5Cwwwroot%5C%5Cclic-tools%5C%5Csrc%5C%5Cmodules%5C%5Ccore%5C%5Clib%5C%5Cnotifications-actions.ts%22%2C%5B%22markNotificationAsRead%22%2C%22executeNotificationAction%22%2C%22createNotification%22%2C%22createNotificationForPermission%22%2C%22getNotificationsForUser%22%2C%22markAllNotificationsAsRead%22%5D%5D%2C%5B%22C%3A%5C%5Cinetpub%5C%5Cwwwroot%5C%5Cclic-tools%5C%5Csrc%5C%5Cmodules%5C%5Ccore%5C%5Clib%5C%5Clogger.ts%22%2C%5B%22logWarn%22%2C%22logInfo%22%2C%22getLogs%22%2C%22logError%22%2C%22clearLogs%22%5D%5D%2C%5B%22C%3A%5C%5Cinetpub%5C%5Cwwwroot%5C%5Cclic-tools%5C%5Csrc%5C%5Cmodules%5C%5Cwarehouse%5C%5Clib%5C%5Cdb.ts%22%2C%5B%22getInventoryUnits%22%2C%22deleteInventoryUnit%22%2C%22forceReleaseLock%22%2C%22unassignItemFromLocation%22%2C%22updateLocation%22%2C%22getWarehouseData%22%2C%22saveWarehouseSettings%22%2C%22getAllItemLocations%22%2C%22updateInventory%22%2C%22initializeWarehouseDb%22%2C%22lockEntity%22%2C%22getChildLocations%22%2C%22getInventoryForItem%22%2C%22addInventoryUnit%22%2C%22runWarehouseMigrations%22%2C%22getLocations%22%2C%22getInventoryUnitById%22%2C%22getInventory%22%2C%22getSelectableLocations%22%2C%22getItemLocations%22%2C%22getMovements%22%2C%22addLocation%22%2C%22deleteLocation%22%2C%22addBulkLocations%22%2C%22getWarehouseSettings%22%2C%22releaseLock%22%2C%22assignItemToLocation%22%2C%22updateInventoryUnitLocation%22%2C%22getActiveLocks%22%2C%22logMovement%22%5D%5D%2C%5B%22C%3A%5C%5Cinetpub%5C%5Cwwwroot%5C%5Cclic-tools%5C%5Csrc%5C%5Cmodules%5C%5Ccore%5C%5Clib%5C%5Cdb.ts%22%2C%5B%22getCurrentVersion%22%2C%22getAllErpPurchaseOrderLines%22%2C%22saveAllExemptions%22%2C%22deleteQuoteDraft%22%2C%22saveAllSuppliers%22%2C%22getApiSettings%22%2C%22runDatabaseAudit%22%2C%22saveSqlConfig%22%2C%22getAllExemptions%22%2C%22factoryReset%22%2C%22clearLogs%22%2C%22saveUserPreferences%22%2C%22getCabysCatalog%22%2C%22getCompanySettings%22%2C%22saveAllErpOrderHeaders%22%2C%22getActiveWizardSession%22%2C%22saveStockSettings%22%2C%22importAllDataFromFiles%22%2C%22getImportQueries%22%2C%22getUserCount%22%2C%22saveApiSettings%22%2C%22connectDb%22%2C%22saveAllErpOrderLines%22%2C%22getUserPreferences%22%2C%22saveWizardSession%22%2C%22getNotifications%22%2C%22createNotification%22%2C%22getAllSuppliers%22%2C%22saveImportQueries%22%2C%22initializeMainDatabase%22%2C%22getAllErpPurchaseOrderHeaders%22%2C%22getAllCustomers%22%2C%22getNotificationById%22%2C%22listAllUpdateBackups%22%2C%22deleteNotificationById%22%2C%22saveAllProducts%22%2C%22getUnreadSuggestions%22%2C%22markNotificationsAsRead%22%2C%22backupAllForUpdate%22%2C%22resetDefaultRoles%22%2C%22getSuggestions%22%2C%22saveAllStock%22%2C%22clearWizardSession%22%2C%22getAllQuoteDrafts%22%2C%22saveAllErpPurchaseOrderHeaders%22%2C%22saveAllErpPurchaseOrderLines%22%2C%22restoreDatabase%22%2C%22saveAllRoles%22%2C%22getStockSettings%22%2C%22getAllProducts%22%2C%22saveAllCustomers%22%2C%22markSuggestionAsRead%22%2C%22testSqlConnection%22%2C%22runSingleModuleMigration%22%2C%22addLog%22%2C%22getAllStock%22%2C%22saveQuoteDraft%22%2C%22getExemptionLaws%22%2C%22getDbModules%22%2C%22confirmPlannerModification%22%2C%22restoreAllFromUpdateBackup%22%2C%22getLogs%22%2C%22getUnreadSuggestionsCount%22%2C%22saveCompanySettings%22%2C%22importData%22%2C%22deleteSuggestion%22%2C%22runMainDbMigrations%22%2C%22getAllRoles%22%2C%22saveExemptionLaws%22%2C%22deleteOldUpdateBackups%22%2C%22importDataFromFile%22%5D%5D%2C%5B%22C%3A%5C%5Cinetpub%5C%5Cwwwroot%5C%5Cclic-tools%5C%5Csrc%5C%5Cmodules%5C%5Ccore%5C%5Clib%5C%5Cactions.ts%22%2C%5B%22syncAllData%22%2C%22shutdownServer%22%2C%22cleanupAllExportFiles%22%5D%5D%5D&__client_imported__=true!:143:17)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:40:286
+    at async rk (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:38:8297)
+    at async ne (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:42:1256)
+    at async doRender (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\base-server.js:1427:30)
+    at async cacheEntry.responseCache.get.routeKind (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\base-server.js:1588:28)
+    at async DevServer.renderToResponseWithComponentsImpl (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\base-server.js:1496:28)
+    at async DevServer.renderPageComponent (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\base-server.js:1924:24)
+    at async DevServer.renderToResponseImpl (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\base-server.js:1962:32)
+    at async DevServer.pipeImpl (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\base-server.js:922:25)
+    at async NextNodeServer.handleCatchallRenderRequest (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\next-server.js:272:17)
+    at async DevServer.handleRequestImpl (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\base-server.js:818:17)
+    at async C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\dev\next-dev-server.js:339:20
+    at async Span.traceAsyncFn (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\trace\trace.js:154:20)
+    at async DevServer.handleRequest (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\dev\next-dev-server.js:336:24)
+    at async invokeRender (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\lib\router-server.js:179:21)
+    at async handleRequest (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\lib\router-server.js:359:24)
+    at async requestHandlerImpl (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\lib\router-server.js:383:13)
+    at async Server.requestListener (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\lib\start-server.js:141:13) {
+  code: 'SQLITE_ERROR'
+}
+ POST /dashboard/warehouse/inventory-count 200 in 42ms
+ POST /dashboard/warehouse/inventory-count 200 in 41ms
+ POST /dashboard/warehouse/inventory-count 200 in 18ms
+ POST /dashboard/warehouse/inventory-count 200 in 18ms
+ ○ Compiling /dashboard/warehouse/units ...
+ ✓ Compiled /dashboard/warehouse/units in 2.2s (4320 modules)
+Error during warehouse migrations: SqliteError: no such table: inventory_units
+    at Database.exec (C:\inetpub\wwwroot\clic-tools\node_modules\better-sqlite3\lib\methods\wrappers.js:9:14)
+    at runWarehouseMigrations (webpack-internal:///(action-browser)/./src/modules/warehouse/lib/db.ts:190:68)
+    at runMigrations (webpack-internal:///(action-browser)/./src/modules/core/lib/db.ts:234:19)
+    at connectDb (webpack-internal:///(action-browser)/./src/modules/core/lib/db.ts:301:15)
+    at getLocations (webpack-internal:///(action-browser)/./src/modules/warehouse/lib/db.ts:271:85)
+    at endpoint (webpack-internal:///(action-browser)/./node_modules/next/dist/build/webpack/loaders/next-flight-action-entry-loader.js?actions=%5B%5B%22C%3A%5C%5Cinetpub%5C%5Cwwwroot%5C%5Cclic-tools%5C%5Csrc%5C%5Cmodules%5C%5Ccore%5C%5Clib%5C%5Cauth.ts%22%2C%5B%22getAllUsersForReport%22%2C%22getAllUsers%22%2C%22saveAllUsers%22%2C%22getCurrentUser%22%2C%22sendPasswordRecoveryEmail%22%2C%22login%22%2C%22comparePasswords%22%2C%22getInitialAuthData%22%2C%22logout%22%2C%22addUser%22%2C%22hasPermission%22%5D%5D%2C%5B%22C%3A%5C%5Cinetpub%5C%5Cwwwroot%5C%5Cclic-tools%5C%5Csrc%5C%5Cmodules%5C%5Ccore%5C%5Clib%5C%5Csuggestions-actions.ts%22%2C%5B%22deleteSuggestion%22%2C%22getUnreadSuggestionsCount%22%2C%22getSuggestions%22%2C%22addSuggestion%22%2C%22markSuggestionAsRead%22%2C%22getUnreadSuggestions%22%5D%5D%2C%5B%22C%3A%5C%5Cinetpub%5C%5Cwwwroot%5C%5Cclic-tools%5C%5Csrc%5C%5Cmodules%5C%5Ccore%5C%5Clib%5C%5Capi-actions.ts%22%2C%5B%22getEmailSettings%22%2C%22getApiSettings%22%2C%22getExchangeRate%22%2C%22getExemptionStatus%22%5D%5D%2C%5B%22C%3A%5C%5Cinetpub%5C%5Cwwwroot%5C%5Cclic-tools%5C%5Csrc%5C%5Cmodules%5C%5Ccore%5C%5Clib%5C%5Cnotifications-actions.ts%22%2C%5B%22markNotificationAsRead%22%2C%22executeNotificationAction%22%2C%22createNotification%22%2C%22createNotificationForPermission%22%2C%22getNotificationsForUser%22%2C%22markAllNotificationsAsRead%22%5D%5D%2C%5B%22C%3A%5C%5Cinetpub%5C%5Cwwwroot%5C%5Cclic-tools%5C%5Csrc%5C%5Cmodules%5C%5Ccore%5C%5Clib%5C%5Clogger.ts%22%2C%5B%22logWarn%22%2C%22logInfo%22%2C%22getLogs%22%2C%22logError%22%2C%22clearLogs%22%5D%5D%2C%5B%22C%3A%5C%5Cinetpub%5C%5Cwwwroot%5C%5Cclic-tools%5C%5Csrc%5C%5Cmodules%5C%5Cwarehouse%5C%5Clib%5C%5Cdb.ts%22%2C%5B%22getInventoryUnits%22%2C%22deleteInventoryUnit%22%2C%22forceReleaseLock%22%2C%22unassignItemFromLocation%22%2C%22updateLocation%22%2C%22getWarehouseData%22%2C%22saveWarehouseSettings%22%2C%22getAllItemLocations%22%2C%22updateInventory%22%2C%22initializeWarehouseDb%22%2C%22lockEntity%22%2C%22getChildLocations%22%2C%22getInventoryForItem%22%2C%22addInventoryUnit%22%2C%22runWarehouseMigrations%22%2C%22getLocations%22%2C%22getInventoryUnitById%22%2C%22getInventory%22%2C%22getSelectableLocations%22%2C%22getItemLocations%22%2C%22getMovements%22%2C%22addLocation%22%2C%22deleteLocation%22%2C%22addBulkLocations%22%2C%22getWarehouseSettings%22%2C%22releaseLock%22%2C%22assignItemToLocation%22%2C%22updateInventoryUnitLocation%22%2C%22getActiveLocks%22%2C%22logMovement%22%5D%5D%2C%5B%22C%3A%5C%5Cinetpub%5C%5Cwwwroot%5C%5Cclic-tools%5C%5Csrc%5C%5Cmodules%5C%5Ccore%5C%5Clib%5C%5Cdb.ts%22%2C%5B%22getCurrentVersion%22%2C%22getAllErpPurchaseOrderLines%22%2C%22saveAllExemptions%22%2C%22deleteQuoteDraft%22%2C%22saveAllSuppliers%22%2C%22getApiSettings%22%2C%22runDatabaseAudit%22%2C%22saveSqlConfig%22%2C%22getAllExemptions%22%2C%22factoryReset%22%2C%22clearLogs%22%2C%22saveUserPreferences%22%2C%22getCabysCatalog%22%2C%22getCompanySettings%22%2C%22saveAllErpOrderHeaders%22%2C%22getActiveWizardSession%22%2C%22saveStockSettings%22%2C%22importAllDataFromFiles%22%2C%22getImportQueries%22%2C%22getUserCount%22%2C%22saveApiSettings%22%2C%22connectDb%22%2C%22saveAllErpOrderLines%22%2C%22getUserPreferences%22%2C%22saveWizardSession%22%2C%22getNotifications%22%2C%22createNotification%22%2C%22getAllSuppliers%22%2C%22saveImportQueries%22%2C%22initializeMainDatabase%22%2C%22getAllErpPurchaseOrderHeaders%22%2C%22getAllCustomers%22%2C%22getNotificationById%22%2C%22listAllUpdateBackups%22%2C%22deleteNotificationById%22%2C%22saveAllProducts%22%2C%22getUnreadSuggestions%22%2C%22markNotificationsAsRead%22%2C%22backupAllForUpdate%22%2C%22resetDefaultRoles%22%2C%22getSuggestions%22%2C%22saveAllStock%22%2C%22clearWizardSession%22%2C%22getAllQuoteDrafts%22%2C%22saveAllErpPurchaseOrderHeaders%22%2C%22saveAllErpPurchaseOrderLines%22%2C%22restoreDatabase%22%2C%22saveAllRoles%22%2C%22getStockSettings%22%2C%22getAllProducts%22%2C%22saveAllCustomers%22%2C%22markSuggestionAsRead%22%2C%22testSqlConnection%22%2C%22runSingleModuleMigration%22%2C%22addLog%22%2C%22getAllStock%22%2C%22saveQuoteDraft%22%2C%22getExemptionLaws%22%2C%22getDbModules%22%2C%22confirmPlannerModification%22%2C%22restoreAllFromUpdateBackup%22%2C%22getLogs%22%2C%22getUnreadSuggestionsCount%22%2C%22saveCompanySettings%22%2C%22importData%22%2C%22deleteSuggestion%22%2C%22runMainDbMigrations%22%2C%22getAllRoles%22%2C%22saveExemptionLaws%22%2C%22deleteOldUpdateBackups%22%2C%22importDataFromFile%22%5D%5D%2C%5B%22C%3A%5C%5Cinetpub%5C%5Cwwwroot%5C%5Cclic-tools%5C%5Csrc%5C%5Cmodules%5C%5Ccore%5C%5Clib%5C%5Cactions.ts%22%2C%5B%22syncAllData%22%2C%22shutdownServer%22%2C%22cleanupAllExportFiles%22%5D%5D%5D&__client_imported__=true!:143:17)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:40:286
+    at async rk (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:38:8297)
+    at async ne (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:42:1256)
+    at async doRender (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\base-server.js:1427:30)
+    at async cacheEntry.responseCache.get.routeKind (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\base-server.js:1588:28)
+    at async DevServer.renderToResponseWithComponentsImpl (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\base-server.js:1496:28)
+    at async DevServer.renderPageComponent (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\base-server.js:1924:24)
+    at async DevServer.renderToResponseImpl (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\base-server.js:1962:32)
+    at async DevServer.pipeImpl (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\base-server.js:922:25)
+    at async NextNodeServer.handleCatchallRenderRequest (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\next-server.js:272:17)
+    at async DevServer.handleRequestImpl (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\base-server.js:818:17)
+    at async C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\dev\next-dev-server.js:339:20
+    at async Span.traceAsyncFn (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\trace\trace.js:154:20)
+    at async DevServer.handleRequest (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\dev\next-dev-server.js:336:24)
+    at async invokeRender (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\lib\router-server.js:179:21)
+    at async handleRequest (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\lib\router-server.js:359:24)
+    at async requestHandlerImpl (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\lib\router-server.js:383:13)
+    at async Server.requestListener (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\lib\start-server.js:141:13) {
+  code: 'SQLITE_ERROR'
+}
+ POST /dashboard/warehouse/units 200 in 46ms
+ ⨯ SqliteError: no such table: inventory_units
+    at getInventoryUnits (./src/modules/warehouse/lib/db.ts:509:22)
+digest: "1999342014"
+ POST /dashboard/warehouse/units 500 in 18ms
+ POST /dashboard/warehouse/units 200 in 17ms
+ ⨯ SqliteError: no such table: inventory_units
+    at getInventoryUnits (./src/modules/warehouse/lib/db.ts:509:22)
+digest: "1999342014"
+ POST /dashboard/warehouse/units 500 in 21ms
+ ○ Compiling /dashboard/warehouse/locations ...
+ ✓ Compiled /dashboard/warehouse/locations in 1955ms (4331 modules)
+Error during warehouse migrations: SqliteError: no such table: inventory_units
+    at Database.exec (C:\inetpub\wwwroot\clic-tools\node_modules\better-sqlite3\lib\methods\wrappers.js:9:14)
+    at runWarehouseMigrations (webpack-internal:///(action-browser)/./src/modules/warehouse/lib/db.ts:190:68)
+    at runMigrations (webpack-internal:///(action-browser)/./src/modules/core/lib/db.ts:234:19)
+    at connectDb (webpack-internal:///(action-browser)/./src/modules/core/lib/db.ts:301:15)
+    at getWarehouseSettings (webpack-internal:///(action-browser)/./src/modules/warehouse/lib/db.ts:200:85)
+    at endpoint (webpack-internal:///(action-browser)/./node_modules/next/dist/build/webpack/loaders/next-flight-action-entry-loader.js?actions=%5B%5B%22C%3A%5C%5Cinetpub%5C%5Cwwwroot%5C%5Cclic-tools%5C%5Csrc%5C%5Cmodules%5C%5Ccore%5C%5Clib%5C%5Clogger.ts%22%2C%5B%22logWarn%22%2C%22logInfo%22%2C%22getLogs%22%2C%22logError%22%2C%22clearLogs%22%5D%5D%2C%5B%22C%3A%5C%5Cinetpub%5C%5Cwwwroot%5C%5Cclic-tools%5C%5Csrc%5C%5Cmodules%5C%5Ccore%5C%5Clib%5C%5Cauth.ts%22%2C%5B%22getAllUsersForReport%22%2C%22getAllUsers%22%2C%22saveAllUsers%22%2C%22getCurrentUser%22%2C%22sendPasswordRecoveryEmail%22%2C%22login%22%2C%22comparePasswords%22%2C%22getInitialAuthData%22%2C%22logout%22%2C%22addUser%22%2C%22hasPermission%22%5D%5D%2C%5B%22C%3A%5C%5Cinetpub%5C%5Cwwwroot%5C%5Cclic-tools%5C%5Csrc%5C%5Cmodules%5C%5Ccore%5C%5Clib%5C%5Csuggestions-actions.ts%22%2C%5B%22deleteSuggestion%22%2C%22getUnreadSuggestionsCount%22%2C%22getSuggestions%22%2C%22addSuggestion%22%2C%22markSuggestionAsRead%22%2C%22getUnreadSuggestions%22%5D%5D%2C%5B%22C%3A%5C%5Cinetpub%5C%5Cwwwroot%5C%5Cclic-tools%5C%5Csrc%5C%5Cmodules%5C%5Ccore%5C%5Clib%5C%5Capi-actions.ts%22%2C%5B%22getEmailSettings%22%2C%22getApiSettings%22%2C%22getExchangeRate%22%2C%22getExemptionStatus%22%5D%5D%2C%5B%22C%3A%5C%5Cinetpub%5C%5Cwwwroot%5C%5Cclic-tools%5C%5Csrc%5C%5Cmodules%5C%5Ccore%5C%5Clib%5C%5Cnotifications-actions.ts%22%2C%5B%22markNotificationAsRead%22%2C%22executeNotificationAction%22%2C%22createNotification%22%2C%22createNotificationForPermission%22%2C%22getNotificationsForUser%22%2C%22markAllNotificationsAsRead%22%5D%5D%2C%5B%22C%3A%5C%5Cinetpub%5C%5Cwwwroot%5C%5Cclic-tools%5C%5Csrc%5C%5Cmodules%5C%5Cwarehouse%5C%5Clib%5C%5Cdb.ts%22%2C%5B%22getInventoryUnits%22%2C%22deleteInventoryUnit%22%2C%22forceReleaseLock%22%2C%22unassignItemFromLocation%22%2C%22updateLocation%22%2C%22getWarehouseData%22%2C%22saveWarehouseSettings%22%2C%22getAllItemLocations%22%2C%22updateInventory%22%2C%22initializeWarehouseDb%22%2C%22lockEntity%22%2C%22getChildLocations%22%2C%22getInventoryForItem%22%2C%22addInventoryUnit%22%2C%22runWarehouseMigrations%22%2C%22getLocations%22%2C%22getInventoryUnitById%22%2C%22getInventory%22%2C%22getSelectableLocations%22%2C%22getItemLocations%22%2C%22getMovements%22%2C%22addLocation%22%2C%22deleteLocation%22%2C%22addBulkLocations%22%2C%22getWarehouseSettings%22%2C%22releaseLock%22%2C%22assignItemToLocation%22%2C%22updateInventoryUnitLocation%22%2C%22getActiveLocks%22%2C%22logMovement%22%5D%5D%2C%5B%22C%3A%5C%5Cinetpub%5C%5Cwwwroot%5C%5Cclic-tools%5C%5Csrc%5C%5Cmodules%5C%5Ccore%5C%5Clib%5C%5Cdb.ts%22%2C%5B%22getCurrentVersion%22%2C%22getAllErpPurchaseOrderLines%22%2C%22saveAllExemptions%22%2C%22deleteQuoteDraft%22%2C%22saveAllSuppliers%22%2C%22getApiSettings%22%2C%22runDatabaseAudit%22%2C%22saveSqlConfig%22%2C%22getAllExemptions%22%2C%22factoryReset%22%2C%22clearLogs%22%2C%22saveUserPreferences%22%2C%22getCabysCatalog%22%2C%22getCompanySettings%22%2C%22saveAllErpOrderHeaders%22%2C%22getActiveWizardSession%22%2C%22saveStockSettings%22%2C%22importAllDataFromFiles%22%2C%22getImportQueries%22%2C%22getUserCount%22%2C%22saveApiSettings%22%2C%22connectDb%22%2C%22saveAllErpOrderLines%22%2C%22getUserPreferences%22%2C%22saveWizardSession%22%2C%22getNotifications%22%2C%22createNotification%22%2C%22getAllSuppliers%22%2C%22saveImportQueries%22%2C%22initializeMainDatabase%22%2C%22getAllErpPurchaseOrderHeaders%22%2C%22getAllCustomers%22%2C%22getNotificationById%22%2C%22listAllUpdateBackups%22%2C%22deleteNotificationById%22%2C%22saveAllProducts%22%2C%22getUnreadSuggestions%22%2C%22markNotificationsAsRead%22%2C%22backupAllForUpdate%22%2C%22resetDefaultRoles%22%2C%22getSuggestions%22%2C%22saveAllStock%22%2C%22clearWizardSession%22%2C%22getAllQuoteDrafts%22%2C%22saveAllErpPurchaseOrderHeaders%22%2C%22saveAllErpPurchaseOrderLines%22%2C%22restoreDatabase%22%2C%22saveAllRoles%22%2C%22getStockSettings%22%2C%22getAllProducts%22%2C%22saveAllCustomers%22%2C%22markSuggestionAsRead%22%2C%22testSqlConnection%22%2C%22runSingleModuleMigration%22%2C%22addLog%22%2C%22getAllStock%22%2C%22saveQuoteDraft%22%2C%22getExemptionLaws%22%2C%22getDbModules%22%2C%22confirmPlannerModification%22%2C%22restoreAllFromUpdateBackup%22%2C%22getLogs%22%2C%22getUnreadSuggestionsCount%22%2C%22saveCompanySettings%22%2C%22importData%22%2C%22deleteSuggestion%22%2C%22runMainDbMigrations%22%2C%22getAllRoles%22%2C%22saveExemptionLaws%22%2C%22deleteOldUpdateBackups%22%2C%22importDataFromFile%22%5D%5D%2C%5B%22C%3A%5C%5Cinetpub%5C%5Cwwwroot%5C%5Cclic-tools%5C%5Csrc%5C%5Cmodules%5C%5Ccore%5C%5Clib%5C%5Cactions.ts%22%2C%5B%22syncAllData%22%2C%22shutdownServer%22%2C%22cleanupAllExportFiles%22%5D%5D%5D&__client_imported__=true!:143:17)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:40:286
+    at async rk (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:38:8297)
+    at async ne (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:42:1256)
+    at async doRender (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\base-server.js:1427:30)
+    at async cacheEntry.responseCache.get.routeKind (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\base-server.js:1588:28)
+    at async DevServer.renderToResponseWithComponentsImpl (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\base-server.js:1496:28)
+    at async DevServer.renderPageComponent (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\base-server.js:1924:24)
+    at async DevServer.renderToResponseImpl (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\base-server.js:1962:32)
+    at async DevServer.pipeImpl (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\base-server.js:922:25)
+    at async NextNodeServer.handleCatchallRenderRequest (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\next-server.js:272:17)
+    at async DevServer.handleRequestImpl (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\base-server.js:818:17)
+    at async C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\dev\next-dev-server.js:339:20
+    at async Span.traceAsyncFn (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\trace\trace.js:154:20)
+    at async DevServer.handleRequest (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\dev\next-dev-server.js:336:24)
+    at async invokeRender (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\lib\router-server.js:179:21)
+    at async handleRequest (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\lib\router-server.js:359:24)
+    at async requestHandlerImpl (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\lib\router-server.js:383:13)
+    at async Server.requestListener (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\lib\start-server.js:141:13) {
+  code: 'SQLITE_ERROR'
+}
+ POST /dashboard/warehouse/locations 200 in 148ms
+ POST /dashboard/warehouse/locations 200 in 14ms
+ POST /dashboard/warehouse/locations 200 in 29ms
+ POST /dashboard/warehouse/locations 200 in 20ms
+ ○ Compiling /dashboard/warehouse/locks ...
+ ✓ Compiled /dashboard/warehouse/locks in 729ms (4341 modules)
+Error during warehouse migrations: SqliteError: no such table: inventory_units
+    at Database.exec (C:\inetpub\wwwroot\clic-tools\node_modules\better-sqlite3\lib\methods\wrappers.js:9:14)
+    at runWarehouseMigrations (webpack-internal:///(action-browser)/./src/modules/warehouse/lib/db.ts:190:68)
+    at runMigrations (webpack-internal:///(action-browser)/./src/modules/core/lib/db.ts:234:19)
+    at connectDb (webpack-internal:///(action-browser)/./src/modules/core/lib/db.ts:301:15)
+    at getActiveLocks (webpack-internal:///(action-browser)/./src/modules/warehouse/lib/db.ts:533:85)
+    at endpoint (webpack-internal:///(action-browser)/./node_modules/next/dist/build/webpack/loaders/next-flight-action-entry-loader.js?actions=%5B%5B%22C%3A%5C%5Cinetpub%5C%5Cwwwroot%5C%5Cclic-tools%5C%5Csrc%5C%5Cmodules%5C%5Ccore%5C%5Clib%5C%5Cauth.ts%22%2C%5B%22getAllUsersForReport%22%2C%22getAllUsers%22%2C%22saveAllUsers%22%2C%22getCurrentUser%22%2C%22sendPasswordRecoveryEmail%22%2C%22login%22%2C%22comparePasswords%22%2C%22getInitialAuthData%22%2C%22logout%22%2C%22addUser%22%2C%22hasPermission%22%5D%5D%2C%5B%22C%3A%5C%5Cinetpub%5C%5Cwwwroot%5C%5Cclic-tools%5C%5Csrc%5C%5Cmodules%5C%5Ccore%5C%5Clib%5C%5Csuggestions-actions.ts%22%2C%5B%22deleteSuggestion%22%2C%22getUnreadSuggestionsCount%22%2C%22getSuggestions%22%2C%22addSuggestion%22%2C%22markSuggestionAsRead%22%2C%22getUnreadSuggestions%22%5D%5D%2C%5B%22C%3A%5C%5Cinetpub%5C%5Cwwwroot%5C%5Cclic-tools%5C%5Csrc%5C%5Cmodules%5C%5Ccore%5C%5Clib%5C%5Capi-actions.ts%22%2C%5B%22getEmailSettings%22%2C%22getApiSettings%22%2C%22getExchangeRate%22%2C%22getExemptionStatus%22%5D%5D%2C%5B%22C%3A%5C%5Cinetpub%5C%5Cwwwroot%5C%5Cclic-tools%5C%5Csrc%5C%5Cmodules%5C%5Ccore%5C%5Clib%5C%5Cnotifications-actions.ts%22%2C%5B%22markNotificationAsRead%22%2C%22executeNotificationAction%22%2C%22createNotification%22%2C%22createNotificationForPermission%22%2C%22getNotificationsForUser%22%2C%22markAllNotificationsAsRead%22%5D%5D%2C%5B%22C%3A%5C%5Cinetpub%5C%5Cwwwroot%5C%5Cclic-tools%5C%5Csrc%5C%5Cmodules%5C%5Ccore%5C%5Clib%5C%5Clogger.ts%22%2C%5B%22logWarn%22%2C%22logInfo%22%2C%22getLogs%22%2C%22logError%22%2C%22clearLogs%22%5D%5D%2C%5B%22C%3A%5C%5Cinetpub%5C%5Cwwwroot%5C%5Cclic-tools%5C%5Csrc%5C%5Cmodules%5C%5Cwarehouse%5C%5Clib%5C%5Cdb.ts%22%2C%5B%22getInventoryUnits%22%2C%22deleteInventoryUnit%22%2C%22forceReleaseLock%22%2C%22unassignItemFromLocation%22%2C%22updateLocation%22%2C%22getWarehouseData%22%2C%22saveWarehouseSettings%22%2C%22getAllItemLocations%22%2C%22updateInventory%22%2C%22initializeWarehouseDb%22%2C%22lockEntity%22%2C%22getChildLocations%22%2C%22getInventoryForItem%22%2C%22addInventoryUnit%22%2C%22runWarehouseMigrations%22%2C%22getLocations%22%2C%22getInventoryUnitById%22%2C%22getInventory%22%2C%22getSelectableLocations%22%2C%22getItemLocations%22%2C%22getMovements%22%2C%22addLocation%22%2C%22deleteLocation%22%2C%22addBulkLocations%22%2C%22getWarehouseSettings%22%2C%22releaseLock%22%2C%22assignItemToLocation%22%2C%22updateInventoryUnitLocation%22%2C%22getActiveLocks%22%2C%22logMovement%22%5D%5D%2C%5B%22C%3A%5C%5Cinetpub%5C%5Cwwwroot%5C%5Cclic-tools%5C%5Csrc%5C%5Cmodules%5C%5Ccore%5C%5Clib%5C%5Cdb.ts%22%2C%5B%22getCurrentVersion%22%2C%22getAllErpPurchaseOrderLines%22%2C%22saveAllExemptions%22%2C%22deleteQuoteDraft%22%2C%22saveAllSuppliers%22%2C%22getApiSettings%22%2C%22runDatabaseAudit%22%2C%22saveSqlConfig%22%2C%22getAllExemptions%22%2C%22factoryReset%22%2C%22clearLogs%22%2C%22saveUserPreferences%22%2C%22getCabysCatalog%22%2C%22getCompanySettings%22%2C%22saveAllErpOrderHeaders%22%2C%22getActiveWizardSession%22%2C%22saveStockSettings%22%2C%22importAllDataFromFiles%22%2C%22getImportQueries%22%2C%22getUserCount%22%2C%22saveApiSettings%22%2C%22connectDb%22%2C%22saveAllErpOrderLines%22%2C%22getUserPreferences%22%2C%22saveWizardSession%22%2C%22getNotifications%22%2C%22createNotification%22%2C%22getAllSuppliers%22%2C%22saveImportQueries%22%2C%22initializeMainDatabase%22%2C%22getAllErpPurchaseOrderHeaders%22%2C%22getAllCustomers%22%2C%22getNotificationById%22%2C%22listAllUpdateBackups%22%2C%22deleteNotificationById%22%2C%22saveAllProducts%22%2C%22getUnreadSuggestions%22%2C%22markNotificationsAsRead%22%2C%22backupAllForUpdate%22%2C%22resetDefaultRoles%22%2C%22getSuggestions%22%2C%22saveAllStock%22%2C%22clearWizardSession%22%2C%22getAllQuoteDrafts%22%2C%22saveAllErpPurchaseOrderHeaders%22%2C%22saveAllErpPurchaseOrderLines%22%2C%22restoreDatabase%22%2C%22saveAllRoles%22%2C%22getStockSettings%22%2C%22getAllProducts%22%2C%22saveAllCustomers%22%2C%22markSuggestionAsRead%22%2C%22testSqlConnection%22%2C%22runSingleModuleMigration%22%2C%22addLog%22%2C%22getAllStock%22%2C%22saveQuoteDraft%22%2C%22getExemptionLaws%22%2C%22getDbModules%22%2C%22confirmPlannerModification%22%2C%22restoreAllFromUpdateBackup%22%2C%22getLogs%22%2C%22getUnreadSuggestionsCount%22%2C%22saveCompanySettings%22%2C%22importData%22%2C%22deleteSuggestion%22%2C%22runMainDbMigrations%22%2C%22getAllRoles%22%2C%22saveExemptionLaws%22%2C%22deleteOldUpdateBackups%22%2C%22importDataFromFile%22%5D%5D%2C%5B%22C%3A%5C%5Cinetpub%5C%5Cwwwroot%5C%5Cclic-tools%5C%5Csrc%5C%5Cmodules%5C%5Ccore%5C%5Clib%5C%5Cactions.ts%22%2C%5B%22syncAllData%22%2C%22shutdownServer%22%2C%22cleanupAllExportFiles%22%5D%5D%5D&__client_imported__=true!:143:17)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:40:286
+    at async rk (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:38:8297)
+    at async ne (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:42:1256)
+    at async doRender (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\base-server.js:1427:30)
+    at async cacheEntry.responseCache.get.routeKind (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\base-server.js:1588:28)
+    at async DevServer.renderToResponseWithComponentsImpl (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\base-server.js:1496:28)
+    at async DevServer.renderPageComponent (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\base-server.js:1924:24)
+    at async DevServer.renderToResponseImpl (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\base-server.js:1962:32)
+    at async DevServer.pipeImpl (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\base-server.js:922:25)
+    at async NextNodeServer.handleCatchallRenderRequest (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\next-server.js:272:17)
+    at async DevServer.handleRequestImpl (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\base-server.js:818:17)
+    at async C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\dev\next-dev-server.js:339:20
+    at async Span.traceAsyncFn (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\trace\trace.js:154:20)
+    at async DevServer.handleRequest (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\dev\next-dev-server.js:336:24)
+    at async invokeRender (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\lib\router-server.js:179:21)
+    at async handleRequest (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\lib\router-server.js:359:24)
+    at async requestHandlerImpl (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\lib\router-server.js:383:13)
+    at async Server.requestListener (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\lib\start-server.js:141:13) {
+  code: 'SQLITE_ERROR'
+}
+ POST /dashboard/warehouse/locks 200 in 63ms
+ POST /dashboard/warehouse/locks 200 in 14ms
+ ○ Compiling /dashboard/analytics/purchase-suggestions ...
+ ✓ Compiled /dashboard/analytics/purchase-suggestions in 936ms (4359 modules)
+ POST /dashboard/analytics/purchase-suggestions 200 in 46ms
+ POST /dashboard/analytics/purchase-suggestions 200 in 23ms
+ POST /dashboard/analytics/purchase-suggestions 200 in 64ms
+ POST /dashboard/analytics/purchase-suggestions 200 in 96ms
+ POST /dashboard/analytics/purchase-suggestions 200 in 81ms
+ POST /dashboard/analytics/purchase-suggestions 200 in 70ms
+ POST /dashboard/analytics/purchase-suggestions 200 in 24ms
+ POST /dashboard/analytics/purchase-suggestions 200 in 20ms
+ POST /dashboard/analytics/purchase-suggestions 200 in 42ms
+ POST /dashboard/analytics/purchase-suggestions 200 in 75ms
+ POST /dashboard/analytics/purchase-suggestions 200 in 60ms
+ POST /dashboard/analytics/purchase-suggestions 200 in 65ms
+ POST /dashboard/analytics/purchase-suggestions 200 in 71ms
+ POST /dashboard/analytics/purchase-suggestions 200 in 45ms
+ POST /dashboard/analytics/purchase-suggestions 200 in 79ms
+ POST /dashboard/analytics/purchase-suggestions 200 in 26ms
+ POST /dashboard/analytics/purchase-suggestions 200 in 59ms
+ POST /dashboard/analytics/purchase-suggestions 200 in 77ms
+ POST /dashboard/analytics/purchase-suggestions 200 in 29ms
+ POST /dashboard/analytics/purchase-suggestions 200 in 42ms
+ ○ Compiling /dashboard/analytics/purchase-report ...
+ ✓ Compiled /dashboard/analytics/purchase-report in 835ms (4367 modules)
+ POST /dashboard/analytics/purchase-report 200 in 46ms
+ POST /dashboard/analytics/purchase-report 200 in 25ms
+ POST /dashboard/analytics/purchase-report 200 in 66ms
+ POST /dashboard/analytics/purchase-report 200 in 92ms
+ POST /dashboard/analytics/purchase-report 200 in 82ms
+ POST /dashboard/analytics/purchase-report 200 in 61ms
+ POST /dashboard/analytics/purchase-report 200 in 12ms
+ POST /dashboard/analytics/purchase-report 200 in 302ms
+ POST /dashboard/analytics/purchase-report 200 in 53ms
+ POST /dashboard/analytics/purchase-report 200 in 83ms
+ POST /dashboard/analytics/purchase-report 200 in 30ms
+ POST /dashboard/analytics/purchase-report 200 in 55ms
+ POST /dashboard/analytics/purchase-report 200 in 73ms
+ POST /dashboard/analytics/purchase-report 200 in 33ms
+ POST /dashboard/analytics/purchase-report 200 in 77ms
+ POST /dashboard/analytics/purchase-report 200 in 31ms
+ POST /dashboard/analytics/purchase-report 200 in 58ms
+ POST /dashboard/analytics/purchase-report 200 in 69ms
+ POST /dashboard/analytics/purchase-report 200 in 14ms
+ POST /dashboard/analytics/purchase-report 200 in 11ms
+ POST /dashboard/analytics/purchase-report 200 in 14ms
+ POST /dashboard/analytics/purchase-report 200 in 10ms
+ POST /dashboard/analytics/purchase-report 200 in 13ms
+ ○ Compiling /dashboard/analytics/transits-report ...
+ ✓ Compiled /dashboard/analytics/transits-report in 2.1s (4391 modules)
+ POST /dashboard/analytics/transits-report 200 in 144ms
+ POST /dashboard/analytics/transits-report 200 in 42ms
+ ○ Compiling /dashboard/analytics/production-report ...
+ ✓ Compiled /dashboard/analytics/production-report in 859ms (4401 modules)
+ POST /dashboard/analytics/production-report 200 in 57ms
+ POST /dashboard/analytics/production-report 200 in 36ms
+ POST /dashboard/analytics/production-report 200 in 48ms
+ POST /dashboard/analytics/production-report 200 in 43ms
+ ○ Compiling /dashboard/analytics/physical-inventory-report ...
+ ✓ Compiled /dashboard/analytics/physical-inventory-report in 930ms (4409 modules)
+ POST /dashboard/analytics/physical-inventory-report 200 in 40ms
+ POST /dashboard/analytics/physical-inventory-report 200 in 26ms
+ ○ Compiling /dashboard/analytics/receiving-report ...
+ ✓ Compiled /dashboard/analytics/receiving-report in 868ms (4417 modules)
+ POST /dashboard/analytics/receiving-report 200 in 68ms
+ POST /dashboard/analytics/receiving-report 200 in 25ms
+ ○ Compiling /dashboard/analytics/user-permissions ...
+ ✓ Compiled /dashboard/analytics/user-permissions in 974ms (4410 modules)
+ POST /dashboard/analytics/user-permissions 200 in 62ms
+ POST /dashboard/analytics/user-permissions 200 in 13ms
+ POST /dashboard/analytics/user-permissions 200 in 19ms
+ POST /dashboard/admin/users 200 in 17ms
+ POST /dashboard/admin/users 200 in 33ms
+ POST /dashboard/admin/users 200 in 43ms
+ POST /dashboard/admin/users 200 in 15ms
+ ○ Compiling /dashboard/admin/roles ...
+ ✓ Compiled /dashboard/admin/roles in 1024ms (4419 modules)
+ POST /dashboard/admin/roles 200 in 56ms
+ POST /dashboard/admin/roles 200 in 41ms
+ ○ Compiling /dashboard/admin/general ...
+ ✓ Compiled /dashboard/admin/general in 2.6s (4427 modules)
+ POST /dashboard/admin/general 200 in 198ms
+ POST /dashboard/admin/general 200 in 56ms
+ ○ Compiling /dashboard/admin/email ...
+ ✓ Compiled /dashboard/admin/email in 1608ms (4350 modules)
+ POST /dashboard/admin/email 200 in 45ms
+ POST /dashboard/admin/email 200 in 29ms
+ ○ Compiling /dashboard/admin/suggestions ...
+ ✓ Compiled /dashboard/admin/suggestions in 807ms (4360 modules)
+ POST /dashboard/admin/suggestions 200 in 67ms
+ POST /dashboard/admin/suggestions 200 in 26ms
+ POST /dashboard/admin/suggestions 200 in 20ms
+ POST /dashboard/admin/suggestions 200 in 28ms
+ ○ Compiling /dashboard/admin/quoter ...
+ ✓ Compiled /dashboard/admin/quoter in 785ms (4366 modules)
+ POST /dashboard/admin 200 in 64ms
+ POST /dashboard/admin 200 in 56ms
+ POST /dashboard/admin 200 in 17ms
+ POST /dashboard/admin/quoter 200 in 88ms
+ POST /dashboard/admin/quoter 200 in 62ms
+ ○ Compiling /dashboard/admin/cost-assistant ...
+ ✓ Compiled /dashboard/admin/cost-assistant in 886ms (4390 modules)
+ POST /dashboard/admin/cost-assistant 200 in 76ms
+ POST /dashboard/admin/cost-assistant 200 in 20ms
+ ○ Compiling /dashboard/admin/import ...
+ ✓ Compiled /dashboard/admin/import in 3.6s (4408 modules)
+ POST /dashboard/admin/import 200 in 179ms
+ POST /dashboard/admin/import 200 in 20ms
+ POST /dashboard/admin/import 200 in 36ms
+ POST /dashboard/admin/import 200 in 16ms
+ POST /dashboard/admin/import 200 in 83ms
+ POST /dashboard/admin/import 200 in 33ms
+ ○ Compiling /dashboard/admin/maintenance ...
+ ✓ Compiled /dashboard/admin/maintenance in 1605ms (4425 modules)
+ POST /dashboard/admin/maintenance 200 in 64ms
+ POST /dashboard/admin/maintenance 200 in 13ms
+ POST /dashboard/admin/maintenance 200 in 29ms
+ POST /dashboard/admin/maintenance 200 in 12ms
+ POST /dashboard/admin/maintenance 200 in 33ms
+ POST /dashboard/admin/maintenance 200 in 36ms
+ ○ Compiling /dashboard/admin/api ...
+ ✓ Compiled /dashboard/admin/api in 987ms (4270 modules)
+ POST /dashboard/admin/api 200 in 71ms
+ POST /dashboard/admin/api 200 in 15ms
+ POST /dashboard/admin/api 200 in 41ms
+ POST /dashboard/admin/api 200 in 34ms
+ ○ Compiling /dashboard/admin/planner ...
+ ✓ Compiled /dashboard/admin/planner in 929ms (4287 modules)
+ POST /dashboard/admin/planner 200 in 42ms
+ POST /dashboard/admin/planner 200 in 27ms
+ ○ Compiling /dashboard/admin/requests ...
+ ✓ Compiled /dashboard/admin/requests in 1057ms (4294 modules)
+ POST /dashboard/admin/requests 200 in 68ms
+ POST /dashboard/admin/requests 200 in 24ms
+ ○ Compiling /dashboard/admin/warehouse ...
+ ✓ Compiled /dashboard/admin/warehouse in 904ms (4300 modules)
+Error during warehouse migrations: SqliteError: no such table: inventory_units
+    at Database.exec (C:\inetpub\wwwroot\clic-tools\node_modules\better-sqlite3\lib\methods\wrappers.js:9:14)
+    at runWarehouseMigrations (webpack-internal:///(action-browser)/./src/modules/warehouse/lib/db.ts:190:68)
+    at runMigrations (webpack-internal:///(action-browser)/./src/modules/core/lib/db.ts:234:19)
+    at connectDb (webpack-internal:///(action-browser)/./src/modules/core/lib/db.ts:301:15)
+    at getWarehouseSettings (webpack-internal:///(action-browser)/./src/modules/warehouse/lib/db.ts:200:85)
+    at endpoint (webpack-internal:///(action-browser)/./node_modules/next/dist/build/webpack/loaders/next-flight-action-entry-loader.js?actions=%5B%5B%22C%3A%5C%5Cinetpub%5C%5Cwwwroot%5C%5Cclic-tools%5C%5Csrc%5C%5Cmodules%5C%5Ccore%5C%5Clib%5C%5Clogger.ts%22%2C%5B%22logWarn%22%2C%22logInfo%22%2C%22getLogs%22%2C%22logError%22%2C%22clearLogs%22%5D%5D%2C%5B%22C%3A%5C%5Cinetpub%5C%5Cwwwroot%5C%5Cclic-tools%5C%5Csrc%5C%5Cmodules%5C%5Ccore%5C%5Clib%5C%5Cauth.ts%22%2C%5B%22getAllUsersForReport%22%2C%22getAllUsers%22%2C%22saveAllUsers%22%2C%22getCurrentUser%22%2C%22sendPasswordRecoveryEmail%22%2C%22login%22%2C%22comparePasswords%22%2C%22getInitialAuthData%22%2C%22logout%22%2C%22addUser%22%2C%22hasPermission%22%5D%5D%2C%5B%22C%3A%5C%5Cinetpub%5C%5Cwwwroot%5C%5Cclic-tools%5C%5Csrc%5C%5Cmodules%5C%5Ccore%5C%5Clib%5C%5Csuggestions-actions.ts%22%2C%5B%22deleteSuggestion%22%2C%22getUnreadSuggestionsCount%22%2C%22getSuggestions%22%2C%22addSuggestion%22%2C%22markSuggestionAsRead%22%2C%22getUnreadSuggestions%22%5D%5D%2C%5B%22C%3A%5C%5Cinetpub%5C%5Cwwwroot%5C%5Cclic-tools%5C%5Csrc%5C%5Cmodules%5C%5Ccore%5C%5Clib%5C%5Capi-actions.ts%22%2C%5B%22getEmailSettings%22%2C%22getApiSettings%22%2C%22getExchangeRate%22%2C%22getExemptionStatus%22%5D%5D%2C%5B%22C%3A%5C%5Cinetpub%5C%5Cwwwroot%5C%5Cclic-tools%5C%5Csrc%5C%5Cmodules%5C%5Ccore%5C%5Clib%5C%5Cnotifications-actions.ts%22%2C%5B%22markNotificationAsRead%22%2C%22executeNotificationAction%22%2C%22createNotification%22%2C%22createNotificationForPermission%22%2C%22getNotificationsForUser%22%2C%22markAllNotificationsAsRead%22%5D%5D%2C%5B%22C%3A%5C%5Cinetpub%5C%5Cwwwroot%5C%5Cclic-tools%5C%5Csrc%5C%5Cmodules%5C%5Cwarehouse%5C%5Clib%5C%5Cdb.ts%22%2C%5B%22getInventoryUnits%22%2C%22deleteInventoryUnit%22%2C%22forceReleaseLock%22%2C%22unassignItemFromLocation%22%2C%22updateLocation%22%2C%22getWarehouseData%22%2C%22saveWarehouseSettings%22%2C%22getAllItemLocations%22%2C%22updateInventory%22%2C%22initializeWarehouseDb%22%2C%22lockEntity%22%2C%22getChildLocations%22%2C%22getInventoryForItem%22%2C%22addInventoryUnit%22%2C%22runWarehouseMigrations%22%2C%22getLocations%22%2C%22getInventoryUnitById%22%2C%22getInventory%22%2C%22getSelectableLocations%22%2C%22getItemLocations%22%2C%22getMovements%22%2C%22addLocation%22%2C%22deleteLocation%22%2C%22addBulkLocations%22%2C%22getWarehouseSettings%22%2C%22releaseLock%22%2C%22assignItemToLocation%22%2C%22updateInventoryUnitLocation%22%2C%22getActiveLocks%22%2C%22logMovement%22%5D%5D%2C%5B%22C%3A%5C%5Cinetpub%5C%5Cwwwroot%5C%5Cclic-tools%5C%5Csrc%5C%5Cmodules%5C%5Ccore%5C%5Clib%5C%5Cdb.ts%22%2C%5B%22getCurrentVersion%22%2C%22getAllErpPurchaseOrderLines%22%2C%22saveAllExemptions%22%2C%22deleteQuoteDraft%22%2C%22saveAllSuppliers%22%2C%22getApiSettings%22%2C%22runDatabaseAudit%22%2C%22saveSqlConfig%22%2C%22getAllExemptions%22%2C%22factoryReset%22%2C%22clearLogs%22%2C%22saveUserPreferences%22%2C%22getCabysCatalog%22%2C%22getCompanySettings%22%2C%22saveAllErpOrderHeaders%22%2C%22getActiveWizardSession%22%2C%22saveStockSettings%22%2C%22importAllDataFromFiles%22%2C%22getImportQueries%22%2C%22getUserCount%22%2C%22saveApiSettings%22%2C%22connectDb%22%2C%22saveAllErpOrderLines%22%2C%22getUserPreferences%22%2C%22saveWizardSession%22%2C%22getNotifications%22%2C%22createNotification%22%2C%22getAllSuppliers%22%2C%22saveImportQueries%22%2C%22initializeMainDatabase%22%2C%22getAllErpPurchaseOrderHeaders%22%2C%22getAllCustomers%22%2C%22getNotificationById%22%2C%22listAllUpdateBackups%22%2C%22deleteNotificationById%22%2C%22saveAllProducts%22%2C%22getUnreadSuggestions%22%2C%22markNotificationsAsRead%22%2C%22backupAllForUpdate%22%2C%22resetDefaultRoles%22%2C%22getSuggestions%22%2C%22saveAllStock%22%2C%22clearWizardSession%22%2C%22getAllQuoteDrafts%22%2C%22saveAllErpPurchaseOrderHeaders%22%2C%22saveAllErpPurchaseOrderLines%22%2C%22restoreDatabase%22%2C%22saveAllRoles%22%2C%22getStockSettings%22%2C%22getAllProducts%22%2C%22saveAllCustomers%22%2C%22markSuggestionAsRead%22%2C%22testSqlConnection%22%2C%22runSingleModuleMigration%22%2C%22addLog%22%2C%22getAllStock%22%2C%22saveQuoteDraft%22%2C%22getExemptionLaws%22%2C%22getDbModules%22%2C%22confirmPlannerModification%22%2C%22restoreAllFromUpdateBackup%22%2C%22getLogs%22%2C%22getUnreadSuggestionsCount%22%2C%22saveCompanySettings%22%2C%22importData%22%2C%22deleteSuggestion%22%2C%22runMainDbMigrations%22%2C%22getAllRoles%22%2C%22saveExemptionLaws%22%2C%22deleteOldUpdateBackups%22%2C%22importDataFromFile%22%5D%5D%2C%5B%22C%3A%5C%5Cinetpub%5C%5Cwwwroot%5C%5Cclic-tools%5C%5Csrc%5C%5Cmodules%5C%5Ccore%5C%5Clib%5C%5Cactions.ts%22%2C%5B%22syncAllData%22%2C%22shutdownServer%22%2C%22cleanupAllExportFiles%22%5D%5D%5D&__client_imported__=true!:143:17)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:40:286
+    at async rk (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:38:8297)
+    at async ne (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:42:1256)
+    at async doRender (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\base-server.js:1427:30)
+    at async cacheEntry.responseCache.get.routeKind (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\base-server.js:1588:28)
+    at async DevServer.renderToResponseWithComponentsImpl (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\base-server.js:1496:28)
+    at async DevServer.renderPageComponent (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\base-server.js:1924:24)
+    at async DevServer.renderToResponseImpl (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\base-server.js:1962:32)
+    at async DevServer.pipeImpl (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\base-server.js:922:25)
+    at async NextNodeServer.handleCatchallRenderRequest (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\next-server.js:272:17)
+    at async DevServer.handleRequestImpl (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\base-server.js:818:17)
+    at async C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\dev\next-dev-server.js:339:20
+    at async Span.traceAsyncFn (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\trace\trace.js:154:20)
+    at async DevServer.handleRequest (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\dev\next-dev-server.js:336:24)
+    at async invokeRender (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\lib\router-server.js:179:21)
+    at async handleRequest (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\lib\router-server.js:359:24)
+    at async requestHandlerImpl (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\lib\router-server.js:383:13)
+    at async Server.requestListener (C:\inetpub\wwwroot\clic-tools\node_modules\next\dist\server\lib\start-server.js:141:13) {
+  code: 'SQLITE_ERROR'
+}
+ POST /dashboard/admin/warehouse 200 in 73ms
+ POST /dashboard/admin/warehouse 200 in 46ms
+ POST /dashboard/admin/warehouse 200 in 29ms
+ POST /dashboard/admin/warehouse 200 in 34ms
+ ○ Compiling /dashboard/admin/logs ...
+ ✓ Compiled /dashboard/admin/logs in 1142ms (4311 modules)
+ POST /dashboard/admin/logs 200 in 59ms
+ POST /dashboard/admin/logs 200 in 41ms
+ POST /dashboard/admin/logs 200 in 28ms
+ POST /dashboard/admin/logs 200 in 26ms
+ POST /dashboard/admin/logs 200 in 31ms
+ POST /dashboard/admin/logs 200 in 16ms
+ POST /dashboard/admin/logs 200 in 43ms
+ POST /dashboard 200 in 35ms
+ POST /dashboard 200 in 23ms
+ POST /dashboard 200 in 20ms

@@ -25,11 +25,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useDropzone } from "react-dropzone";
 import { Camera, Save } from "lucide-react";
 import { useRouter } from "next/navigation";
-
-const getInitials = (name: string) => {
-    if (!name) return "CL";
-    return name.split(" ").map((n) => n[0]).join("").substring(0, 2).toUpperCase();
-};
+import { getInitials } from "@/lib/utils";
 
 // --- Helper Functions for Time Conversion ---
 
