@@ -27,8 +27,9 @@ export default function WarehouseDashboardPage() {
         return warehouseTools.filter(tool => {
             switch (tool.id) {
                 case 'warehouse-search':
+                    return hasPermission('warehouse:search:full');
                 case 'warehouse-search-simple':
-                    return hasPermission('warehouse:access');
+                    return hasPermission('warehouse:search:simple');
                 case 'receiving-wizard':
                     return hasPermission('warehouse:receiving:create');
                 case 'population-wizard':
@@ -44,7 +45,8 @@ export default function WarehouseDashboardPage() {
                 case 'lock-management':
                     return hasPermission('warehouse:locks:manage');
                 default:
-                    return false;
+                    // Fallback for general access if specific permission is not defined for a new tool
+                    return hasPermission('warehouse:access');
             }
         });
     }, [isAuthorized, hasPermission]);
