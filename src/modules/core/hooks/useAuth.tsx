@@ -37,7 +37,7 @@ interface AuthContextType {
   unreadNotificationsCount: number;
   fetchUnreadNotifications: () => Promise<void>;
   refreshAuth: () => Promise<void>;
-  refreshAuthAndRedirect: (path?: string) => Promise<void>;
+  redirectAfterLogin: (path?: string) => void;
   logout: () => void;
   refreshExchangeRate: () => Promise<void>;
   setCompanyData: (data: Company) => void;
@@ -104,6 +104,7 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
   }, []);
 
   const loadAuthData = useCallback(async () => {
+    setIsReady(false);
     try {
       const currentUser = await getCurrentUserClient();
       
@@ -148,21 +149,19 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
       setIsReady(true);
     }
   }, []);
-
-  const refreshAuthAndRedirect = async (path?: string) => {
-    setIsReady(false);
-    await loadAuthData(); // This reloads all auth context data
-    const redirectUrl = sessionStorage.getItem(REDIRECT_URL_KEY);
+  
+  const redirectAfterLogin = (path?: string) => {
+    const redirectUrlKey = 'redirectUrl';
+    const redirectUrl = sessionStorage.getItem(redirectUrlKey);
     
-    // Clear the redirect URL from session storage after using it
     if (redirectUrl) {
-        sessionStorage.removeItem(REDIRECT_URL_KEY);
+        sessionStorage.removeItem(redirectUrlKey);
     }
     
     // Prioritize the redirect URL from session storage, then the provided path, then default to dashboard.
     router.push(redirectUrl || path || '/dashboard');
   };
-  
+
   const handleLogout = async () => {
     await clientLogout();
     setIsReady(false);
@@ -209,7 +208,7 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
     unreadNotificationsCount,
     fetchUnreadNotifications,
     refreshAuth: loadAuthData,
-    refreshAuthAndRedirect,
+    redirectAfterLogin,
     logout: handleLogout,
     refreshExchangeRate: fetchExchangeRate,
     setCompanyData,

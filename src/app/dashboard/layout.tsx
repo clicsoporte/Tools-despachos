@@ -54,7 +54,7 @@ export default function DashboardLayout({
 
   // While waiting for the initial check and for all auth data to be ready,
   // show a global loading screen.
-  if (!isReady) {
+  if (!isReady || !user) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-background">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />

@@ -41,8 +41,6 @@ import { useAuth } from "@/modules/core/hooks/useAuth";
 import { SetupWizard } from "./setup-wizard";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
-const REDIRECT_URL_KEY = 'redirectUrl';
-
 interface AuthFormProps {
   clientInfo: {
     ip: string;
@@ -57,7 +55,7 @@ interface AuthFormProps {
 export function AuthForm({ clientInfo }: AuthFormProps) {
   const router = useRouter();
   const { toast } = useToast();
-  const { refreshAuthAndRedirect } = useAuth();
+  const { refreshAuth, redirectAfterLogin } = useAuth();
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
@@ -99,8 +97,9 @@ export function AuthForm({ clientInfo }: AuthFormProps) {
 
     // Store redirect URL
     const fullPath = `${pathname}${searchParams ? '?' + searchParams.toString() : ''}`;
+    const redirectUrlKey = 'redirectUrl';
     if (pathname && pathname !== '/' && fullPath !== '/?') {
-      sessionStorage.setItem(REDIRECT_URL_KEY, fullPath);
+      sessionStorage.setItem(redirectUrlKey, fullPath);
     }
   }, [pathname, searchParams]);
 
@@ -115,7 +114,9 @@ export function AuthForm({ clientInfo }: AuthFormProps) {
           setUserForPasswordChange(loginResult.user);
           setAuthStep("force_change");
         } else {
-          await refreshAuthAndRedirect();
+          // **THE FIX**: First, await the context update, then redirect.
+          await refreshAuth();
+          redirectAfterLogin();
         }
       } else {
         toast({ title: "Credenciales Incorrectas", variant: "destructive" });
