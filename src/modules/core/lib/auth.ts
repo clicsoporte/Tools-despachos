@@ -69,10 +69,13 @@ export async function login(email: string, passwordProvided: string, clientInfo:
         // Correctly exclude the password from the returned object.
         const { password: _, ...userWithoutPassword } = user;
         
+        // Use an environment variable to control the 'secure' flag. Default to false for LAN.
+        const useSecureCookie = process.env.CLIC_TOOLS_COOKIE_SECURE === 'true';
+
         // Create session cookie
         cookies().set(SESSION_COOKIE_NAME, String(user.id), {
             httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
+            secure: useSecureCookie,
             maxAge: SESSION_DURATION / 1000, // seconds
             path: '/',
         });
@@ -104,10 +107,12 @@ export async function logout(): Promise<void> {
         }
     }
     
+    const useSecureCookie = process.env.CLIC_TOOLS_COOKIE_SECURE === 'true';
+    
     // Invalidate the cookie
     cookieStore.set(SESSION_COOKIE_NAME, '', {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
+        secure: useSecureCookie,
         maxAge: 0,
         path: '/',
     });

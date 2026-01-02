@@ -11,7 +11,7 @@ import { AppSidebar } from "@/components/layout/sidebar";
 import { Header } from "@/components/layout/header";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { usePageTitle, PageTitleProvider } from "@/modules/core/hooks/usePageTitle";
-import { useAuth } from "@/modules/core/hooks/useAuth";
+import { useAuth, REDIRECT_URL_KEY } from "@/modules/core/hooks/useAuth";
 import { useEffect } from "react";
 import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -48,13 +48,17 @@ export default function DashboardLayout({
     // If the auth context is ready but there's no user, it means the session
     // is invalid (or the user logged out). Redirect to the login page.
     if (isReady && !user) {
+      const fullPath = window.location.pathname + window.location.search;
+      if (fullPath && fullPath !== "/" && fullPath !== "/?") {
+        sessionStorage.setItem(REDIRECT_URL_KEY, fullPath);
+      }
       router.replace('/');
     }
   }, [isReady, user, router]);
 
   // While waiting for the initial check and for all auth data to be ready,
   // show a global loading screen.
-  if (!isReady || !user) {
+  if (!isReady) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-background">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />

@@ -1,3 +1,4 @@
+
 /**
  * @fileoverview Client component for handling the authentication form,
  * now also responsible for determining whether to show the login form or the setup wizard.
@@ -55,7 +56,7 @@ interface AuthFormProps {
 export function AuthForm({ clientInfo }: AuthFormProps) {
   const router = useRouter();
   const { toast } = useToast();
-  const { refreshAuth, redirectAfterLogin } = useAuth();
+  const { user, isReady, refreshAuth, redirectAfterLogin } = useAuth();
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
@@ -79,29 +80,35 @@ export function AuthForm({ clientInfo }: AuthFormProps) {
   // New password state
   const [newPassword, setNewPassword] = useState("");
   const [confirmNewPassword, setConfirmNewPassword] = useState("");
+  
+  useEffect(() => {
+    // If the user is already logged in, redirect them to the dashboard.
+    if (isReady && user) {
+      redirectAfterLogin("/dashboard");
+    }
+  }, [isReady, user, redirectAfterLogin]);
 
   useEffect(() => {
     async function checkUserStatus() {
-      try {
-        const { hasUsers, companyName } = await getInitialPageData();
-        setHasUsers(hasUsers);
-        setCompanyName(companyName);
-      } catch (err: any) {
-        console.error("Critical error on initial page data fetch:", err);
-        setError("No se pudo conectar con la base de datos. Revisa la consola del servidor.");
-      } finally {
+      // Only run this check if the user is not logged in.
+      if (!user) {
+        try {
+          const { hasUsers, companyName } = await getInitialPageData();
+          setHasUsers(hasUsers);
+          setCompanyName(companyName);
+        } catch (err: any) {
+          console.error("Critical error on initial page data fetch:", err);
+          setError("No se pudo conectar con la base de datos. Revisa la consola del servidor.");
+        } finally {
+          setIsLoading(false);
+        }
+      } else {
+        // If user is already loaded, we don't need to fetch initial data.
         setIsLoading(false);
       }
     }
     checkUserStatus();
-
-    // Store redirect URL
-    const fullPath = `${pathname}${searchParams ? '?' + searchParams.toString() : ''}`;
-    const redirectUrlKey = 'redirectUrl';
-    if (pathname && pathname !== '/' && fullPath !== '/?') {
-      sessionStorage.setItem(redirectUrlKey, fullPath);
-    }
-  }, [pathname, searchParams]);
+  }, [user]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -115,11 +122,11 @@ export function AuthForm({ clientInfo }: AuthFormProps) {
           setAuthStep("force_change");
         } else {
           // Pass the user object directly to refreshAuth to avoid race conditions
-          const user = await refreshAuth(loginResult.user);
-          if (user) {
+          const refreshedUser = await refreshAuth(loginResult.user);
+          if (refreshedUser) {
             redirectAfterLogin();
           } else {
-            throw new Error("La sesión no se pudo establecer después del login.");
+             throw new Error("La sesión no se pudo establecer después del login.");
           }
         }
       } else {
@@ -204,7 +211,7 @@ export function AuthForm({ clientInfo }: AuthFormProps) {
   };
 
   const renderContent = () => {
-    if (isLoading) return <div className="flex justify-center items-center h-48"><Loader2 className="h-10 w-10 animate-spin text-primary" /></div>;
+    if (isLoading || (isReady && user)) return <div className="flex justify-center items-center h-48"><Loader2 className="h-10 w-10 animate-spin text-primary" /></div>;
     if (error) return <Alert variant="destructive"><AlertTriangle className="h-4 w-4" /><CardTitle>Error Crítico</CardTitle><AlertDescription>{error}</AlertDescription></Alert>;
     
     if (hasUsers === false) return <SetupWizard clientInfo={clientInfo} />;

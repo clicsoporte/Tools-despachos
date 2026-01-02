@@ -1,3 +1,4 @@
+
 /**
  * @fileoverview Page for the Cost Assistant module.
  * Allows users to upload purchase invoice XMLs and calculate selling prices.

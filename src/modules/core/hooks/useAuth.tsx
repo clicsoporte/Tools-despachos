@@ -1,3 +1,4 @@
+
 /**
  * @fileoverview This file defines a central authentication context and hook.
  * It provides a single source of truth for the current user, their role, companyData,
@@ -13,7 +14,12 @@ import { getUnreadSuggestionsCount as getUnreadSuggestionsCountAction } from "@/
 import { getExchangeRate } from "../lib/api-actions";
 import { getNotificationsForUser } from "../lib/notifications-actions";
 
-const REDIRECT_URL_KEY = 'redirectUrl';
+export const REDIRECT_URL_KEY = 'redirectUrl';
+
+const safeInternalPath = (value: string | null): string | null => {
+  if (!value) return null;
+  return value.startsWith("/") ? value : null;
+};
 
 /**
  * Defines the shape of the authentication context's value.
@@ -154,15 +160,11 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
   }, []);
   
   const redirectAfterLogin = (path?: string) => {
-    const redirectUrlKey = 'redirectUrl';
-    const redirectUrl = sessionStorage.getItem(redirectUrlKey);
+    const stored = safeInternalPath(sessionStorage.getItem(REDIRECT_URL_KEY));
+    sessionStorage.removeItem(REDIRECT_URL_KEY);
     
-    if (redirectUrl) {
-        sessionStorage.removeItem(redirectUrlKey);
-    }
-    
-    // Prioritize the redirect URL from session storage, then the provided path, then default to dashboard.
-    router.push(redirectUrl || path || '/dashboard');
+    // Use router.replace to prevent the login page from being in the browser history
+    router.replace(stored ?? path ?? "/dashboard");
   };
 
   const handleLogout = async () => {
