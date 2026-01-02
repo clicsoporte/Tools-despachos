@@ -282,28 +282,28 @@ export default function AssignItemPage() {
             const descriptionLines = doc.splitTextToSize(product.description, pageWidth - margin * 2);
             doc.text(descriptionLines, pageWidth / 2, currentY + 40, { align: "center" });
     
-            const bottomY = pageHeight - margin;
+            const bottomY = pageHeight - margin - 50;
             
             if (client) {
               doc.setFontSize(24);
               doc.setFont("Helvetica", "bold");
-              doc.text("Cliente:", margin, bottomY - 70);
+              doc.text("Cliente:", margin, bottomY - 30);
               doc.setFont("Helvetica", "normal");
-              doc.text(client.name, margin + 80, bottomY - 70);
+              doc.text(client.name, margin + 80, bottomY - 30);
             }
             
             doc.setFontSize(28);
             doc.setFont("Helvetica", "bold");
-            doc.text("Ubicación:", margin, bottomY - 20);
+            doc.text("Ubicación:", margin, bottomY);
             doc.setFont("Helvetica", "normal");
             doc.setFontSize(36);
             
             const locationLines = doc.splitTextToSize(locationString, pageWidth - (margin * 2) - 100);
-            doc.text(locationLines, margin, bottomY + 20);
+            doc.text(locationLines, margin, bottomY + 30);
     
             doc.setFontSize(9);
             doc.setTextColor(150);
-            doc.text(`Generado: ${format(new Date(), 'dd/MM/yyyy HH:mm')}`, pageWidth - margin, bottomY, { align: "right" });
+            doc.text(`Generado: ${format(new Date(), 'dd/MM/yyyy HH:mm')}`, pageWidth - margin, pageHeight - margin);
     
             doc.save(`etiqueta_rack_${product.id}.pdf`);
         } catch (error: any) {
