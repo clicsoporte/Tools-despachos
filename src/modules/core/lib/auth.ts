@@ -329,7 +329,6 @@ export async function getCurrentUser(): Promise<User | null> {
         return null;
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { password, ...userWithoutPassword } = user;
     return userWithoutPassword as User;
 }
