@@ -1,0 +1,96 @@
+# Análisis de Diseño: Módulo de Tareas Programadas (Cron Jobs) con Telegram
+
+Este documento resume la lluvia de ideas sobre cómo implementar un sistema de tareas automatizadas en Clic-Tools.
+
+## 1. Objetivo Principal
+
+El objetivo es permitir que la aplicación ejecute tareas de forma autónoma a intervalos regulares o en horarios específicos, sin necesidad de intervención del usuario. Esto permitiría funcionalidades como:
+
+-   Sincronización automática de la base de datos con el ERP (ej. todas las noches).
+-   Envío de reportes diarios por correo electrónico a supervisores.
+-   Envío de notificaciones proactivas a un canal de Telegram.
+-   Tareas de limpieza de datos antiguos.
+
+## 2. Enfoque Arquitectónico Principal: Acciones Predefinidas
+
+La arquitectura propuesta es la más segura, mantenible y compatible con el ecosistema de Next.js. Se basa en un sistema de "Acciones Predefinidas" en lugar de permitir la ejecución de código arbitrario.
+
+### 2.1. Desafío del Código Dinámico (Enfoque Descartado)
+
+La idea inicial de permitir a un administrador "pegar código" en la interfaz de usuario se descarta por los siguientes motivos críticos:
+
+-   **Incompatibilidad con el Build de Next.js:** El servidor de producción ejecuta código compilado de la carpeta `.next/`. Modificar un archivo en `src/` no tendría efecto sin un `build` y un reinicio completo de la aplicación, lo cual es inviable en producción.
+-   **Riesgo de Seguridad Catastrófico:** Permitir la ejecución de código desde una base de datos o un archivo modificable por la UI (`eval()`) abriría una vulnerabilidad de Ejecución Remota de Código (RCE), incluso en una LAN.
+-   **Fragilidad y Mantenimiento:** El código almacenado fuera del control de versiones (`git`) es imposible de depurar, validar con TypeScript o mantener a largo plazo.
+
+### 2.2. Cómo Funciona el Modelo de "Acciones Predefinidas"
+
+1.  **Instalación de `node-cron`:** Se añadiría la dependencia `node-cron` al `package.json` para manejar la programación.
+
+2.  **Registro Central de Acciones:**
+    -   Se crearía un archivo, por ejemplo `src/lib/task-registry.ts`.
+    -   En este archivo, los desarrolladores registrarían todas las funciones que pueden ser automatizadas. Cada registro tendría un ID único, un nombre descriptivo y la función de servidor a ejecutar.
+
+    ```typescript
+    // Ejemplo de src/lib/task-registry.ts
+    import { syncAllData } from '@/modules/core/lib/actions';
+    import { sendDailyProductionSummaryToTelegram } from '@/modules/analytics/lib/actions';
+
+    export const availableTasks = {
+      'sync-erp': {
+        name: 'Sincronizar Datos Completos del ERP',
+        description: 'Ejecuta la importación de clientes, productos, etc.',
+        action: syncAllData,
+      },
+      'send-prod-summary-telegram': {
+        name: 'Enviar Resumen de Producción a Telegram',
+        description: 'Envía el resumen de producción al canal de Telegram.',
+        action: sendDailyProductionSummaryToTelegram,
+      },
+    };
+    ```
+
+3.  **Módulo de Administración de Tareas (UI):**
+    -   Un administrador podría crear una "Nueva Tarea".
+    -   En el formulario, seleccionaría la **"Acción a Ejecutar"** de un menú desplegable (poblado desde `availableTasks`).
+    -   Ingresaría la **"Periodicidad"** usando la sintaxis estándar de cron (ej. `0 2 * * *` para "a las 2 AM todos los días").
+    -   Podría activar o desactivar la tarea.
+    -   Esta configuración (ID de la acción, horario, estado) se guardaría en la base de datos.
+
+4.  **El Programador Dinámico (`cron-jobs.ts`):**
+    -   Un script principal, que se ejecutaría junto con el servidor de Next.js, haría lo siguiente al arrancar:
+        1.  Consultar la base de datos para obtener todas las tareas activas.
+        2.  Para cada tarea, buscaría su acción correspondiente en el `task-registry.ts` usando el ID guardado.
+        3.  Crearía dinámicamente una instancia de `cron.schedule()` con el horario y la función recuperados.
+
+## 3. Extensión Propuesta: Integración con Telegram
+
+Esta arquitectura permite añadir nuevas capacidades de notificación de forma elegante.
+
+### 3.1. Requisitos de Configuración
+
+1.  **Bot de Telegram:** Se debe crear un bot a través de "BotFather" en Telegram para obtener un **Token de API**.
+2.  **Chat ID:** Se debe obtener el ID del grupo o canal de Telegram donde el bot enviará los mensajes.
+
+### 3.2. Implementación Técnica
+
+1.  **Instalar Librería:** Añadir `node-telegram-bot-api` a las dependencias del proyecto.
+
+2.  **Guardar Credenciales:** Crear una nueva sección en **Administración > Configuración** para que el admin guarde de forma segura el Token del Bot y el Chat ID en la base de datos.
+
+3.  **Crear un Servicio de Telegram:**
+    -   Crear un archivo `src/modules/core/lib/telegram-service.ts`.
+    -   Este contendría una función `sendTelegramMessage(message: string)` que:
+        -   Lee las credenciales de la base de datos.
+        -   Si están configuradas, instancia el bot y envía el mensaje usando `parse_mode: 'HTML'` para permitir formato básico (negrita, etc.).
+
+4.  **Crear y Registrar la Acción:**
+    -   Crear una nueva función de servidor (ej. `sendDailyProductionSummaryToTelegram`) que obtenga los datos necesarios, los formatee como un mensaje HTML simple y llame a `sendTelegramMessage`.
+    -   Registrar esta nueva función en el `task-registry.ts` como se mostró en el ejemplo anterior.
+
+### 3.3. Ventajas del Modelo Combinado
+
+-   **Seguridad:** Cero exposición de código ejecutable a la UI. El administrador solo elige entre acciones seguras y predefinidas.
+-   **Flexibilidad:** El administrador tiene control total sobre QUÉ se ejecuta y CUÁNDO, sin necesidad de un despliegue.
+-   **Mantenibilidad:** Para añadir nuevas tareas (ej. "Enviar Correo de Alerta de Stock Bajo"), solo se necesita crear la función y registrarla. El resto del sistema la soporta automáticamente.
+-   **Robustez:** Todo el código de las tareas vive en el repositorio, se beneficia de TypeScript, control de versiones y es fácilmente depurable.
