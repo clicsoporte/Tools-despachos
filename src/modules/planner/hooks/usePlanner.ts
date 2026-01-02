@@ -201,7 +201,7 @@ export const usePlanner = () => {
                 updateState({ isLoading: false, isRefreshing: false });
             }
         }
-        return () => { isMounted = false; };
+         return () => { isMounted = false; };
     }, [toast, updateState, state.currentPage, state.pageSize, state.viewingArchived, debouncedSearchTerm, state.statusFilter, state.classificationFilter, state.showOnlyMyOrders, state.dateFilter, currentUser?.name]);
     
     useEffect(() => {
@@ -537,7 +537,7 @@ export const usePlanner = () => {
                     productId: product.id, 
                     productDescription: product.description || '', 
                     inventoryErp: stock,
-                    inventory: stock,
+                    inventory: state.newOrder.inventory || stock,
                 };
 
                 const existingActive = state.orders.filter(o => o.productId === product.id && !state.viewingArchived);
@@ -836,7 +836,7 @@ export const usePlanner = () => {
         , [products]),
         filteredOrders: state.orders,
         stockLevels: stockLevels,
-        totalItems: state.totalItems,
+        totalItems: state.viewingArchived ? state.totalArchivedCount : state.totalActiveCount,
         totalActiveCount: state.totalActiveCount,
         totalArchivedCount: state.totalArchivedCount,
         availableColumns,

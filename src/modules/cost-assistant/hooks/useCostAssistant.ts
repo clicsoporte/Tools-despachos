@@ -45,6 +45,7 @@ type ExportStatus = 'idle' | 'generating' | 'ready';
 
 const initialState = {
     isProcessing: false,
+    isSubmitting: false,
     lines: [] as CostAssistantLine[],
     processedInvoices: [] as ProcessedInvoiceInfo[],
     drafts: [] as CostAnalysisDraft[],
@@ -273,11 +274,16 @@ export const useCostAssistant = () => {
             return;
         }
         
+        setState(prevState => ({ ...prevState, isSubmitting: true }));
+
         const settings = await getCostAssistantSettings(user.id);
         const defaultName = `${settings.draftPrefix || 'AC-'}${String(settings.nextDraftNumber || 1).padStart(5, '0')} - Borrador de Costos`;
         const draftName = prompt("Asigna un nombre a este borrador:", defaultName);
 
-        if (!draftName) return; // User cancelled prompt
+        if (!draftName) {
+            setState(prevState => ({ ...prevState, isSubmitting: false }));
+            return; // User cancelled prompt
+        }
 
         const newDraft: Omit<CostAnalysisDraft, 'id' | 'createdAt'> = {
             userId: user.id,
@@ -288,7 +294,6 @@ export const useCostAssistant = () => {
                 otherCosts: state.otherCosts,
             },
             processedInvoices: state.processedInvoices,
-            // New field to save
             discountHandling: state.discountHandling,
         };
 
@@ -299,6 +304,8 @@ export const useCostAssistant = () => {
         } catch (error: any) {
             logError("Failed to save draft", { error: error.message });
             toast({ title: "Error", description: "No se pudo guardar el borrador.", variant: "destructive" });
+        } finally {
+            setState(prevState => ({ ...prevState, isSubmitting: false }));
         }
     };
     
