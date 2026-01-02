@@ -116,7 +116,7 @@ export default function AssignItemPage() {
         if (exactMatch) {
             results.push({ value: exactMatch.id, label: `[${exactMatch.id}] ${exactMatch.description}` });
         }
-        results.push(...partialMatches.map(p => ({ value: p.id, label: `[${exactMatch.id}] ${exactMatch.description}` })));
+        results.push(...partialMatches.map(p => ({ value: p.id, label: `[${p.id}] ${p.description}` })));
         
         return results;
     }, [authProducts, debouncedProductSearch]);
@@ -270,7 +270,9 @@ export default function AssignItemPage() {
     
             doc.addImage(qrCodeDataUrl, 'PNG', margin, margin, 100, 100);
             
+            doc.setFont("Helvetica", "normal");
             doc.setFontSize(9);
+            doc.setTextColor(0); // Set text to black
             doc.text(`Generado: ${format(new Date(), 'dd/MM/yyyy HH:mm')}`, pageWidth - margin, margin, { align: 'right' });
             
             doc.setFont("Helvetica", "bold");
