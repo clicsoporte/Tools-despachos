@@ -137,8 +137,7 @@ async function getAllUsersWithPasswords(): Promise<User[]> {
 export async function getAllUsers(): Promise<User[]> {
     const users = await getAllUsersWithPasswords();
     return users.map(u => {
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { password, ...userWithoutPassword } = u;
+        const { password: _, ...userWithoutPassword } = u;
         return userWithoutPassword;
     }) as User[];
 }
@@ -155,8 +154,7 @@ export async function getAllUsersForReport(): Promise<User[]> {
         const users = stmt.all() as User[];
         // Ensure passwords are never sent to the client.
         return users.map(u => {
-            // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            const { password, ...userWithoutPassword } = u;
+            const { password: _, ...userWithoutPassword } = u;
             return userWithoutPassword;
         }) as User[];
     } catch (error: any) {
@@ -213,8 +211,7 @@ export async function addUser(userData: Omit<User, 'id' | 'avatar' | 'recentActi
     forcePasswordChange: userToCreate.forcePasswordChange ? 1 : 0,
   });
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { password, ...userWithoutPassword } = userToCreate;
+  const { password: _, ...userWithoutPassword } = userToCreate;
   await logInfo(`Admin added a new user: ${userToCreate.name}`, { role: userToCreate.role });
   return userWithoutPassword as User;
 }
@@ -341,8 +338,7 @@ export async function getCurrentUser(): Promise<User | null> {
         return null;
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { password, ...userWithoutPassword } = user;
+    const { password: _, ...userWithoutPassword } = user;
     return userWithoutPassword as User;
 }
 
