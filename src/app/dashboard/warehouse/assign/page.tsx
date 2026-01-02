@@ -271,11 +271,8 @@ export default function AssignItemPage() {
             doc.addImage(qrCodeDataUrl, 'PNG', margin, margin, 100, 100);
             
             doc.setFontSize(9);
-            doc.setTextColor(150);
             doc.text(`Generado: ${format(new Date(), 'dd/MM/yyyy HH:mm')}`, pageWidth - margin, margin, { align: 'right' });
             
-            doc.setTextColor(0); // Reset color to black
-
             doc.setFont("Helvetica", "bold");
             doc.setFontSize(150);
             const productCodeLines = doc.splitTextToSize(product.id, pageWidth - margin * 2);
