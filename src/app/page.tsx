@@ -17,6 +17,11 @@ import { Network } from "lucide-react";
 import React from "react";
 import { headers } from "next/headers";
 
+// This is the critical fix for the production cache issue.
+// It forces Next.js to re-evaluate this page on every request, ensuring
+// that the authentication state (which depends on cookies) is always fresh.
+export const dynamic = 'force-dynamic';
+
 export default function InitialPage() {
   // Extracting client info on the server side.
   // Note: In a typical server environment behind proxies, you'd need to check

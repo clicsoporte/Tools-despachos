@@ -30,7 +30,29 @@ export default function DashboardPage() {
   const visibleTools = useMemo(() => {
     if (!isReady) return [];
     
-    let tools: Tool[] = [...mainTools];
+    // Filter the main tools based on user permissions first
+    const permittedMainTools = mainTools.filter(tool => {
+        switch (tool.id) {
+            case 'quoter':
+                return hasPermission('quotes:create');
+            case 'purchase-request':
+                return hasPermission('requests:read');
+            case 'planner':
+                return hasPermission('planner:read');
+            case 'cost-assistant':
+                return hasPermission('cost-assistant:access');
+            case 'warehouse':
+                return hasPermission('warehouse:access');
+            case 'hacienda-query':
+                return hasPermission('hacienda:query');
+            case 'help':
+                return true; // Help is always visible
+            default:
+                return hasPermission(tool.id); // Default case for other tools
+        }
+    });
+
+    let tools: Tool[] = [...permittedMainTools];
 
     if (hasPermission('analytics:read')) {
       tools.push({
