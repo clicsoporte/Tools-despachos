@@ -1,4 +1,5 @@
 
+
 /**
  * @fileoverview Server-side authentication and user management functions.
  * These functions interact directly with the database to handle user data.
@@ -15,6 +16,12 @@ import { logInfo, logWarn, logError } from './logger';
 import { headers, cookies } from 'next/headers';
 import { getExchangeRate, getEmailSettings } from './api-actions';
 import { NewUserSchema, UserSchema } from './auth-schemas';
+import { confirmModification as confirmPlannerModificationServer } from '../../planner/lib/db';
+import { initializePlannerDb, runPlannerMigrations } from '../../planner/lib/db';
+import { initializeRequestsDb, runRequestMigrations } from '../../requests/lib/db';
+import { initializeWarehouseDb, runWarehouseMigrations } from '../../warehouse/lib/db';
+import { initializeCostAssistantDb, runCostAssistantMigrations } from '../../cost-assistant/lib/db';
+import { revalidatePath } from 'next/cache';
 
 const SALT_ROUNDS = 10;
 const SESSION_COOKIE_NAME = 'clic-tools-session';
@@ -130,7 +137,8 @@ async function getAllUsersWithPasswords(): Promise<User[]> {
 export async function getAllUsers(): Promise<User[]> {
     const users = await getAllUsersWithPasswords();
     return users.map(u => {
-        const { password: _, ...userWithoutPassword } = u;
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { password, ...userWithoutPassword } = u;
         return userWithoutPassword;
     }) as User[];
 }
@@ -147,7 +155,8 @@ export async function getAllUsersForReport(): Promise<User[]> {
         const users = stmt.all() as User[];
         // Ensure passwords are never sent to the client.
         return users.map(u => {
-            const { password: _, ...userWithoutPassword } = u;
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            const { password, ...userWithoutPassword } = u;
             return userWithoutPassword;
         }) as User[];
     } catch (error: any) {
@@ -204,7 +213,8 @@ export async function addUser(userData: Omit<User, 'id' | 'avatar' | 'recentActi
     forcePasswordChange: userToCreate.forcePasswordChange ? 1 : 0,
   });
 
-  const { password: _, ...userWithoutPassword } = userToCreate;
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { password, ...userWithoutPassword } = userToCreate;
   await logInfo(`Admin added a new user: ${userToCreate.name}`, { role: userToCreate.role });
   return userWithoutPassword as User;
 }
@@ -331,7 +341,8 @@ export async function getCurrentUser(): Promise<User | null> {
         return null;
     }
 
-    const { password: _, ...userWithoutPassword } = user;
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { password, ...userWithoutPassword } = user;
     return userWithoutPassword as User;
 }
 
@@ -340,6 +351,9 @@ export async function getCurrentUser(): Promise<User | null> {
  * This is a server action that aggregates data from various database functions.
  */
 export async function getInitialAuthData() {
+    // This action invalidates the cache for the entire site, ensuring fresh data on login/refresh.
+    revalidatePath('/', 'layout');
+
     const db = await connectDb();
     // Ensure all databases are initialized on first authenticated load
     const dbModules = await getDbModules();
