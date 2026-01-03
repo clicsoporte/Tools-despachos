@@ -16,7 +16,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { getWarehouseData, addInventoryUnit } from '@/modules/warehouse/lib/actions';
 import { syncAllData } from '@/modules/core/lib/actions';
 import type { WarehouseLocation, WarehouseInventoryItem, Product, StockInfo, StockSettings, ItemLocation, Customer, InventoryUnit, WarehouseSettings } from '@/modules/core/types';
-import { Search, MapPin, Package, Building, Waypoints, Box, Layers, Warehouse as WarehouseIcon, RefreshCw, Loader2, Info, User, ChevronRight, Printer, Filter, Archive } from 'lucide-react';
+import { Search, MapPin, Package, Building, Waypoints, Box, Layers, Warehouse as WarehouseIcon, RefreshCw, Loader2, Info, User, ChevronRight, Printer, Filter, Archive, FilterX } from 'lucide-react';
 import { useDebounce } from 'use-debounce';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/modules/core/hooks/use-toast';
@@ -122,6 +122,13 @@ export default function WarehouseSearchPage() {
     const [classificationFilter, setClassificationFilter] = useState<string[]>([]);
     const [warehouseFilter, setWarehouseFilter] = useState<string[]>([]);
     const [locationFilter, setLocationFilter] = useState<string[]>([]);
+    
+    const handleClearFilters = () => {
+        setSearchTerm('');
+        setClassificationFilter([]);
+        setWarehouseFilter([]);
+        setLocationFilter([]);
+    };
 
     const loadData = useCallback(async () => {
         setIsLoading(true);
@@ -170,10 +177,22 @@ export default function WarehouseSearchPage() {
         }
     };
 
+    const hasActiveFilters = useMemo(() => 
+        debouncedSearchTerm.length > 0 ||
+        classificationFilter.length > 0 ||
+        warehouseFilter.length > 0 ||
+        locationFilter.length > 0,
+        [debouncedSearchTerm, classificationFilter, warehouseFilter, locationFilter]
+    );
+
     const filteredItems = useMemo((): SearchResultItem[] => {
-        // Start with all products
+        // Do not render anything if no filters are active.
+        if (!hasActiveFilters) {
+            return [];
+        }
+
         let results: Product[] = [...products];
-    
+
         // 1. Apply global text search
         if (debouncedSearchTerm) {
             const searchLower = normalizeText(debouncedSearchTerm);
@@ -193,7 +212,7 @@ export default function WarehouseSearchPage() {
             results = results.filter(p => classificationFilter.includes(p.classification));
         }
 
-        // 3. Map to SearchResultItem and apply filters that depend on related data
+        // 3. Map to SearchResultItem and prepare for final filters
         let searchResultItems = results.map(product => {
             const productInventory = inventory.filter(inv => inv.itemId === product.id);
             const productItemLocations = itemLocations.filter(il => il.itemId === product.id);
@@ -225,10 +244,10 @@ export default function WarehouseSearchPage() {
                 item.physicalLocations.some(loc => loc.location && locationFilter.includes(String(loc.location.id)))
             );
         }
-
+        
         return searchResultItems.sort((a, b) => a.product.id.localeCompare(b.product.id));
 
-    }, [debouncedSearchTerm, products, customers, inventory, itemLocations, stock, locations, classificationFilter, warehouseFilter, locationFilter]);
+    }, [hasActiveFilters, products, itemLocations, customers, inventory, stock, locations, debouncedSearchTerm, classificationFilter, warehouseFilter, locationFilter]);
     
     const handlePrintLabel = async (product: Product, location: WarehouseLocation) => {
         if (!user || !companyData) return;
@@ -354,6 +373,9 @@ export default function WarehouseSearchPage() {
                                         onSelectedChange={setLocationFilter}
                                     />
                                     <Separator />
+                                     <Button variant="ghost" onClick={handleClearFilters} className="w-full justify-start">
+                                        <FilterX className="mr-2 h-4 w-4" />Limpiar Todos los Filtros
+                                    </Button>
                                     <Button onClick={handleRefresh} disabled={isRefreshing} className="w-full">
                                         {isRefreshing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
                                         Refrescar Datos del ERP
@@ -454,7 +476,10 @@ export default function WarehouseSearchPage() {
                         })
                     ) : (
                         <div className="text-center py-16 text-muted-foreground">
-                            {debouncedSearchTerm ? <p>No se encontraron resultados para &quot;{debouncedSearchTerm}&quot;.</p> : <p>Comienza a escribir para buscar un artículo o cliente.</p>}
+                            {hasActiveFilters 
+                                ? <p>No se encontraron resultados para los filtros aplicados.</p> 
+                                : <p>Comienza a escribir en la barra de búsqueda o usa los filtros avanzados para ver los resultados.</p>
+                            }
                         </div>
                     )}
                 </div>
@@ -462,3 +487,5 @@ export default function WarehouseSearchPage() {
         </div>
     );
 }
+
+    
