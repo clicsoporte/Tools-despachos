@@ -1,7 +1,7 @@
 ========================================
 Guía de Despliegue para Clic-Tools en IIS
 ========================================
-v2.0.0
+v2.1.0
 
 Este documento explica cómo desplegar la aplicación Clic-Tools (Next.js) en un servidor Windows utilizando Internet Information Services (IIS).
 
@@ -24,7 +24,7 @@ Pasos de Despliegue
 **Paso 1: Mover los archivos del proyecto al servidor**
 
 1.  Crea una carpeta en tu servidor donde vivirá la aplicación (ej: `C:\inetpub\wwwroot\clic-tools`).
-2.  Copia **todo el contenido del proyecto** (excepto la carpeta `node_modules`) a esta nueva carpeta. Consulta el archivo `DEPLOYMENT_GUIDE.md` para más detalles sobre qué archivos copiar.
+2.  Copia **todo el contenido del proyecto** (excepto la carpeta `node_modules` y `.next`) a esta nueva carpeta. Consulta el archivo `DEPLOYMENT_GUIDE.md` para más detalles sobre qué archivos copiar.
 
 **Paso 2: Instalar dependencias en el servidor**
 
@@ -37,11 +37,11 @@ Pasos de Despliegue
 
 **Paso 3: Construir la aplicación para producción**
 
-1.  En la misma terminal, ejecuta el comando para construir la versión optimizada de Next.js:
+1.  En la misma terminal, ejecuta el comando para construir la versión optimizada de Next.js. Si la carpeta `.next` ya existe por una compilación anterior, se recomienda borrarla primero.
     ```bash
     npm run build
     ```
-    Esto creará una carpeta `.next` con el archivo `server.js` y todo lo necesario para producción.
+    Esto creará una carpeta `.next` con la versión de producción de la aplicación.
 
 **Paso 4: Configurar el Sitio en IIS**
 
@@ -49,12 +49,12 @@ Pasos de Despliegue
 2.  En el panel de "Conexiones", haz clic derecho en "Sitios" y selecciona "Agregar sitio web".
 3.  **Nombre del sitio**: Asigna un nombre descriptivo (ej: `Clic-Tools`).
 4.  **Ruta de acceso física**: Selecciona la carpeta donde están los archivos del proyecto (ej: `C:\inetpub\wwwroot\clic-tools`).
-5.  **Enlace**: Configura el puerto en el que se ejecutará la aplicación en tu red LAN (ej: puerto 80) y el nombre de host si lo vas a usar (ej: intratool.miempresa.com).
+5.  **Enlace**: Configura el puerto en el que se ejecutará la aplicación en tu red LAN (ej: puerto 80 o 9003) y el nombre de host si lo vas a usar (ej: intratool.miempresa.com).
 6.  Haz clic en "Aceptar".
 
 **Paso 5: Copiar y Asegurar los archivos de configuración de IIS**
 
-1.  Desde la carpeta `docs/deployment/IIS_Setup/` de tu proyecto, copia el archivo `web.config` a la raíz de tu sitio en el servidor (ej: a `C:\inetpub\wwwroot\clic-tools`).
+1.  Desde la carpeta `deployment/IIS_Setup/` de tu proyecto, copia el archivo `web.config` a la raíz de tu sitio en el servidor (ej: a `C:\inetpub\wwwroot\clic-tools`).
 2.  Este archivo es crucial, ya que le dice a IIS cómo manejar las solicitudes y pasárselas a Node.js a través de `iisnode`. **Este archivo ya está optimizado para evitar reinicios inesperados al modificar las bases de datos en la carpeta `dbs/`**.
 
 --------------------

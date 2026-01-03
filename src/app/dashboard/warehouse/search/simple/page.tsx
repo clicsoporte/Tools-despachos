@@ -1,4 +1,3 @@
-
 /**
  * @fileoverview Simplified warehouse search page, optimized for mobile devices and scanners.
  * This component provides a minimal UI for warehouse workers to quickly look up items
@@ -87,7 +86,7 @@ export default function SimpleWarehouseSearchPage() {
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedItem, setSelectedItem] = useState<Product | null>(null);
 
-    const [debouncedSearchTerm] = useDebounce(searchTerm, companyData?.searchDebounceTime ?? 500);
+    const [debouncedSearchTerm] = useDebounce(searchTerm, 300); // Shorter debounce for faster scanner response
     
     const [locations, setLocations] = useState<WarehouseLocation[]>([]);
     const [inventory, setInventory] = useState<WarehouseInventoryItem[]>([]);
@@ -125,6 +124,15 @@ export default function SimpleWarehouseSearchPage() {
             const searchLower = debouncedSearchTerm.toLowerCase();
             const exactMatch = products.find(p => p.id.toLowerCase() === searchLower);
             setSelectedItem(exactMatch || null);
+            
+            // Clear input after search to prepare for next scan
+            if (exactMatch) {
+                setTimeout(() => {
+                    setSearchTerm('');
+                    inputRef.current?.focus();
+                }, 500); // A small delay to let the user see the result of their scan
+            }
+
         } else {
             setSelectedItem(null);
         }
@@ -133,11 +141,10 @@ export default function SimpleWarehouseSearchPage() {
     const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
         if (e.key === 'Enter') {
             e.preventDefault();
-            const searchLower = searchTerm.toLowerCase();
-            const exactMatch = products.find(p => p.id.toLowerCase() === searchLower);
-            setSelectedItem(exactMatch || null);
-            setSearchTerm(''); // Clear input for next scan
-            // Re-focus after state has had a chance to update
+            // The useEffect with debouncedSearchTerm will handle the logic.
+            // This just ensures enter key can also trigger it if needed,
+            // and clears the input for the next scan.
+            setSearchTerm(''); 
             setTimeout(() => inputRef.current?.focus(), 0);
         }
     };

@@ -1,6 +1,6 @@
 # Clic-Tools: Documentación Técnica y Manual de Usuario
 
-**Clic-Tools v2.0.0** es una aplicación web interna diseñada para centralizar herramientas y procesos empresariales clave en un único panel de control. El objetivo es proporcionar una plataforma sencilla, rápida, segura y altamente configurable, optimizada para su uso en una red local (LAN).
+**Clic-Tools v2.1.0** es una aplicación web interna diseñada para centralizar herramientas y procesos empresariales clave en un único panel de control. El objetivo es proporcionar una plataforma sencilla, rápida, segura y altamente configurable, optimizada para su uso en una red local (LAN).
 
 Esta versión marca un hito importante, introduciendo mejoras significativas en la arquitectura, la experiencia de usuario y la inteligencia de negocio.
 
@@ -38,7 +38,7 @@ Esta versión marca un hito importante, introduciendo mejoras significativas en 
     -   `quoter/`, `planner/`, `requests/`, `warehouse/`, `cost-assistant/`: Módulos para cada herramienta, conteniendo sus propios `hooks`, `actions` y lógica de base de datos.
 -   `src/lib/`: Utilidades generales.
 -   `dbs/`: **Directorio persistente** donde se almacenan todos los archivos de base de datos (`.db`).
--   `docs/`: Documentación del proyecto y archivos de ejemplo.
+-   `deployment/`: **(Nuevo)** Documentación y scripts de ayuda para el despliegue.
 -   `web.config`: **(Nuevo en v2.0)** Archivo de configuración para despliegues en IIS que previene reinicios inesperados.
 -   `.env.local`: Archivo **NO COMPARTIDO** donde se almacenan las credenciales de SQL Server y SMTP.
 
@@ -167,7 +167,7 @@ Este módulo agrupa herramientas de inteligencia de negocio para ayudar en la to
     npm run build
     npm run start
     ```
-    Se recomienda usar un gestor de procesos como **PM2** (para Linux) o configurar el sitio en **IIS** (para Windows).
+    Se recomienda usar un gestor de procesos como **PM2** (para Linux) o configurar el sitio en **IIS** (para Windows). Puedes encontrar guías detalladas en la carpeta `deployment/`.
 
 ---
 

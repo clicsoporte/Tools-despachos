@@ -10,8 +10,8 @@
 # Uso:
 # 1. Asegúrate de que tienes el código del proyecto en el directorio actual.
 # 2. Sube este archivo a la raíz de tu proyecto en el servidor Ubuntu.
-# 3. Dale permisos de ejecución: chmod +x docs/deployment/setup-ubuntu.sh
-# 4. Ejecútalo desde la raíz del proyecto: ./docs/deployment/setup-ubuntu.sh
+# 3. Dale permisos de ejecución: chmod +x deployment/setup-ubuntu.sh
+# 4. Ejecútalo desde la raíz del proyecto: ./deployment/setup-ubuntu.sh
 #
 # ==============================================================================
 
