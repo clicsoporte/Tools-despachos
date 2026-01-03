@@ -346,7 +346,7 @@ export default function RolesPage() {
                     <div className="space-y-4">
                         <h4 className="font-medium">Permisos</h4>
                         <ScrollArea className="h-72 w-full rounded-md border p-4">
-                            <Accordion type="multiple" className="w-full" defaultValue={Object.keys(permissionGroups)}>
+                            <Accordion type="multiple" className="w-full">
                                 {Object.entries(permissionGroups).map(([groupName, permissions]) => (
                                     <AccordionItem value={groupName} key={groupName}>
                                         <AccordionTrigger>{groupName}</AccordionTrigger>
