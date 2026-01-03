@@ -146,7 +146,7 @@ export default function GeneralSettingsPage() {
     router.refresh(); // Force a server-side data refresh
   };
   
-  if (isAuthorized === null) {
+  if (isAuthorized === false) {
     return null;
   }
 

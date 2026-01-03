@@ -126,7 +126,7 @@ export default function LogViewerPage() {
     }
   };
   
-  if (!isAuthorized) {
+  if (isAuthorized === false) {
     return null; // or a skeleton loader
   }
 

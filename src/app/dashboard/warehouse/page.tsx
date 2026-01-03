@@ -1,3 +1,4 @@
+
 /**
  * @fileoverview The main dashboard page for the warehouse section.
  * It displays a grid of available warehouse management tools.
@@ -36,13 +37,13 @@ export default function WarehouseDashboardPage() {
                     return hasPermission('warehouse:population-wizard:use');
                 case 'assign-item':
                     return hasPermission('warehouse:item-assignment:create');
-                case 'inventory-count':
+                 case 'inventory-count':
                      return hasPermission('warehouse:inventory-count:create');
                 case 'warehouse-units':
                     return hasPermission('warehouse:units:create') || hasPermission('warehouse:units:delete');
                 case 'warehouse-locations':
                     return hasPermission('warehouse:locations:create') || hasPermission('warehouse:locations:update') || hasPermission('warehouse:locations:delete');
-                case 'lock-management':
+                 case 'lock-management':
                     return hasPermission('warehouse:locks:manage');
                 default:
                     // Fallback for general access if specific permission is not defined for a new tool

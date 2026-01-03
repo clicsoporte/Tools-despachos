@@ -1,8 +1,10 @@
+
 /**
  * @fileoverview The main dashboard page for the admin section.
  * It dynamically displays a grid of available administration tools.
  */
 'use client';
+
 import { adminTools } from "@/modules/core/lib/data";
 import { adminPermissions } from "@/modules/core/lib/permissions";
 import { ToolCard } from "@/components/dashboard/tool-card";
@@ -22,7 +24,7 @@ export default function AdminDashboardPage() {
     }, [setTitle]);
     
     const visibleTools = useMemo(() => {
-        if (!isAuthorized) return [];
+        if (isAuthorized === false) return [];
         return adminTools.filter(tool => hasPermission(tool.id));
     }, [hasPermission, isAuthorized]);
 

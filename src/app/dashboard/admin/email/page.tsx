@@ -127,7 +127,10 @@ export default function EmailSettingsPage() {
         }
     };
 
-    if (!isAuthorized) return null;
+    if (isAuthorized === false) {
+      return null;
+    }
+
     if (isLoading || !settings) {
         return (
             <main className="flex-1 p-4 md:p-6 lg:p-8">
@@ -166,7 +169,7 @@ export default function EmailSettingsPage() {
                                 </div>
                                 <div className="space-y-2">
                                     <Label htmlFor="smtpSecure">Seguridad</Label>
-                                    <Select value={String(settings.smtpSecure)} onValueChange={(val) => setSettings({ ...settings, smtpSecure: val === 'true' })}>
+                                    <Select value={String(settings.smtpSecure)} onValueChange={(val) => setSettings(prev => prev ? { ...prev, smtpSecure: val === 'true' } : null)}>
                                         <SelectTrigger><SelectValue /></SelectTrigger>
                                         <SelectContent>
                                             <SelectItem value="true">TLS/STARTTLS (Recomendado)</SelectItem>

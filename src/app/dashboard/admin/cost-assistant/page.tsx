@@ -58,7 +58,9 @@ export default function CostAssistantSettingsPage() {
         }
     };
     
-    if (!isAuthorized) return null;
+    if (isAuthorized === false) {
+      return null;
+    }
 
     if (isLoading || !settings) {
         return (
