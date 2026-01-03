@@ -23,6 +23,7 @@ import { initializePlannerDb, runPlannerMigrations } from '../../planner/lib/db'
 import { initializeRequestsDb, runRequestMigrations } from '../../requests/lib/db';
 import { initializeWarehouseDb, runWarehouseMigrations } from '../../warehouse/lib/db';
 import { initializeCostAssistantDb, runCostAssistantMigrations } from '../../cost-assistant/lib/db';
+import { revalidatePath } from 'next/cache';
 
 const DB_FILE = 'intratool.db';
 const SALT_ROUNDS = 10;
@@ -380,7 +381,7 @@ async function checkAndApplyMigrations(db: import('better-sqlite3').Database) {
         const erpHeadersTable = db.prepare(`SELECT name FROM sqlite_master WHERE type='table' AND name='erp_order_headers'`).get();
         if (!erpHeadersTable) {
             console.log("MIGRATION: Creating erp_order_headers table.");
-            db.exec(`CREATE TABLE erp_order_headers (PEDIDO TEXT PRIMARY KEY, ESTADO TEXT, CLIENTE TEXT, FECHA_PEDIDO TEXT, FECHA_PROMETIDA TEXT, ORDEN_COMPRA TEXT);`);
+            db.exec(`CREATE TABLE erp_order_headers (PEDIDO TEXT PRIMARY KEY, ESTADO TEXT, CLIENTE TEXT, FECHA_PEDIDO TEXT, FECHA_PROMETIDA TEXT, ORDEN_COMPRA TEXT, TOTAL_UNIDADES REAL, MONEDA_PEDIDO TEXT, USUARIO TEXT);`);
         } else {
             const erpHeadersInfo = db.prepare(`PRAGMA table_info(erp_order_headers)`).all() as { name: string }[];
             const erpHeadersColumns = new Set(erpHeadersInfo.map(c => c.name));

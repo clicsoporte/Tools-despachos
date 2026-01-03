@@ -37,24 +37,8 @@ type SearchableItem = {
   searchText: string;
 };
 
-type UnitResultItem = {
-    isUnit: true;
-    unit: InventoryUnit;
-    product: Product | null;
-    physicalLocations: {
-        path: React.ReactNode;
-        quantity?: undefined;
-        clientId?: undefined;
-        location: WarehouseLocation | undefined;
-    }[];
-    erpStock: StockInfo | null;
-    client?: undefined;
-}
-
 type SearchResultItem = {
-    isUnit: false;
-    unit: null;
-    product: Product | null;
+    product: Product;
     physicalLocations: {
         path: React.ReactNode;
         quantity?: number;
@@ -64,8 +48,6 @@ type SearchResultItem = {
     erpStock: StockInfo | null;
     client?: Customer | null;
 }
-
-type CombinedItem = SearchResultItem | UnitResultItem;
 
 const normalizeText = (text: string | null | undefined): string => {
     if (!text) return "";
@@ -133,8 +115,7 @@ export default function WarehouseSearchPage() {
     
     const [searchTerm, setSearchTerm] = useState('');
     const [isSearchOpen, setIsSearchOpen] = useState(false);
-    const [selectedItem, setSelectedItem] = useState<SearchableItem | null>(null);
-
+    
     const [debouncedSearchTerm] = useDebounce(searchTerm, companyData?.searchDebounceTime ?? 500);
     
     const [locations, setLocations] = useState<WarehouseLocation[]>([]);
@@ -145,6 +126,8 @@ export default function WarehouseSearchPage() {
     const [warehouseSettings, setWarehouseSettings] = useState<WarehouseSettings | null>(null);
     
     const [classificationFilter, setClassificationFilter] = useState<string[]>([]);
+    const [warehouseFilter, setWarehouseFilter] = useState<string[]>([]);
+    const [locationFilter, setLocationFilter] = useState<string[]>([]);
 
     const loadData = useCallback(async () => {
         setIsLoading(true);
@@ -208,65 +191,72 @@ export default function WarehouseSearchPage() {
         return [...productResults, ...customerResults];
     }, [debouncedSearchTerm, products, customers]);
 
-    const handleSelectSearchItem = (value: string) => {
-        const [type, id] = value.split('-');
-        setIsSearchOpen(false);
-
-        if (type === 'product') {
-            const product = products.find(p => p.id === id);
-            if (product) {
-                 setSelectedItem({ id: product.id, type: 'product', searchText: '' });
-                 setSearchTerm(`[ARTÍCULO] ${product.id} - ${product.description}`);
-            }
-        } else if (type === 'customer') {
-            const customer = customers.find(c => c.id === id);
-            if (customer) {
-                setSelectedItem({ id: customer.id, type: 'customer', searchText: '' });
-                setSearchTerm(`[CLIENTE] ${customer.id} - ${customer.name}`);
-            }
+    const filteredItems = useMemo((): SearchResultItem[] => {
+        let itemsToShow: Product[] = [];
+    
+        // If a specific search term exists, filter products and customers
+        if (debouncedSearchTerm) {
+            const searchLower = normalizeText(debouncedSearchTerm);
+            const customerItems = itemLocations
+                .filter(il => customers.some(c => c.id === il.clientId && normalizeText(c.name).includes(searchLower)))
+                .map(il => il.itemId);
+            
+            itemsToShow = products.filter(p =>
+                normalizeText(`${p.id} ${p.description}`).includes(searchLower) ||
+                customerItems.includes(p.id)
+            );
+        } else {
+            // If no search term, show all products
+            itemsToShow = [...products];
         }
-    };
 
+        let results = itemsToShow.map(product => {
+            const productInventory = inventory.filter(inv => inv.itemId === product.id);
+            const productItemLocations = itemLocations.filter(il => il.itemId === product.id);
 
-    const filteredItems = useMemo((): CombinedItem[] => {
-        if (!selectedItem) return [];
-        
-        const groupedByItem: { [key: string]: SearchResultItem } = {};
+            const physicalLocations = [
+                ...productInventory.map(inv => ({
+                    path: renderLocationPath(inv.locationId, locations),
+                    quantity: inv.quantity,
+                    location: locations.find(l => l.id === inv.locationId),
+                })),
+                ...productItemLocations.map(il => ({
+                    path: renderLocationPath(il.locationId, locations),
+                    clientId: il.clientId || undefined,
+                    location: locations.find(l => l.id === il.locationId),
+                }))
+            ];
+            
+            const uniqueLocations = Array.from(new Map(physicalLocations.map(item => [item.location?.id, item])).values());
+            
+            const client = customers.find(c => itemLocations.some(il => il.clientId === c.id && il.itemId === product.id));
 
-        if (selectedItem.type === 'product') {
-            const product = products.find(p => p.id === selectedItem.id);
-            if (product) {
-                groupedByItem[product.id] = { isUnit: false, unit: null, product, physicalLocations: [], erpStock: stock.find(s => s.itemId === product.id) || null };
-            }
-        }
-        
-        inventory.forEach(item => {
-            if (selectedItem.type === 'product' && item.itemId === selectedItem.id && groupedByItem[item.itemId]) {
-                 groupedByItem[item.itemId].physicalLocations.push({ path: renderLocationPath(item.locationId, locations), quantity: item.quantity, location: locations.find(l => l.id === item.locationId) });
-            }
+            return {
+                product: product,
+                physicalLocations: uniqueLocations,
+                erpStock: stock.find(s => s.itemId === product.id) || null,
+                client: client,
+            };
         });
-        
-        itemLocations.forEach(itemLoc => {
-            if (selectedItem.type === 'product' && itemLoc.itemId === selectedItem.id && groupedByItem[itemLoc.itemId]) {
-                groupedByItem[itemLoc.itemId].physicalLocations.push({ path: renderLocationPath(itemLoc.locationId, locations), clientId: itemLoc.clientId || undefined, location: locations.find(l => l.id === itemLoc.locationId) });
-            } else if (selectedItem.type === 'customer' && itemLoc.clientId === selectedItem.id) {
-                 const product = products.find(p => p.id === itemLoc.itemId);
-                 if (!groupedByItem[itemLoc.itemId]) {
-                     groupedByItem[itemLoc.itemId] = { isUnit: false, unit: null, product: product || { id: itemLoc.itemId, description: `Artículo ${itemLoc.itemId}`, active: 'S', cabys: '', classification: '', isBasicGood: 'N', lastEntry: '', notes: '', unit: '' }, physicalLocations: [], erpStock: stock.find(s => s.itemId === itemLoc.itemId) || null, client: customers.find(c => c.id === itemLoc.clientId) };
-                 }
-                 groupedByItem[itemLoc.itemId].physicalLocations.push({ path: renderLocationPath(itemLoc.locationId, locations), clientId: itemLoc.clientId || undefined, location: locations.find(l => l.id === itemLoc.locationId) });
-            }
-        });
-        
-        let results: CombinedItem[] = Object.values(groupedByItem).sort((a, b) => (a.product?.id || '').localeCompare(b.product?.id || ''));
 
+        // Apply secondary filters
         if (classificationFilter.length > 0) {
-            return results.filter(item => item.product && classificationFilter.includes(item.product.classification));
+            results = results.filter(item => classificationFilter.includes(item.product.classification));
+        }
+        if (warehouseFilter.length > 0) {
+            results = results.filter(item => 
+                item.erpStock && Object.keys(item.erpStock.stockByWarehouse).some(whId => warehouseFilter.includes(whId))
+            );
+        }
+        if (locationFilter.length > 0) {
+             results = results.filter(item => 
+                item.physicalLocations.some(loc => loc.location && locationFilter.includes(String(loc.location.id)))
+            );
         }
 
-        return results;
+        return results.sort((a, b) => a.product.id.localeCompare(b.product.id));
 
-    }, [selectedItem, products, customers, inventory, itemLocations, stock, locations, classificationFilter]);
+    }, [debouncedSearchTerm, products, customers, inventory, itemLocations, stock, locations, classificationFilter, warehouseFilter, locationFilter]);
     
     const handlePrintLabel = async (product: Product, location: WarehouseLocation) => {
         if (!user || !companyData) return;
@@ -283,14 +273,12 @@ export default function WarehouseSearchPage() {
             const margin = 0.2;
             const contentWidth = 4 - (margin * 2);
             
-            // --- Left Column (QR and Barcode) ---
             const leftColX = margin;
             const leftColWidth = 1.2;
             doc.addImage(qrCodeDataUrl, 'PNG', leftColX, margin, leftColWidth, leftColWidth);
             doc.addImage(barcodeDataUrl, 'PNG', leftColX, margin + leftColWidth + 0.1, leftColWidth, 0.4);
             doc.setFontSize(10).text(newUnit.unitCode!, leftColX + leftColWidth / 2, margin + leftColWidth + 0.1 + 0.4 + 0.15, { align: 'center' });
 
-            // --- Right Column (Text Info) ---
             const rightColX = leftColX + leftColWidth + 0.2;
             const rightColWidth = contentWidth - leftColWidth - 0.2;
 
@@ -310,7 +298,6 @@ export default function WarehouseSearchPage() {
             const locLines = doc.splitTextToSize(renderLocationPathAsString(location.id, locations), rightColWidth);
             doc.text(locLines, rightColX, currentY);
             
-            // --- Footer ---
             const footerY = 3 - margin;
             doc.setFontSize(8).setTextColor(150);
             doc.text(`Creado: ${format(new Date(), 'dd/MM/yyyy')} por ${user?.name || 'Sistema'}`, 4 - margin, footerY, { align: 'right' });
@@ -326,6 +313,9 @@ export default function WarehouseSearchPage() {
     };
     
     const classifications = useMemo(() => Array.from(new Set(products.map(p => p.classification).filter(Boolean))), [products]);
+    const warehouseOptions = useMemo(() => stockSettings?.warehouses.map(w => ({ value: w.id, label: w.name })) || [], [stockSettings]);
+    const locationOptions = useMemo(() => locations.map(l => ({ value: String(l.id), label: renderLocationPathAsString(l.id, locations) })), [locations]);
+
 
     if (!isReady || !warehouseSettings) {
         return (
@@ -350,13 +340,13 @@ export default function WarehouseSearchPage() {
                  <div className="flex flex-col sm:flex-row justify-between items-center gap-4 max-w-5xl mx-auto">
                     <div className="w-full flex-1">
                         <SearchInput
-                            options={searchOptions || []}
-                            onSelect={handleSelectSearchItem}
+                            options={[]} // No popover for global search
+                            onSelect={() => {}}
                             value={searchTerm}
                             onValueChange={setSearchTerm}
                             onOpenChange={setIsSearchOpen}
-                            open={isSearchOpen}
-                            placeholder="Buscar artículo o cliente..."
+                            open={false}
+                            placeholder="Buscar por artículo, cliente, código, etc..."
                             className="text-lg h-12"
                         />
                     </div>
@@ -364,12 +354,12 @@ export default function WarehouseSearchPage() {
                          <Sheet>
                             <SheetTrigger asChild>
                                 <Button variant="outline" className="w-full sm:w-auto">
-                                    <Filter className="mr-2 h-4 w-4" /> Filtros
+                                    <Filter className="mr-2 h-4 w-4" /> Filtros Avanzados
                                 </Button>
                             </SheetTrigger>
                             <SheetContent>
                                 <SheetHeader>
-                                    <SheetTitle>Filtros Adicionales</SheetTitle>
+                                    <SheetTitle>Filtros Avanzados</SheetTitle>
                                     <SheetDescription>Refina tu búsqueda con estas opciones.</SheetDescription>
                                 </SheetHeader>
                                 <div className="py-4 space-y-4">
@@ -379,6 +369,19 @@ export default function WarehouseSearchPage() {
                                         selectedValues={classificationFilter}
                                         onSelectedChange={setClassificationFilter}
                                     />
+                                    <MultiSelectFilter
+                                        title="Bodega (ERP)"
+                                        options={warehouseOptions}
+                                        selectedValues={warehouseFilter}
+                                        onSelectedChange={setWarehouseFilter}
+                                    />
+                                     <MultiSelectFilter
+                                        title="Ubicación Física"
+                                        options={locationOptions}
+                                        selectedValues={locationFilter}
+                                        onSelectedChange={setLocationFilter}
+                                    />
+                                    <Separator />
                                     <Button onClick={handleRefresh} disabled={isRefreshing} className="w-full">
                                         {isRefreshing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
                                         Refrescar Datos del ERP
@@ -410,16 +413,16 @@ export default function WarehouseSearchPage() {
                                 : [];
 
                             return (
-                                <Card key={item.product?.id || item.unit?.id || itemIndex} className="w-full">
+                                <Card key={item.product.id} className="w-full">
                                     <CardHeader>
                                         <CardTitle className="text-xl flex items-center gap-2">
                                             <Package className="h-6 w-6 text-primary" />
-                                            {item.isUnit ? `Unidad ${item.unit.unitCode} - ${item.product?.description}` : item.product?.description || 'Producto no encontrado'}
+                                            {item.product?.description || 'Producto no encontrado'}
                                         </CardTitle>
                                         <CardDescription>
-                                            {item.isUnit ? `ID legible: ${item.unit.humanReadableId || 'N/A'}` : `Código: ${item.product?.id}`}
+                                            Código: {item.product?.id}
                                         </CardDescription>
-                                         {!item.isUnit && item.client && (
+                                         {item.client && (
                                             <div className="text-sm text-muted-foreground flex items-center gap-2 pt-1">
                                                 <User className="h-4 w-4"/>
                                                 <span>Inventario de Cliente: <strong>{item.client.name}</strong> ({item.client.id})</span>
@@ -432,7 +435,10 @@ export default function WarehouseSearchPage() {
                                             <div className="space-y-2">
                                             {item.physicalLocations.length > 0 ? item.physicalLocations.map((loc, index) => (
                                                 <div key={index} className="flex justify-between items-center p-2 border rounded-md">
-                                                    <span>{loc.path}</span>
+                                                    <div>
+                                                        {loc.path}
+                                                        {loc.clientId && <p className="text-xs text-blue-600 font-medium">Cliente: {customers.find(c => c.id === loc.clientId)?.name || loc.clientId}</p>}
+                                                    </div>
                                                     <div className='flex items-center gap-1'>
                                                         {loc.quantity !== undefined && (
                                                             <span className="font-bold text-lg">{loc.quantity.toLocaleString()}</span>
@@ -446,7 +452,6 @@ export default function WarehouseSearchPage() {
                                                 </div>
                                             )) : <p className="text-sm text-muted-foreground">Sin ubicaciones físicas registradas.</p>}
                                             </div>
-                                            {item.isUnit && item.unit?.notes && <p className="text-xs italic text-muted-foreground mt-2">&quot;{item.unit.notes}&quot;</p>}
                                         </div>
                                         <div>
                                              <h4 className="font-semibold mb-2">Existencias por Bodega (ERP)</h4>
