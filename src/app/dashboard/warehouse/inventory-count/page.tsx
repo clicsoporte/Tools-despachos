@@ -37,7 +37,7 @@ const renderLocationPathAsString = (locationId: number, locations: WarehouseLoca
 };
 
 export default function InventoryCountPage() {
-    const { isAuthorized } = useAuthorization(['warehouse:inventory:assign']);
+    const { isAuthorized } = useAuthorization(['warehouse:inventory-count:create']);
     const { setTitle } = usePageTitle();
     const { toast } = useToast();
     const { user, companyData, products: authProducts } = useAuth();
@@ -158,7 +158,7 @@ export default function InventoryCountPage() {
         }
     };
     
-    if (!isAuthorized) {
+    if (isAuthorized === false) {
         return null;
     }
     

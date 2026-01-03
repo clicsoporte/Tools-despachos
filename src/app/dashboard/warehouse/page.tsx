@@ -31,17 +31,17 @@ export default function WarehouseDashboardPage() {
                 case 'warehouse-search-simple':
                     return hasPermission('warehouse:search:simple');
                 case 'receiving-wizard':
-                    return hasPermission('warehouse:receiving:create');
+                    return hasPermission('warehouse:receiving-wizard:use');
                 case 'population-wizard':
-                    return hasPermission('warehouse:receiving:create'); // Re-using the same permission
+                    return hasPermission('warehouse:population-wizard:use');
                 case 'assign-item':
-                    return hasPermission('warehouse:inventory:assign');
+                    return hasPermission('warehouse:item-assignment:create');
                 case 'inventory-count':
-                     return hasPermission('warehouse:inventory:assign');
+                     return hasPermission('warehouse:inventory-count:create');
                 case 'warehouse-units':
-                    return hasPermission('warehouse:units:manage');
+                    return hasPermission('warehouse:units:create') || hasPermission('warehouse:units:delete');
                 case 'warehouse-locations':
-                    return hasPermission('warehouse:locations:manage');
+                    return hasPermission('warehouse:locations:create') || hasPermission('warehouse:locations:update') || hasPermission('warehouse:locations:delete');
                 case 'lock-management':
                     return hasPermission('warehouse:locks:manage');
                 default:

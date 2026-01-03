@@ -1,4 +1,3 @@
-
 /**
  * @fileoverview Page for associating products with clients and warehouse locations.
  * This tool allows users to create a catalog-like mapping, indicating where
@@ -48,7 +47,7 @@ const renderLocationPathAsString = (locationId: number, locations: WarehouseLoca
 };
 
 export default function AssignItemPage() {
-    useAuthorization(['warehouse:inventory:assign']);
+    const { hasPermission, isAuthorized } = useAuthorization(['warehouse:item-assignment:create', 'warehouse:item-assignment:delete']);
     const { setTitle } = usePageTitle();
     const { toast } = useToast();
     const { user, companyData, products: authProducts, customers: authCustomers } = useAuth();
@@ -98,8 +97,10 @@ export default function AssignItemPage() {
     
     useEffect(() => {
         setTitle("Catálogo de Ubicaciones por Artículo");
-        loadInitialData();
-    }, [setTitle, loadInitialData]);
+        if (isAuthorized) {
+            loadInitialData();
+        }
+    }, [setTitle, loadInitialData, isAuthorized]);
 
     const productOptions = useMemo(() => {
         if (!debouncedProductSearch) return [];
@@ -322,6 +323,10 @@ export default function AssignItemPage() {
         )
     }
 
+    if (isAuthorized === false) {
+        return null; // Or a dedicated access denied component
+    }
+
     return (
         <main className="flex-1 p-4 md:p-6 lg:p-8">
             <div className="mx-auto max-w-5xl space-y-8">
@@ -332,51 +337,53 @@ export default function AssignItemPage() {
                                 <CardTitle>Catálogo de Ubicaciones por Artículo</CardTitle>
                                 <CardDescription>Gestiona las ubicaciones físicas predeterminadas para los productos de tus clientes.</CardDescription>
                             </div>
-                             <Dialog open={isFormOpen} onOpenChange={(open) => { setIsFormOpen(open); if (!open) resetForm(); }}>
-                                <DialogTrigger asChild>
-                                    <Button><PlusCircle className="mr-2 h-4 w-4"/>Crear Nueva Asignación</Button>
-                                </DialogTrigger>
-                                <DialogContent className="sm:max-w-2xl">
-                                    <DialogHeader>
-                                        <DialogTitle>Crear Asignación</DialogTitle>
-                                        <DialogDescription>Asocia un producto a un cliente y una ubicación física.</DialogDescription>
-                                    </DialogHeader>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-4">
-                                        <div className="space-y-2">
-                                            <Label>1. Seleccione un Producto <span className="text-destructive">*</span></Label>
-                                            <SearchInput options={productOptions} onSelect={handleSelectProduct} value={productSearchTerm} onValueChange={setProductSearchTerm} placeholder="Buscar producto..." open={isProductSearchOpen} onOpenChange={setIsProductSearchOpen} />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label>2. Seleccione un Cliente (Opcional)</Label>
-                                            <SearchInput options={clientOptions} onSelect={handleSelectClient} value={clientSearchTerm} onValueChange={setClientSearchTerm} placeholder="Buscar cliente..." open={isClientSearchOpen} onOpenChange={setIsClientSearchOpen} />
-                                        </div>
-                                        <div className="space-y-2 md:col-span-2">
-                                            <Label>3. Seleccione una Ubicación <span className="text-destructive">*</span></Label>
-                                            <div className="flex items-center gap-2">
-                                                <SearchInput 
-                                                    options={locationOptions} 
-                                                    onSelect={handleSelectLocation} 
-                                                    value={locationSearchTerm} 
-                                                    onValueChange={setLocationSearchTerm} 
-                                                    placeholder="Buscar... ('*' o vacío para ver todas)" 
-                                                    open={isLocationSearchOpen} 
-                                                    onOpenChange={setIsLocationSearchOpen}
-                                                />
-                                                <Button type="button" variant="outline" size="icon" onClick={() => {setLocationSearchTerm('*'); setIsLocationSearchOpen(true)}}>
-                                                    <List className="h-4 w-4" />
-                                                </Button>
+                            {hasPermission('warehouse:item-assignment:create') && (
+                                <Dialog open={isFormOpen} onOpenChange={(open) => { setIsFormOpen(open); if (!open) resetForm(); }}>
+                                    <DialogTrigger asChild>
+                                        <Button><PlusCircle className="mr-2 h-4 w-4"/>Crear Nueva Asignación</Button>
+                                    </DialogTrigger>
+                                    <DialogContent className="sm:max-w-2xl">
+                                        <DialogHeader>
+                                            <DialogTitle>Crear Asignación</DialogTitle>
+                                            <DialogDescription>Asocia un producto a un cliente y una ubicación física.</DialogDescription>
+                                        </DialogHeader>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-4">
+                                            <div className="space-y-2">
+                                                <Label>1. Seleccione un Producto <span className="text-destructive">*</span></Label>
+                                                <SearchInput options={productOptions} onSelect={handleSelectProduct} value={productSearchTerm} onValueChange={setProductSearchTerm} placeholder="Buscar producto..." open={isProductSearchOpen} onOpenChange={setIsProductSearchOpen} />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label>2. Seleccione un Cliente (Opcional)</Label>
+                                                <SearchInput options={clientOptions} onSelect={handleSelectClient} value={clientSearchTerm} onValueChange={setClientSearchTerm} placeholder="Buscar cliente..." open={isClientSearchOpen} onOpenChange={setIsClientSearchOpen} />
+                                            </div>
+                                            <div className="space-y-2 md:col-span-2">
+                                                <Label>3. Seleccione una Ubicación <span className="text-destructive">*</span></Label>
+                                                <div className="flex items-center gap-2">
+                                                    <SearchInput 
+                                                        options={locationOptions} 
+                                                        onSelect={handleSelectLocation} 
+                                                        value={locationSearchTerm} 
+                                                        onValueChange={setLocationSearchTerm} 
+                                                        placeholder="Buscar... ('*' o vacío para ver todas)" 
+                                                        open={isLocationSearchOpen} 
+                                                        onOpenChange={setIsLocationSearchOpen}
+                                                    />
+                                                    <Button type="button" variant="outline" size="icon" onClick={() => {setLocationSearchTerm('*'); setIsLocationSearchOpen(true)}}>
+                                                        <List className="h-4 w-4" />
+                                                    </Button>
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                    <DialogFooter>
-                                        <DialogClose asChild><Button variant="ghost">Cancelar</Button></DialogClose>
-                                        <Button onClick={handleCreateAssignment} disabled={isSubmitting || !selectedProductId || !selectedLocationId}>
-                                            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                            Crear Asignación
-                                        </Button>
-                                    </DialogFooter>
-                                </DialogContent>
-                            </Dialog>
+                                        <DialogFooter>
+                                            <DialogClose asChild><Button variant="ghost">Cancelar</Button></DialogClose>
+                                            <Button onClick={handleCreateAssignment} disabled={isSubmitting || !selectedProductId || !selectedLocationId}>
+                                                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                                Crear Asignación
+                                            </Button>
+                                        </DialogFooter>
+                                    </DialogContent>
+                                </Dialog>
+                            )}
                         </div>
                          <div className="relative mt-4">
                             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -425,25 +432,27 @@ export default function AssignItemPage() {
                                                     <Button variant="ghost" size="icon" onClick={() => handlePrintRackLabel(a)}>
                                                         <Printer className="h-4 w-4 text-blue-600" />
                                                     </Button>
-                                                    <AlertDialog>
-                                                        <AlertDialogTrigger asChild>
-                                                            <Button variant="ghost" size="icon" disabled={isSubmitting}>
-                                                                <Trash2 className="h-4 w-4 text-destructive" />
-                                                            </Button>
-                                                        </AlertDialogTrigger>
-                                                        <AlertDialogContent>
-                                                          <AlertDialogHeader>
-                                                            <AlertDialogTitle>¿Confirmar eliminación?</AlertDialogTitle>
-                                                            <AlertDialogDescription>
-                                                              Esta acción eliminará la asignación permanentemente. No se puede deshacer.
-                                                            </AlertDialogDescription>
-                                                          </AlertDialogHeader>
-                                                          <AlertDialogFooter>
-                                                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                                            <AlertDialogAction onClick={() => handleDeleteAssignment(a.id!)}>Eliminar</AlertDialogAction>
-                                                          </AlertDialogFooter>
-                                                        </AlertDialogContent>
-                                                    </AlertDialog>
+                                                    {hasPermission('warehouse:item-assignment:delete') && (
+                                                        <AlertDialog>
+                                                            <AlertDialogTrigger asChild>
+                                                                <Button variant="ghost" size="icon" disabled={isSubmitting}>
+                                                                    <Trash2 className="h-4 w-4 text-destructive" />
+                                                                </Button>
+                                                            </AlertDialogTrigger>
+                                                            <AlertDialogContent>
+                                                              <AlertDialogHeader>
+                                                                <AlertDialogTitle>¿Confirmar eliminación?</AlertDialogTitle>
+                                                                <AlertDialogDescription>
+                                                                  Esta acción eliminará la asignación permanentemente. No se puede deshacer.
+                                                                </AlertDialogDescription>
+                                                              </AlertDialogHeader>
+                                                              <AlertDialogFooter>
+                                                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                                                <AlertDialogAction onClick={() => handleDeleteAssignment(a.id!)}>Eliminar</AlertDialogAction>
+                                                              </AlertDialogFooter>
+                                                            </AlertDialogContent>
+                                                        </AlertDialog>
+                                                    )}
                                                 </TableCell>
                                             </TableRow>
                                         );
