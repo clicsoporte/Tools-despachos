@@ -23,6 +23,7 @@ import { Input } from '@/components/ui/input';
 import jsPDF from "jspdf";
 import QRCode from 'qrcode';
 import { format } from 'date-fns';
+import { Badge } from '@/components/ui/badge';
 
 type SearchResultItem = {
     product: Product | null;
@@ -246,10 +247,13 @@ export default function SimpleWarehouseSearchPage() {
                          {searchResult ? (
                             <Card className="w-full">
                                 <CardHeader>
-                                    <CardTitle className="text-lg flex items-center gap-2">
-                                        <Package className="h-5 w-5 text-primary" />
-                                        {searchResult.product?.description}
-                                    </CardTitle>
+                                    <div className="flex justify-between items-start">
+                                        <CardTitle className="text-lg flex items-center gap-2">
+                                            <Package className="h-5 w-5 text-primary" />
+                                            {searchResult.product?.description}
+                                        </CardTitle>
+                                        <Badge variant="outline">{searchResult.product?.classification}</Badge>
+                                    </div>
                                     <CardDescription>Código: {searchResult.product?.id}</CardDescription>
                                 </CardHeader>
                                 <CardContent className="space-y-4">

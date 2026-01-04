@@ -30,6 +30,7 @@ import QRCode from 'qrcode';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import jsbarcode from 'jsbarcode';
+import { Badge } from '@/components/ui/badge';
 
 type SearchResultItem = {
     product: Product;
@@ -409,10 +410,13 @@ export default function WarehouseSearchPage() {
                             return (
                                 <Card key={item.product.id} className="w-full">
                                     <CardHeader>
-                                        <CardTitle className="text-xl flex items-center gap-2">
-                                            <Package className="h-6 w-6 text-primary" />
-                                            {item.product?.description || 'Producto no encontrado'}
-                                        </CardTitle>
+                                        <div className="flex justify-between items-start">
+                                            <CardTitle className="text-xl flex items-center gap-2">
+                                                <Package className="h-6 w-6 text-primary" />
+                                                {item.product?.description || 'Producto no encontrado'}
+                                            </CardTitle>
+                                            <Badge variant="outline">{item.product?.classification}</Badge>
+                                        </div>
                                         <CardDescription>
                                             Código: {item.product?.id}
                                         </CardDescription>

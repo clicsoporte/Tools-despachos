@@ -258,7 +258,7 @@ export const adminTools: Tool[] = [
         bgColor: 'bg-orange-500',
       },
       {
-        id: "admin:settings:general",
+        id: "admin:settings:email",
         name: "Configuración de Correo",
         description: "Ajustes del servidor SMTP para enviar correos.",
         href: "/dashboard/admin/email",
@@ -274,7 +274,7 @@ export const adminTools: Tool[] = [
         bgColor: 'bg-green-700',
       },
       {
-        id: "admin:settings:general",
+        id: "admin:settings:quoter",
         name: "Config. Cotizador",
         description: "Gestionar prefijos y consecutivos del cotizador.",
         href: "/dashboard/admin/quoter", 
