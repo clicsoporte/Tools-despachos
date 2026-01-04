@@ -411,15 +411,26 @@ export default function WarehouseSearchPage() {
                                 <Card key={item.product.id} className="w-full">
                                     <CardHeader>
                                         <div className="flex justify-between items-start">
-                                            <CardTitle className="text-xl flex items-center gap-2">
-                                                <Package className="h-6 w-6 text-primary" />
-                                                {item.product?.description || 'Producto no encontrado'}
-                                            </CardTitle>
-                                            <Badge variant="outline">{item.product?.classification}</Badge>
+                                            <div>
+                                                <CardTitle className="text-xl flex items-center gap-2">
+                                                    <Package className="h-6 w-6 text-primary" />
+                                                    {item.product?.description || 'Producto no encontrado'}
+                                                </CardTitle>
+                                                <CardDescription>
+                                                    Código: {item.product?.id}
+                                                </CardDescription>
+                                            </div>
+                                             <div className="flex flex-col items-end gap-1">
+                                                <Badge variant={item.product.active === 'S' ? 'default' : 'destructive'} className={item.product.active === 'S' ? 'bg-green-600' : ''}>
+                                                    {item.product.active === 'S' ? 'Activo' : 'Inactivo'}
+                                                </Badge>
+                                                <Badge variant="secondary">{item.product?.classification}</Badge>
+                                            </div>
                                         </div>
-                                        <CardDescription>
-                                            Código: {item.product?.id}
-                                        </CardDescription>
+                                         <div className="text-sm text-muted-foreground pt-2 space-y-1">
+                                            <p><strong>Unidad de Venta:</strong> {item.product.unit}</p>
+                                            {item.product.notes && <p><strong>Notas:</strong> {item.product.notes}</p>}
+                                        </div>
                                          {item.client && (
                                             <div className="text-sm text-muted-foreground flex items-center gap-2 pt-1">
                                                 <User className="h-4 w-4"/>
@@ -491,5 +502,3 @@ export default function WarehouseSearchPage() {
         </div>
     );
 }
-
-    

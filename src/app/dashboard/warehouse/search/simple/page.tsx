@@ -150,7 +150,6 @@ export default function SimpleWarehouseSearchPage() {
             e.preventDefault();
             // The useEffect with debouncedSearchTerm will handle the logic.
             // This just ensures enter key can also trigger it if needed.
-            // The clearing is handled by the useEffect after a successful search.
             const searchLower = searchTerm.toLowerCase();
             const exactMatch = products.find(p => p.id.toLowerCase() === searchLower);
             if (exactMatch) {
@@ -244,17 +243,28 @@ export default function SimpleWarehouseSearchPage() {
                     </div>
                     
                     <div className="space-y-4 pt-4">
-                         {searchResult ? (
+                         {searchResult && searchResult.product ? (
                             <Card className="w-full">
                                 <CardHeader>
-                                    <div className="flex justify-between items-start">
-                                        <CardTitle className="text-lg flex items-center gap-2">
-                                            <Package className="h-5 w-5 text-primary" />
-                                            {searchResult.product?.description}
-                                        </CardTitle>
-                                        <Badge variant="outline">{searchResult.product?.classification}</Badge>
+                                    <div className="flex justify-between items-start gap-4">
+                                        <div className="flex-1">
+                                            <CardTitle className="text-lg flex flex-wrap items-center gap-2">
+                                                <Package className="h-5 w-5 text-primary" />
+                                                <span>{searchResult.product.description}</span>
+                                            </CardTitle>
+                                            <CardDescription>Código: {searchResult.product.id}</CardDescription>
+                                        </div>
+                                        <div className="flex flex-col items-end gap-1">
+                                            <Badge variant={searchResult.product.active === 'S' ? 'default' : 'destructive'} className={searchResult.product.active === 'S' ? 'bg-green-600' : ''}>
+                                                {searchResult.product.active === 'S' ? 'Activo' : 'Inactivo'}
+                                            </Badge>
+                                            <Badge variant="secondary">{searchResult.product.classification}</Badge>
+                                        </div>
                                     </div>
-                                    <CardDescription>Código: {searchResult.product?.id}</CardDescription>
+                                    <div className="text-sm text-muted-foreground pt-2 space-y-1">
+                                        <p><strong>Unidad de Venta:</strong> {searchResult.product.unit}</p>
+                                        {searchResult.product.notes && <p><strong>Notas:</strong> {searchResult.product.notes}</p>}
+                                    </div>
                                 </CardHeader>
                                 <CardContent className="space-y-4">
                                     <div>
