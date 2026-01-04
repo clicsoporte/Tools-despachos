@@ -84,7 +84,7 @@ export default function SimpleWarehouseSearchPage() {
 
     const [isLoading, setIsLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
-    const [selectedItem, setSelectedItem] = useState<Product | null>(null);
+    const [lastSearchedItem, setLastSearchedItem] = useState<Product | null>(null);
 
     const [debouncedSearchTerm] = useDebounce(searchTerm, 300); // Shorter debounce for faster scanner response
     
@@ -128,18 +128,19 @@ export default function SimpleWarehouseSearchPage() {
         if (debouncedSearchTerm) {
             const searchLower = debouncedSearchTerm.toLowerCase();
             const exactMatch = products.find(p => p.id.toLowerCase() === searchLower);
-            setSelectedItem(exactMatch || null);
             
-            // Clear input after search to prepare for next scan
             if (exactMatch) {
-                // Clear the search term for the next scan after a brief delay
+                setLastSearchedItem(exactMatch);
+                // Clear input after search to prepare for next scan
                 setTimeout(() => {
                     setSearchTerm('');
                     inputRef.current?.focus();
                 }, 500);
+            } else {
+                // Only clear the result if the user typed something that yielded no match.
+                // This prevents clearing the result when the input is just empty.
+                setLastSearchedItem(null);
             }
-        } else {
-            setSelectedItem(null);
         }
     }, [debouncedSearchTerm, products]);
     
@@ -147,20 +148,27 @@ export default function SimpleWarehouseSearchPage() {
         if (e.key === 'Enter') {
             e.preventDefault();
             // The useEffect with debouncedSearchTerm will handle the logic.
-            // This just ensures enter key can also trigger it if needed,
-            // and clears the input for the next scan.
-            setSearchTerm(''); 
-            setTimeout(() => inputRef.current?.focus(), 0);
+            // This just ensures enter key can also trigger it if needed.
+            // The clearing is handled by the useEffect after a successful search.
+            const searchLower = searchTerm.toLowerCase();
+            const exactMatch = products.find(p => p.id.toLowerCase() === searchLower);
+            if (exactMatch) {
+                setLastSearchedItem(exactMatch);
+            }
+            setTimeout(() => {
+                setSearchTerm('');
+                inputRef.current?.focus();
+            }, 100);
         }
     };
 
     const searchResult = useMemo((): SearchResultItem | null => {
-        if (!selectedItem) return null;
+        if (!lastSearchedItem) return null;
 
-        const erpStock = stock.find(s => s.itemId === selectedItem.id) || null;
+        const erpStock = stock.find(s => s.itemId === lastSearchedItem.id) || null;
         
         const physicalLocations = inventory
-            .filter(inv => inv.itemId === selectedItem.id)
+            .filter(inv => inv.itemId === lastSearchedItem.id)
             .map(inv => ({
                 path: renderLocationPath(inv.locationId, locations),
                 quantity: inv.quantity,
@@ -168,7 +176,7 @@ export default function SimpleWarehouseSearchPage() {
             }));
 
         const designatedLocations = itemLocations
-            .filter(itemLoc => itemLoc.itemId === selectedItem.id)
+            .filter(itemLoc => itemLoc.itemId === lastSearchedItem.id)
             .map(itemLoc => ({
                 path: renderLocationPath(itemLoc.locationId, locations),
                 clientId: itemLoc.clientId || undefined,
@@ -179,11 +187,11 @@ export default function SimpleWarehouseSearchPage() {
         const uniqueLocations = Array.from(new Map(allPhysical.map(item => [item.location?.id, item])).values());
         
         return {
-            product: selectedItem,
+            product: lastSearchedItem,
             physicalLocations: uniqueLocations,
             erpStock: erpStock,
         };
-    }, [selectedItem, inventory, itemLocations, stock, locations]);
+    }, [lastSearchedItem, inventory, itemLocations, stock, locations]);
 
     const handlePrintLabel = async (product: Product, location: WarehouseLocation) => {
         if (!user || !companyData) return;
