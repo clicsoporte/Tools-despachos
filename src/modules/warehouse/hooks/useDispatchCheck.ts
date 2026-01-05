@@ -8,11 +8,14 @@ import { useToast } from '@/modules/core/hooks/use-toast';
 import { usePageTitle } from '@/modules/core/hooks/usePageTitle';
 import { useAuthorization } from '@/modules/core/hooks/useAuthorization';
 import { logError, logInfo } from '@/modules/core/lib/logger';
-import { getInvoiceData, searchDocuments, logDispatch } from '../lib/actions';
+import { getInvoiceData, searchDocuments, logDispatch, sendDispatchEmail } from '../lib/actions';
 import type { User, Product, ErpInvoiceHeader, ErpInvoiceLine, UserPreferences } from '@/modules/core/types';
 import { useAuth } from '@/modules/core/hooks/useAuth';
 import { useDebounce } from 'use-debounce';
 import { getUserPreferences, saveUserPreferences } from '@/modules/core/lib/db';
+import { generateDocument } from '@/modules/core/lib/pdf-generator';
+import { format, parseISO } from 'date-fns';
+import type { HAlignType } from 'jspdf-autotable';
 
 type WizardStep = 'initial' | 'verifying' | 'finished';
 
@@ -23,6 +26,7 @@ type VerificationItem = {
     barcode: string;
     requiredQuantity: number;
     verifiedQuantity: number;
+    displayVerifiedQuantity: string;
     isManualOverride?: boolean;
 };
 
@@ -36,10 +40,21 @@ type CurrentDocument = {
     erpUser?: string;
 };
 
+type ConfirmationState = {
+    title: string;
+    message: string;
+    onConfirm: () => void;
+    onCancel?: () => void;
+    confirmText?: string;
+    cancelText?: string;
+} | null;
+
 type ErrorState = {
+    type: 'info' | 'error';
     title: string;
     message: string;
 } | null;
+
 
 type State = {
     isLoading: boolean;
@@ -58,6 +73,7 @@ type State = {
     isStrictMode: boolean;
 
     errorState: ErrorState;
+    confirmationState: ConfirmationState;
 
     // Email state
     selectedUsers: User[];
@@ -67,15 +83,18 @@ type State = {
     emailBody: string;
 
     scannerInputRef: React.RefObject<HTMLInputElement>;
+    quantityInputRefs: React.RefObject<Map<number, HTMLInputElement>>;
 };
 
 export function useDispatchCheck() {
     const { isAuthorized, hasPermission } = useAuthorization(['warehouse:dispatch-check:use']);
     const { setTitle } = usePageTitle();
     const { toast } = useToast();
-    const { user, products, users: allUsers } = useAuth();
+    const { user, products, users: allUsers, companyData } = useAuth();
     
     const scannerInputRef = useRef<HTMLInputElement>(null);
+    const quantityInputRefs = useRef<Map<number, HTMLInputElement>>(new Map());
+
 
     const [state, setState] = useState<State>({
         isLoading: true,
@@ -90,12 +109,14 @@ export function useDispatchCheck() {
         lastScannedProductCode: null,
         isStrictMode: false,
         errorState: null,
+        confirmationState: null,
         selectedUsers: [],
         userSearchTerm: '',
         isUserSearchOpen: false,
         externalEmail: '',
         emailBody: '',
         scannerInputRef,
+        quantityInputRefs,
     });
 
     const [debouncedDocSearch] = useDebounce(state.documentSearchTerm, 300);
@@ -157,6 +178,7 @@ export function useDispatchCheck() {
                     barcode: product?.barcode || '',
                     requiredQuantity: line.CANTIDAD,
                     verifiedQuantity: 0,
+                    displayVerifiedQuantity: '0',
                 };
             });
 
@@ -189,8 +211,6 @@ export function useDispatchCheck() {
         }
     };
     
-    // --- Verification Logic ---
-
     const handleScan = (e: React.KeyboardEvent<HTMLInputElement>) => {
         if (e.key !== 'Enter' || !state.scannedCode.trim()) return;
         e.preventDefault();
@@ -201,74 +221,97 @@ export function useDispatchCheck() {
         updateState({ scannedCode: '', lastScannedProductCode: targetItem?.itemCode || null });
 
         if (!targetItem) {
-            updateState({ errorState: { title: "Artículo Incorrecto", message: `El código "${scanned}" no corresponde a ningún artículo de este despacho.` } });
+            updateState({ errorState: { type: 'error', title: "Artículo Incorrecto", message: `El código "${scanned}" no corresponde a ningún artículo de este despacho.` } });
             return;
         }
 
         if (targetItem.verifiedQuantity >= targetItem.requiredQuantity) {
-            updateState({ errorState: { title: "Cantidad Completa", message: `Ya se verificaron todas las unidades de "${targetItem.description}".` } });
+            updateState({ errorState: { type: 'info', title: "Cantidad Completa", message: `Ya se verificaron todas las unidades de "${targetItem.description}".` } });
             return;
         }
         
         if (state.isStrictMode) {
-            // Increment by one
+            const newQty = targetItem.verifiedQuantity + 1;
             const newItems = state.verificationItems.map(item =>
-                item.lineId === targetItem.lineId ? { ...item, verifiedQuantity: item.verifiedQuantity + 1 } : item
+                item.lineId === targetItem.lineId ? { ...item, verifiedQuantity: newQty, displayVerifiedQuantity: String(newQty) } : item
             );
             updateState({ verificationItems: newItems });
         } else {
-            // Quick confirmation mode
-            if (targetItem.requiredQuantity === 1) {
-                const newItems = state.verificationItems.map(item =>
-                    item.lineId === targetItem.lineId ? { ...item, verifiedQuantity: 1 } : item
-                );
-                updateState({ verificationItems: newItems });
-            } else {
-                updateState({
-                    errorState: {
-                        title: `Confirmar cantidad para "${targetItem.description}"`,
-                        message: `¿Están las ${targetItem.requiredQuantity} unidades completas?`,
-                    },
-                });
-            }
+             actions.handleIndicatorClick(targetItem.lineId);
         }
     };
-
+    
     const clearError = () => {
-        if (state.errorState?.title.startsWith('Confirmar')) {
-             // This was a confirmation dialog, not an error. Mark as complete.
-            const targetItem = state.verificationItems.find(item => state.errorState?.title.includes(item.description));
-            if (targetItem) {
-                const newItems = state.verificationItems.map(item =>
-                    item.lineId === targetItem.lineId ? { ...item, verifiedQuantity: item.requiredQuantity } : item
-                );
-                updateState({ verificationItems: newItems, errorState: null });
-            }
+        updateState({ errorState: null });
+        setTimeout(() => state.scannerInputRef.current?.focus(), 50);
+    };
+
+    const handleConfirmation = (lineId: number, confirm: boolean) => {
+        const targetItem = state.verificationItems.find(item => item.lineId === lineId);
+        if (!targetItem) return;
+
+        if (confirm) {
+            const newQty = targetItem.requiredQuantity;
+            const newItems = state.verificationItems.map(item =>
+                item.lineId === targetItem.lineId ? { ...item, verifiedQuantity: newQty, displayVerifiedQuantity: String(newQty), isManualOverride: true } : item
+            );
+            updateState({ verificationItems: newItems });
+            setTimeout(() => state.scannerInputRef.current?.focus(), 50);
         } else {
-            updateState({ errorState: null });
+            const inputRef = state.quantityInputRefs.current.get(lineId);
+            if (inputRef) {
+                setTimeout(() => {
+                    inputRef.focus();
+                    inputRef.select();
+                }, 50);
+            }
         }
+        updateState({ confirmationState: null });
     };
 
     const handleIndicatorClick = (lineId: number) => {
-        if (state.isStrictMode) return; // Not allowed in strict mode
         const targetItem = state.verificationItems.find(item => item.lineId === lineId);
         if (targetItem) {
              updateState({
-                errorState: {
+                confirmationState: {
                     title: `Confirmar cantidad para "${targetItem.description}"`,
                     message: `¿Están las ${targetItem.requiredQuantity} unidades completas?`,
+                    onConfirm: () => handleConfirmation(lineId, true),
+                    onCancel: () => handleConfirmation(lineId, false),
+                    confirmText: 'Sí, Completar',
+                    cancelText: 'No, Ingresar Manual'
                 },
             });
         }
     };
 
     const handleManualQuantityChange = (lineId: number, value: string) => {
-        const qty = parseInt(value, 10);
-        if (isNaN(qty) && value !== '') return;
-
         updateState({
             verificationItems: state.verificationItems.map(item =>
-                item.lineId === lineId ? { ...item, verifiedQuantity: isNaN(qty) ? 0 : qty, isManualOverride: true } : item
+                item.lineId === lineId ? { ...item, displayVerifiedQuantity: value, isManualOverride: true } : item
+            ),
+        });
+    };
+
+    const handleManualQuantityBlur = (lineId: number, value: string) => {
+        const qty = parseInt(value, 10);
+        const newQty = isNaN(qty) ? 0 : qty;
+        
+        const targetItem = state.verificationItems.find(item => item.lineId === lineId);
+
+        if (targetItem && newQty > targetItem.requiredQuantity) {
+            updateState({ 
+                errorState: {
+                    type: 'info',
+                    title: 'Cantidad Excedida',
+                    message: `Has verificado ${newQty} unidades, pero solo se requieren ${targetItem.requiredQuantity}.`
+                }
+            });
+        }
+        
+        updateState({
+            verificationItems: state.verificationItems.map(item =>
+                item.lineId === lineId ? { ...item, verifiedQuantity: newQty, displayVerifiedQuantity: String(newQty) } : item
             ),
         });
     };
@@ -288,6 +331,7 @@ export function useDispatchCheck() {
             verificationItems: [],
             scannedCode: '',
             errorState: null,
+            confirmationState: null,
             selectedUsers: [],
             userSearchTerm: '',
             externalEmail: '',
@@ -295,7 +339,68 @@ export function useDispatchCheck() {
         });
     };
 
+    const generatePdfForAction = async (): Promise<{ buffer: Buffer; fileName: string } | null> => {
+        if (!companyData || !state.currentDocument) return null;
+        const fileName = `Comprobante-${state.currentDocument.id}.pdf`;
+
+        const styledRows = state.verificationItems.map(item => {
+            let textColor: [number, number, number] = [0, 0, 0]; // Default black
+            if (item.verifiedQuantity > item.requiredQuantity) {
+                textColor = [220, 53, 69]; // Red
+            } else if (item.verifiedQuantity === item.requiredQuantity) {
+                textColor = [25, 135, 84]; // Green
+            } else if (item.verifiedQuantity > 0) {
+                textColor = [255, 193, 7]; // Orange/Yellow
+            }
+
+            return [
+                item.itemCode,
+                item.description,
+                { content: item.requiredQuantity.toString(), styles: { halign: 'right' as HAlignType } },
+                { content: item.verifiedQuantity.toString(), styles: { halign: 'right' as HAlignType, textColor, fontStyle: 'bold' as const } }
+            ];
+        });
+
+        const doc = generateDocument({
+            docTitle: `Comprobante de Despacho`,
+            docId: state.currentDocument.id,
+            companyData,
+            meta: [{ label: 'Verificado por', value: user?.name || 'N/A' }, { label: 'Fecha', value: format(new Date(), 'dd/MM/yyyy HH:mm') }],
+            blocks: [{ title: 'Cliente', content: `${state.currentDocument.clientName}\nCédula: ${state.currentDocument.clientId}\nDirección: ${state.currentDocument.shippingAddress}` }],
+            table: {
+                columns: ["Código", "Descripción", { content: "Req.", styles: { halign: 'right' } }, { content: "Verif.", styles: { halign: 'right' } }],
+                rows: styledRows,
+            },
+            totals: [],
+        });
+        const pdfBuffer = Buffer.from(doc.output('arraybuffer'));
+        return { buffer: pdfBuffer, fileName };
+    };
+
     const handleFinalizeAndAction = async (action: 'finish' | 'pdf' | 'email') => {
+        if (!user || !state.currentDocument) return;
+
+        const hasDiscrepancy = state.verificationItems.some(item => item.requiredQuantity !== item.verifiedQuantity);
+        if (hasDiscrepancy) {
+            updateState({
+                confirmationState: {
+                    title: 'Finalizar con Discrepancias',
+                    message: 'Existen diferencias entre las cantidades requeridas y las verificadas. ¿Estás seguro de que deseas finalizar y registrar este despacho?',
+                    confirmText: 'Sí, Completar',
+                    cancelText: 'Cancelar',
+                    onConfirm: () => {
+                        updateState({ confirmationState: null });
+                        proceedWithFinalize(action);
+                    },
+                    onCancel: () => updateState({ confirmationState: null })
+                }
+            });
+        } else {
+            proceedWithFinalize(action);
+        }
+    };
+    
+    const proceedWithFinalize = async (action: 'finish' | 'pdf' | 'email') => {
         if (!user || !state.currentDocument) return;
         updateState({ isSubmitting: true });
 
@@ -310,9 +415,28 @@ export function useDispatchCheck() {
             });
 
             if (action === 'email') {
-                // Email logic would go here
+                const pdfData = await generatePdfForAction();
+                if (pdfData) {
+                    await sendDispatchEmail({
+                        to: state.selectedUsers.map(u => u.email),
+                        cc: state.externalEmail,
+                        body: state.emailBody,
+                        pdfBuffer: pdfData.buffer.toString('base64'),
+                        fileName: pdfData.fileName,
+                        documentId: state.currentDocument.id,
+                    });
+                }
             } else if (action === 'pdf') {
-                // PDF logic here
+                const pdfData = await generatePdfForAction();
+                if (pdfData) {
+                    const blob = new Blob([pdfData.buffer], { type: 'application/pdf' });
+                    const url = URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = pdfData.fileName;
+                    link.click();
+                    URL.revokeObjectURL(url);
+                }
             }
 
             toast({ title: "Verificación Finalizada", description: "El despacho ha sido registrado." });
@@ -326,16 +450,17 @@ export function useDispatchCheck() {
         }
     };
 
+
     const [debouncedUserSearch] = useDebounce(state.userSearchTerm, 300);
     const userOptions = useMemo(() => {
         if (debouncedUserSearch.length < 2) return [];
         return allUsers
-            .filter((u) => u.name.toLowerCase().includes(debouncedUserSearch.toLowerCase()) || u.email.toLowerCase().includes(debouncedUserSearch.toLowerCase()))
-            .map((u) => ({ value: String(u.id), label: `${u.name} (${u.email})` }));
+            .filter(u => u.name.toLowerCase().includes(debouncedUserSearch.toLowerCase()) || u.email.toLowerCase().includes(debouncedUserSearch.toLowerCase()))
+            .map(u => ({ value: String(u.id), label: `${u.name} (${u.email})` }));
     }, [debouncedUserSearch, allUsers]);
 
     const handleUserSelect = (userId: string) => {
-        const userToAdd = allUsers.find((u) => String(u.id) === userId);
+        const userToAdd = allUsers.find(u => String(u.id) === userId);
         if (userToAdd && !state.selectedUsers.some(u => u.id === userToAdd.id)) {
             updateState({
                 selectedUsers: [...state.selectedUsers, userToAdd],
@@ -370,6 +495,7 @@ export function useDispatchCheck() {
         clearError,
         handleIndicatorClick,
         handleManualQuantityChange,
+        handleManualQuantityBlur,
         handleModeChange,
         reset,
         handleFinalizeAndAction,
@@ -379,6 +505,7 @@ export function useDispatchCheck() {
         setIsUserSearchOpen: (isOpen: boolean) => updateState({ isUserSearchOpen: isOpen }),
         setExternalEmail: (email: string) => updateState({ externalEmail: email }),
         setEmailBody: (body: string) => updateState({ emailBody: body }),
+        setConfirmationState: (confirmation: ConfirmationState) => updateState({ confirmationState: confirmation }),
     };
 
     return {

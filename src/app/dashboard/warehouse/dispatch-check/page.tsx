@@ -10,11 +10,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Loader2, Search, CheckCircle, XCircle, Info, ClipboardCheck, Circle, User, FileDown, Mail, ArrowRight } from 'lucide-react';
+import { Loader2, Search, CheckCircle, XCircle, Info, ClipboardCheck, Circle, User, FileDown, Mail, ArrowRight, AlertTriangle, ArrowLeft } from 'lucide-react';
 import { useAuth } from '@/modules/core/hooks/useAuth';
 import { useDispatchCheck } from '@/modules/warehouse/hooks/useDispatchCheck';
 import { SearchInput } from '@/components/ui/search-input';
-import { AlertDialog, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { AlertDialog, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogAction, AlertDialogCancel } from '@/components/ui/alert-dialog';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from '@/components/ui/dialog';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
@@ -158,35 +158,43 @@ export default function DispatchCheckPage() {
                                     />
                                 </div>
                                 <div className="h-[45vh] overflow-y-auto pr-2 space-y-2">
-                                    {state.verificationItems.map(item => (
-                                        <div key={item.lineId} className="flex items-center gap-4 p-2 border rounded-md">
-                                            <Button variant={item.isManualOverride ? 'secondary' : 'ghost'} size="icon" className="h-10 w-10 shrink-0" onClick={() => actions.handleIndicatorClick(item.lineId)}>
-                                                {item.verifiedQuantity >= item.requiredQuantity ? <CheckCircle className="h-6 w-6 text-green-500"/> : item.verifiedQuantity > 0 ? <Loader2 className="h-6 w-6 text-yellow-500 animate-spin"/> : <Circle className="h-6 w-6 text-muted-foreground"/>}
-                                            </Button>
-                                            <div className="flex-1">
-                                                <p className="font-medium">
-                                                    <HighlightedText text={`[${item.itemCode}] ${item.description}`} highlight={state.lastScannedProductCode ?? ''} />
-                                                </p>
-                                                <p className="text-sm text-muted-foreground">
-                                                    Cod. Barras: <span className="font-mono">{item.barcode || 'N/A'}</span>
-                                                </p>
-                                            </div>
-                                            <div className="w-32 text-right">
-                                                <Label>Cantidades</Label>
-                                                <div className="flex items-center justify-end gap-2">
-                                                    <Badge variant="secondary" className="text-base">{item.requiredQuantity}</Badge>
-                                                    <ArrowRight className="h-4 w-4"/>
-                                                    <Input
-                                                        type="number"
-                                                        className="w-20 h-8 text-lg text-center font-bold"
-                                                        value={item.verifiedQuantity}
-                                                        onChange={(e) => actions.handleManualQuantityChange(item.lineId, e.target.value)}
-                                                        disabled={!selectors.canManuallyOverride}
-                                                    />
+                                    {state.verificationItems.map(item => {
+                                        const inputRef = (el: HTMLInputElement) => {
+                                            if (el) state.quantityInputRefs.current.set(item.lineId, el);
+                                            else state.quantityInputRefs.current.delete(item.lineId);
+                                        };
+                                        return (
+                                            <div key={item.lineId} className="flex items-center gap-4 p-2 border rounded-md">
+                                                <Button variant={'ghost'} size="icon" className="h-10 w-10 shrink-0" onClick={() => actions.handleIndicatorClick(item.lineId)}>
+                                                    {item.verifiedQuantity > item.requiredQuantity ? <AlertTriangle className="h-6 w-6 text-orange-500"/> : item.verifiedQuantity === item.requiredQuantity ? <CheckCircle className="h-6 w-6 text-green-500"/> : item.verifiedQuantity > 0 ? <Loader2 className="h-6 w-6 text-yellow-500 animate-spin"/> : <Circle className="h-6 w-6 text-muted-foreground"/>}
+                                                </Button>
+                                                <div className="flex-1">
+                                                    <p className="font-medium">
+                                                        <HighlightedText text={`[${item.itemCode}] ${item.description}`} highlight={state.lastScannedProductCode ?? ''} />
+                                                    </p>
+                                                    <p className="text-sm text-muted-foreground">
+                                                        Cod. Barras: <span className="font-mono">{item.barcode || 'N/A'}</span>
+                                                    </p>
+                                                </div>
+                                                <div className="w-32 text-right">
+                                                    <Label>Cantidades</Label>
+                                                    <div className="flex items-center justify-end gap-2">
+                                                        <Badge variant="secondary" className="text-base">{item.requiredQuantity}</Badge>
+                                                        <ArrowRight className="h-4 w-4"/>
+                                                        <Input
+                                                            ref={inputRef}
+                                                            type="text"
+                                                            className="w-20 h-8 text-lg text-center font-bold"
+                                                            value={item.displayVerifiedQuantity}
+                                                            onChange={(e) => actions.handleManualQuantityChange(item.lineId, e.target.value)}
+                                                            onBlur={(e) => actions.handleManualQuantityBlur(item.lineId, e.target.value)}
+                                                            disabled={!selectors.canManuallyOverride}
+                                                        />
+                                                    </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                    ))}
+                                        )
+                                    })}
                                 </div>
                             </div>
                         </CardContent>
@@ -220,10 +228,10 @@ export default function DispatchCheckPage() {
                                                         onOpenChange={actions.setIsUserSearchOpen}
                                                     />
                                                     <div className="flex flex-wrap gap-1 mt-2">
-                                                        {state.selectedUsers.map(user => (
-                                                            <Badge key={user.id} variant="secondary">
-                                                                {user.name}
-                                                                <button onClick={() => actions.handleUserDeselect(user.id)} className="ml-1 rounded-full p-0.5 hover:bg-muted-foreground/20">
+                                                        {state.selectedUsers.map(u => (
+                                                            <Badge key={u.id} variant="secondary">
+                                                                {u.name}
+                                                                <button onClick={() => actions.handleUserDeselect(u.id)} className="ml-1 rounded-full p-0.5 hover:bg-muted-foreground/20">
                                                                     <XCircle className="h-3 w-3"/>
                                                                 </button>
                                                             </Badge>
@@ -276,6 +284,29 @@ export default function DispatchCheckPage() {
                             </AlertDialogFooter>
                         </AlertDialogContent>
                     </AlertDialog>
+
+                    <AlertDialog open={!!state.confirmationState}>
+                        <AlertDialogContent>
+                             <AlertDialogHeader>
+                                <AlertDialogTitle className="flex items-center gap-2">
+                                    <Info className="h-6 w-6 text-blue-500"/>
+                                    {state.confirmationState?.title}
+                                </AlertDialogTitle>
+                                <AlertDialogDescription>
+                                    {state.confirmationState?.message}
+                                </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                                <AlertDialogCancel onClick={state.confirmationState?.onCancel}>
+                                    {state.confirmationState?.cancelText || 'Cancelar'}
+                                </AlertDialogCancel>
+                                <AlertDialogAction onClick={state.confirmationState?.onConfirm}>
+                                    {state.confirmationState?.confirmText || 'Confirmar'}
+                                </AlertDialogAction>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                    </AlertDialog>
+
                 </div>
             </main>
         );
