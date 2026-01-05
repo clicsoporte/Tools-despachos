@@ -28,6 +28,7 @@ const config: Config = {
     'bg-green-700',
     'bg-blue-600',
     'bg-sky-600',
+    'bg-sky-700',
     'bg-teal-600',
     'bg-lime-600',
     'bg-gray-500',

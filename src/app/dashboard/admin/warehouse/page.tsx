@@ -16,7 +16,7 @@ import { logError, logInfo } from '@/modules/core/lib/logger';
 import { usePageTitle } from '@/modules/core/hooks/usePageTitle';
 import { useAuthorization } from '@/modules/core/hooks/useAuthorization';
 import { getWarehouseSettings, saveWarehouseSettings, getLocations, addLocation, deleteLocation, updateLocation, addBulkLocations, getStockSettings, saveStockSettings } from '@/modules/warehouse/lib/actions';
-import { Save, PlusCircle, Trash2, Palette } from 'lucide-react';
+import { Save, PlusCircle, Trash2, Palette, Mail } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { WarehouseSettings, StockSettings, Warehouse } from '@/modules/core/types';
 import { Separator } from '@/components/ui/separator';
@@ -24,6 +24,7 @@ import { useRouter } from 'next/navigation';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
+import { Textarea } from '@/components/ui/textarea';
 
 const defaultColors = [ '#8884d8', '#82ca9d', '#ffc658', '#ff8042', '#ff7300', '#0088fe', '#00c49f', '#ffbb28', '#F44336', '#9C27B0', '#3F51B5', '#009688' ];
 
@@ -45,6 +46,12 @@ export default function WarehouseSettingsPage() {
                 getWarehouseSettings(),
                 getStockSettings()
             ]);
+
+            // Ensure dispatchNotificationEmails exists
+            if (wSettings && wSettings.dispatchNotificationEmails === undefined) {
+                wSettings.dispatchNotificationEmails = '';
+            }
+
             setWarehouseSettings(wSettings);
             if (!sSettings.warehouses) {
                 sSettings.warehouses = [];
@@ -233,6 +240,20 @@ export default function WarehouseSettingsPage() {
                                     <PlusCircle className="h-4 w-4" />
                                 </Button>
                             </div>
+                        </div>
+                        <Separator />
+                         <div className="space-y-4 rounded-lg border p-4">
+                            <h3 className="font-semibold flex items-center gap-2"><Mail className="h-4 w-4"/>Notificaciones Automáticas de Despacho</h3>
+                            <CardDescription className="mb-4">
+                                Ingresa una lista de correos que recibirán una copia del comprobante de despacho cada vez que se finalice una verificación. Sepáralos por comas.
+                            </CardDescription>
+                            <Textarea
+                                id="dispatchEmails"
+                                placeholder="supervisor@ejemplo.com, logistica@ejemplo.com"
+                                value={warehouseSettings.dispatchNotificationEmails || ''}
+                                onChange={(e) => setWarehouseSettings(prev => prev ? { ...prev, dispatchNotificationEmails: e.target.value } : null)}
+                                rows={3}
+                            />
                         </div>
                     </CardContent>
                     <CardFooter>
