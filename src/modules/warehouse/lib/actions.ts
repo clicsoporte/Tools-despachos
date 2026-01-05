@@ -17,7 +17,7 @@ import {
     getItemLocations as getItemLocationsServer,
     getAllItemLocations as getAllItemLocationsServer,
     assignItemToLocation as assignItemToLocationServer,
-    unassignItemFromLocation as unassignItemFromLocationServer,
+    unassignItemToLocation as unassignItemFromLocationServer,
     getWarehouseData as getWarehouseDataServer,
     getMovements as getMovementsServer,
     addInventoryUnit as addInventoryUnitServer,
@@ -45,12 +45,12 @@ import type { HAlignType, FontStyle } from 'jspdf-autotable';
 
 export const getWarehouseSettings = async (): Promise<WarehouseSettings> => getWarehouseSettingsServer();
 export async function saveWarehouseSettings(settings: WarehouseSettings): Promise<void> {
-    await logInfo("Warehouse settings updated.");
+    await logInfo('Warehouse settings updated.');
     return saveWarehouseSettingsServer(settings);
 }
 export const getStockSettings = async (): Promise<StockSettings> => getStockSettingsDb();
 export async function saveStockSettings(settings: StockSettings): Promise<void> {
-    await logInfo("Stock settings updated.");
+    await logInfo('Stock settings updated.');
     return saveStockSettingsDb(settings);
 }
 export const getLocations = async (): Promise<WarehouseLocation[]> => getLocationsServer();
@@ -130,7 +130,7 @@ export async function sendDispatchEmail(payload: {
     cc: string; 
     body: string; 
     document: any; // The full currentDocument object
-    items: { itemCode: string; barcode: string; description: string; requiredQuantity: number; verifiedQuantity: number }[],
+    items: { itemCode: string, barcode: string, description: string, requiredQuantity: number, verifiedQuantity: number }[],
     verifiedBy: string,
 }): Promise<void> {
     const { to, cc, body, items, document, verifiedBy } = payload;
@@ -166,12 +166,12 @@ export async function sendDispatchEmail(payload: {
     }).join('');
 
     const htmlBody = `
-        <p>Se adjunta el comprobante de despacho para el documento ${document.id}.</p>
+        <p>Se ha completado la verificación de despacho para el documento <strong>${document.id}</strong>.</p>
         <hr>
         <h3>Datos del Despacho:</h3>
         <p>
-            <strong>Cliente:</strong> ${document.clientName}<br>
-            <strong>Cédula:</strong> ${document.clientTaxId}<br>
+            <strong>Cliente:</strong> ${document.clientName} (${document.clientId})<br>
+            <strong>Cédula:</strong> ${document.clientTaxId || 'No disponible'}<br>
             <strong>Dirección de Envío:</strong> ${document.shippingAddress}<br>
             <strong>Verificado por:</strong> ${verifiedBy}
         </p>
@@ -204,7 +204,7 @@ export async function sendDispatchEmail(payload: {
         });
         logInfo(`Dispatch email sent for document ${document.id}`, { to, cc });
     } catch (error: any) {
-        logError("Failed to send dispatch email", { error: error.message, documentId: document.id });
-        throw new Error("No se pudo enviar el correo de despacho. Verifica la configuración de SMTP.");
+        logError('Failed to send dispatch email', { error: error.message, documentId: document.id });
+        throw new Error('No se pudo enviar el correo de despacho. Verifica la configuración de SMTP.');
     }
 }

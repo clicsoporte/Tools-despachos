@@ -1,4 +1,3 @@
-
 /**
  * @fileoverview This file contains centralized utility functions related to time and date calculations.
  * Centralizing this logic adheres to the DRY (Don't Repeat Yourself) principle and makes
@@ -45,7 +44,7 @@ export function getDaysRemaining(dateStr: string | null | undefined) {
         return { label, color: colorClass };
         
     } catch (error) {
-        console.error("Error parsing date in getDaysRemaining:", error);
+        console.error('Error parsing date in getDaysRemaining:', error);
         return { label: 'Fecha inv.', color: 'text-red-600' };
     }
 }

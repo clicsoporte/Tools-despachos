@@ -6,7 +6,7 @@
  * This file implements secure password handling using bcryptjs.
  * All functions in this file are server-only.
  */
-"use server";
+'use server';
 
 import { connectDb, getAllRoles, getCompanySettings, getAllCustomers, getAllProducts, getAllStock, getAllExemptions, getExemptionLaws, getUnreadSuggestions, getDbModules } from './db';
 import { sendEmail, getEmailSettings as getEmailSettingsFromDb } from './email-service';
@@ -23,6 +23,7 @@ import { initializeWarehouseDb, runWarehouseMigrations } from '../../warehouse/l
 import { initializeCostAssistantDb, runCostAssistantMigrations } from '../../cost-assistant/lib/db';
 import { revalidatePath } from 'next/cache';
 
+const DB_FILE = 'intratool.db';
 const SALT_ROUNDS = 10;
 const SESSION_COOKIE_NAME = 'clic-tools-session';
 const SESSION_DURATION = 8 * 60 * 60 * 1000; // 8 hours in milliseconds
@@ -87,7 +88,7 @@ export async function login(email: string, passwordProvided: string, clientInfo:
     await logWarn(`Failed login attempt for email: ${email}`, logMeta);
     return { user: null, forcePasswordChange: false };
   } catch (error: any) {
-    console.error("Login error:", error);
+    console.error('Login error:', error);
     await logError(`Login process failed for email: ${email}`, { error: error.message, ...logMeta});
     return { user: null, forcePasswordChange: false };
   }
@@ -129,7 +130,7 @@ async function getAllUsersWithPasswords(): Promise<User[]> {
         const stmt = db.prepare('SELECT * FROM users ORDER BY name');
         return stmt.all() as User[];
     } catch (error) {
-        console.error("Failed to get all users:", error);
+        console.error('Failed to get all users:', error);
         return [];
     }
 }
@@ -163,7 +164,7 @@ export async function getAllUsersForReport(): Promise<User[]> {
             return userWithoutPassword;
         }) as User[];
     } catch (error: any) {
-        await logError("getAllUsersForReport", { error: error.message });
+        await logError('getAllUsersForReport', { error: error.message });
         return [];
     }
 }
@@ -193,11 +194,11 @@ export async function addUser(userData: Omit<User, 'id' | 'avatar' | 'recentActi
     email: validationResult.data.email,
     password: hashedPassword,
     role: validationResult.data.role,
-    avatar: "",
-    recentActivity: "Usuario recién creado.",
-    phone: validationResult.data.phone || "",
-    whatsapp: validationResult.data.whatsapp || "",
-    erpAlias: validationResult.data.erpAlias || "",
+    avatar: '',
+    recentActivity: 'Usuario recién creado.',
+    phone: validationResult.data.phone || '',
+    whatsapp: validationResult.data.whatsapp || '',
+    erpAlias: validationResult.data.erpAlias || '',
     forcePasswordChange: validationResult.data.forcePasswordChange,
   };
   
@@ -291,8 +292,8 @@ export async function saveAllUsers(users: User[]): Promise<void> {
         transaction(users);
         await logInfo(`${users.length} user records were processed for saving.`);
     } catch (error) {
-        await logError("Failed to save all users (saveAllUsers)", { error: (error as Error).message });
-        throw new Error("Database transaction failed to save users.");
+        await logError('Failed to save all users (saveAllUsers)', { error: (error as Error).message });
+        throw new Error('Database transaction failed to save users.');
     }
 }
 
@@ -434,7 +435,7 @@ export async function sendPasswordRecoveryEmail(email: string, clientInfo: { ip:
     try {
         const emailSettings = await getEmailSettingsFromDb();
         if (!emailSettings.smtpHost) {
-            throw new Error("La configuración de SMTP no está establecida. No se puede enviar el correo.");
+            throw new Error('La configuración de SMTP no está establecida. No se puede enviar el correo.');
         }
         
         const emailBody = (emailSettings.recoveryEmailBody || '')
@@ -450,6 +451,6 @@ export async function sendPasswordRecoveryEmail(email: string, clientInfo: { ip:
         await logInfo(`Password recovery email sent successfully to ${user.name}.`, logMeta);
     } catch (error: any) {
         await logError('Failed to send password recovery email.', { ...logMeta, error: error.message });
-        throw new Error("No se pudo enviar el correo de recuperación. Revisa la configuración de SMTP.");
+        throw new Error('No se pudo enviar el correo de recuperación. Revisa la configuración de SMTP.');
     }
 }

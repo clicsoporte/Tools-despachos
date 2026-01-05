@@ -1,4 +1,3 @@
-
 /**
  * @fileoverview This file defines a custom hook and provider for managing the page title.
  * This allows any child component to set the title that is displayed in the main Header component,
@@ -6,7 +5,7 @@
  */
 'use client';
 
-import React, { createContext, useState, useContext, ReactNode, FC } from "react";
+import React, { createContext, useState, useContext, ReactNode, FC } from 'react';
 
 /**
  * Defines the shape of the context's value.
@@ -54,7 +53,7 @@ export const PageTitleProvider: FC<PageTitleProviderProps> = ({ children, initia
 export const usePageTitle = (): PageTitleContextType => {
     const context = useContext(PageTitleContext);
     if (context === undefined) {
-        throw new Error("usePageTitle must be used within a PageTitleProvider");
+        throw new Error('usePageTitle must be used within a PageTitleProvider');
     }
     return context;
 };

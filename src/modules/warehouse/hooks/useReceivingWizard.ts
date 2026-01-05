@@ -7,12 +7,12 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useToast } from '@/modules/core/hooks/use-toast';
 import { usePageTitle } from '@/modules/core/hooks/usePageTitle';
 import { useAuthorization } from '@/modules/core/hooks/useAuthorization';
-import { logError } from '@/modules/core/lib/logger';
-import { getLocations, getAllItemLocations, addInventoryUnit, getSelectableLocations, assignItemToLocation } from '@/modules/warehouse/lib/actions';
+import { logError, logInfo } from '@/modules/core/lib/logger';
+import { getLocations, getAllItemLocations, addInventoryUnit, getSelectableLocations, assignItemToLocation } from '../lib/actions';
 import type { Product, WarehouseLocation, ItemLocation, InventoryUnit } from '@/modules/core/types';
 import { useAuth } from '@/modules/core/hooks/useAuth';
 import { useDebounce } from 'use-debounce';
-import jsPDF from "jspdf";
+import jsPDF from 'jspdf';
 import QRCode from 'qrcode';
 import jsbarcode from 'jsbarcode';
 import { format } from 'date-fns';
@@ -33,7 +33,7 @@ const renderLocationPathAsString = (locationId: number, locations: WarehouseLoca
 };
 
 export const useReceivingWizard = () => {
-    useAuthorization(['warehouse:receiving:create']);
+    useAuthorization(['warehouse:receiving-wizard:use']);
     const { setTitle } = usePageTitle();
     const { toast } = useToast();
     const { user, companyData, products: authProducts, isReady } = useAuth();
@@ -60,7 +60,7 @@ export const useReceivingWizard = () => {
         saveAsDefault: true, // New state for the switch
     });
     
-    const [debouncedProductSearch] = useDebounce(state.productSearchTerm, 300);
+    const [debouncedProductSearch] = useDebounce(state.productSearchTerm, companyData?.searchDebounceTime ?? 500);
     const [debouncedLocationSearch] = useDebounce(state.locationSearchTerm, 300);
 
     const updateState = useCallback((newState: Partial<typeof state>) => {
@@ -68,7 +68,7 @@ export const useReceivingWizard = () => {
     }, []);
 
     useEffect(() => {
-        setTitle("Asistente de Recepción");
+        setTitle('Asistente de Recepción');
         const loadInitialData = async () => {
             updateState({ isLoading: true });
             try {
@@ -79,8 +79,8 @@ export const useReceivingWizard = () => {
                     allItemLocations: itemLocs,
                 });
             } catch (error: any) {
-                logError("Failed to load initial receiving data", { error: error.message });
-                toast({ title: "Error de Carga", variant: "destructive" });
+                logError('Failed to load initial receiving data', { error: error.message });
+                toast({ title: 'Error de Carga', variant: 'destructive' });
             } finally {
                 updateState({ isLoading: false });
             }
@@ -239,9 +239,9 @@ export const useReceivingWizard = () => {
 
             doc.save(`etiqueta_unidad_${unit.unitCode}.pdf`);
 
-        } catch (error: any) {
-             logError('Failed to generate label', { error: error.message, unitCode: unit.unitCode });
-            toast({ title: 'Error al Imprimir', description: 'No se pudo generar la etiqueta PDF.', variant: 'destructive' });
+        } catch (err) {
+            console.error(err);
+            toast({ title: 'Error al generar QR/Barcode', description: 'No se pudo crear la imagen del código.', variant: 'destructive'});
         }
     };
     

@@ -59,7 +59,6 @@ type ErrorState = {
 
 type State = {
     isLoading: boolean;
-    isSubmitting: boolean;
     step: WizardStep;
     
     documentSearchTerm: string;
@@ -96,10 +95,8 @@ export function useDispatchCheck() {
     const scannerInputRef = useRef<HTMLInputElement>(null);
     const quantityInputRefs = useRef<Map<number, HTMLInputElement>>(new Map());
 
-
     const [state, setState] = useState<State>({
         isLoading: true,
-        isSubmitting: false,
         step: 'initial',
         documentSearchTerm: '',
         isDocumentSearchOpen: false,
@@ -127,7 +124,7 @@ export function useDispatchCheck() {
     }, []);
     
     useEffect(() => {
-        setTitle("Chequeo de Despacho");
+        setTitle('Chequeo de Despacho');
         const loadPrefs = async () => {
             if (user) {
                 const prefs = await getUserPreferences(user.id, 'dispatchCheckPrefs');
@@ -158,7 +155,7 @@ export function useDispatchCheck() {
                 }));
                 updateState({ documentOptions: options });
             } catch (error: any) {
-                logError("Error searching documents", { error: error.message });
+                logError('Error searching documents', { error: error.message });
             }
         };
         fetchDocs();
@@ -168,7 +165,7 @@ export function useDispatchCheck() {
         updateState({ isLoading: true, isDocumentSearchOpen: false });
         try {
             const data = await getInvoiceData(documentId);
-            if (!data) throw new Error("No se encontraron datos para este documento.");
+            if (!data) throw new Error('No se encontraron datos para este documento.');
 
             const verificationItems: VerificationItem[] = data.lines.map(line => {
                 const product = products.find(p => p.id === line.ARTICULO);
@@ -199,7 +196,7 @@ export function useDispatchCheck() {
             });
              setTimeout(() => scannerInputRef.current?.focus(), 100);
         } catch (error: any) {
-            toast({ title: "Error", description: error.message, variant: "destructive" });
+            toast({ title: 'Error', description: error.message, variant: 'destructive' });
             updateState({ step: 'initial' });
         } finally {
             updateState({ isLoading: false });
@@ -218,7 +215,7 @@ export function useDispatchCheck() {
     
     const processScannedItem = useCallback((targetItem: VerificationItem) => {
         if (targetItem.verifiedQuantity >= targetItem.requiredQuantity) {
-            updateState({ errorState: { title: "Cantidad Completa", message: `Ya se verificaron todas las unidades de "${targetItem.description}".` } });
+            updateState({ errorState: { title: 'Cantidad Completa', message: `Ya se verificaron todas las unidades de "${targetItem.description}".` } });
             return;
         }
 
@@ -247,7 +244,7 @@ export function useDispatchCheck() {
         updateState({ scannedCode: '', lastScannedProductCode: targetItem?.itemCode || null });
 
         if (!targetItem) {
-            updateState({ errorState: { title: "Artículo Incorrecto", message: `El código "${state.scannedCode.trim()}" no corresponde a ningún artículo de este despacho.` } });
+            updateState({ errorState: { title: 'Artículo Incorrecto', message: `El código "${state.scannedCode.trim()}" no corresponde a ningún artículo de este despacho.` } });
             return;
         }
         
@@ -386,13 +383,13 @@ export function useDispatchCheck() {
         });
 
         const doc = generateDocument({
-            docTitle: "Comprobante de Despacho",
+            docTitle: 'Comprobante de Despacho',
             docId: document.id,
             companyData,
             meta: [{ label: 'Verificado por', value: verifiedBy }, { label: 'Fecha', value: format(new Date(), 'dd/MM/yyyy HH:mm') }],
             blocks: [{ title: 'Cliente', content: `${document.clientName} (${document.clientId})\n${document.shippingAddress}` }],
             table: {
-                columns: ["Código", "Descripción", { content: "Req.", styles: { halign: 'right' } }, { content: "Verif.", styles: { halign: 'right' } }],
+                columns: ['Código', 'Descripción', { content: 'Req.', styles: { halign: 'right' } }, { content: 'Verif.', styles: { halign: 'right' } }],
                 rows: styledRows,
                 columnStyles: {},
             },
@@ -403,7 +400,7 @@ export function useDispatchCheck() {
 
     const proceedWithFinalize = useCallback(async (action: 'finish' | 'email') => {
         if (!user || !state.currentDocument) return;
-        updateState({ isSubmitting: true });
+        updateState({ isLoading: true });
 
         try {
             await logDispatch({
@@ -426,14 +423,14 @@ export function useDispatchCheck() {
                 });
             }
 
-            toast({ title: "Verificación Finalizada", description: "El despacho ha sido registrado." });
+            toast({ title: 'Verificación Finalizada', description: 'El despacho ha sido registrado.' });
             updateState({ step: 'finished' });
 
         } catch (error: any) {
-            logError("Failed to finalize dispatch", { error: error.message });
-            toast({ title: "Error al Finalizar", description: error.message, variant: "destructive" });
+            logError('Failed to finalize dispatch', { error: error.message });
+            toast({ title: 'Error al Finalizar', description: error.message, variant: 'destructive' });
         } finally {
-            updateState({ isSubmitting: false });
+            updateState({ isLoading: false });
         }
     }, [user, state.currentDocument, state.verificationItems, state.selectedUsers, state.externalEmail, state.emailBody, toast, updateState]);
     
@@ -486,7 +483,7 @@ export function useDispatchCheck() {
         canSwitchMode: hasPermission('warehouse:dispatch-check:switch-mode'),
         canManuallyOverride: hasPermission('warehouse:dispatch-check:manual-override'),
         canSendExternalEmail: hasPermission('warehouse:dispatch-check:send-email-external'),
-        isVerificationComplete: state.verificationItems.length > 0, // Always allow finalizing
+        isVerificationComplete: state.verificationItems.length > 0,
         progressPercentage: (state.verificationItems.filter(item => item.verifiedQuantity >= item.requiredQuantity).length / (state.verificationItems.length || 1)) * 100,
         progressText: `${state.verificationItems.filter(item => item.verifiedQuantity >= item.requiredQuantity).length} de ${state.verificationItems.length} líneas completadas`,
         documentOptions: state.documentOptions,
