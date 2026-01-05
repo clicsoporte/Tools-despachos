@@ -692,23 +692,21 @@ export async function searchDocuments(searchTerm: string): Promise<{ id: string,
     const db = await connectDb();
     const likeTerm = `%${searchTerm}%`;
 
-    // Query for invoices and remissions
-    const invoices = db.prepare(`
+    const query = `
         SELECT FACTURA as id, TIPO_DOCUMENTO as typeCode, CLIENTE as clientId, NOMBRE_CLIENTE as clientName 
         FROM erp_invoice_headers 
-        WHERE (FACTURA LIKE ? OR NOMBRE_CLIENTE LIKE ? OR CLIENTE LIKE ? OR PEDIDO LIKE ?)
+        WHERE (FACTURA LIKE ?)
           AND TIPO_DOCUMENTO IN ('F', 'R')
-    `).all(likeTerm, likeTerm, likeTerm, likeTerm) as any[];
-
-    // Query for sales orders
-    const orders = db.prepare(`
+        UNION ALL
         SELECT h.PEDIDO as id, 'P' as typeCode, h.CLIENTE as clientId, c.name as clientName
         FROM erp_order_headers h
         LEFT JOIN customers c ON h.CLIENTE = c.id
-        WHERE h.PEDIDO LIKE ? OR h.CLIENTE LIKE ? OR c.name LIKE ?
-    `).all(likeTerm, likeTerm, likeTerm) as any[];
+        WHERE h.PEDIDO LIKE ?
+    `;
 
-    const combinedResults = [...invoices, ...orders].map(r => ({
+    const results = db.prepare(query).all(likeTerm, likeTerm) as any[];
+    
+    const combinedResults = results.map(r => ({
         ...r,
         type: r.typeCode === 'F' ? 'Factura' : (r.typeCode === 'R' ? 'Remisión' : 'Pedido')
     })).slice(0, 10);
@@ -743,22 +741,69 @@ export async function getDispatchLogs(): Promise<DispatchLog[]> {
     return JSON.parse(JSON.stringify(logs));
 }
 
-export async function sendDispatchEmail(payload: { to: string[]; cc: string; body: string; pdfBuffer: string; fileName: string; documentId: string; }): Promise<void> {
-    const { to, cc, body, pdfBuffer, fileName, documentId } = payload;
+
+export async function sendDispatchEmail(payload: { 
+    to: string[]; 
+    cc: string; 
+    body: string; 
+    pdfBuffer: string; // Base64 encoded string
+    fileName: string; 
+    documentId: string;
+    items: { itemCode: string, description: string, requiredQuantity: number, verifiedQuantity: number }[]
+}): Promise<void> {
+    const { to, cc, body, pdfBuffer, fileName, documentId, items } = payload;
+    
     if (!to || to.length === 0) {
         logWarn('sendDispatchEmail called without recipients.', { documentId });
         return;
     }
+
+    const tableRows = items.map(item => {
+        let statusColor = '#000000'; // Black
+        if (item.verifiedQuantity > item.requiredQuantity) statusColor = '#dc2626'; // Red
+        else if (item.verifiedQuantity === item.requiredQuantity) statusColor = '#16a34a'; // Green
+        else if (item.verifiedQuantity > 0) statusColor = '#f59e0b'; // Amber
+        return `
+            <tr style="border-bottom: 1px solid #ddd;">
+                <td style="padding: 8px;">${item.itemCode}</td>
+                <td style="padding: 8px;">${item.description}</td>
+                <td style="padding: 8px; text-align: right;">${item.requiredQuantity}</td>
+                <td style="padding: 8px; text-align: right; color: ${statusColor}; font-weight: bold;">${item.verifiedQuantity}</td>
+            </tr>
+        `;
+    }).join('');
+
+    const htmlBody = `
+        <p>Se adjunta el comprobante de despacho para el documento ${documentId}.</p>
+        ${body ? `<p><strong>Mensaje Adicional:</strong></p><p>${body.replace(/\n/g, '<br>')}</p>` : ''}
+        <hr>
+        <h3>Resumen del Despacho:</h3>
+        <table style="width: 100%; border-collapse: collapse; font-family: sans-serif; font-size: 14px;">
+            <thead>
+                <tr style="background-color: #f2f2f2; text-align: left;">
+                    <th style="padding: 8px;">Código</th>
+                    <th style="padding: 8px;">Descripción</th>
+                    <th style="padding: 8px; text-align: right;">Requerido</th>
+                    <th style="padding: 8px; text-align: right;">Verificado</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${tableRows}
+            </tbody>
+        </table>
+    `;
+
     try {
         await sendEmail({
             to: to,
             cc: cc,
             subject: `Comprobante de Despacho - ${documentId}`,
-            html: `<p>Se adjunta el comprobante de despacho para el documento ${documentId}.</p><p><strong>Mensaje Adicional:</strong></p><p>${body || 'No hay mensaje adicional.'}</p>`,
+            html: htmlBody,
             attachments: [
                 {
                     filename: fileName,
-                    content: Buffer.from(pdfBuffer, 'base64'),
+                    content: pdfBuffer,
+                    encoding: 'base64',
                     contentType: 'application/pdf',
                 },
             ],

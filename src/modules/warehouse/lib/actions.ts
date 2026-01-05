@@ -122,4 +122,12 @@ export const searchDocuments = async (searchTerm: string): Promise<{ id: string,
 export const getInvoiceData = async (documentId: string): Promise<{ header: ErpInvoiceHeader; lines: ErpInvoiceLine[] } | null> => getInvoiceDataServer(documentId);
 export const logDispatch = async (dispatchData: any): Promise<void> => logDispatchServer(dispatchData);
 export const getDispatchLogs = async (): Promise<DispatchLog[]> => getDispatchLogsServer();
-export const sendDispatchEmail = async (payload: { to: string[]; cc: string; body: string; pdfBuffer: string; fileName: string; documentId: string; }): Promise<void> => sendDispatchEmailServer(payload);
+export const sendDispatchEmail = async (payload: { 
+    to: string[]; 
+    cc: string; 
+    body: string; 
+    pdfBuffer: string; 
+    fileName: string; 
+    documentId: string; 
+    items: { itemCode: string, description: string, requiredQuantity: number, verifiedQuantity: number }[]
+}): Promise<void> => sendDispatchEmailServer(payload);

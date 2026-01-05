@@ -1,3 +1,4 @@
+
 /**
  * @fileoverview Hook to manage the state and logic for the Dispatch Check module.
  */
@@ -355,9 +356,9 @@ export function useDispatchCheck() {
 
         const styledRows = state.verificationItems.map(item => {
             let textColor: [number, number, number] = [0, 0, 0];
-            if (item.verifiedQuantity > item.requiredQuantity) textColor = [220, 53, 69];
-            else if (item.verifiedQuantity === item.requiredQuantity) textColor = [25, 135, 84];
-            else if (item.verifiedQuantity > 0) textColor = [255, 193, 7];
+            if (item.verifiedQuantity > item.requiredQuantity) textColor = [220, 53, 69]; // Red
+            else if (item.verifiedQuantity === item.requiredQuantity) textColor = [25, 135, 84]; // Green
+            else if (item.verifiedQuantity > 0) textColor = [255, 193, 7]; // Orange/Yellow
 
             return [
                 item.itemCode,
@@ -407,6 +408,7 @@ export function useDispatchCheck() {
                         pdfBuffer: pdfData.buffer.toString('base64'),
                         fileName: pdfData.fileName,
                         documentId: state.currentDocument.id,
+                        items: state.verificationItems,
                     });
                 }
             } else if (action === 'pdf') {
