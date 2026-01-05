@@ -10,7 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Loader2, Search, CheckCircle, XCircle, Info, ClipboardCheck, Circle, User, FileDown, Mail, ArrowRight, AlertTriangle, ArrowLeft } from 'lucide-react';
+import { Loader2, Search, CheckCircle, XCircle, Info, ClipboardCheck, Circle, User, FileDown, Mail, ArrowRight, AlertTriangle, ArrowLeft, Printer } from 'lucide-react';
 import { useAuth } from '@/modules/core/hooks/useAuth';
 import { useDispatchCheck } from '@/modules/warehouse/hooks/useDispatchCheck';
 import { SearchInput } from '@/components/ui/search-input';
@@ -176,7 +176,7 @@ export default function DispatchCheckPage() {
                                                         Cod. Barras: <span className="font-mono">{item.barcode || 'N/A'}</span>
                                                     </p>
                                                 </div>
-                                                <div className="w-32 text-right">
+                                                <div className="w-40 text-right">
                                                     <Label>Cantidades</Label>
                                                     <div className="flex items-center justify-end gap-2">
                                                         <Badge variant="secondary" className="text-base">{item.requiredQuantity}</Badge>
@@ -184,7 +184,7 @@ export default function DispatchCheckPage() {
                                                         <Input
                                                             ref={inputRef}
                                                             type="text"
-                                                            className="w-20 h-8 text-lg text-center font-bold"
+                                                            className="w-24 h-8 text-lg text-center font-bold"
                                                             value={item.displayVerifiedQuantity}
                                                             onChange={(e) => actions.handleManualQuantityChange(item.lineId, e.target.value)}
                                                             onBlur={(e) => actions.handleManualQuantityBlur(item.lineId, e.target.value)}
@@ -258,9 +258,6 @@ export default function DispatchCheckPage() {
                                             </DialogFooter>
                                         </DialogContent>
                                     </Dialog>
-                                    <Button variant="outline" onClick={() => actions.handleFinalizeAndAction('pdf')} disabled={state.isSubmitting}>
-                                        <FileDown className="mr-2 h-4 w-4"/> Finalizar y Generar PDF
-                                    </Button>
                                     <Button onClick={() => actions.handleFinalizeAndAction('finish')} disabled={state.isSubmitting}>
                                         Finalizar Verificación
                                     </Button>

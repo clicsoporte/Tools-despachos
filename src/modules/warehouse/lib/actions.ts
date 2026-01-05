@@ -126,14 +126,12 @@ export async function sendDispatchEmail(payload: {
     to: string[]; 
     cc: string; 
     body: string; 
-    pdfBuffer: string; // Base64 encoded string
-    fileName: string; 
     documentId: string;
     document: any; // The full currentDocument object
     items: { itemCode: string, description: string, requiredQuantity: number, verifiedQuantity: number }[],
     verifiedBy: string,
 }): Promise<void> {
-    const { to, cc, body, pdfBuffer, fileName, documentId, items, document, verifiedBy } = payload;
+    const { to, cc, body, documentId, items, document, verifiedBy } = payload;
     
     if (!to || to.length === 0) {
         logWarn('sendDispatchEmail called without recipients.', { documentId });
@@ -143,8 +141,9 @@ export async function sendDispatchEmail(payload: {
     const tableRows = items.map(item => {
         let statusColor = '#000000'; // Black
         if (item.verifiedQuantity > item.requiredQuantity) statusColor = '#dc2626'; // Red
+        else if (item.verifiedQuantity < item.requiredQuantity) statusColor = '#f59e0b'; // Amber
         else if (item.verifiedQuantity === item.requiredQuantity) statusColor = '#16a34a'; // Green
-        else if (item.verifiedQuantity > 0) statusColor = '#f59e0b'; // Amber
+
         return `
             <tr style="border-bottom: 1px solid #ddd;">
                 <td style="padding: 8px;">${item.itemCode}</td>
@@ -189,14 +188,6 @@ export async function sendDispatchEmail(payload: {
             cc: cc,
             subject: `Comprobante de Despacho - ${documentId}`,
             html: htmlBody,
-            attachments: [
-                {
-                    filename: fileName,
-                    content: pdfBuffer,
-                    encoding: 'base64',
-                    contentType: 'application/pdf',
-                },
-            ],
         });
         logInfo(`Dispatch email sent for document ${documentId}`, { to, cc });
     } catch (error: any) {

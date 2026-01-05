@@ -17,18 +17,6 @@ import { generateDocument } from '@/modules/core/lib/pdf-generator';
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import type { HAlignType, FontStyle } from 'jspdf-autotable';
-import { Button } from '@/components/ui/button';
-import { Loader2, Search, CheckCircle, XCircle, Info, ClipboardCheck, Circle, FileDown, Mail, ArrowRight, Hourglass, ArrowLeft, Printer, AlertTriangle } from 'lucide-react';
-import { SearchInput } from '@/components/ui/search-input';
-import { AlertDialog, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogAction, AlertDialogCancel } from '@/components/ui/alert-dialog';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from '@/components/ui/dialog';
-import { Progress } from '@/components/ui/progress';
-import { Badge } from '@/components/ui/badge';
-import { Textarea } from '@/components/ui/textarea';
-import { Switch } from '@/components/ui/switch';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Skeleton } from '@/components/ui/skeleton';
 
 type WizardStep = 'initial' | 'verifying' | 'finished';
 
@@ -217,9 +205,13 @@ export function useDispatchCheck() {
     }, [products, toast, updateState]);
     
     const handleDocumentSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-        if (e.key === 'Enter' && state.documentOptions.length > 0) {
+        if (e.key === 'Enter') {
             e.preventDefault();
-            handleDocumentSelect(state.documentOptions[0].value);
+            if (state.documentOptions.length > 0) {
+                 handleDocumentSelect(state.documentOptions[0].value);
+            } else if (state.documentSearchTerm) {
+                 handleDocumentSelect(state.documentSearchTerm);
+            }
         }
     };
     
@@ -244,17 +236,17 @@ export function useDispatchCheck() {
         if (e.key !== 'Enter' || !state.scannedCode.trim()) return;
         e.preventDefault();
 
-        const scanned = state.scannedCode.trim();
+        const scanned = state.scannedCode.trim().toLowerCase();
         
         const targetItem = state.verificationItems.find(item => 
-            (item.barcode?.toLowerCase() === scanned.toLowerCase()) || 
-            (item.itemCode.toLowerCase() === scanned.toLowerCase())
+            (item.barcode?.toLowerCase() === scanned) || 
+            (item.itemCode.toLowerCase() === scanned)
         );
 
         updateState({ scannedCode: '', lastScannedProductCode: targetItem?.itemCode || null });
 
         if (!targetItem) {
-            updateState({ errorState: { title: "Artículo Incorrecto", message: `El código "${scanned}" no corresponde a ningún artículo de este despacho.` } });
+            updateState({ errorState: { title: "Artículo Incorrecto", message: `El código "${state.scannedCode.trim()}" no corresponde a ningún artículo de este despacho.` } });
             return;
         }
         
@@ -275,9 +267,10 @@ export function useDispatchCheck() {
             const newItems = state.verificationItems.map(item =>
                 item.lineId === targetItem.lineId ? { ...item, verifiedQuantity: newQty, displayVerifiedQuantity: String(newQty), isManualOverride: true } : item
             );
-            updateState({ verificationItems: newItems });
+            updateState({ verificationItems: newItems, confirmationState: null });
             setTimeout(() => state.scannerInputRef.current?.focus(), 50);
         } else {
+            updateState({ confirmationState: null });
             const inputRef = state.quantityInputRefs.current.get(lineId);
             if (inputRef) {
                 setTimeout(() => {
@@ -286,7 +279,6 @@ export function useDispatchCheck() {
                 }, 50);
             }
         }
-        updateState({ confirmationState: null });
     }, [state.verificationItems, updateState, state.scannerInputRef, state.quantityInputRefs]);
 
     const handleIndicatorClick = useCallback((lineId: number) => {
@@ -360,40 +352,6 @@ export function useDispatchCheck() {
         });
     }, [updateState]);
 
-    const generatePdfForAction = useCallback(async (): Promise<{ buffer: Buffer; fileName: string } | null> => {
-        if (!companyData || !state.currentDocument) return null;
-        const fileName = `Comprobante-${state.currentDocument.id}.pdf`;
-
-        const styledRows = state.verificationItems.map(item => {
-            let textColor: [number, number, number] = [0, 0, 0];
-            if (item.verifiedQuantity > item.requiredQuantity) textColor = [220, 53, 69]; // Red
-            else if (item.verifiedQuantity === item.requiredQuantity) textColor = [25, 135, 84]; // Green
-            else if (item.verifiedQuantity > 0) textColor = [255, 193, 7]; // Orange/Yellow
-
-            return [
-                item.itemCode,
-                item.description,
-                { content: item.requiredQuantity.toString(), styles: { halign: 'right' as HAlignType } },
-                { content: item.verifiedQuantity.toString(), styles: { halign: 'right' as HAlignType, textColor, fontStyle: 'bold' as FontStyle } }
-            ];
-        });
-
-        const doc = generateDocument({
-            docTitle: `Comprobante de Despacho`,
-            docId: state.currentDocument.id,
-            companyData,
-            meta: [{ label: 'Verificado por', value: user?.name || 'N/A' }, { label: 'Fecha', value: format(new Date(), 'dd/MM/yyyy HH:mm') }],
-            blocks: [{ title: 'Cliente', content: `${state.currentDocument.clientName}\nCédula: ${state.currentDocument.clientId}\nDirección: ${state.currentDocument.shippingAddress}` }],
-            table: {
-                columns: ["Código", "Descripción", { content: "Req.", styles: { halign: 'right' } }, { content: "Verif.", styles: { halign: 'right' } }],
-                rows: styledRows,
-            },
-            totals: [],
-        });
-        const pdfBuffer = Buffer.from(doc.output('arraybuffer'));
-        return { buffer: pdfBuffer, fileName };
-    }, [state.verificationItems, state.currentDocument, companyData, user]);
-
     const proceedWithFinalize = useCallback(async (action: 'finish' | 'pdf' | 'email') => {
         if (!user || !state.currentDocument) return;
         updateState({ isSubmitting: true });
@@ -409,31 +367,15 @@ export function useDispatchCheck() {
             });
 
             if (action === 'email') {
-                const pdfData = await generatePdfForAction();
-                if (pdfData) {
-                    await sendDispatchEmail({
-                        to: state.selectedUsers.map(u => u.email),
-                        cc: state.externalEmail,
-                        body: state.emailBody,
-                        pdfBuffer: pdfData.buffer.toString('base64'),
-                        fileName: pdfData.fileName,
-                        documentId: state.currentDocument.id,
-                        document: state.currentDocument,
-                        items: state.verificationItems,
-                        verifiedBy: user.name,
-                    });
-                }
-            } else if (action === 'pdf') {
-                const pdfData = await generatePdfForAction();
-                if (pdfData) {
-                    const blob = new Blob([pdfData.buffer], { type: 'application/pdf' });
-                    const url = URL.createObjectURL(blob);
-                    const link = document.createElement('a');
-                    link.href = url;
-                    link.download = pdfData.fileName;
-                    link.click();
-                    URL.revokeObjectURL(url);
-                }
+                await sendDispatchEmail({
+                    to: state.selectedUsers.map(u => u.email),
+                    cc: state.externalEmail,
+                    body: state.emailBody,
+                    documentId: state.currentDocument.id,
+                    document: state.currentDocument,
+                    items: state.verificationItems,
+                    verifiedBy: user.name,
+                });
             }
 
             toast({ title: "Verificación Finalizada", description: "El despacho ha sido registrado." });
@@ -445,7 +387,7 @@ export function useDispatchCheck() {
         } finally {
             updateState({ isSubmitting: false });
         }
-    }, [user, state.currentDocument, state.verificationItems, state.selectedUsers, state.externalEmail, state.emailBody, generatePdfForAction, toast, updateState]);
+    }, [user, state.currentDocument, state.verificationItems, state.selectedUsers, state.externalEmail, state.emailBody, toast, updateState]);
     
     const handleFinalizeAndAction = useCallback(async (action: 'finish' | 'pdf' | 'email') => {
         const hasDiscrepancy = state.verificationItems.some(item => item.requiredQuantity !== item.verifiedQuantity);
@@ -473,13 +415,13 @@ export function useDispatchCheck() {
     const userOptions = useMemo(() => {
         if (debouncedUserSearch.length < 2) return [];
         return users
-            .filter(u => u.name.toLowerCase().includes(debouncedUserSearch.toLowerCase()) || u.email.toLowerCase().includes(debouncedUserSearch.toLowerCase()))
-            .map(u => ({ value: String(u.id), label: `${u.name} (${u.email})` }));
+            .filter((u: User) => u.name.toLowerCase().includes(debouncedUserSearch.toLowerCase()) || u.email.toLowerCase().includes(debouncedUserSearch.toLowerCase()))
+            .map((u: User) => ({ value: String(u.id), label: `${u.name} (${u.email})` }));
     }, [debouncedUserSearch, users]);
 
     const handleUserSelect = useCallback((userId: string) => {
-        const userToAdd = users.find(u => String(u.id) === userId);
-        if (userToAdd && !state.selectedUsers.some(u => u.id === userToAdd.id)) {
+        const userToAdd = users.find((u: User) => String(u.id) === userId);
+        if (userToAdd && !state.selectedUsers.some((u: User) => u.id === userToAdd.id)) {
             updateState({
                 selectedUsers: [...state.selectedUsers, userToAdd],
                 userSearchTerm: '',
@@ -489,14 +431,14 @@ export function useDispatchCheck() {
     }, [users, state.selectedUsers, updateState]);
 
     const handleUserDeselect = useCallback((userId: number) => {
-        updateState({ selectedUsers: state.selectedUsers.filter(u => u.id !== userId) });
+        updateState({ selectedUsers: state.selectedUsers.filter((u: User) => u.id !== userId) });
     }, [state.selectedUsers, updateState]);
 
     const selectors = {
         canSwitchMode: hasPermission('warehouse:dispatch-check:switch-mode'),
         canManuallyOverride: hasPermission('warehouse:dispatch-check:manual-override'),
         canSendExternalEmail: hasPermission('warehouse:dispatch-check:send-email-external'),
-        isVerificationComplete: state.verificationItems.every(item => item.verifiedQuantity >= item.requiredQuantity),
+        isVerificationComplete: state.verificationItems.length > 0, // Always allow finalizing
         progressPercentage: (state.verificationItems.filter(item => item.verifiedQuantity >= item.requiredQuantity).length / (state.verificationItems.length || 1)) * 100,
         progressText: `${state.verificationItems.filter(item => item.verifiedQuantity >= item.requiredQuantity).length} de ${state.verificationItems.length} líneas completadas`,
         documentOptions: state.documentOptions,
