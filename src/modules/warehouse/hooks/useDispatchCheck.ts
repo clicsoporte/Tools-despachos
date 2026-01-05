@@ -9,7 +9,7 @@ import { usePageTitle } from '@/modules/core/hooks/usePageTitle';
 import { useAuthorization } from '@/modules/core/hooks/useAuthorization';
 import { logError, logInfo } from '@/modules/core/lib/logger';
 import { getInvoiceData, searchDocuments, logDispatch, sendDispatchEmail } from '../lib/actions';
-import type { User, Product, ErpInvoiceHeader, ErpInvoiceLine, UserPreferences } from '@/modules/core/types';
+import type { User, Product, ErpInvoiceHeader, ErpInvoiceLine, UserPreferences, Company } from '@/modules/core/types';
 import { useAuth } from '@/modules/core/hooks/useAuth';
 import { useDebounce } from 'use-debounce';
 import { getUserPreferences, saveUserPreferences } from '@/modules/core/lib/db';
@@ -35,6 +35,7 @@ type CurrentDocument = {
     id: string;
     type: 'Factura' | 'Pedido' | 'Remisión';
     clientId: string;
+    clientTaxId: string;
     clientName: string;
     shippingAddress: string;
     date: string;
@@ -187,6 +188,7 @@ export function useDispatchCheck() {
                     id: data.header.FACTURA,
                     type: data.header.TIPO_DOCUMENTO === 'F' ? 'Factura' : (data.header.TIPO_DOCUMENTO === 'R' ? 'Remisión' : 'Pedido'),
                     clientId: data.header.CLIENTE,
+                    clientTaxId: '', // Will be fetched from customer data if available
                     clientName: data.header.NOMBRE_CLIENTE,
                     shippingAddress: data.header.DIRECCION_FACTURA,
                     date: typeof data.header.FECHA === 'string' ? data.header.FECHA : data.header.FECHA.toISOString(),
@@ -207,10 +209,9 @@ export function useDispatchCheck() {
     const handleDocumentSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
         if (e.key === 'Enter') {
             e.preventDefault();
-            if (state.documentOptions.length > 0) {
-                 handleDocumentSelect(state.documentOptions[0].value);
-            } else if (state.documentSearchTerm) {
-                 handleDocumentSelect(state.documentSearchTerm);
+            const term = state.documentSearchTerm.trim();
+            if (term) {
+                 handleDocumentSelect(term);
             }
         }
     };
@@ -284,7 +285,7 @@ export function useDispatchCheck() {
     const handleIndicatorClick = useCallback((lineId: number) => {
         if (state.isStrictMode) return; // Not allowed in strict mode
         const targetItem = state.verificationItems.find(item => item.lineId === lineId);
-        if (targetItem) {
+        if (targetItem && targetItem.verifiedQuantity < targetItem.requiredQuantity) {
              updateState({
                 confirmationState: {
                     title: `Confirmar cantidad para "${targetItem.description}"`,
@@ -352,7 +353,55 @@ export function useDispatchCheck() {
         });
     }, [updateState]);
 
-    const proceedWithFinalize = useCallback(async (action: 'finish' | 'pdf' | 'email') => {
+    const handlePrintPdf = (docData: {
+        document: CurrentDocument;
+        items: VerificationItem[];
+        verifiedBy: string;
+        companyData: Company;
+    }) => {
+        const { document, items, verifiedBy, companyData } = docData;
+
+        const styledRows = items.map(item => {
+            let textColor: [number, number, number] = [0, 0, 0];
+            let fontStyle: FontStyle = 'normal';
+            if (item.verifiedQuantity > item.requiredQuantity) {
+                textColor = [220, 53, 69]; // Red
+                fontStyle = 'bold';
+            } else if (item.verifiedQuantity === item.requiredQuantity) {
+                textColor = [25, 135, 84]; // Green
+            } else if (item.verifiedQuantity < item.requiredQuantity && item.verifiedQuantity > 0) {
+                textColor = [255, 193, 7]; // Amber
+                fontStyle = 'bold';
+            } else if (item.verifiedQuantity === 0) {
+                textColor = [220, 53, 69]; // Red for zero
+                fontStyle = 'bold';
+            }
+
+            return [
+                item.itemCode,
+                item.description,
+                { content: item.requiredQuantity.toString(), styles: { halign: 'right' as HAlignType } },
+                { content: item.verifiedQuantity.toString(), styles: { halign: 'right' as HAlignType, textColor, fontStyle } }
+            ];
+        });
+
+        const doc = generateDocument({
+            docTitle: "Comprobante de Despacho",
+            docId: document.id,
+            companyData,
+            meta: [{ label: 'Verificado por', value: verifiedBy }, { label: 'Fecha', value: format(new Date(), 'dd/MM/yyyy HH:mm') }],
+            blocks: [{ title: 'Cliente', content: `${document.clientName} (${document.clientId})\n${document.shippingAddress}` }],
+            table: {
+                columns: ["Código", "Descripción", { content: "Req.", styles: { halign: 'right' } }, { content: "Verif.", styles: { halign: 'right' } }],
+                rows: styledRows,
+                columnStyles: {},
+            },
+            totals: []
+        });
+        doc.save(`Comprobante-${document.id}.pdf`);
+    };
+
+    const proceedWithFinalize = useCallback(async (action: 'finish' | 'email') => {
         if (!user || !state.currentDocument) return;
         updateState({ isSubmitting: true });
 
@@ -371,7 +420,6 @@ export function useDispatchCheck() {
                     to: state.selectedUsers.map(u => u.email),
                     cc: state.externalEmail,
                     body: state.emailBody,
-                    documentId: state.currentDocument.id,
                     document: state.currentDocument,
                     items: state.verificationItems,
                     verifiedBy: user.name,
@@ -389,7 +437,7 @@ export function useDispatchCheck() {
         }
     }, [user, state.currentDocument, state.verificationItems, state.selectedUsers, state.externalEmail, state.emailBody, toast, updateState]);
     
-    const handleFinalizeAndAction = useCallback(async (action: 'finish' | 'pdf' | 'email') => {
+    const handleFinalizeAndAction = useCallback(async (action: 'finish' | 'email') => {
         const hasDiscrepancy = state.verificationItems.some(item => item.requiredQuantity !== item.verifiedQuantity);
         if (hasDiscrepancy) {
             updateState({
@@ -459,6 +507,7 @@ export function useDispatchCheck() {
         handleModeChange,
         reset,
         handleFinalizeAndAction,
+        handlePrintPdf,
         handleUserSelect,
         handleUserDeselect,
         setUserSearchTerm: (term: string) => updateState({ userSearchTerm: term }),
