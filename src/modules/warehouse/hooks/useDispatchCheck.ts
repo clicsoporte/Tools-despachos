@@ -163,7 +163,7 @@ export function useDispatchCheck() {
             updateState({
                 currentDocument: {
                     id: data.header.FACTURA,
-                    type: data.header.TIPO_DOCUMENTO === 'F' ? 'Factura' : data.header.TIPO_DOCUMENTO === 'R' ? 'Remisión' : 'Documento',
+                    type: data.header.TIPO_DOCUMENTO === 'F' ? 'Factura' : data.header.TIPO_DOCUMENTO === 'R' ? 'Remisión' : 'Pedido',
                     clientId: data.header.CLIENTE,
                     clientName: data.header.NOMBRE_CLIENTE,
                     shippingAddress: data.header.DIRECCION_FACTURA,
@@ -330,12 +330,12 @@ export function useDispatchCheck() {
     const userOptions = useMemo(() => {
         if (debouncedUserSearch.length < 2) return [];
         return allUsers
-            .filter((u: User) => u.name.toLowerCase().includes(debouncedUserSearch.toLowerCase()) || u.email.toLowerCase().includes(debouncedUserSearch.toLowerCase()))
-            .map((u: User) => ({ value: String(u.id), label: `${u.name} (${u.email})` }));
+            .filter((u) => u.name.toLowerCase().includes(debouncedUserSearch.toLowerCase()) || u.email.toLowerCase().includes(debouncedUserSearch.toLowerCase()))
+            .map((u) => ({ value: String(u.id), label: `${u.name} (${u.email})` }));
     }, [debouncedUserSearch, allUsers]);
 
     const handleUserSelect = (userId: string) => {
-        const userToAdd = allUsers.find((u: User) => String(u.id) === userId);
+        const userToAdd = allUsers.find((u) => String(u.id) === userId);
         if (userToAdd && !state.selectedUsers.some(u => u.id === userToAdd.id)) {
             updateState({
                 selectedUsers: [...state.selectedUsers, userToAdd],
