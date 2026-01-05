@@ -1,4 +1,3 @@
-
 /**
  * @fileoverview Hook to manage the state and logic for the Dispatch Check module.
  */
@@ -186,7 +185,7 @@ export function useDispatchCheck() {
             updateState({
                 currentDocument: {
                     id: data.header.FACTURA,
-                    type: data.header.TIPO_DOCUMENTO === 'F' ? 'Factura' : data.header.TIPO_DOCUMENTO === 'R' ? 'Remisión' : 'Pedido',
+                    type: data.header.TIPO_DOCUMENTO === 'F' ? 'Factura' : (data.header.TIPO_DOCUMENTO === 'R' ? 'Remisión' : 'Pedido'),
                     clientId: data.header.CLIENTE,
                     clientName: data.header.NOMBRE_CLIENTE,
                     shippingAddress: data.header.DIRECCION_FACTURA,
@@ -212,25 +211,12 @@ export function useDispatchCheck() {
         }
     };
     
-    const handleScan = (e: React.KeyboardEvent<HTMLInputElement>) => {
-        if (e.key !== 'Enter' || !state.scannedCode.trim()) return;
-        e.preventDefault();
-
-        const scanned = state.scannedCode.trim();
-        const targetItem = state.verificationItems.find(item => item.barcode === scanned);
-
-        updateState({ scannedCode: '', lastScannedProductCode: targetItem?.itemCode || null });
-
-        if (!targetItem) {
-            updateState({ errorState: { title: "Artículo Incorrecto", message: `El código "${scanned}" no corresponde a ningún artículo de este despacho.` } });
-            return;
-        }
-
+    const processScannedItem = useCallback((targetItem: VerificationItem) => {
         if (targetItem.verifiedQuantity >= targetItem.requiredQuantity) {
             updateState({ errorState: { title: "Cantidad Completa", message: `Ya se verificaron todas las unidades de "${targetItem.description}".` } });
             return;
         }
-        
+
         if (state.isStrictMode) {
             const newQty = targetItem.verifiedQuantity + 1;
             const newItems = state.verificationItems.map(item =>
@@ -238,16 +224,38 @@ export function useDispatchCheck() {
             );
             updateState({ verificationItems: newItems });
         } else {
-             actions.handleIndicatorClick(targetItem.lineId);
+            actions.handleIndicatorClick(targetItem.lineId);
         }
-    };
+    }, [state.isStrictMode, state.verificationItems, updateState]);
     
-    const clearError = () => {
+    const handleScan = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key !== 'Enter' || !state.scannedCode.trim()) return;
+        e.preventDefault();
+
+        const scanned = state.scannedCode.trim().toLowerCase();
+        
+        // Find by barcode first, then by item code, case-insensitively
+        const targetItem = state.verificationItems.find(item => 
+            (item.barcode?.toLowerCase() === scanned) || 
+            (item.itemCode.toLowerCase() === scanned)
+        );
+
+        updateState({ scannedCode: '', lastScannedProductCode: targetItem?.itemCode || null });
+
+        if (!targetItem) {
+            updateState({ errorState: { title: "Artículo Incorrecto", message: `El código "${scanned}" no corresponde a ningún artículo de este despacho.` } });
+            return;
+        }
+        
+        processScannedItem(targetItem);
+    }, [state.scannedCode, state.verificationItems, updateState, processScannedItem]);
+    
+    const clearError = useCallback(() => {
         updateState({ errorState: null });
         setTimeout(() => state.scannerInputRef.current?.focus(), 50);
-    };
+    }, [updateState, state.scannerInputRef]);
 
-    const handleConfirmation = (lineId: number, confirm: boolean) => {
+    const handleConfirmation = useCallback((lineId: number, confirm: boolean) => {
         const targetItem = state.verificationItems.find(item => item.lineId === lineId);
         if (!targetItem) return;
 
@@ -268,9 +276,9 @@ export function useDispatchCheck() {
             }
         }
         updateState({ confirmationState: null });
-    };
+    }, [state.verificationItems, updateState, state.scannerInputRef, state.quantityInputRefs]);
 
-    const handleIndicatorClick = (lineId: number) => {
+    const handleIndicatorClick = useCallback((lineId: number) => {
         if (state.isStrictMode) return; // Not allowed in strict mode
         const targetItem = state.verificationItems.find(item => item.lineId === lineId);
         if (targetItem) {
@@ -285,17 +293,17 @@ export function useDispatchCheck() {
                 },
             });
         }
-    };
+    }, [state.isStrictMode, state.verificationItems, updateState, handleConfirmation]);
 
-    const handleManualQuantityChange = (lineId: number, value: string) => {
+    const handleManualQuantityChange = useCallback((lineId: number, value: string) => {
         updateState({
             verificationItems: state.verificationItems.map(item =>
                 item.lineId === lineId ? { ...item, displayVerifiedQuantity: value, isManualOverride: true } : item
             ),
         });
-    };
+    }, [state.verificationItems, updateState]);
 
-    const handleManualQuantityBlur = (lineId: number, value: string) => {
+    const handleManualQuantityBlur = useCallback((lineId: number, value: string) => {
         const qty = parseInt(value, 10);
         const newQty = isNaN(qty) ? 0 : qty;
         
@@ -315,17 +323,17 @@ export function useDispatchCheck() {
                 item.lineId === lineId ? { ...item, verifiedQuantity: newQty, displayVerifiedQuantity: String(newQty) } : item
             ),
         });
-    };
+    }, [state.verificationItems, updateState]);
 
 
-    const handleModeChange = async (isStrictMode: boolean) => {
+    const handleModeChange = useCallback(async (isStrictMode: boolean) => {
         updateState({ isStrictMode });
         if (user) {
             await saveUserPreferences(user.id, 'dispatchCheckPrefs', { isStrictMode });
         }
-    };
+    }, [user, updateState]);
 
-    const reset = () => {
+    const reset = useCallback(() => {
         updateState({
             step: 'initial',
             documentSearchTerm: '',
@@ -339,21 +347,17 @@ export function useDispatchCheck() {
             externalEmail: '',
             emailBody: '',
         });
-    };
+    }, [updateState]);
 
-    const generatePdfForAction = async (): Promise<{ buffer: Buffer; fileName: string } | null> => {
+    const generatePdfForAction = useCallback(async (): Promise<{ buffer: Buffer; fileName: string } | null> => {
         if (!companyData || !state.currentDocument) return null;
         const fileName = `Comprobante-${state.currentDocument.id}.pdf`;
 
         const styledRows = state.verificationItems.map(item => {
-            let textColor: [number, number, number] = [0, 0, 0]; // Default black
-            if (item.verifiedQuantity > item.requiredQuantity) {
-                textColor = [220, 53, 69]; // Red
-            } else if (item.verifiedQuantity === item.requiredQuantity) {
-                textColor = [25, 135, 84]; // Green
-            } else if (item.verifiedQuantity > 0) {
-                textColor = [255, 193, 7]; // Orange/Yellow
-            }
+            let textColor: [number, number, number] = [0, 0, 0];
+            if (item.verifiedQuantity > item.requiredQuantity) textColor = [220, 53, 69];
+            else if (item.verifiedQuantity === item.requiredQuantity) textColor = [25, 135, 84];
+            else if (item.verifiedQuantity > 0) textColor = [255, 193, 7];
 
             return [
                 item.itemCode,
@@ -377,9 +381,9 @@ export function useDispatchCheck() {
         });
         const pdfBuffer = Buffer.from(doc.output('arraybuffer'));
         return { buffer: pdfBuffer, fileName };
-    };
+    }, [state.verificationItems, state.currentDocument, companyData, user]);
 
-    const proceedWithFinalize = async (action: 'finish' | 'pdf' | 'email') => {
+    const proceedWithFinalize = useCallback(async (action: 'finish' | 'pdf' | 'email') => {
         if (!user || !state.currentDocument) return;
         updateState({ isSubmitting: true });
 
@@ -427,11 +431,9 @@ export function useDispatchCheck() {
         } finally {
             updateState({ isSubmitting: false });
         }
-    };
+    }, [user, state.currentDocument, state.verificationItems, state.selectedUsers, state.externalEmail, state.emailBody, generatePdfForAction, toast, updateState]);
     
-    const handleFinalizeAndAction = async (action: 'finish' | 'pdf' | 'email') => {
-        if (!user || !state.currentDocument) return;
-
+    const handleFinalizeAndAction = useCallback(async (action: 'finish' | 'pdf' | 'email') => {
         const hasDiscrepancy = state.verificationItems.some(item => item.requiredQuantity !== item.verifiedQuantity);
         if (hasDiscrepancy) {
             updateState({
@@ -450,7 +452,7 @@ export function useDispatchCheck() {
         } else {
             proceedWithFinalize(action);
         }
-    };
+    }, [state.verificationItems, updateState, proceedWithFinalize]);
 
 
     const [debouncedUserSearch] = useDebounce(state.userSearchTerm, 300);
@@ -461,7 +463,7 @@ export function useDispatchCheck() {
             .map(u => ({ value: String(u.id), label: `${u.name} (${u.email})` }));
     }, [debouncedUserSearch, users]);
 
-    const handleUserSelect = (userId: string) => {
+    const handleUserSelect = useCallback((userId: string) => {
         const userToAdd = users.find(u => String(u.id) === userId);
         if (userToAdd && !state.selectedUsers.some(u => u.id === userToAdd.id)) {
             updateState({
@@ -470,11 +472,11 @@ export function useDispatchCheck() {
                 isUserSearchOpen: false,
             });
         }
-    };
+    }, [users, state.selectedUsers, updateState]);
 
-    const handleUserDeselect = (userId: number) => {
+    const handleUserDeselect = useCallback((userId: number) => {
         updateState({ selectedUsers: state.selectedUsers.filter(u => u.id !== userId) });
-    };
+    }, [state.selectedUsers, updateState]);
 
     const selectors = {
         canSwitchMode: hasPermission('warehouse:dispatch-check:switch-mode'),
