@@ -55,6 +55,8 @@ export type Company = {
     supplierFilePath?: string;
     erpPurchaseOrderHeaderFilePath?: string;
     erpPurchaseOrderLineFilePath?: string;
+    erpInvoiceHeaderFilePath?: string;
+    erpInvoiceLineFilePath?: string;
 };
 
 /**
@@ -475,6 +477,7 @@ export type WarehouseSettings = {
     locationLevels: WarehouseLocationLevel[];
     unitPrefix: string;
     nextUnitNumber: number;
+    dispatchNotificationEmails?: string;
 };
 
 export type WarehouseLocation = {

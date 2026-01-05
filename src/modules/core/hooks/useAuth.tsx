@@ -1,4 +1,3 @@
-
 /**
  * @fileoverview This file defines a central authentication context and hook.
  * It provides a single source of truth for the current user, their role, companyData,
@@ -26,6 +25,7 @@ const safeInternalPath = (value: string | null): string | null => {
  */
 interface AuthContextType {
   user: User | null;
+  users: User[];
   userRole: Role | null;
   companyData: Company | null;
   customers: Customer[];
@@ -61,6 +61,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
+  const [users, setUsers] = useState<User[]>([]);
   const [userRole, setUserRole] = useState<Role | null>(null);
   const [companyData, setCompanyData] = useState<Company | null>(null);
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -124,6 +125,7 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
       const data = await getInitialAuthData();
       
       setUser(currentUser);
+      setUsers(data.users || []);
       setCompanyData(data.companySettings);
       setCustomers(data.customers);
       setProducts(data.products);
@@ -199,6 +201,7 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
 
   const contextValue: AuthContextType = {
     user,
+    users,
     userRole,
     companyData,
     customers,

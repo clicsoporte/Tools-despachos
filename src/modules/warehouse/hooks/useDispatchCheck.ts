@@ -167,7 +167,7 @@ export function useDispatchCheck() {
                     clientId: data.header.CLIENTE,
                     clientName: data.header.NOMBRE_CLIENTE,
                     shippingAddress: data.header.DIRECCION_FACTURA,
-                    date: data.header.FECHA,
+                    date: typeof data.header.FECHA === 'string' ? data.header.FECHA : data.header.FECHA.toISOString(),
                     erpUser: data.header.USUARIO,
                 },
                 verificationItems,
@@ -330,12 +330,12 @@ export function useDispatchCheck() {
     const userOptions = useMemo(() => {
         if (debouncedUserSearch.length < 2) return [];
         return allUsers
-            .filter(u => u.name.toLowerCase().includes(debouncedUserSearch.toLowerCase()) || u.email.toLowerCase().includes(debouncedUserSearch.toLowerCase()))
-            .map(u => ({ value: String(u.id), label: `${u.name} (${u.email})` }));
+            .filter((u: User) => u.name.toLowerCase().includes(debouncedUserSearch.toLowerCase()) || u.email.toLowerCase().includes(debouncedUserSearch.toLowerCase()))
+            .map((u: User) => ({ value: String(u.id), label: `${u.name} (${u.email})` }));
     }, [debouncedUserSearch, allUsers]);
 
     const handleUserSelect = (userId: string) => {
-        const userToAdd = allUsers.find(u => String(u.id) === userId);
+        const userToAdd = allUsers.find((u: User) => String(u.id) === userId);
         if (userToAdd && !state.selectedUsers.some(u => u.id === userToAdd.id)) {
             updateState({
                 selectedUsers: [...state.selectedUsers, userToAdd],
@@ -354,7 +354,7 @@ export function useDispatchCheck() {
         canManuallyOverride: hasPermission('warehouse:dispatch-check:manual-override'),
         canSendExternalEmail: hasPermission('warehouse:dispatch-check:send-email-external'),
         isVerificationComplete: state.verificationItems.every(item => item.verifiedQuantity >= item.requiredQuantity),
-        progressPercentage: (state.verificationItems.filter(item => item.verifiedQuantity >= item.requiredQuantity).length / state.verificationItems.length) * 100,
+        progressPercentage: (state.verificationItems.filter(item => item.verifiedQuantity >= item.requiredQuantity).length / (state.verificationItems.length || 1)) * 100,
         progressText: `${state.verificationItems.filter(item => item.verifiedQuantity >= item.requiredQuantity).length} de ${state.verificationItems.length} líneas completadas`,
         documentOptions: state.documentOptions,
         userOptions,

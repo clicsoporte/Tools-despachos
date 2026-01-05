@@ -10,7 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Loader2, Search, CheckCircle, XCircle, Info, ClipboardCheck, Circle, User, FileDown, Mail, ArrowRight, Switch } from 'lucide-react';
+import { Loader2, Search, CheckCircle, XCircle, Info, ClipboardCheck, Circle, User, FileDown, Mail, ArrowRight } from 'lucide-react';
 import { useAuth } from '@/modules/core/hooks/useAuth';
 import { useDispatchCheck } from '@/modules/warehouse/hooks/useDispatchCheck';
 import { SearchInput } from '@/components/ui/search-input';
@@ -21,6 +21,7 @@ import { Badge } from '@/components/ui/badge';
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
 
 const HighlightedText = ({ text, highlight }: { text: string; highlight: string }) => {
     if (!highlight) return <span>{text}</span>;

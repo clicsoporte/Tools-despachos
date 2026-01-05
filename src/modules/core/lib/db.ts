@@ -10,7 +10,7 @@ import path from 'path';
 import fs from 'fs';
 import { initialCompany, initialRoles } from './data';
 import { DB_MODULES } from './db-modules';
-import type { Company, LogEntry, ApiSettings, User, Product, Customer, Role, QuoteDraft, DatabaseModule, Exemption, ExemptionLaw, StockInfo, StockSettings, ImportQuery, ItemLocation, UpdateBackupInfo, Suggestion, DateRange, Supplier, ErpOrderHeader, ErpOrderLine, Notification, UserPreferences, AuditResult, ErpPurchaseOrderHeader, ErpPurchaseOrderLine, SqlConfig, ProductionOrder, WizardSession } from '@/modules/core/types';
+import type { Company, LogEntry, ApiSettings, User, Product, Customer, Role, QuoteDraft, DatabaseModule, Exemption, ExemptionLaw, StockInfo, StockSettings, ImportQuery, ItemLocation, UpdateBackupInfo, Suggestion, DateRange, Supplier, ErpOrderHeader, ErpOrderLine, Notification, UserPreferences, AuditResult, ErpPurchaseOrderHeader, ErpPurchaseOrderLine, SqlConfig, ProductionOrder, WizardSession, ErpInvoiceHeader, ErpInvoiceLine } from '@/modules/core/types';
 import bcrypt from 'bcryptjs';
 import Papa from 'papaparse';
 import { executeQuery } from './sql-service';
@@ -65,7 +65,7 @@ export async function initializeMainDatabase(db: import('better-sqlite3').Databa
             systemName TEXT, publicUrl TEXT, quotePrefix TEXT, nextQuoteNumber INTEGER, decimalPlaces INTEGER, quoterShowTaxId BOOLEAN,
             searchDebounceTime INTEGER, syncWarningHours REAL, lastSyncTimestamp TEXT,
             importMode TEXT, customerFilePath TEXT, productFilePath TEXT, exemptionFilePath TEXT, stockFilePath TEXT, locationFilePath TEXT, cabysFilePath TEXT, supplierFilePath TEXT,
-            erpPurchaseOrderHeaderFilePath TEXT, erpPurchaseOrderLineFilePath TEXT
+            erpPurchaseOrderHeaderFilePath TEXT, erpPurchaseOrderLineFilePath TEXT, erpInvoiceHeaderFilePath TEXT, erpInvoiceLineFilePath TEXT
         );
         CREATE TABLE IF NOT EXISTS logs (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -76,7 +76,7 @@ export async function initializeMainDatabase(db: import('better-sqlite3').Databa
         );
         CREATE TABLE IF NOT EXISTS api_settings (id INTEGER PRIMARY KEY, exchangeRateApi TEXT, haciendaExemptionApi TEXT, haciendaTributariaApi TEXT);
         CREATE TABLE IF NOT EXISTS customers (id TEXT PRIMARY KEY, name TEXT, address TEXT, phone TEXT, taxId TEXT, currency TEXT, creditLimit REAL, paymentCondition TEXT, salesperson TEXT, active TEXT, email TEXT, electronicDocEmail TEXT);
-        CREATE TABLE IF NOT EXISTS products (id TEXT PRIMARY KEY, description TEXT, classification TEXT, lastEntry TEXT, active TEXT, notes TEXT, unit TEXT, isBasicGood TEXT, cabys TEXT);
+        CREATE TABLE IF NOT EXISTS products (id TEXT PRIMARY KEY, description TEXT, classification TEXT, lastEntry TEXT, active TEXT, notes TEXT, unit TEXT, isBasicGood TEXT, cabys TEXT, barcode TEXT);
         CREATE TABLE IF NOT EXISTS exemptions (code TEXT PRIMARY KEY, description TEXT, customer TEXT, authNumber TEXT, startDate TEXT, endDate TEXT, percentage REAL, docType TEXT, institutionName TEXT, institutionCode TEXT);
         CREATE TABLE IF NOT EXISTS quote_drafts (id TEXT PRIMARY KEY, createdAt TEXT NOT NULL, userId INTEGER, customerId TEXT, customerDetails TEXT, lines TEXT, totals TEXT, notes TEXT, currency TEXT, exchangeRate REAL, purchaseOrderNumber TEXT, deliveryAddress TEXT, deliveryDate TEXT, sellerName TEXT, sellerType TEXT, quoteDate TEXT, validUntilDate TEXT, paymentTerms TEXT, creditDays INTEGER);
         CREATE TABLE IF NOT EXISTS exemption_laws (docType TEXT PRIMARY KEY, institutionName TEXT, authNumber TEXT);
@@ -93,6 +93,8 @@ export async function initializeMainDatabase(db: import('better-sqlite3').Databa
         CREATE TABLE IF NOT EXISTS erp_order_lines (PEDIDO TEXT, PEDIDO_LINEA INTEGER, ARTICULO TEXT, CANTIDAD_PEDIDA REAL, PRECIO_UNITARIO REAL, PRIMARY KEY (PEDIDO, PEDIDO_LINEA));
         CREATE TABLE IF NOT EXISTS erp_purchase_order_headers (ORDEN_COMPRA TEXT PRIMARY KEY, PROVEEDOR TEXT, FECHA_HORA TEXT, ESTADO TEXT, CreatedBy TEXT);
         CREATE TABLE IF NOT EXISTS erp_purchase_order_lines (ORDEN_COMPRA TEXT, ARTICULO TEXT, CANTIDAD_ORDENADA REAL, PRIMARY KEY(ORDEN_COMPRA, ARTICULO));
+        CREATE TABLE IF NOT EXISTS erp_invoice_headers (CLIENTE TEXT, NOMBRE_CLIENTE TEXT, TIPO_DOCUMENTO TEXT, FACTURA TEXT PRIMARY KEY, PEDIDO TEXT, FACTURA_ORIGINAL TEXT, FECHA TEXT, FECHA_ENTREGA TEXT, ANULADA TEXT, EMBARCAR_A TEXT, DIRECCION_FACTURA TEXT, OBSERVACIONES TEXT, RUTA TEXT, USUARIO TEXT, USUARIO_ANULA TEXT, ZONA TEXT, VENDEDOR TEXT, REIMPRESO INTEGER);
+        CREATE TABLE IF NOT EXISTS erp_invoice_lines (FACTURA TEXT, TIPO_DOCUMENTO TEXT, LINEA INTEGER, BODEGA TEXT, PEDIDO TEXT, ARTICULO TEXT, ANULADA TEXT, FECHA_FACTURA TEXT, CANTIDAD REAL, PRECIO_UNITARIO REAL, TOTAL_IMPUESTO1 REAL, PRECIO_TOTAL REAL, DESCRIPCION TEXT, DOCUMENTO_ORIGEN TEXT, CANT_DESPACHADA REAL, ES_CANASTA_BASICA TEXT, PRIMARY KEY(FACTURA, TIPO_DOCUMENTO, LINEA));
         CREATE TABLE IF NOT EXISTS stock_settings (key TEXT PRIMARY KEY, value TEXT);
     `;
     db.exec(schema);
@@ -323,11 +325,16 @@ async function checkAndApplyMigrations(db: import('better-sqlite3').Database) {
         if (!companyColumns.has('supplierFilePath')) db.exec(`ALTER TABLE company_settings ADD COLUMN supplierFilePath TEXT`);
         if (!companyColumns.has('erpPurchaseOrderHeaderFilePath')) db.exec(`ALTER TABLE company_settings ADD COLUMN erpPurchaseOrderHeaderFilePath TEXT`);
         if (!companyColumns.has('erpPurchaseOrderLineFilePath')) db.exec(`ALTER TABLE company_settings ADD COLUMN erpPurchaseOrderLineFilePath TEXT`);
+        if (!companyColumns.has('erpInvoiceHeaderFilePath')) db.exec(`ALTER TABLE company_settings ADD COLUMN erpInvoiceHeaderFilePath TEXT`);
+        if (!companyColumns.has('erpInvoiceLineFilePath')) db.exec(`ALTER TABLE company_settings ADD COLUMN erpInvoiceLineFilePath TEXT`);
         if (!companyColumns.has('importMode')) db.exec(`ALTER TABLE company_settings ADD COLUMN importMode TEXT DEFAULT 'file'`);
         if (!companyColumns.has('logoUrl')) db.exec(`ALTER TABLE company_settings ADD COLUMN logoUrl TEXT`);
         if (!companyColumns.has('searchDebounceTime')) db.exec(`ALTER TABLE company_settings ADD COLUMN searchDebounceTime INTEGER DEFAULT 500`);
         if (!companyColumns.has('lastSyncTimestamp')) db.exec(`ALTER TABLE company_settings ADD COLUMN lastSyncTimestamp TEXT`);
 
+        const productsTableInfo = db.prepare(`PRAGMA table_info(products)`).all() as { name: string }[];
+        const productColumns = new Set(productsTableInfo.map(c => c.name));
+        if (!productColumns.has('barcode')) db.exec(`ALTER TABLE products ADD COLUMN barcode TEXT`);
 
         const adminUser = db.prepare('SELECT role FROM users WHERE id = 1').get() as { role: string } | undefined;
         if (adminUser && adminUser.role !== 'admin') {
@@ -423,6 +430,15 @@ async function checkAndApplyMigrations(db: import('better-sqlite3').Database) {
             console.log("MIGRATION: Creating stock_settings table.");
             db.exec(`CREATE TABLE stock_settings (key TEXT PRIMARY KEY, value TEXT);`);
         }
+        
+        if (!db.prepare(`SELECT name FROM sqlite_master WHERE type='table' AND name='erp_invoice_headers'`).get()) {
+            console.log("MIGRATION: Creating erp_invoice_headers table.");
+            db.exec(`CREATE TABLE erp_invoice_headers (CLIENTE TEXT, NOMBRE_CLIENTE TEXT, TIPO_DOCUMENTO TEXT, FACTURA TEXT PRIMARY KEY, PEDIDO TEXT, FACTURA_ORIGINAL TEXT, FECHA TEXT, FECHA_ENTREGA TEXT, ANULADA TEXT, EMBARCAR_A TEXT, DIRECCION_FACTURA TEXT, OBSERVACIONES TEXT, RUTA TEXT, USUARIO TEXT, USUARIO_ANULA TEXT, ZONA TEXT, VENDEDOR TEXT, REIMPRESO INTEGER);`);
+        }
+        if (!db.prepare(`SELECT name FROM sqlite_master WHERE type='table' AND name='erp_invoice_lines'`).get()) {
+            console.log("MIGRATION: Creating erp_invoice_lines table.");
+            db.exec(`CREATE TABLE erp_invoice_lines (FACTURA TEXT, TIPO_DOCUMENTO TEXT, LINEA INTEGER, BODEGA TEXT, PEDIDO TEXT, ARTICULO TEXT, ANULADA TEXT, FECHA_FACTURA TEXT, CANTIDAD REAL, PRECIO_UNITARIO REAL, TOTAL_IMPUESTO1 REAL, PRECIO_TOTAL REAL, DESCRIPCION TEXT, DOCUMENTO_ORIGEN TEXT, CANT_DESPACHADA REAL, ES_CANASTA_BASICA TEXT, PRIMARY KEY(FACTURA, TIPO_DOCUMENTO, LINEA));`);
+        }
 
     } catch (error) {
         console.error("Failed to apply migrations:", error);
@@ -477,7 +493,8 @@ export async function saveCompanySettings(settings: Company): Promise<void> {
                 customerFilePath = @customerFilePath, productFilePath = @productFilePath, exemptionFilePath = @exemptionFilePath,
                 stockFilePath = @stockFilePath, locationFilePath = @locationFilePath, cabysFilePath = @cabysFilePath,
                 supplierFilePath = @supplierFilePath, erpPurchaseOrderHeaderFilePath = @erpPurchaseOrderHeaderFilePath,
-                erpPurchaseOrderLineFilePath = @erpPurchaseOrderLineFilePath,
+                erpPurchaseOrderLineFilePath = @erpPurchaseOrderLineFilePath, erpInvoiceHeaderFilePath = @erpInvoiceHeaderFilePath,
+                erpInvoiceLineFilePath = @erpInvoiceLineFilePath,
                 importMode = @importMode, lastSyncTimestamp = @lastSyncTimestamp, quoterShowTaxId = @quoterShowTaxId, syncWarningHours = @syncWarningHours
             WHERE id = 1
         `);
@@ -680,15 +697,15 @@ export async function getAllProducts(): Promise<Product[]> {
 
 export async function saveAllProducts(products: Product[]): Promise<void> {
     const db = await connectDb();
-    const insert = db.prepare('INSERT INTO products (id, description, classification, lastEntry, active, notes, unit, isBasicGood, cabys) VALUES (@id, @description, @classification, @lastEntry, @active, @notes, @unit, @isBasicGood, @cabys)');
+    const insert = db.prepare('INSERT INTO products (id, description, classification, lastEntry, active, notes, unit, isBasicGood, cabys, barcode) VALUES (@id, @description, @classification, @lastEntry, @active, @notes, @unit, @isBasicGood, @cabys, @barcode)');
     
     const transaction = db.transaction((productsToSave) => {
         db.prepare('DELETE FROM products').run();
         for(let product of productsToSave) {
-            // Ensure date objects are converted to strings before binding
             const productToSave = {
                 ...product,
                 lastEntry: product.lastEntry instanceof Date ? product.lastEntry.toISOString() : product.lastEntry,
+                barcode: product.barcode || null,
             };
             insert.run(productToSave);
         }
@@ -868,7 +885,7 @@ export async function getDbModules(): Promise<Omit<DatabaseModule, 'schema'>[]> 
 const createHeaderMapping = (type: ImportQuery['type']) => {
     switch (type) {
         case 'customers': return {'CLIENTE': 'id', 'NOMBRE': 'name', 'DIRECCION': 'address', 'TELEFONO1': 'phone', 'CONTRIBUYENTE': 'taxId', 'MONEDA': 'currency', 'LIMITE_CREDITO': 'creditLimit', 'CONDICION_PAGO': 'paymentCondition', 'VENDEDOR': 'salesperson', 'ACTIVO': 'active', 'E_MAIL': 'email', 'EMAIL_DOC_ELECTRONICO': 'electronicDocEmail'};
-        case 'products': return {'ARTICULO': 'id', 'DESCRIPCION': 'description', 'CLASIFICACION_2': 'classification', 'ULTIMO_INGRESO': 'lastEntry', 'ACTIVO': 'active', 'NOTAS': 'notes', 'UNIDAD_VENTA': 'unit', 'CANASTA_BASICA': 'isBasicGood', 'CODIGO_HACIENDA': 'cabys'};
+        case 'products': return {'ARTICULO': 'id', 'DESCRIPCION': 'description', 'CLASIFICACION_2': 'classification', 'ULTIMO_INGRESO': 'lastEntry', 'ACTIVO': 'active', 'NOTAS': 'notes', 'UNIDAD_VENTA': 'unit', 'CANASTA_BASICA': 'isBasicGood', 'CODIGO_HACIENDA': 'cabys', 'CODIGO_BARRAS_VENT': 'barcode'};
         case 'exemptions': return {'CODIGO': 'code', 'DESCRIPCION': 'description', 'CLIENTE': 'customer', 'NUM_AUTOR': 'authNumber', 'FECHA_RIGE': 'startDate', 'FECHA_VENCE': 'endDate', 'PORCENTAJE': 'percentage', 'TIPO_DOC': 'docType', 'NOMBRE_INSTITUCION': 'institutionName', 'CODIGO_INSTITUCION': 'institutionCode'};
         case 'stock': return {'ARTICULO': 'itemId', 'BODEGA': 'warehouseId', 'CANT_DISPONIBLE': 'stock'};
         case 'locations': return {'CODIGO': 'itemId', 'P. HORIZONTAL': 'hPos', 'P. VERTICAL': 'vPos', 'RACK': 'rack', 'CLIENTE': 'client', 'DESCRIPCION': 'description'};
@@ -878,6 +895,8 @@ const createHeaderMapping = (type: ImportQuery['type']) => {
         case 'erp_order_lines': return {'PEDIDO': 'PEDIDO', 'PEDIDO_LINEA': 'PEDIDO_LINEA', 'ARTICULO': 'ARTICULO', 'CANTIDAD_PEDIDA': 'CANTIDAD_PEDIDA', 'PRECIO_UNITARIO': 'PRECIO_UNITARIO'};
         case 'erp_purchase_order_headers': return { 'ORDEN_COMPRA': 'ORDEN_COMPRA', 'PROVEEDOR': 'PROVEEDOR', 'FECHA_HORA': 'FECHA_HORA', 'ESTADO': 'ESTADO', 'CREATEDBY': 'CreatedBy' };
         case 'erp_purchase_order_lines': return { 'ORDEN_COMPRA': 'ORDEN_COMPRA', 'ARTICULO': 'ARTICULO', 'CANTIDAD_ORDENADA': 'CANTIDAD_ORDENADA' };
+        case 'erp_invoice_headers': return { 'CLIENTE': 'CLIENTE', 'NOMBRE_CLIENTE': 'NOMBRE_CLIENTE', 'TIPO_DOCUMENTO': 'TIPO_DOCUMENTO', 'FACTURA': 'FACTURA', 'PEDIDO': 'PEDIDO', 'FACTURA_ORIGINAL': 'FACTURA_ORIGINAL', 'FECHA': 'FECHA', 'FECHA_ENTREGA': 'FECHA_ENTREGA', 'ANULADA': 'ANULADA', 'EMBARCAR_A': 'EMBARCAR_A', 'DIRECCION_FACTURA': 'DIRECCION_FACTURA', 'OBSERVACIONES': 'OBSERVACIONES', 'RUTA': 'RUTA', 'USUARIO': 'USUARIO', 'USUARIO_ANULA': 'USUARIO_ANULA', 'ZONA': 'ZONA', 'VENDEDOR': 'VENDEDOR', 'REIMPRESO': 'REIMPRESO' };
+        case 'erp_invoice_lines': return { 'FACTURA': 'FACTURA', 'TIPO_DOCUMENTO': 'TIPO_DOCUMENTO', 'LINEA': 'LINEA', 'BODEGA': 'BODEGA', 'PEDIDO': 'PEDIDO', 'ARTICULO': 'ARTICULO', 'ANULADA': 'ANULADA', 'FECHA_FACTURA': 'FECHA_FACTURA', 'CANTIDAD': 'CANTIDAD', 'PRECIO_UNITARIO': 'PRECIO_UNITARIO', 'TOTAL_IMPUESTO1': 'TOTAL_IMPUESTO1', 'PRECIO_TOTAL': 'PRECIO_TOTAL', 'DESCRIPCION': 'DESCRIPCION', 'DOCUMENTO_ORIGEN': 'DOCUMENTO_ORIGEN', 'CANT_DESPACHADA': 'CANT_DESPACHADA', 'ES_CANASTA_BASICA': 'ES_CANASTA_BASICA' };
         default: return {};
     }
 }
@@ -1011,6 +1030,10 @@ async function importDataFromSql(type: ImportQuery['type']): Promise<{ count: nu
         await saveAllErpPurchaseOrderHeaders(mappedData as ErpPurchaseOrderHeader[]);
     } else if (type === 'erp_purchase_order_lines') {
         await saveAllErpPurchaseOrderLines(mappedData as ErpPurchaseOrderLine[]);
+    } else if (type === 'erp_invoice_headers') {
+        await saveAllErpInvoiceHeaders(mappedData as ErpInvoiceHeader[]);
+    } else if (type === 'erp_invoice_lines') {
+        await saveAllErpInvoiceLines(mappedData as ErpInvoiceLine[]);
     }
     return { count: mappedData.length, source: 'SQL Server' };
 }
@@ -1022,7 +1045,7 @@ export async function importData(type: ImportQuery['type']): Promise<{ count: nu
     if (companySettings.importMode === 'sql') {
         return importDataFromSql(type);
     } else {
-        if (['erp_order_headers', 'erp_order_lines', 'erp_purchase_order_headers', 'erp_purchase_order_lines'].includes(type)) {
+        if (['erp_order_headers', 'erp_order_lines', 'erp_purchase_order_headers', 'erp_purchase_order_lines', 'erp_invoice_headers', 'erp_invoice_lines'].includes(type)) {
             return { count: 0, source: 'file (skipped)' };
         }
         return importDataFromFile(type as 'customers' | 'products' | 'exemptions' | 'stock' | 'locations' | 'cabys' | 'suppliers' | 'erp_purchase_order_headers' | 'erp_purchase_order_lines');
@@ -1039,6 +1062,7 @@ export async function importAllDataFromFiles(): Promise<{ type: string; count: n
         { type: 'stock' }, { type: 'locations' }, { type: 'cabys' }, { type: 'suppliers' },
         { type: 'erp_order_headers' }, { type: 'erp_order_lines' },
         { type: 'erp_purchase_order_headers' }, { type: 'erp_purchase_order_lines' },
+        { type: 'erp_invoice_headers' }, { type: 'erp_invoice_lines' },
     ];
     
     const results: { type: string; count: number; }[] = [];
@@ -1049,7 +1073,7 @@ export async function importAllDataFromFiles(): Promise<{ type: string; count: n
                 const filePathKey = `${task.type}FilePath` as keyof Company;
                 const filePath = companySettings[filePathKey] as string | undefined;
 
-                if (!filePath && !['erp_order_headers', 'erp_order_lines', 'erp_purchase_order_headers', 'erp_purchase_order_lines'].includes(task.type)) {
+                if (!filePath && !['erp_order_headers', 'erp_order_lines', 'erp_purchase_order_headers', 'erp_purchase_order_lines', 'erp_invoice_headers', 'erp_invoice_lines'].includes(task.type)) {
                     console.log(`Skipping file import for ${task.type}: no file path configured.`);
                     continue;
                 }
@@ -1454,6 +1478,48 @@ export async function saveAllErpPurchaseOrderLines(lines: ErpPurchaseOrderLine[]
         throw error;
     }
 }
+
+export async function saveAllErpInvoiceHeaders(headers: ErpInvoiceHeader[]): Promise<void> {
+    const db = await connectDb();
+    const insert = db.prepare('INSERT OR REPLACE INTO erp_invoice_headers (CLIENTE, NOMBRE_CLIENTE, TIPO_DOCUMENTO, FACTURA, PEDIDO, FACTURA_ORIGINAL, FECHA, FECHA_ENTREGA, ANULADA, EMBARCAR_A, DIRECCION_FACTURA, OBSERVACIONES, RUTA, USUARIO, USUARIO_ANULA, ZONA, VENDEDOR, REIMPRESO) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+    const transaction = db.transaction((headersToSave: ErpInvoiceHeader[]) => {
+        db.prepare('DELETE FROM erp_invoice_headers').run();
+        for(const header of headersToSave) {
+            const fecha = header.FECHA;
+            const fechaString = typeof fecha === 'object' && fecha !== null && 'toISOString' in fecha ? (fecha as Date).toISOString() : String(fecha);
+            const fechaEntrega = header.FECHA_ENTREGA;
+            const fechaEntregaString = typeof fechaEntrega === 'object' && fechaEntrega !== null && 'toISOString' in fechaEntrega ? (fechaEntrega as Date).toISOString() : String(fechaEntrega);
+
+            insert.run(header.CLIENTE, header.NOMBRE_CLIENTE, header.TIPO_DOCUMENTO, header.FACTURA, header.PEDIDO, header.FACTURA_ORIGINAL, fechaString, fechaEntregaString, header.ANULADA, header.EMBARCAR_A, header.DIRECCION_FACTURA, header.OBSERVACIONES, header.RUTA, header.USUARIO, header.USUARIO_ANULA, header.ZONA, header.VENDEDOR, header.REIMPRESO);
+        }
+    });
+    try {
+        transaction(headers);
+    } catch (error) {
+        console.error("Failed to save ERP invoice headers:", error);
+        throw error;
+    }
+}
+
+export async function saveAllErpInvoiceLines(lines: ErpInvoiceLine[]): Promise<void> {
+    const db = await connectDb();
+    const insert = db.prepare('INSERT OR REPLACE INTO erp_invoice_lines (FACTURA, TIPO_DOCUMENTO, LINEA, BODEGA, PEDIDO, ARTICULO, ANULADA, FECHA_FACTURA, CANTIDAD, PRECIO_UNITARIO, TOTAL_IMPUESTO1, PRECIO_TOTAL, DESCRIPCION, DOCUMENTO_ORIGEN, CANT_DESPACHADA, ES_CANASTA_BASICA) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+    const transaction = db.transaction((linesToSave: ErpInvoiceLine[]) => {
+        db.prepare('DELETE FROM erp_invoice_lines').run();
+        for(const line of linesToSave) {
+            const fechaFactura = line.FECHA_FACTURA;
+            const fechaFacturaString = typeof fechaFactura === 'object' && fechaFactura !== null && 'toISOString' in fechaFactura ? (fechaFactura as Date).toISOString() : String(fechaFactura);
+            insert.run(line.FACTURA, line.TIPO_DOCUMENTO, line.LINEA, line.BODEGA, line.PEDIDO, line.ARTICULO, line.ANULADA, fechaFacturaString, line.CANTIDAD, line.PRECIO_UNITARIO, line.TOTAL_IMPUESTO1, line.PRECIO_TOTAL, line.DESCRIPCION, line.DOCUMENTO_ORIGEN, line.CANT_DESPACHADA, line.ES_CANASTA_BASICA);
+        }
+    });
+    try {
+        transaction(lines);
+    } catch (error) {
+        console.error("Failed to save ERP invoice lines:", error);
+        throw error;
+    }
+}
+
 
 export async function getAllErpPurchaseOrderHeaders(): Promise<ErpPurchaseOrderHeader[]> {
     const db = await connectDb();

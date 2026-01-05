@@ -363,6 +363,7 @@ export async function getInitialAuthData() {
     }
     
     const [
+        users,
         roles,
         companySettings,
         customers,
@@ -373,6 +374,7 @@ export async function getInitialAuthData() {
         exchangeRate,
         unreadSuggestions
     ] = await Promise.all([
+        getAllUsers(),
         getAllRoles(),
         getCompanySettings(),
         getAllCustomers(),
@@ -392,6 +394,7 @@ export async function getInitialAuthData() {
     }
 
     return {
+        users,
         roles,
         companySettings,
         customers,
