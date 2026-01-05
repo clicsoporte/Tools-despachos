@@ -130,6 +130,7 @@ export default function DispatchCheckPage() {
                                             </DialogHeader>
                                             <div className="text-sm space-y-2">
                                                 <p><strong>Cliente:</strong> {state.currentDocument.clientName} ({state.currentDocument.clientId})</p>
+                                                <p><strong>Cédula:</strong> {state.currentDocument.clientTaxId}</p>
                                                 <p><strong>Dirección:</strong> {state.currentDocument.shippingAddress}</p>
                                                 <p><strong>Fecha Doc:</strong> {format(parseISO(state.currentDocument.date), 'dd/MM/yyyy')}</p>
                                                 <p><strong>Usuario ERP:</strong> {state.currentDocument.erpUser}</p>
@@ -150,7 +151,7 @@ export default function DispatchCheckPage() {
                                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                                     <Input
                                         ref={state.scannerInputRef}
-                                        placeholder="Escanear código de barras..."
+                                        placeholder="Escanear código de barras o código de artículo..."
                                         className="h-12 text-lg pl-10"
                                         value={state.scannedCode}
                                         onChange={(e) => actions.setScannedCode(e.target.value)}
@@ -166,7 +167,7 @@ export default function DispatchCheckPage() {
                                         return (
                                             <div key={item.lineId} className="flex items-center gap-4 p-2 border rounded-md">
                                                 <Button variant={'ghost'} size="icon" className="h-10 w-10 shrink-0" onClick={() => actions.handleIndicatorClick(item.lineId)}>
-                                                    {item.verifiedQuantity > item.requiredQuantity ? <AlertTriangle className="h-6 w-6 text-orange-500"/> : item.verifiedQuantity === item.requiredQuantity ? <CheckCircle className="h-6 w-6 text-green-500"/> : item.verifiedQuantity > 0 ? <Loader2 className="h-6 w-6 text-yellow-500 animate-spin"/> : <Circle className="h-6 w-6 text-muted-foreground"/>}
+                                                    {item.verifiedQuantity > item.requiredQuantity ? <AlertTriangle className="h-6 w-6 text-orange-500"/> : item.verifiedQuantity === item.requiredQuantity ? <CheckCircle className="h-6 w-6 text-green-500"/> : item.verifiedQuantity > 0 ? <AlertTriangle className="h-6 w-6 text-yellow-500"/> : <Circle className="h-6 w-6 text-muted-foreground"/>}
                                                 </Button>
                                                 <div className="flex-1">
                                                     <p className="font-medium">
@@ -176,7 +177,7 @@ export default function DispatchCheckPage() {
                                                         Cod. Barras: <span className="font-mono">{item.barcode || 'N/A'}</span>
                                                     </p>
                                                 </div>
-                                                <div className="w-40 text-right">
+                                                <div className="w-48 text-right">
                                                     <Label>Cantidades</Label>
                                                     <div className="flex items-center justify-end gap-2">
                                                         <Badge variant="secondary" className="text-base">{item.requiredQuantity}</Badge>
@@ -184,7 +185,7 @@ export default function DispatchCheckPage() {
                                                         <Input
                                                             ref={inputRef}
                                                             type="text"
-                                                            className="w-24 h-8 text-lg text-center font-bold"
+                                                            className="w-28 h-10 text-lg text-center font-bold"
                                                             value={item.displayVerifiedQuantity}
                                                             onChange={(e) => actions.handleManualQuantityChange(item.lineId, e.target.value)}
                                                             onBlur={(e) => actions.handleManualQuantityBlur(item.lineId, e.target.value)}
@@ -202,9 +203,12 @@ export default function DispatchCheckPage() {
                             <Button variant="destructive" onClick={actions.reset}>Cancelar Verificación</Button>
                             {selectors.isVerificationComplete && (
                                 <div className="flex gap-2">
+                                     <Button variant="secondary" onClick={() => actions.handleFinalizeAndAction('pdf')} disabled={state.isLoading}>
+                                        <Printer className="mr-2 h-4 w-4" /> Finalizar y Exportar PDF
+                                    </Button>
                                      <Dialog>
                                         <DialogTrigger asChild>
-                                            <Button variant="outline" disabled={state.isSubmitting}>
+                                            <Button variant="outline" disabled={state.isLoading}>
                                                 <Mail className="mr-2 h-4 w-4" /> Finalizar y Enviar
                                             </Button>
                                         </DialogTrigger>
@@ -251,14 +255,14 @@ export default function DispatchCheckPage() {
                                             </div>
                                             <DialogFooter>
                                                 <DialogClose asChild><Button variant="ghost">Cancelar</Button></DialogClose>
-                                                <Button onClick={() => actions.handleFinalizeAndAction('email')} disabled={state.isSubmitting || state.selectedUsers.length === 0}>
-                                                     {state.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
+                                                <Button onClick={() => actions.handleFinalizeAndAction('email')} disabled={state.isLoading || state.selectedUsers.length === 0}>
+                                                     {state.isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
                                                     Enviar
                                                 </Button>
                                             </DialogFooter>
                                         </DialogContent>
                                     </Dialog>
-                                    <Button onClick={() => actions.handleFinalizeAndAction('finish')} disabled={state.isSubmitting}>
+                                    <Button onClick={() => actions.handleFinalizeAndAction('finish')} disabled={state.isLoading}>
                                         Finalizar Verificación
                                     </Button>
                                 </div>
@@ -297,7 +301,11 @@ export default function DispatchCheckPage() {
                                 <AlertDialogCancel onClick={state.confirmationState?.onCancel}>
                                     {state.confirmationState?.cancelText || 'Cancelar'}
                                 </AlertDialogCancel>
-                                <AlertDialogAction onClick={state.confirmationState?.onConfirm}>
+                                <AlertDialogAction 
+                                    onClick={state.confirmationState?.onConfirm}
+                                    className={state.confirmationState?.isDestructive ? 'bg-destructive text-destructive-foreground hover:bg-destructive/90' : ''}
+                                >
+                                    {state.confirmationState?.isDestructive && <AlertTriangle className="mr-2 h-4 w-4" />}
                                     {state.confirmationState?.confirmText || 'Confirmar'}
                                 </AlertDialogAction>
                             </AlertDialogFooter>

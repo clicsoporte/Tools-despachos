@@ -49,6 +49,7 @@ type ConfirmationState = {
     onCancel?: () => void;
     confirmText?: string;
     cancelText?: string;
+    isDestructive?: boolean;
 } | null;
 
 type ErrorState = {
@@ -90,7 +91,7 @@ export function useDispatchCheck() {
     const { isAuthorized, hasPermission } = useAuthorization(['warehouse:dispatch-check:use']);
     const { setTitle } = usePageTitle();
     const { toast } = useToast();
-    const { user, products, users, companyData } = useAuth();
+    const { user, products, users, customers, companyData } = useAuth();
     
     const scannerInputRef = useRef<HTMLInputElement>(null);
     const quantityInputRefs = useRef<Map<number, HTMLInputElement>>(new Map());
@@ -180,12 +181,14 @@ export function useDispatchCheck() {
                 };
             });
 
+            const customer = customers.find(c => c.id === data.header.CLIENTE);
+
             updateState({
                 currentDocument: {
                     id: data.header.FACTURA,
                     type: data.header.TIPO_DOCUMENTO === 'F' ? 'Factura' : (data.header.TIPO_DOCUMENTO === 'R' ? 'Remisión' : 'Pedido'),
                     clientId: data.header.CLIENTE,
-                    clientTaxId: '', // Will be fetched from customer data if available
+                    clientTaxId: customer?.taxId || 'N/A',
                     clientName: data.header.NOMBRE_CLIENTE,
                     shippingAddress: data.header.DIRECCION_FACTURA,
                     date: typeof data.header.FECHA === 'string' ? data.header.FECHA : data.header.FECHA.toISOString(),
@@ -201,7 +204,7 @@ export function useDispatchCheck() {
         } finally {
             updateState({ isLoading: false });
         }
-    }, [products, toast, updateState]);
+    }, [products, customers, toast, updateState]);
     
     const handleDocumentSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
         if (e.key === 'Enter') {
@@ -398,10 +401,10 @@ export function useDispatchCheck() {
         doc.save(`Comprobante-${document.id}.pdf`);
     };
 
-    const proceedWithFinalize = useCallback(async (action: 'finish' | 'email') => {
-        if (!user || !state.currentDocument) return;
+    const proceedWithFinalize = useCallback(async (action: 'finish' | 'email' | 'pdf') => {
+        if (!user || !state.currentDocument || !companyData) return;
         updateState({ isLoading: true });
-
+    
         try {
             await logDispatch({
                 documentId: state.currentDocument.id,
@@ -411,7 +414,7 @@ export function useDispatchCheck() {
                 items: state.verificationItems,
                 notes: `Acción: ${action}`
             });
-
+    
             if (action === 'email') {
                 await sendDispatchEmail({
                     to: state.selectedUsers.map(u => u.email),
@@ -422,19 +425,23 @@ export function useDispatchCheck() {
                     verifiedBy: user.name,
                 });
             }
-
+    
+            if (action === 'pdf') {
+                handlePrintPdf({ document: state.currentDocument, items: state.verificationItems, verifiedBy: user.name, companyData });
+            }
+    
             toast({ title: 'Verificación Finalizada', description: 'El despacho ha sido registrado.' });
             updateState({ step: 'finished' });
-
+    
         } catch (error: any) {
             logError('Failed to finalize dispatch', { error: error.message });
             toast({ title: 'Error al Finalizar', description: error.message, variant: 'destructive' });
         } finally {
             updateState({ isLoading: false });
         }
-    }, [user, state.currentDocument, state.verificationItems, state.selectedUsers, state.externalEmail, state.emailBody, toast, updateState]);
+    }, [user, state.currentDocument, state.verificationItems, state.selectedUsers, state.externalEmail, state.emailBody, toast, updateState, companyData]);
     
-    const handleFinalizeAndAction = useCallback(async (action: 'finish' | 'email') => {
+    const handleFinalizeAndAction = useCallback(async (action: 'finish' | 'email' | 'pdf') => {
         const hasDiscrepancy = state.verificationItems.some(item => item.requiredQuantity !== item.verifiedQuantity);
         if (hasDiscrepancy) {
             updateState({
@@ -447,7 +454,8 @@ export function useDispatchCheck() {
                         updateState({ confirmationState: null });
                         proceedWithFinalize(action);
                     },
-                    onCancel: () => updateState({ confirmationState: null })
+                    onCancel: () => updateState({ confirmationState: null }),
+                    isDestructive: true,
                 }
             });
         } else {

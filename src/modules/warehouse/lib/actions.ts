@@ -35,7 +35,7 @@ import {
     logDispatch as logDispatchServer,
     getDispatchLogs as getDispatchLogsServer,
 } from './db';
-import { sendEmail } from '@/modules/core/lib/email-service';
+import { sendEmail as sendEmailServer } from '@/modules/core/lib/email-service';
 import { getStockSettings as getStockSettingsDb, saveStockSettings as saveStockSettingsDb } from '@/modules/core/lib/db';
 import type { WarehouseSettings, WarehouseLocation, WarehouseInventoryItem, MovementLog, ItemLocation, InventoryUnit, StockSettings, User, ErpInvoiceHeader, ErpInvoiceLine, DispatchLog, Company } from '@/modules/core/types';
 import { logInfo, logWarn, logError } from '@/modules/core/lib/logger';
@@ -135,7 +135,15 @@ export async function sendDispatchEmail(payload: {
 }): Promise<void> {
     const { to, cc, body, items, document, verifiedBy } = payload;
     
-    if (!to || to.length === 0) {
+    // Fetch automatic emails from settings
+    const warehouseSettings = await getWarehouseSettingsServer();
+    const autoEmails = warehouseSettings.dispatchNotificationEmails
+        ? warehouseSettings.dispatchNotificationEmails.split(',').map(e => e.trim()).filter(Boolean)
+        : [];
+    
+    const allRecipients = Array.from(new Set([...to, ...autoEmails]));
+
+    if (allRecipients.length === 0) {
         logWarn('sendDispatchEmail called without recipients.', { documentId: document.id });
         return;
     }
@@ -143,7 +151,7 @@ export async function sendDispatchEmail(payload: {
     const tableRows = items.map(item => {
         const difference = item.verifiedQuantity - item.requiredQuantity;
         let statusColor = '#000000'; // Black
-        let diffText = difference === 0 ? '' : (difference > 0 ? `+${difference}` : String(difference));
+        let diffText = difference === 0 ? '0' : (difference > 0 ? `+${difference}` : String(difference));
 
         if (difference !== 0) {
             statusColor = '#dc2626'; // Red
@@ -157,7 +165,7 @@ export async function sendDispatchEmail(payload: {
                 <td style="padding: 8px;">${item.barcode || 'N/A'}</td>
                 <td style="padding: 8px;">${item.description}</td>
                 <td style="padding: 8px; text-align: right;">${item.requiredQuantity}</td>
-                <td style="padding: 8px; text-align: right; color: ${statusColor}; font-weight: bold;">${item.verifiedQuantity}</td>
+                <td style="padding: 8px; text-align: right; font-weight: bold;">${item.verifiedQuantity}</td>
                 <td style="padding: 8px; text-align: right; color: ${statusColor}; font-weight: bold;">${diffText}</td>
             </tr>
         `;
@@ -194,8 +202,8 @@ export async function sendDispatchEmail(payload: {
     `;
 
     try {
-        await sendEmail({
-            to: to,
+        await sendEmailServer({
+            to: allRecipients,
             cc: cc,
             subject: `Comprobante de Despacho - ${document.id}`,
             html: htmlBody,
