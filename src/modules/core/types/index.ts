@@ -188,7 +188,7 @@ export type ApiSettings = {
     exchangeRateApi: string;
     haciendaExemptionApi: string;
     haciendaTributariaApi: string;
-};
+    };
 
 /**
  * Represents the expected schema of a table for database auditing.
@@ -247,8 +247,6 @@ export type ProductionOrder = {
   purchaseOrder?: string;
   requestDate: string;
   deliveryDate: string;
-  scheduledStartDate?: string | null;
-  scheduledEndDate?: string | null;
   customerId: string;
   customerName: string;
   customerTaxId: string;
@@ -867,7 +865,7 @@ export type DispatchLog = {
     verifiedAt: string;
     verifiedByUserId: number;
     verifiedByUserName: string;
-    items: VerificationItem[] | string;
+    items: VerificationItem[];
     notes: string | null;
 };
 

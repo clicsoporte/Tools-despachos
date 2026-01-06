@@ -10,7 +10,7 @@ import { usePageTitle } from '@/modules/core/hooks/usePageTitle';
 import { useAuthorization } from '@/modules/core/hooks/useAuthorization';
 import { getDispatchLogs } from '@/modules/warehouse/lib/actions';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { Loader2, CalendarIcon, Search, FileDown, FileSpreadsheet, FilterX, Columns3, Printer, AlertTriangle } from 'lucide-react';
@@ -25,7 +25,7 @@ import { SearchInput } from '@/components/ui/search-input';
 import { DialogColumnSelector } from '@/components/ui/dialog-column-selector';
 import { exportToExcel } from '@/modules/core/lib/excel-export';
 import { generateDocument } from '@/modules/core/lib/pdf-generator';
-import type { DateRange, DispatchLog, VerificationItem } from '@/modules/core/types';
+import type { DateRange, DispatchLog, VerificationItem, Company } from '@/modules/core/types';
 import { useDebounce } from 'use-debounce';
 import { useAuth } from '@/modules/core/hooks/useAuth';
 import type { HAlignType, FontStyle } from 'jspdf-autotable';
@@ -44,12 +44,12 @@ export default function DispatchReportPage() {
     const { toast } = useToast();
     const { companyData } = useAuth();
     
-    const [isInitialLoading, setIsInitialLoading] = React.useState(true);
-    const [isLoading, setIsLoading] = React.useState(false);
-    const [logs, setLogs] = React.useState<DispatchLog[]>([]);
-    const [dateRange, setDateRange] = React.useState<DateRange | undefined>(undefined);
-    const [searchTerm, setSearchTerm] = React.useState('');
-    const [visibleColumns, setVisibleColumns] = React.useState(availableColumns.map(c => c.id));
+    const [isInitialLoading, setIsInitialLoading(true);
+    const [isLoading, setIsLoading(false);
+    const [logs, setLogs([]: DispatchLog[]);
+    const [dateRange, setDateRange<DateRange | undefined>(undefined);
+    const [searchTerm, setSearchTerm('');
+    const [visibleColumns, setVisibleColumns(availableColumns.map(c => c.id));
 
     const [debouncedSearchTerm] = useDebounce(searchTerm, 500);
 
@@ -130,7 +130,7 @@ export default function DispatchReportPage() {
             meta: [{ label: 'Verificado por', value: log.verifiedByUserName }, { label: 'Fecha', value: format(parseISO(log.verifiedAt), 'dd/MM/yyyy HH:mm') }],
             blocks: [],
             table: {
-                columns: ['Código', 'Descripción', { content: 'Req.', styles: { halign: 'right' } }, { content: 'Verif.', styles: { halign: 'right' } }],
+                columns: ['Código', 'Descripción', { content: 'Req.', styles: { halign: 'right' as HAlignType } }, { content: 'Verif.', styles: { halign: 'right' as HAlignType } }],
                 rows: styledRows,
                 columnStyles: {},
             },
@@ -192,7 +192,7 @@ export default function DispatchReportPage() {
                         <PopoverContent className="w-auto p-0" align="start"><Calendar initialFocus mode="range" defaultMonth={dateRange?.from} selected={dateRange} onSelect={setDateRange} numberOfMonths={2} locale={es} /></PopoverContent>
                     </Popover>
                     <div className="relative flex-1 min-w-[240px]"><Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><SearchInput options={[]} value={searchTerm} onValueChange={setSearchTerm} placeholder="Buscar por documento, usuario..." open={false} onOpenChange={()=>{}} onSelect={()=>{}} className="pl-8 w-full" /></div>
-                    <Button variant="ghost" onClick={() => { setSearchTerm(''); setDateRange(undefined); }}><FilterX className="mr-2 h-4 w-4" />Limpiar</Button>
+                    <Button variant="ghost" onClick(() => { setSearchTerm(''); setDateRange(undefined); }}><FilterX className="mr-2 h-4 w-4" />Limpiar</Button>
                 </CardContent>
             </Card>
 
@@ -239,7 +239,7 @@ export default function DispatchReportPage() {
                                                                 <Table>
                                                                     <TableHeader><TableRow><TableHead>Artículo</TableHead><TableHead>Descripción</TableHead><TableHead>Requerido</TableHead><TableHead>Verificado</TableHead></TableRow></TableHeader>
                                                                     <TableBody>
-                                                                        {log.items.map((item: VerificationItem) => (
+                                                                        {Array.isArray(log.items) && log.items.map((item: VerificationItem) => (
                                                                             <TableRow key={item.lineId} className={item.verifiedQuantity !== item.requiredQuantity ? 'bg-destructive/10' : ''}>
                                                                                 <TableCell>{item.itemCode}</TableCell>
                                                                                 <TableCell>{item.description}</TableCell>
