@@ -477,6 +477,17 @@ export async function getCompanySettings(): Promise<Company | null> {
     }
 }
 
+export async function getPublicUrl(): Promise<{ publicUrl: string | undefined } | null> {
+    const db = await connectDb();
+    try {
+        const settings = db.prepare('SELECT publicUrl FROM company_settings WHERE id = 1').get() as { publicUrl: string | undefined } | undefined;
+        return settings || null;
+    } catch (error) {
+        console.error("Failed to get public URL:", error);
+        return null;
+    }
+}
+
 export async function saveCompanySettings(settings: Company): Promise<void> {
     const db = await connectDb();
 

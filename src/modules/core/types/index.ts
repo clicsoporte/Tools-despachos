@@ -955,7 +955,7 @@ export interface EmailSettings {
 }
 
 // --- Notification Engine Types ---
-export type NotificationEventId = 'onDispatchCompleted' | 'onReceivingCompleted' | 'onPlannerOrderCreated' | 'onPlannerOrderApproved' | 'onPlannerOrderCompleted' | 'onRequestCreated' | 'onRequestApproved' | 'onRequestOrdered';
+export type NotificationEventId = 'onDispatchCompleted' | 'onReceivingCompleted' | 'onPlannerOrderCreated' | 'onPlannerOrderApproved' | 'onPlannerOrderCompleted' | 'onRequestCreated' | 'onRequestApproved' | 'onRequestOrdered' | 'onRackCreated';
 export type NotificationActionType = 'sendEmail' | 'sendTelegram';
 
 export interface NotificationEvent {
