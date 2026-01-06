@@ -22,6 +22,7 @@ import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
+import type { VerificationItem } from '@/modules/core/types';
 
 const HighlightedText = ({ text, highlight }: { text: string; highlight: string }) => {
     if (!highlight) return <span>{text}</span>;
@@ -160,9 +161,12 @@ export default function DispatchCheckPage() {
                                 </div>
                                 <div className="h-[45vh] overflow-y-auto pr-2 space-y-2">
                                     {state.verificationItems.map(item => {
-                                        const inputRef = (el: HTMLInputElement) => {
-                                            if (el && state.quantityInputRefs.current) state.quantityInputRefs.current.set(item.lineId, el);
-                                            else if(state.quantityInputRefs.current) state.quantityInputRefs.current.delete(item.lineId);
+                                        const inputRef = (el: HTMLInputElement | null) => {
+                                            if (el && state.quantityInputRefs.current) {
+                                                state.quantityInputRefs.current.set(item.lineId, el);
+                                            } else if(state.quantityInputRefs.current) {
+                                                state.quantityInputRefs.current.delete(item.lineId);
+                                            }
                                         };
                                         const isPartial = item.verifiedQuantity > 0 && item.verifiedQuantity < item.requiredQuantity;
                                         const isOver = item.verifiedQuantity > item.requiredQuantity;
@@ -263,6 +267,9 @@ export default function DispatchCheckPage() {
                                             </DialogFooter>
                                         </DialogContent>
                                     </Dialog>
+                                     <Button variant="outline" onClick={() => actions.handleFinalizeAndAction('pdf')} disabled={state.isLoading}>
+                                        <FileDown className="mr-2 h-4 w-4" /> Finalizar y Exportar PDF
+                                    </Button>
                                     <Button onClick={() => actions.handleFinalizeAndAction('finish')} disabled={state.isLoading}>
                                         Finalizar Verificación
                                     </Button>
