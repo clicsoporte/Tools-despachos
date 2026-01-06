@@ -28,6 +28,7 @@ import { generateDocument } from '@/modules/core/lib/pdf-generator';
 import type { DateRange, DispatchLog, VerificationItem } from '@/modules/core/types';
 import { useDebounce } from 'use-debounce';
 import { useAuth } from '@/modules/core/hooks/useAuth';
+import type { HAlignType, FontStyle } from 'jspdf-autotable';
 
 const availableColumns = [
     { id: 'documentId', label: 'Documento' },
@@ -99,14 +100,26 @@ export default function DispatchReportPage() {
         
         const styledRows = log.items.map((item: VerificationItem) => {
             let textColor: [number, number, number] = [0, 0, 0];
-            if (item.verifiedQuantity > item.requiredQuantity) textColor = [220, 53, 69];
-            else if (item.verifiedQuantity === item.requiredQuantity) textColor = [25, 135, 84];
-            else if (item.verifiedQuantity < item.requiredQuantity && item.verifiedQuantity > 0) textColor = [255, 193, 7];
+            let fontStyle: FontStyle = 'normal';
+            if (item.verifiedQuantity > item.requiredQuantity) {
+                 textColor = [220, 53, 69]; // Red
+                 fontStyle = 'bold';
+            }
+            else if (item.verifiedQuantity === item.requiredQuantity) textColor = [25, 135, 84]; // Green
+            else if (item.verifiedQuantity < item.requiredQuantity && item.verifiedQuantity > 0) {
+                 textColor = [255, 193, 7]; // Amber
+                 fontStyle = 'bold';
+            }
+             else if (item.verifiedQuantity === 0) {
+                textColor = [220, 53, 69]; // Red
+                fontStyle = 'bold';
+            }
+
             return [
                 item.itemCode,
                 item.description,
-                { content: item.requiredQuantity.toString(), styles: { halign: 'right' } },
-                { content: item.verifiedQuantity.toString(), styles: { halign: 'right', textColor, fontStyle: 'bold' } }
+                { content: item.requiredQuantity.toString(), styles: { halign: 'right' as HAlignType } },
+                { content: item.verifiedQuantity.toString(), styles: { halign: 'right' as HAlignType, textColor, fontStyle } }
             ];
         });
 
@@ -129,7 +142,7 @@ export default function DispatchReportPage() {
     const handleExportExcel = () => {
         const dataToExport = filteredData.flatMap(log => {
             if (!Array.isArray(log.items)) return [];
-            return log.items.map((item: VerificationItem) => ({
+            return log.items.map(item => ({
                 'Documento': log.documentId,
                 'Tipo': log.documentType,
                 'Fecha': format(parseISO(log.verifiedAt), 'dd/MM/yyyy HH:mm'),
@@ -226,7 +239,7 @@ export default function DispatchReportPage() {
                                                                 <Table>
                                                                     <TableHeader><TableRow><TableHead>Artículo</TableHead><TableHead>Descripción</TableHead><TableHead>Requerido</TableHead><TableHead>Verificado</TableHead></TableRow></TableHeader>
                                                                     <TableBody>
-                                                                        {Array.isArray(log.items) && log.items.map((item: VerificationItem) => (
+                                                                        {log.items.map((item: VerificationItem) => (
                                                                             <TableRow key={item.lineId} className={item.verifiedQuantity !== item.requiredQuantity ? 'bg-destructive/10' : ''}>
                                                                                 <TableCell>{item.itemCode}</TableCell>
                                                                                 <TableCell>{item.description}</TableCell>
