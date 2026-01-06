@@ -205,44 +205,6 @@ export function useDispatchCheck() {
         }
     };
     
-    const processScannedItem = useCallback((targetItem: VerificationItem) => {
-        if (targetItem.verifiedQuantity >= targetItem.requiredQuantity) {
-            updateState({ errorState: { title: 'Cantidad Completa', message: `Ya se verificaron todas las unidades de "${targetItem.description}".` } });
-            return;
-        }
-
-        if (state.isStrictMode) {
-            const newQty = targetItem.verifiedQuantity + 1;
-            const newItems = state.verificationItems.map(item =>
-                item.lineId === targetItem.lineId ? { ...item, verifiedQuantity: newQty, displayVerifiedQuantity: String(newQty) } : item
-            );
-            updateState({ verificationItems: newItems });
-        } else {
-            handleIndicatorClick(targetItem.lineId);
-        }
-    }, [state.isStrictMode, state.verificationItems, updateState]);
-    
-    const handleScan = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
-        if (e.key !== 'Enter' || !state.scannedCode.trim()) return;
-        e.preventDefault();
-
-        const scanned = state.scannedCode.trim().toLowerCase();
-        
-        const targetItem = state.verificationItems.find(item => 
-            (item.barcode?.toLowerCase() === scanned) || 
-            (item.itemCode.toLowerCase() === scanned)
-        );
-
-        updateState({ scannedCode: '', lastScannedProductCode: targetItem?.itemCode || null });
-
-        if (!targetItem) {
-            updateState({ errorState: { title: 'Artículo Incorrecto', message: `El código "${state.scannedCode.trim()}" no corresponde a ningún artículo de este despacho.` } });
-            return;
-        }
-        
-        processScannedItem(targetItem);
-    }, [state.scannedCode, state.verificationItems, updateState, processScannedItem]);
-    
     const clearError = useCallback(() => {
         updateState({ errorState: null });
         setTimeout(() => state.scannerInputRef.current?.focus(), 50);
@@ -287,6 +249,44 @@ export function useDispatchCheck() {
             });
         }
     }, [state.isStrictMode, state.verificationItems, updateState, handleConfirmation]);
+
+    const processScannedItem = useCallback((targetItem: VerificationItem) => {
+        if (targetItem.verifiedQuantity >= targetItem.requiredQuantity) {
+            updateState({ errorState: { title: 'Cantidad Completa', message: `Ya se verificaron todas las unidades de "${targetItem.description}".` } });
+            return;
+        }
+
+        if (state.isStrictMode) {
+            const newQty = targetItem.verifiedQuantity + 1;
+            const newItems = state.verificationItems.map(item =>
+                item.lineId === targetItem.lineId ? { ...item, verifiedQuantity: newQty, displayVerifiedQuantity: String(newQty) } : item
+            );
+            updateState({ verificationItems: newItems });
+        } else {
+            handleIndicatorClick(targetItem.lineId);
+        }
+    }, [state.isStrictMode, state.verificationItems, updateState, handleIndicatorClick]);
+    
+    const handleScan = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key !== 'Enter' || !state.scannedCode.trim()) return;
+        e.preventDefault();
+
+        const scanned = state.scannedCode.trim().toLowerCase();
+        
+        const targetItem = state.verificationItems.find(item => 
+            (item.barcode?.toLowerCase() === scanned) || 
+            (item.itemCode.toLowerCase() === scanned)
+        );
+
+        updateState({ scannedCode: '', lastScannedProductCode: targetItem?.itemCode || null });
+
+        if (!targetItem) {
+            updateState({ errorState: { title: 'Artículo Incorrecto', message: `El código "${state.scannedCode.trim()}" no corresponde a ningún artículo de este despacho.` } });
+            return;
+        }
+        
+        processScannedItem(targetItem);
+    }, [state.scannedCode, state.verificationItems, updateState, processScannedItem]);
 
     const handleManualQuantityChange = useCallback((lineId: number, value: string) => {
         updateState({
@@ -341,55 +341,7 @@ export function useDispatchCheck() {
             emailBody: '',
         });
     }, [updateState]);
-
-    const handlePrintPdf = (docData: {
-        document: CurrentDocument;
-        items: VerificationItem[];
-        verifiedBy: string;
-        companyData: Company;
-    }) => {
-        const { document, items, verifiedBy, companyData } = docData;
-
-        const styledRows: RowInput[] = items.map((item: VerificationItem) => {
-            let textColor: [number, number, number] = [0, 0, 0];
-            let fontStyle: FontStyle = 'normal';
-            if (item.verifiedQuantity > item.requiredQuantity) {
-                textColor = [220, 53, 69]; // Red
-                fontStyle = 'bold';
-            } else if (item.verifiedQuantity === item.requiredQuantity) {
-                textColor = [25, 135, 84]; // Green
-            } else if (item.verifiedQuantity < item.requiredQuantity && item.verifiedQuantity > 0) {
-                textColor = [255, 193, 7]; // Amber
-                fontStyle = 'bold';
-            } else if (item.verifiedQuantity === 0) {
-                textColor = [220, 53, 69]; // Red for zero
-                fontStyle = 'bold';
-            }
-
-            return [
-                item.itemCode,
-                item.description,
-                { content: item.requiredQuantity.toString(), styles: { halign: 'right' as HAlignType } },
-                { content: item.verifiedQuantity.toString(), styles: { halign: 'right' as HAlignType, textColor, fontStyle } }
-            ];
-        });
-
-        const doc = generateDocument({
-            docTitle: 'Comprobante de Despacho',
-            docId: document.id,
-            companyData,
-            meta: [{ label: 'Verificado por', value: verifiedBy }, { label: 'Fecha', value: format(new Date(), 'dd/MM/yyyy HH:mm') }],
-            blocks: [],
-            table: {
-                columns: ['Código', 'Descripción', { content: 'Req.', styles: { halign: 'right' as HAlignType } }, { content: 'Verif.', styles: { halign: 'right' as HAlignType } }],
-                rows: styledRows,
-                columnStyles: {},
-            },
-            totals: []
-        });
-        doc.save(`Comprobante-${document.id}.pdf`);
-    };
-
+    
     const proceedWithFinalize = useCallback(async (action: 'finish' | 'email' | 'pdf') => {
         if (!user || !state.currentDocument || !companyData) return;
         updateState({ isLoading: true });
@@ -453,6 +405,55 @@ export function useDispatchCheck() {
     }, [state.verificationItems, updateState, proceedWithFinalize]);
 
 
+    const handlePrintPdf = (docData: {
+        document: CurrentDocument;
+        items: VerificationItem[];
+        verifiedBy: string;
+        companyData: Company;
+    }) => {
+        const { document, items, verifiedBy, companyData } = docData;
+
+        const styledRows: RowInput[] = items.map((item: VerificationItem) => {
+            let textColor: [number, number, number] = [0, 0, 0];
+            let fontStyle: FontStyle = 'normal';
+            if (item.verifiedQuantity > item.requiredQuantity) {
+                textColor = [220, 53, 69]; // Red
+                fontStyle = 'bold';
+            } else if (item.verifiedQuantity === item.requiredQuantity) {
+                textColor = [25, 135, 84]; // Green
+            } else if (item.verifiedQuantity < item.requiredQuantity && item.verifiedQuantity > 0) {
+                textColor = [255, 193, 7]; // Amber
+                fontStyle = 'bold';
+            } else if (item.verifiedQuantity === 0) {
+                textColor = [220, 53, 69]; // Red for zero
+                fontStyle = 'bold';
+            }
+
+            return [
+                item.itemCode,
+                item.description,
+                { content: item.requiredQuantity.toString(), styles: { halign: 'right' as HAlignType } },
+                { content: item.verifiedQuantity.toString(), styles: { halign: 'right' as HAlignType, textColor, fontStyle } }
+            ];
+        });
+
+        const doc = generateDocument({
+            docTitle: 'Comprobante de Despacho',
+            docId: document.id,
+            companyData,
+            meta: [{ label: 'Verificado por', value: verifiedBy }, { label: 'Fecha', value: format(new Date(), 'dd/MM/yyyy HH:mm') }],
+            blocks: [],
+            table: {
+                columns: ['Código', 'Descripción', { content: 'Req.', styles: { halign: 'right' as HAlignType } }, { content: 'Verif.', styles: { halign: 'right' as HAlignType } }],
+                rows: styledRows,
+                columnStyles: {},
+            },
+            totals: []
+        });
+        doc.save(`Comprobante-${document.id}.pdf`);
+    };
+
+
     const [debouncedUserSearch] = useDebounce(state.userSearchTerm, 300);
     const userOptions = useMemo(() => {
         if (debouncedUserSearch.length < 2) return [];
@@ -508,6 +509,7 @@ export function useDispatchCheck() {
         setIsUserSearchOpen: (isOpen: boolean) => updateState({ isUserSearchOpen: isOpen }),
         setExternalEmail: (email: string) => updateState({ externalEmail: email }),
         setEmailBody: (body: string) => updateState({ emailBody: body }),
+        handleGoBack
     };
 
     return {
