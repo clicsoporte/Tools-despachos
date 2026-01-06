@@ -300,7 +300,7 @@ export async function addLocation(location: Omit<WarehouseLocation, 'id'>): Prom
     const db = await connectDb(WAREHOUSE_DB_FILE);
     const { name, code, type, parentId } = location;
 
-    // Validate for duplicate code before attempting to insert.
+    // Validate for duplicate code before trying to insert.
     const existing = db.prepare('SELECT id FROM locations WHERE code = ?').get(code);
     if (existing) {
         throw new Error(`El código de ubicación '${code}' ya está en uso. Por favor, elige otro.`);
@@ -779,12 +779,15 @@ export async function getDispatchLogs(dateRange?: DateRange): Promise<DispatchLo
     let query = 'SELECT * FROM dispatch_logs';
 
     if (dateRange && dateRange.from) {
-        const toDate = dateRange.to || new Date(); // If no 'to' date, use today
-        const endDate = new Date(toDate);
-        endDate.setHours(23, 59, 59, 999); // Set to end of the day
+        // Create new Date objects to avoid modifying the original state from the hook.
+        const startDate = new Date(dateRange.from);
+        startDate.setHours(0, 0, 0, 0); // Start of the day
+
+        const endDate = new Date(dateRange.to || dateRange.from); // If 'to' is missing, use 'from'
+        endDate.setHours(23, 59, 59, 999); // End of the day
 
         query += ' WHERE verifiedAt BETWEEN ? AND ?';
-        params.push(dateRange.from.toISOString(), endDate.toISOString());
+        params.push(startDate.toISOString(), endDate.toISOString());
     }
 
     query += ' ORDER BY verifiedAt DESC';
