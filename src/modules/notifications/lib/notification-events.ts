@@ -1,7 +1,6 @@
 /**
  * @fileoverview Central registry for all possible notification events in the system.
  */
-'use server';
 
 import type { NotificationEvent } from '@/modules/core/types';
 

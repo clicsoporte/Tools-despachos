@@ -8,7 +8,7 @@ import type { NotificationEventId, NotificationRule } from '@/modules/core/types
 import { getAllNotificationRules } from './db';
 import { getEmailSettings, sendEmail } from '@/modules/core/lib/email-service';
 import { sendTelegramMessage } from './telegram-service';
-import { logError, logInfo } from '@/modules/core/lib/logger';
+import { logError, logInfo, logWarn } from '@/modules/core/lib/logger';
 import { getDispatchCompletedTemplate } from './templates/dispatch-completed';
 
 /**

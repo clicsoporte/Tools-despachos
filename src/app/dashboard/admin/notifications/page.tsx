@@ -5,7 +5,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Input } from '@/components/ui/input';
@@ -16,7 +16,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { useToast } from '@/modules/core/hooks/use-toast';
 import { usePageTitle } from '@/modules/core/hooks/usePageTitle';
 import { useAuthorization } from '@/modules/core/hooks/useAuthorization';
-import type { NotificationRule, NotificationEvent } from '@/modules/core/types';
+import type { NotificationRule, NotificationEventId } from '@/modules/core/types';
 import { getAllNotificationRules, saveNotificationRule, deleteNotificationRule } from '@/modules/notifications/lib/actions';
 import { NOTIFICATION_EVENTS } from '@/modules/notifications/lib/notification-events';
 import { PlusCircle, Trash2, Edit, Loader2, Settings } from 'lucide-react';
@@ -44,6 +44,7 @@ export default function NotificationRulesPage() {
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
     const [currentRule, setCurrentRule] = useState<Omit<NotificationRule, 'id'> | NotificationRule>(emptyRule);
+    const [selectedModule, setSelectedModule] = useState('');
     const [ruleToDelete, setRuleToDelete] = useState<NotificationRule | null>(null);
 
     useEffect(() => {
@@ -64,19 +65,19 @@ export default function NotificationRulesPage() {
 
     const eventModules = useMemo(() => Array.from(new Set(NOTIFICATION_EVENTS.map(e => e.module))), []);
     const eventsForSelectedModule = useMemo(() => 
-        NOTIFICATION_EVENTS.filter(e => e.module === (currentRule as any).selectedModule), 
-    [currentRule]);
+        NOTIFICATION_EVENTS.filter(e => e.module === selectedModule), 
+    [selectedModule]);
 
     const handleFormChange = (field: keyof typeof currentRule, value: any) => {
         setCurrentRule(prev => ({ ...prev, [field]: value }));
     };
 
     const handleModuleChange = (moduleName: string) => {
-        setCurrentRule(prev => ({ 
-            ...prev,
-            selectedModule: moduleName,
-            event: NOTIFICATION_EVENTS.find(e => e.module === moduleName)?.id || '' // Select first event of module
-        }));
+        setSelectedModule(moduleName);
+        const firstEventOfModule = NOTIFICATION_EVENTS.find(e => e.module === moduleName)?.id;
+        if (firstEventOfModule) {
+            handleFormChange('event', firstEventOfModule);
+        }
     };
 
     const handleSave = async () => {
@@ -119,10 +120,14 @@ export default function NotificationRulesPage() {
     const openForm = (rule?: NotificationRule) => {
         if (rule) {
             const eventModule = NOTIFICATION_EVENTS.find(e => e.id === rule.event)?.module || '';
-            setCurrentRule({ ...rule, selectedModule: eventModule });
+            setCurrentRule(rule);
+            setSelectedModule(eventModule);
             setIsEditing(true);
         } else {
-            setCurrentRule({ ...emptyRule, selectedModule: eventModules[0] || '' });
+            const firstModule = eventModules[0] || '';
+            setCurrentRule(emptyRule);
+            setSelectedModule(firstModule);
+            handleModuleChange(firstModule); // Set initial event
             setIsEditing(false);
         }
         setIsFormOpen(true);
@@ -219,7 +224,7 @@ export default function NotificationRulesPage() {
                         <div className="grid grid-cols-2 gap-4">
                              <div className="space-y-2">
                                 <Label htmlFor="rule-module">Módulo</Label>
-                                <Select value={(currentRule as any).selectedModule} onValueChange={handleModuleChange}>
+                                <Select value={selectedModule} onValueChange={handleModuleChange}>
                                     <SelectTrigger><SelectValue /></SelectTrigger>
                                     <SelectContent>
                                         {eventModules.map(module => <SelectItem key={module} value={module}>{module}</SelectItem>)}
@@ -228,7 +233,7 @@ export default function NotificationRulesPage() {
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="rule-event">Disparador (Evento)</Label>
-                                <Select value={currentRule.event} onValueChange={(val) => handleFormChange('event', val)}>
+                                <Select value={currentRule.event} onValueChange={(val) => handleFormChange('event', val as NotificationEventId)}>
                                     <SelectTrigger><SelectValue /></SelectTrigger>
                                     <SelectContent>
                                         {eventsForSelectedModule.map(event => <SelectItem key={event.id} value={event.id}>{event.name}</SelectItem>)}
