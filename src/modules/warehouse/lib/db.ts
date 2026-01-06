@@ -773,20 +773,23 @@ export async function logDispatch(dispatchData: any): Promise<void> {
     });
 }
 
-export async function getDispatchLogs(dateRange?: DateRange): Promise<DispatchLog[]> {
+export async function getDispatchLogs(dateRange: DateRange): Promise<DispatchLog[]> {
     const db = await connectDb(WAREHOUSE_DB_FILE);
-    let query = 'SELECT * FROM dispatch_logs ORDER BY verifiedAt DESC';
     const params: any[] = [];
-    
-    if (dateRange?.from) {
-        const toDate = dateRange.to || new Date();
-        toDate.setHours(23, 59, 59, 999);
-        query = 'SELECT * FROM dispatch_logs WHERE verifiedAt BETWEEN ? AND ? ORDER BY verifiedAt DESC';
-        params.push(dateRange.from.toISOString(), toDate.toISOString());
+    let query = 'SELECT * FROM dispatch_logs';
+
+    if (dateRange && dateRange.from) {
+        const toDate = dateRange.to || dateRange.from;
+        const endDate = new Date(toDate);
+        endDate.setHours(23, 59, 59, 999);
+
+        query += ' WHERE verifiedAt BETWEEN ? AND ?';
+        params.push(dateRange.from.toISOString(), endDate.toISOString());
     }
-    
+
+    query += ' ORDER BY verifiedAt DESC';
+
     const logs = db.prepare(query).all(...params) as any[];
-    // Correctly parse the `items` property
     return logs.map(log => ({
         ...log,
         items: JSON.parse(log.items),
