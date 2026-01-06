@@ -4,11 +4,7 @@
  */
 'use client';
 
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { useToast } from '@/modules/core/hooks/use-toast';
-import { usePageTitle } from '@/modules/core/hooks/usePageTitle';
-import { useAuthorization } from '@/modules/core/hooks/useAuthorization';
-import { getDispatchLogs } from '@/modules/warehouse/lib/actions';
+import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -23,144 +19,21 @@ import { Calendar } from '@/components/ui/calendar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { SearchInput } from '@/components/ui/search-input';
 import { DialogColumnSelector } from '@/components/ui/dialog-column-selector';
-import { exportToExcel } from '@/modules/core/lib/excel-export';
-import { generateDocument } from '@/modules/core/lib/pdf-generator';
-import type { DateRange, DispatchLog, VerificationItem, Company } from '@/modules/core/types';
-import { useDebounce } from 'use-debounce';
+import type { VerificationItem, DispatchLog } from '@/modules/core/types';
 import { useAuth } from '@/modules/core/hooks/useAuth';
-import type { HAlignType, FontStyle, RowInput } from 'jspdf-autotable';
-
-const availableColumns = [
-    { id: 'documentId', label: 'Documento' },
-    { id: 'documentType', label: 'Tipo' },
-    { id: 'verifiedAt', label: 'Fecha Verificación' },
-    { id: 'verifiedByUserName', label: 'Verificado por' },
-    { id: 'actions', label: 'Acciones' },
-];
+import { useDispatchReport } from '@/modules/analytics/hooks/useDispatchReport';
 
 export default function DispatchReportPage() {
-    const { isAuthorized } = useAuthorization(['analytics:dispatch-report:read']);
-    const { setTitle } = usePageTitle();
-    const { toast } = useToast();
-    const { companyData } = useAuth();
-    
-    const [isInitialLoading, setIsInitialLoading] = useState(true);
-    const [isLoading, setIsLoading] = useState(false);
-    const [logs, setLogs] = useState<DispatchLog[]>([]);
-    const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
-    const [searchTerm, setSearchTerm] = useState('');
-    const [visibleColumns, setVisibleColumns] = useState(availableColumns.map(c => c.id));
+    const { 
+        state, 
+        actions, 
+        selectors, 
+        isAuthorized, 
+        isInitialLoading 
+    } = useDispatchReport();
 
-    const [debouncedSearchTerm] = useDebounce(searchTerm, 500);
-
-    const fetchData = useCallback(async () => {
-        setIsLoading(true);
-        try {
-            const data = await getDispatchLogs();
-            setLogs(data);
-        } catch (error: any) {
-            toast({ title: 'Error', description: 'No se pudieron cargar los registros de despacho.', variant: 'destructive' });
-        } finally {
-            setIsLoading(false);
-            if (isInitialLoading) setIsInitialLoading(false);
-        }
-    }, [toast, isInitialLoading]);
-
-    useEffect(() => {
-        setTitle('Reporte de Despachos');
-        if (isAuthorized) {
-            fetchData();
-        } else if (isAuthorized === false) {
-            setIsInitialLoading(false);
-        }
-    }, [setTitle, isAuthorized, fetchData]);
-
-    const filteredData = useMemo(() => {
-        return logs.filter(log => {
-            if (dateRange?.from && parseISO(log.verifiedAt) < dateRange.from) return false;
-            if (dateRange?.to) {
-                const toDate = new Date(dateRange.to);
-                toDate.setHours(23, 59, 59, 999);
-                if (parseISO(log.verifiedAt) > toDate) return false;
-            }
-            if (debouncedSearchTerm) {
-                const search = debouncedSearchTerm.toLowerCase();
-                return (
-                    log.documentId.toLowerCase().includes(search) ||
-                    log.verifiedByUserName.toLowerCase().includes(search) ||
-                    (Array.isArray(log.items) && JSON.stringify(log.items).toLowerCase().includes(search))
-                );
-            }
-            return true;
-        });
-    }, [logs, dateRange, debouncedSearchTerm]);
-    
-    const handlePrintPdf = (log: DispatchLog) => {
-        if (!companyData || !Array.isArray(log.items)) return;
-        
-        const styledRows: RowInput[] = log.items.map((item: VerificationItem) => {
-            let textColor: [number, number, number] = [0, 0, 0];
-            let fontStyle: FontStyle = 'normal';
-            if (item.verifiedQuantity > item.requiredQuantity) {
-                 textColor = [220, 53, 69]; // Red
-                 fontStyle = 'bold';
-            }
-            else if (item.verifiedQuantity === item.requiredQuantity) textColor = [25, 135, 84]; // Green
-            else if (item.verifiedQuantity < item.requiredQuantity && item.verifiedQuantity > 0) {
-                 textColor = [255, 193, 7]; // Amber
-                 fontStyle = 'bold';
-            }
-             else if (item.verifiedQuantity === 0) {
-                textColor = [220, 53, 69]; // Red
-                fontStyle = 'bold';
-            }
-
-            return [
-                item.itemCode,
-                item.description,
-                { content: item.requiredQuantity.toString(), styles: { halign: 'right' as HAlignType } },
-                { content: item.verifiedQuantity.toString(), styles: { halign: 'right' as HAlignType, textColor, fontStyle } }
-            ];
-        });
-
-        const doc = generateDocument({
-            docTitle: 'Comprobante de Despacho',
-            docId: log.documentId,
-            companyData,
-            meta: [{ label: 'Verificado por', value: log.verifiedByUserName }, { label: 'Fecha', value: format(parseISO(log.verifiedAt), 'dd/MM/yyyy HH:mm') }],
-            blocks: [],
-            table: {
-                columns: ['Código', 'Descripción', { content: 'Req.', styles: { halign: 'right' as HAlignType } }, { content: 'Verif.', styles: { halign: 'right' as HAlignType } }],
-                rows: styledRows,
-                columnStyles: {},
-            },
-            totals: []
-        });
-        doc.save(`Comprobante-${log.documentId}.pdf`);
-    };
-
-    const handleExportExcel = () => {
-        const dataToExport = filteredData.flatMap(log => {
-            if (!Array.isArray(log.items)) return [];
-            return log.items.map((item: VerificationItem) => ({
-                'Documento': log.documentId,
-                'Tipo': log.documentType,
-                'Fecha': format(parseISO(log.verifiedAt), 'dd/MM/yyyy HH:mm'),
-                'Usuario': log.verifiedByUserName,
-                'Código Artículo': item.itemCode,
-                'Descripción': item.description,
-                'Cant. Requerida': item.requiredQuantity,
-                'Cant. Verificada': item.verifiedQuantity,
-                'Diferencia': item.verifiedQuantity - item.requiredQuantity,
-            }));
-        });
-        exportToExcel({
-            fileName: 'reporte_despachos',
-            sheetName: 'Despachos',
-            headers: ['Documento', 'Tipo', 'Fecha', 'Usuario', 'Código Artículo', 'Descripción', 'Cant. Requerida', 'Cant. Verificada', 'Diferencia'],
-            data: dataToExport.map(item => Object.values(item)),
-        });
-    };
+    const { isLoading, dateRange, searchTerm, visibleColumns, logs } = state;
+    const { filteredData, availableColumns, visibleColumnsData } = selectors;
 
     if (isInitialLoading) {
         return (
@@ -178,8 +51,16 @@ export default function DispatchReportPage() {
         <main className="flex-1 p-4 md:p-6 lg:p-8 space-y-6">
             <Card>
                 <CardHeader>
-                    <CardTitle>Reporte de Despachos</CardTitle>
-                    <CardDescription>Audita las verificaciones de despacho registradas en el sistema.</CardDescription>
+                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                        <div>
+                            <CardTitle>Reporte de Despachos</CardTitle>
+                            <CardDescription>Audita las verificaciones de despacho registradas en el sistema.</CardDescription>
+                        </div>
+                        <Button onClick={actions.fetchData} disabled={isLoading}>
+                            {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Search className="mr-2 h-4 w-4" />}
+                            Generar Reporte
+                        </Button>
+                    </div>
                 </CardHeader>
                 <CardContent>
                     <div className="flex flex-wrap items-center gap-4">
@@ -190,10 +71,10 @@ export default function DispatchReportPage() {
                                     {dateRange?.from ? (dateRange.to ? (`${format(dateRange.from, 'LLL dd, y', { locale: es })} - ${format(dateRange.to, 'LLL dd, y', { locale: es })}`) : format(dateRange.from, 'LLL dd, y', { locale: es })) : (<span>Rango de Fechas</span>)}
                                 </Button>
                             </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0" align="start"><Calendar initialFocus mode="range" defaultMonth={dateRange?.from} selected={dateRange} onSelect={setDateRange} numberOfMonths={2} locale={es} /></PopoverContent>
+                            <PopoverContent className="w-auto p-0" align="start"><Calendar initialFocus mode="range" defaultMonth={dateRange?.from} selected={dateRange} onSelect={actions.setDateRange} numberOfMonths={2} locale={es} /></PopoverContent>
                         </Popover>
-                        <div className="relative flex-1 min-w-[240px]"><Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><SearchInput options={[]} value={searchTerm} onValueChange={setSearchTerm} placeholder="Buscar por documento, usuario..." open={false} onOpenChange={()=>{}} onSelect={()=>{}} className="pl-8 w-full" /></div>
-                        <Button variant="ghost" onClick={() => { setSearchTerm(''); setDateRange(undefined); }}><FilterX className="mr-2 h-4 w-4" />Limpiar</Button>
+                        <div className="relative flex-1 min-w-[240px]"><Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><SearchInput options={[]} value={searchTerm} onValueChange={actions.setSearchTerm} placeholder="Buscar por documento, usuario..." open={false} onOpenChange={()=>{}} onSelect={()=>{}} className="pl-8 w-full" /></div>
+                        <Button variant="ghost" onClick={actions.handleClearFilters}><FilterX className="mr-2 h-4 w-4" />Limpiar</Button>
                     </div>
                 </CardContent>
             </Card>
@@ -203,8 +84,8 @@ export default function DispatchReportPage() {
                     <div className="flex justify-between items-center">
                         <CardTitle>Resultados</CardTitle>
                         <div className="flex items-center gap-2">
-                             <DialogColumnSelector allColumns={availableColumns} visibleColumns={visibleColumns} onColumnChange={(colId, checked) => setVisibleColumns(prev => checked ? [...prev, colId] : prev.filter(id => id !== colId))} onSave={() => {}} />
-                            <Button variant="outline" onClick={handleExportExcel} disabled={isLoading || filteredData.length === 0}><FileSpreadsheet className="mr-2"/>Exportar Excel</Button>
+                             <DialogColumnSelector allColumns={availableColumns} visibleColumns={visibleColumns} onColumnChange={actions.handleColumnVisibilityChange} onSave={actions.savePreferences} />
+                            <Button variant="outline" onClick={actions.handleExportExcel} disabled={isLoading || filteredData.length === 0}><FileSpreadsheet className="mr-2"/>Exportar Excel</Button>
                         </div>
                     </div>
                 </CardHeader>
@@ -213,7 +94,7 @@ export default function DispatchReportPage() {
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    {availableColumns.filter(c => visibleColumns.includes(c.id)).map(col => <TableHead key={col.id}>{col.label}</TableHead>)}
+                                    {visibleColumnsData.map(col => <TableHead key={col.id}>{col.label}</TableHead>)}
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -255,7 +136,7 @@ export default function DispatchReportPage() {
                                                                 </Table>
                                                             </ScrollArea>
                                                             <DialogFooter>
-                                                                <Button onClick={() => handlePrintPdf(log)}><Printer className="mr-2 h-4 w-4"/>Reimprimir Comprobante</Button>
+                                                                <Button onClick={() => actions.handlePrintPdf(log)}><Printer className="mr-2 h-4 w-4"/>Reimprimir Comprobante</Button>
                                                             </DialogFooter>
                                                         </DialogContent>
                                                     </Dialog>
