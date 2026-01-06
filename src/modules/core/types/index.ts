@@ -953,3 +953,33 @@ export interface EmailSettings {
   recoveryEmailSubject: string;
   recoveryEmailBody: string;
 }
+
+// --- Notification Engine Types ---
+export type NotificationEventId = 'onDispatchCompleted' | 'onReceivingCompleted' | 'onPlannerOrderCreated' | 'onPlannerOrderApproved' | 'onPlannerOrderCompleted' | 'onRequestCreated' | 'onRequestApproved' | 'onRequestOrdered';
+export type NotificationActionType = 'sendEmail' | 'sendTelegram';
+
+export interface NotificationEvent {
+  id: NotificationEventId;
+  module: string;
+  name: string;
+  description: string;
+}
+
+export interface NotificationRule {
+  id: number;
+  name: string;
+  event: NotificationEventId;
+  action: NotificationActionType;
+  recipients: string[];
+  subject?: string;
+  enabled: boolean;
+}
+
+export interface TelegramSettings {
+    botToken: string;
+    chatId: string;
+}
+
+export interface NotificationServiceConfig {
+    telegram: TelegramSettings;
+}

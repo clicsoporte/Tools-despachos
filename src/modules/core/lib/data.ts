@@ -1,4 +1,3 @@
-
 /**
  * @fileoverview This file contains the initial or default data for the application.
  * This data is used to populate the database on its first run.
@@ -40,6 +39,7 @@ import {
   Lock,
   PackageCheck,
   ClipboardList,
+  Bell,
 } from "lucide-react";
 import { allAdminPermissions } from "./permissions";
 
@@ -273,6 +273,14 @@ export const adminTools: Tool[] = [
         href: "/dashboard/admin/email",
         icon: Mail,
         bgColor: 'bg-purple-600',
+      },
+      {
+        id: "admin:notifications:read",
+        name: "Gestor de Notificaciones",
+        description: "Crear y gestionar reglas de notificación automática.",
+        href: "/dashboard/admin/notifications",
+        icon: Bell,
+        bgColor: 'bg-fuchsia-600',
       },
       {
         id: "admin:suggestions:read",

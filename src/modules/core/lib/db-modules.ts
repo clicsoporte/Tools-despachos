@@ -11,6 +11,7 @@ import { plannerSchema } from '../../planner/lib/schema';
 import { requestSchema } from '../../requests/lib/schema';
 import { warehouseSchema } from '../../warehouse/lib/schema';
 import { costAssistantSchema } from '../../cost-assistant/lib/schema';
+import { notificationsSchema } from '../../notifications/lib/schema';
 import { mainDbSchema } from './schema';
 
 /**
@@ -47,5 +48,11 @@ export const DB_MODULES: Omit<DatabaseModule, 'initFn' | 'migrationFn'>[] = [
         name: 'Asistente de Costos', 
         dbFile: 'cost_assistant.db', 
         schema: costAssistantSchema,
+    },
+    {
+        id: 'notifications-engine',
+        name: 'Motor de Notificaciones',
+        dbFile: 'notifications.db',
+        schema: notificationsSchema,
     },
 ];

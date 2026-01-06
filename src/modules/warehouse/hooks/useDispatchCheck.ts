@@ -9,7 +9,7 @@ import { usePageTitle } from '@/modules/core/hooks/usePageTitle';
 import { useAuthorization } from '@/modules/core/hooks/useAuthorization';
 import { logError, logInfo } from '@/modules/core/lib/logger';
 import { getInvoiceData, searchDocuments, logDispatch, sendDispatchEmail } from '../lib/actions';
-import type { User, Product, ErpInvoiceHeader, ErpInvoiceLine, UserPreferences, Company, VerificationItem } from '@/modules/core/types';
+import type { User, Product, ErpInvoiceHeader, ErpInvoiceLine, UserPreferences, Company, VerificationItem, DispatchLog } from '@/modules/core/types';
 import { useAuth } from '@/modules/core/hooks/useAuth';
 import { useDebounce } from 'use-debounce';
 import { getUserPreferences, saveUserPreferences } from '@/modules/core/lib/db';
@@ -17,6 +17,7 @@ import { generateDocument } from '@/modules/core/lib/pdf-generator';
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import type { HAlignType, FontStyle, RowInput } from 'jspdf-autotable';
+import { triggerNotificationEvent } from '@/modules/notifications/lib/notifications-engine';
 
 type WizardStep = 'initial' | 'verifying' | 'finished';
 
@@ -232,7 +233,7 @@ export function useDispatchCheck() {
             }
         }
     }, [state.verificationItems, updateState, state.scannerInputRef, state.quantityInputRefs]);
-
+    
     const handleIndicatorClick = useCallback((lineId: number) => {
         if (state.isStrictMode) return;
         const targetItem = state.verificationItems.find(item => item.lineId === lineId);
@@ -326,6 +327,12 @@ export function useDispatchCheck() {
         }
     }, [user, updateState]);
 
+    const handleGoBack = () => {
+        if (state.step === 'verifying') {
+            reset();
+        }
+    };
+    
     const reset = useCallback(() => {
         updateState({
             step: 'initial',
@@ -342,13 +349,8 @@ export function useDispatchCheck() {
         });
     }, [updateState]);
 
-    const handleGoBack = () => {
-        if (state.step === 'verifying') {
-            reset();
-        }
-    };
     
-    const handlePrintPdf = (docData: {
+    const handlePrintPdf = useCallback((docData: {
         document: CurrentDocument;
         items: VerificationItem[];
         verifiedBy: string;
@@ -394,32 +396,26 @@ export function useDispatchCheck() {
             totals: []
         });
         doc.save(`Comprobante-${document.id}.pdf`);
-    };
+    }, []);
 
     const proceedWithFinalize = useCallback(async (action: 'finish' | 'email' | 'pdf') => {
         if (!user || !state.currentDocument || !companyData) return;
         updateState({ isLoading: true });
     
         try {
-            await logDispatch({
+            const dispatchLogData: DispatchLog = {
+                id: 0, // DB will assign it
                 documentId: state.currentDocument.id,
                 documentType: state.currentDocument.type,
-                userId: user.id,
-                userName: user.name,
+                verifiedAt: new Date().toISOString(),
+                verifiedByUserId: user.id,
+                verifiedByUserName: user.name,
                 items: state.verificationItems,
                 notes: `Acción: ${action}`
-            });
-    
-            if (action === 'email') {
-                await sendDispatchEmail({
-                    to: state.selectedUsers.map(u => u.email),
-                    cc: state.externalEmail,
-                    body: state.emailBody,
-                    document: state.currentDocument,
-                    verifiedBy: user.name,
-                    items: state.verificationItems,
-                });
-            }
+            };
+
+            await logDispatch(dispatchLogData);
+            await triggerNotificationEvent('onDispatchCompleted', dispatchLogData);
     
             if (action === 'pdf') {
                 handlePrintPdf({ document: state.currentDocument, items: state.verificationItems, verifiedBy: user.name, companyData });
@@ -434,7 +430,7 @@ export function useDispatchCheck() {
         } finally {
             updateState({ isLoading: false });
         }
-    }, [user, state.currentDocument, state.verificationItems, state.selectedUsers, state.externalEmail, state.emailBody, toast, updateState, companyData]);
+    }, [user, state.currentDocument, state.verificationItems, companyData, toast, updateState, handlePrintPdf]);
     
     const handleFinalizeAndAction = useCallback(async (action: 'finish' | 'email' | 'pdf') => {
         const hasDiscrepancy = state.verificationItems.some(item => item.requiredQuantity !== item.verifiedQuantity);

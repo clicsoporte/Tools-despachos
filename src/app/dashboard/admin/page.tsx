@@ -1,4 +1,3 @@
-
 /**
  * @fileoverview The main dashboard page for the admin section.
  * It dynamically displays a grid of available administration tools.

@@ -1,4 +1,3 @@
-
 /**
  * @fileoverview This file centralizes all permission-related constants and logic.
  * Separating this from data.ts breaks a problematic dependency cycle.
@@ -24,7 +23,7 @@ export const allAdminPermissions = [
     "analytics:read", "analytics:purchase-suggestions:read", "analytics:purchase-report:read", "analytics:production-report:read", "analytics:transits-report:read", "analytics:user-permissions:read", "analytics:physical-inventory-report:read", "analytics:receiving-report:read", "analytics:dispatch-report:read",
     "users:create", "users:read", "users:update", "users:delete",
     "roles:create", "roles:read", "roles:update", "roles:delete", "admin:settings:general", "admin:settings:api", "admin:settings:planner", "admin:settings:requests", "admin:settings:warehouse", "admin:settings:stock", "admin:settings:cost-assistant",
-    "admin:suggestions:read",
+    "admin:suggestions:read", "admin:notifications:read", "admin:notifications:write",
     "admin:import:run", "admin:import:files", "admin:import:sql", "admin:import:sql-config",
     "admin:logs:read", "admin:logs:clear",
     "admin:maintenance:backup", "admin:maintenance:restore", "admin:maintenance:reset"
@@ -56,7 +55,7 @@ export const permissionGroups = {
     "Administración del Sistema": [
         "admin:access",
         "admin:settings:general", "admin:settings:api", "admin:settings:planner", "admin:settings:requests", "admin:settings:warehouse", "admin:settings:stock", "admin:settings:cost-assistant",
-        "admin:suggestions:read",
+        "admin:suggestions:read", "admin:notifications:read", "admin:notifications:write",
         "admin:import:run", "admin:import:files", "admin:import:sql", "admin:import:sql-config",
         "admin:logs:read", "admin:logs:clear",
         "admin:maintenance:backup", "admin:maintenance:restore", "admin:maintenance:reset"
@@ -85,6 +84,7 @@ export const permissionTranslations: { [key: string]: string } = {
     "roles:create": "Roles: Crear", "roles:read": "Roles: Leer", "roles:update": "Roles: Actualizar", "roles:delete": "Roles: Eliminar",
     "admin:settings:general": "Admin: Config. General", "admin:settings:api": "Admin: Config. de API", "admin:settings:planner": "Admin: Config. Planificador", "admin:settings:requests": "Admin: Config. Compras", "admin:settings:warehouse": "Admin: Config. Almacenes", "admin:settings:stock": "Admin: Config. Inventario", "admin:settings:cost-assistant": "Admin: Config. Asist. Costos",
     "admin:suggestions:read": "Admin: Leer Sugerencias",
+    "admin:notifications:read": "Admin: Leer Notif. Configs", "admin:notifications:write": "Admin: Escribir Notif. Configs",
     "admin:import:run": "Admin: Ejecutar Sincronización ERP", "admin:import:files": "Admin: Importar (Archivos)", "admin:import:sql": "Admin: Importar (SQL)", "admin:import:sql-config": "Admin: Configurar SQL",
     "admin:logs:read": "Admin: Ver Registros (Logs)", "admin:logs:clear": "Admin: Limpiar Registros (Logs)",
     "admin:maintenance:backup": "Admin: Mantenimiento (Backup)", "admin:maintenance:restore": "Admin: Mantenimiento (Restaurar)", "admin:maintenance:reset": "Admin: Mantenimiento (Resetear)",
@@ -98,7 +98,7 @@ export const adminPermissions = [
     "users:create", "users:read", "users:update", "users:delete",
     "roles:create", "roles:read", "roles:update", "roles:delete",
     "admin:settings:general", "admin:settings:api", "admin:settings:planner", "admin:settings:requests", "admin:settings:warehouse", "admin:settings:stock", "admin:settings:cost-assistant",
-    "admin:suggestions:read",
+    "admin:suggestions:read", "admin:notifications:read", "admin:notifications:write",
     "admin:import:run", "admin:import:files", "admin:import:sql", "admin:import:sql-config",
     "admin:logs:read", "admin:logs:clear",
     "admin:maintenance:backup", "admin:maintenance:restore", "admin:maintenance:reset",
@@ -121,7 +121,7 @@ export const analyticsPermissions = [
 
 export const permissionTree: Record<string, string[]> = {
     // Top-level Access
-    "admin:access": ["users:read", "roles:read", "admin:settings:general", "admin:settings:api", "admin:settings:planner", "admin:settings:requests", "admin:settings:warehouse", "admin:settings:stock", "admin:settings:cost-assistant", "admin:suggestions:read", "admin:import:run", "admin:logs:read", "admin:maintenance:backup"],
+    "admin:access": ["users:read", "roles:read", "admin:settings:general", "admin:settings:api", "admin:settings:planner", "admin:settings:requests", "admin:settings:warehouse", "admin:settings:stock", "admin:settings:cost-assistant", "admin:suggestions:read", "admin:notifications:read", "admin:import:run", "admin:logs:read", "admin:maintenance:backup"],
     "analytics:read": ["analytics:purchase-suggestions:read", "analytics:purchase-report:read", "analytics:production-report:read", "analytics:transits-report:read", "analytics:user-permissions:read", "analytics:physical-inventory-report:read", "analytics:receiving-report:read", "analytics:dispatch-report:read"],
     "warehouse:access": ["warehouse:search:full", "warehouse:search:simple", "warehouse:receiving-wizard:use", "warehouse:population-wizard:use", "warehouse:inventory-count:create", "warehouse:item-assignment:create", "warehouse:locations:create", "warehouse:units:create", "warehouse:locks:manage", "warehouse:dispatch-check:use"],
     "requests:read": ["requests:read:all", "requests:create"],
@@ -133,6 +133,7 @@ export const permissionTree: Record<string, string[]> = {
     "admin:import:run": ["admin:import:files", "admin:import:sql", "admin:import:sql-config"],
     "admin:logs:read": ["admin:logs:clear"],
     "admin:maintenance:backup": ["admin:maintenance:restore", "admin:maintenance:reset"],
+    "admin:notifications:read": ["admin:notifications:write"],
 
     "requests:create": ["requests:notes:add", "requests:edit:pending", "requests:create:duplicate"],
     "requests:edit:pending": ["requests:status:review"],

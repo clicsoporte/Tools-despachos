@@ -23,6 +23,7 @@ import { initializePlannerDb, runPlannerMigrations } from '../../planner/lib/db'
 import { initializeRequestsDb, runRequestMigrations } from '../../requests/lib/db';
 import { initializeWarehouseDb, runWarehouseMigrations } from '../../warehouse/lib/db';
 import { initializeCostAssistantDb, runCostAssistantMigrations } from '../../cost-assistant/lib/db';
+import { initializeNotificationsDb, runNotificationsMigrations } from '../../notifications/lib/db';
 import { revalidatePath } from 'next/cache';
 
 const DB_FILE = 'intratool.db';
@@ -130,6 +131,7 @@ async function runMigrations(dbModule: Omit<DatabaseModule, 'schema'>, db: Datab
         case 'production-planner': migrationFn = runPlannerMigrations; break;
         case 'warehouse-management': migrationFn = runWarehouseMigrations; break;
         case 'cost-assistant': migrationFn = runCostAssistantMigrations; break;
+        case 'notifications-engine': migrationFn = runNotificationsMigrations; break;
         default: break;
     }
 
@@ -206,6 +208,8 @@ export async function connectDb(dbFile: string = DB_FILE, forceRecreate = false)
                 await initializeWarehouseDb(db);
             } else if (dbModule.id === 'cost-assistant') {
                 await initializeCostAssistantDb(db);
+            } else if (dbModule.id === 'notifications-engine') {
+                await initializeNotificationsDb(db);
             }
         }
         // Always run migrations on an existing DB to check for updates.
@@ -1684,6 +1688,7 @@ export async function runSingleModuleMigration(moduleId: string): Promise<void> 
             case 'production-planner': migrationFn = runPlannerMigrations; break;
             case 'warehouse-management': migrationFn = runWarehouseMigrations; break;
             case 'cost-assistant': migrationFn = runCostAssistantMigrations; break;
+            case 'notifications-engine': migrationFn = runNotificationsMigrations; break;
             default: break;
         }
 
