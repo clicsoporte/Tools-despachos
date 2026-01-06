@@ -735,9 +735,10 @@ export async function logDispatch(dispatchData: any): Promise<void> {
 
 export async function getDispatchLogs(): Promise<DispatchLog[]> {
     const db = await connectDb(WAREHOUSE_DB_FILE);
-    const logs = db.prepare('SELECT * FROM dispatch_logs ORDER BY verifiedAt DESC').all() as DispatchLog[];
+    const logs = db.prepare('SELECT * FROM dispatch_logs ORDER BY verifiedAt DESC').all() as any[];
+    // Correctly parse the `items` property
     return logs.map(log => ({
         ...log,
-        items: typeof log.items === 'string' ? JSON.parse(log.items) : log.items,
+        items: JSON.parse(log.items),
     }));
 }

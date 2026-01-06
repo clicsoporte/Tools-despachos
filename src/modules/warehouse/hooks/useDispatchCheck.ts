@@ -16,7 +16,7 @@ import { getUserPreferences, saveUserPreferences } from '@/modules/core/lib/db';
 import { generateDocument } from '@/modules/core/lib/pdf-generator';
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
-import type { HAlignType, FontStyle } from 'jspdf-autotable';
+import type { HAlignType, FontStyle, RowInput } from 'jspdf-autotable';
 
 type WizardStep = 'initial' | 'verifying' | 'finished';
 
@@ -272,7 +272,7 @@ export function useDispatchCheck() {
     }, [state.verificationItems, updateState, state.scannerInputRef, state.quantityInputRefs]);
 
     const handleIndicatorClick = useCallback((lineId: number) => {
-        if (state.isStrictMode) return; // Not allowed in strict mode
+        if (state.isStrictMode) return;
         const targetItem = state.verificationItems.find(item => item.lineId === lineId);
         if (targetItem && targetItem.verifiedQuantity < targetItem.requiredQuantity) {
              updateState({
@@ -350,7 +350,7 @@ export function useDispatchCheck() {
     }) => {
         const { document, items, verifiedBy, companyData } = docData;
 
-        const styledRows = items.map((item: VerificationItem) => {
+        const styledRows: RowInput[] = items.map((item: VerificationItem) => {
             let textColor: [number, number, number] = [0, 0, 0];
             let fontStyle: FontStyle = 'normal';
             if (item.verifiedQuantity > item.requiredQuantity) {
@@ -379,9 +379,9 @@ export function useDispatchCheck() {
             docId: document.id,
             companyData,
             meta: [{ label: 'Verificado por', value: verifiedBy }, { label: 'Fecha', value: format(new Date(), 'dd/MM/yyyy HH:mm') }],
-            blocks: [{ title: 'Cliente', content: `${document.clientName} (${document.clientId})\n${document.shippingAddress}` }],
+            blocks: [],
             table: {
-                columns: ['Código', 'Descripción', { content: 'Req.', styles: { halign: 'right' } }, { content: 'Verif.', styles: { halign: 'right' } }],
+                columns: ['Código', 'Descripción', { content: 'Req.', styles: { halign: 'right' as HAlignType } }, { content: 'Verif.', styles: { halign: 'right' as HAlignType } }],
                 rows: styledRows,
                 columnStyles: {},
             },

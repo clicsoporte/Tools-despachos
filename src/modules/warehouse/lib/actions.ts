@@ -41,7 +41,7 @@ import type { WarehouseSettings, WarehouseLocation, WarehouseInventoryItem, Move
 import { logInfo, logWarn, logError } from '@/modules/core/lib/logger';
 import { generateDocument } from '@/modules/core/lib/pdf-generator';
 import { format } from 'date-fns';
-import type { HAlignType, FontStyle } from 'jspdf-autotable';
+import type { HAlignType, FontStyle, RowInput } from 'jspdf-autotable';
 
 export const getWarehouseSettings = async (): Promise<WarehouseSettings> => getWarehouseSettingsServer();
 export async function saveWarehouseSettings(settings: WarehouseSettings): Promise<void> {

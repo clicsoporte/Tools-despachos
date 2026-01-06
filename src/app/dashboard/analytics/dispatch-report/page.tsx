@@ -4,7 +4,7 @@
  */
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useToast } from '@/modules/core/hooks/use-toast';
 import { usePageTitle } from '@/modules/core/hooks/usePageTitle';
 import { useAuthorization } from '@/modules/core/hooks/useAuthorization';
@@ -28,7 +28,7 @@ import { generateDocument } from '@/modules/core/lib/pdf-generator';
 import type { DateRange, DispatchLog, VerificationItem, Company } from '@/modules/core/types';
 import { useDebounce } from 'use-debounce';
 import { useAuth } from '@/modules/core/hooks/useAuth';
-import type { HAlignType, FontStyle } from 'jspdf-autotable';
+import type { HAlignType, FontStyle, RowInput } from 'jspdf-autotable';
 
 const availableColumns = [
     { id: 'documentId', label: 'Documento' },
@@ -44,12 +44,12 @@ export default function DispatchReportPage() {
     const { toast } = useToast();
     const { companyData } = useAuth();
     
-    const [isInitialLoading, setIsInitialLoading(true);
-    const [isLoading, setIsLoading(false);
-    const [logs, setLogs([]: DispatchLog[]);
-    const [dateRange, setDateRange<DateRange | undefined>(undefined);
-    const [searchTerm, setSearchTerm('');
-    const [visibleColumns, setVisibleColumns(availableColumns.map(c => c.id));
+    const [isInitialLoading, setIsInitialLoading] = useState(true);
+    const [isLoading, setIsLoading] = useState(false);
+    const [logs, setLogs] = useState<DispatchLog[]>([]);
+    const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [visibleColumns, setVisibleColumns] = useState(availableColumns.map(c => c.id));
 
     const [debouncedSearchTerm] = useDebounce(searchTerm, 500);
 
@@ -98,7 +98,7 @@ export default function DispatchReportPage() {
     const handlePrintPdf = (log: DispatchLog) => {
         if (!companyData || !Array.isArray(log.items)) return;
         
-        const styledRows = log.items.map((item: VerificationItem) => {
+        const styledRows: RowInput[] = log.items.map((item: VerificationItem) => {
             let textColor: [number, number, number] = [0, 0, 0];
             let fontStyle: FontStyle = 'normal';
             if (item.verifiedQuantity > item.requiredQuantity) {
@@ -142,7 +142,7 @@ export default function DispatchReportPage() {
     const handleExportExcel = () => {
         const dataToExport = filteredData.flatMap(log => {
             if (!Array.isArray(log.items)) return [];
-            return log.items.map(item => ({
+            return log.items.map((item: VerificationItem) => ({
                 'Documento': log.documentId,
                 'Tipo': log.documentType,
                 'Fecha': format(parseISO(log.verifiedAt), 'dd/MM/yyyy HH:mm'),
@@ -181,18 +181,20 @@ export default function DispatchReportPage() {
                     <CardTitle>Reporte de Despachos</CardTitle>
                     <CardDescription>Audita las verificaciones de despacho registradas en el sistema.</CardDescription>
                 </CardHeader>
-                <CardContent className="flex flex-wrap items-center gap-4">
-                    <Popover>
-                        <PopoverTrigger asChild>
-                            <Button id="date" variant={'outline'} className={cn('w-full sm:w-auto sm:min-w-[260px] justify-start text-left font-normal', !dateRange && 'text-muted-foreground')}>
-                                <CalendarIcon className="mr-2 h-4 w-4" />
-                                {dateRange?.from ? (dateRange.to ? (`${format(dateRange.from, 'LLL dd, y', { locale: es })} - ${format(dateRange.to, 'LLL dd, y', { locale: es })}`) : format(dateRange.from, 'LLL dd, y', { locale: es })) : (<span>Rango de Fechas</span>)}
-                            </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start"><Calendar initialFocus mode="range" defaultMonth={dateRange?.from} selected={dateRange} onSelect={setDateRange} numberOfMonths={2} locale={es} /></PopoverContent>
-                    </Popover>
-                    <div className="relative flex-1 min-w-[240px]"><Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><SearchInput options={[]} value={searchTerm} onValueChange={setSearchTerm} placeholder="Buscar por documento, usuario..." open={false} onOpenChange={()=>{}} onSelect={()=>{}} className="pl-8 w-full" /></div>
-                    <Button variant="ghost" onClick(() => { setSearchTerm(''); setDateRange(undefined); }}><FilterX className="mr-2 h-4 w-4" />Limpiar</Button>
+                <CardContent>
+                    <div className="flex flex-wrap items-center gap-4">
+                        <Popover>
+                            <PopoverTrigger asChild>
+                                <Button id="date" variant={'outline'} className={cn('w-full sm:w-auto sm:min-w-[260px] justify-start text-left font-normal', !dateRange && 'text-muted-foreground')}>
+                                    <CalendarIcon className="mr-2 h-4 w-4" />
+                                    {dateRange?.from ? (dateRange.to ? (`${format(dateRange.from, 'LLL dd, y', { locale: es })} - ${format(dateRange.to, 'LLL dd, y', { locale: es })}`) : format(dateRange.from, 'LLL dd, y', { locale: es })) : (<span>Rango de Fechas</span>)}
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start"><Calendar initialFocus mode="range" defaultMonth={dateRange?.from} selected={dateRange} onSelect={setDateRange} numberOfMonths={2} locale={es} /></PopoverContent>
+                        </Popover>
+                        <div className="relative flex-1 min-w-[240px]"><Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" /><SearchInput options={[]} value={searchTerm} onValueChange={setSearchTerm} placeholder="Buscar por documento, usuario..." open={false} onOpenChange={()=>{}} onSelect={()=>{}} className="pl-8 w-full" /></div>
+                        <Button variant="ghost" onClick={() => { setSearchTerm(''); setDateRange(undefined); }}><FilterX className="mr-2 h-4 w-4" />Limpiar</Button>
+                    </div>
                 </CardContent>
             </Card>
 
