@@ -128,11 +128,31 @@ export function useDispatchCheck() {
         setState(prevState => ({ ...prevState, ...newState }));
     }, []);
     
+    const reset = useCallback(() => {
+        const isStrictMode = state.isStrictMode; // Preserve strict mode setting
+        updateState({
+            ...state, // keep existing state
+            step: 'initial',
+            documentSearchTerm: '',
+            currentDocument: null,
+            verificationItems: [],
+            scannedCode: '',
+            errorState: null,
+            confirmationState: null,
+            selectedUsers: [],
+            userSearchTerm: '',
+            externalEmail: '',
+            emailBody: '',
+            isStrictMode, // re-apply
+        });
+    }, [updateState, state.isStrictMode]);
+
     const handleDocumentSelect = useCallback(async (documentId: string, containerId?: number) => {
-        updateState({ isLoading: true, isDocumentSearchOpen: false });
+        updateState({ isLoading: true, isDocumentSearchOpen: false, step: 'loading' });
         try {
             const data = await getInvoiceData(documentId);
             if (!data) throw new Error('No se encontraron datos para este documento.');
+            
             const containers = await getContainersAction();
 
             const verificationItems: VerificationItem[] = data.lines.map(line => {
@@ -145,7 +165,6 @@ export function useDispatchCheck() {
                     requiredQuantity: line.CANTIDAD,
                     verifiedQuantity: 0,
                     displayVerifiedQuantity: '0',
-                    warehouseId: line.BODEGA, // Keep warehouse ID for context
                 };
             });
 
@@ -166,42 +185,38 @@ export function useDispatchCheck() {
                 verificationItems,
                 step: 'verifying',
                 availableContainers: containers,
+                isLoading: false,
             });
              setTimeout(() => scannerInputRef.current?.focus(), 100);
         } catch (error: any) {
             toast({ title: 'Error', description: error.message, variant: 'destructive' });
-            updateState({ step: 'initial' });
-        } finally {
-            updateState({ isLoading: false });
+            updateState({ step: 'initial', isLoading: false });
         }
     }, [products, customers, toast, updateState]);
     
     useEffect(() => {
         setTitle('Chequeo de Despacho');
         const loadInitial = async () => {
+            if (!isReady || !user) return;
+
             const docId = searchParams.get('docId');
             const containerId = searchParams.get('containerId');
             
-            if (user) {
-                const prefs = await getUserPreferences(user.id, 'dispatchCheckPrefs');
-                if (prefs) {
-                    updateState({ isStrictMode: prefs.isStrictMode || false });
-                }
-            }
+            const prefs = await getUserPreferences(user.id, 'dispatchCheckPrefs');
+            const isStrictMode = prefs?.isStrictMode || false;
             
             if (docId) {
+                updateState({ isStrictMode, step: 'loading' });
                 await handleDocumentSelect(docId, containerId ? Number(containerId) : undefined);
             } else {
-                updateState({ isLoading: false, step: 'initial' });
+                updateState({ isLoading: false, step: 'initial', isStrictMode });
             }
         };
 
-        if (isAuthorized && user) {
+        if (isAuthorized !== null) {
             loadInitial();
-        } else if (!isAuthorized) {
-             updateState({ isLoading: false });
         }
-    }, [setTitle, isAuthorized, user, updateState, searchParams, handleDocumentSelect]);
+    }, [setTitle, isAuthorized, user, isReady, searchParams, handleDocumentSelect, updateState]);
     
     useEffect(() => {
         const fetchDocs = async () => {
@@ -354,25 +369,9 @@ export function useDispatchCheck() {
         }
     }, [user, updateState]);
     
-    const reset = useCallback(() => {
-        updateState({
-            step: 'initial',
-            documentSearchTerm: '',
-            currentDocument: null,
-            verificationItems: [],
-            scannedCode: '',
-            errorState: null,
-            confirmationState: null,
-            selectedUsers: [],
-            userSearchTerm: '',
-            externalEmail: '',
-            emailBody: '',
-        });
-    }, [updateState]);
-
     const handleGoBack = useCallback(() => {
         if (state.currentDocument?.containerId) {
-            router.push('/dashboard/warehouse/dispatch-center');
+            router.replace('/dashboard/warehouse/dispatch-center');
         } else {
             reset();
         }
@@ -436,11 +435,9 @@ export function useDispatchCheck() {
         const nextDocId = await getNextDocumentInContainer(state.currentDocument.containerId, state.currentDocument.id);
         
         if (nextDocId) {
-            // Navigate to the next document in the same container
-            router.push(`/dashboard/warehouse/dispatch-check?docId=${nextDocId}&containerId=${state.currentDocument.containerId}`);
+            router.replace(`/dashboard/warehouse/dispatch-check?docId=${nextDocId}&containerId=${state.currentDocument.containerId}`);
         } else {
-            // All documents in container are done, redirect to dispatch center
-            router.push('/dashboard/warehouse/dispatch-center');
+            router.replace('/dashboard/warehouse/dispatch-center');
         }
     }, [state.currentDocument, router, updateState]);
 
@@ -450,12 +447,10 @@ export function useDispatchCheck() {
         updateState({isLoading: true});
         try {
             await moveAssignmentToContainer(-1, targetContainerId, state.currentDocument.id);
-            // After moving, update its status to 'partial' so it's clear it was worked on.
             await updateAssignmentStatus(state.currentDocument.id, 'partial');
             
             toast({ title: "Documento Movido", description: `Se ha movido ${state.currentDocument.id} a la nueva ruta.`});
             
-            // Log what was done before moving
              if (user) {
                 await logDispatch({
                     id: 0,
@@ -464,8 +459,10 @@ export function useDispatchCheck() {
                     verifiedAt: new Date().toISOString(),
                     verifiedByUserId: user.id,
                     verifiedByUserName: user.name,
-                    items: state.verificationItems.filter(item => item.verifiedQuantity > 0), // Log only what was verified
-                    notes: `Movido al contenedor ${targetContainerId}.`
+                    items: state.verificationItems.filter(item => item.verifiedQuantity > 0),
+                    notes: `Movido al contenedor ${targetContainerId}.`,
+                    vehiclePlate: null,
+                    driverName: null,
                 });
             }
 
@@ -485,7 +482,7 @@ export function useDispatchCheck() {
 
         try {
             const dispatchLogData: DispatchLog = {
-                id: 0, // DB will assign it
+                id: 0,
                 documentId: state.currentDocument.id,
                 documentType: state.currentDocument.type,
                 verifiedAt: new Date().toISOString(),
@@ -525,8 +522,7 @@ export function useDispatchCheck() {
         } catch (error: any) {
             logError('Failed to finalize dispatch', { error: error.message });
             toast({ title: 'Error al Finalizar', description: error.message, variant: 'destructive' });
-        } finally {
-            updateState({ isLoading: false });
+            updateState({ isLoading: false }); // Ensure loading state is false on error
         }
     }, [user, state.currentDocument, state.verificationItems, companyData, toast, updateState, handlePrintPdf, state.selectedUsers, state.externalEmail, state.emailBody, proceedToNextStep]);
     
@@ -551,7 +547,6 @@ export function useDispatchCheck() {
                 }
             });
         } else {
-            // If all items have some quantity > 0, just confirm if there are discrepancies
             const hasDiscrepancy = state.verificationItems.some(item => item.verifiedQuantity !== item.requiredQuantity);
             if (hasDiscrepancy) {
                 updateState({

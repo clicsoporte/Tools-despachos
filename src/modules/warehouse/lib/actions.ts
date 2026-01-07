@@ -18,6 +18,7 @@ import {
     getAllItemLocations as getAllItemLocationsServer,
     assignItemToLocation as assignItemToLocationServer,
     unassignItemFromLocation as unassignItemFromLocationServer,
+    unassignDocumentFromContainer as unassignDocumentFromContainerServer,
     getWarehouseData as getWarehouseDataServer,
     getMovements as getMovementsServer,
     addInventoryUnit as addInventoryUnitServer,
@@ -97,7 +98,6 @@ export const updateInventory = async(itemId: string, locationId: number, quantit
 export const getItemLocations = async (itemId: string): Promise<ItemLocation[]> => getItemLocationsServer(itemId);
 export const getAllItemLocations = async (): Promise<ItemLocation[]> => getAllItemLocationsServer();
 export const assignItemToLocation = async (itemId: string, locationId: number, clientId: string | null, updatedBy: string): Promise<ItemLocation> => assignItemToLocationServer(itemId, locationId, clientId, updatedBy);
-
 export async function unassignItemFromLocation(assignmentId: number): Promise<void> {
     await logInfo(`Assignment with ID ${assignmentId} was unassigned.`);
     return unassignItemFromLocationServer(assignmentId);
@@ -228,3 +228,4 @@ export const getNextDocumentInContainer = async (containerId: number, currentDoc
 export const moveAssignmentToContainer = async (assignmentId: number, targetContainerId: number, documentId?: string): Promise<void> => moveAssignmentToContainerServer(assignmentId, targetContainerId, documentId);
 export const updateAssignmentStatus = async (documentId: string, status: 'pending' | 'in-progress' | 'completed' | 'discrepancy' | 'partial'): Promise<void> => updateAssignmentStatusServer(documentId, status);
 export const resetContainerAssignments = async (containerId: number): Promise<void> => resetContainerAssignmentsServer(containerId);
+export const unassignDocumentFromContainer = async (assignmentId: number): Promise<void> => unassignDocumentFromContainerServer(assignmentId);

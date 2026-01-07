@@ -266,7 +266,7 @@ export async function getInventoryForItem(itemId: string): Promise<WarehouseInve
 export async function getInventory(dateRange?: DateRange): Promise<WarehouseInventoryItem[]> {
     const db = await connectDb(WAREHOUSE_DB_FILE);
     if (dateRange?.from) {
-        const toDate = dateRange.to || new Date();
+        const toDate = new Date(dateRange.to || dateRange.from);
         toDate.setHours(23, 59, 59, 999);
         const inventory = db.prepare(`
             SELECT * FROM inventory 
@@ -384,6 +384,7 @@ export async function assignItemToLocation(itemId: string, locationId: number, c
 export async function unassignItemFromLocation(assignmentId: number): Promise<void> {
     const db = await connectDb(WAREHOUSE_DB_FILE);
     db.prepare('DELETE FROM item_locations WHERE id = ?').run(assignmentId);
+    await logInfo(`Assignment with ID ${assignmentId} was unassigned.`);
 }
 
 export async function addInventoryUnit(unit: Omit<InventoryUnit, 'id' | 'createdAt' | 'unitCode'>): Promise<InventoryUnit> {
@@ -429,7 +430,7 @@ export async function getInventoryUnits(dateRange?: DateRange): Promise<Inventor
     const db = await connectDb(WAREHOUSE_DB_FILE);
     
     if (dateRange?.from) {
-        const toDate = dateRange.to || new Date();
+        const toDate = new Date(dateRange.to || dateRange.from);
         toDate.setHours(23, 59, 59, 999);
         const units = db.prepare(`
             SELECT * FROM inventory_units 
@@ -473,8 +474,8 @@ export async function updateInventoryUnitLocation(id: number, locationId: number
 
 export async function getActiveLocks(): Promise<any[]> {
     const db = await connectDb(WAREHOUSE_DB_FILE);
-    const locationLocks = db.prepare("SELECT id, name, code, 'location' as entityType, lockedBy FROM locations WHERE isLocked = 1").all();
-    const containerLocks = db.prepare("SELECT id, name, name as code, 'container' as entityType, lockedBy FROM dispatch_containers WHERE isLocked = 1").all();
+    const locationLocks = db.prepare("SELECT id, name, code, 'location' as entityType, lockedBy, lockedByUserId FROM locations WHERE isLocked = 1").all();
+    const containerLocks = db.prepare("SELECT id, name, name as code, 'container' as entityType, lockedBy, lockedByUserId FROM dispatch_containers WHERE isLocked = 1").all();
     return JSON.parse(JSON.stringify([...locationLocks, ...containerLocks]));
 }
 
@@ -681,6 +682,10 @@ export async function assignDocumentsToContainer(documentIds: string[], containe
     const warehouseDb = await connectDb(WAREHOUSE_DB_FILE);
 
     const placeholders = documentIds.map(() => '?').join(',');
+    
+    // First, remove these documents from any other container to prevent duplicates.
+    warehouseDb.prepare(`DELETE FROM dispatch_assignments WHERE documentId IN (${placeholders})`).run(...documentIds);
+
     const invoices = mainDb.prepare(`SELECT * FROM erp_invoice_headers WHERE FACTURA IN (${placeholders})`).all(...documentIds) as ErpInvoiceHeader[];
     
     const insert = warehouseDb.prepare(`
@@ -779,4 +784,9 @@ export async function resetContainerAssignments(containerId: number): Promise<vo
     const db = await connectDb(WAREHOUSE_DB_FILE);
     db.prepare("UPDATE dispatch_assignments SET status = 'pending' WHERE containerId = ?").run(containerId);
     logInfo(`Container ${containerId} has been reset.`);
+}
+
+export async function unassignDocumentFromContainer(assignmentId: number): Promise<void> {
+    const db = await connectDb(WAREHOUSE_DB_FILE);
+    db.prepare('DELETE FROM dispatch_assignments WHERE id = ?').run(assignmentId);
 }
