@@ -34,10 +34,15 @@ import {
     getInvoiceData as getInvoiceDataServer,
     logDispatch as logDispatchServer,
     getDispatchLogs as getDispatchLogsServer,
+    getContainers as getContainersServer,
+    getAssignmentsForContainer as getAssignmentsForContainerServer,
+    getAssignmentsByIds as getAssignmentsByIdsServer,
+    getNextDocumentInContainer as getNextDocumentInContainerServer,
+    moveAssignmentToContainer as moveAssignmentToContainerServer
 } from './db';
 import { sendEmail as sendEmailServer } from '@/modules/core/lib/email-service';
 import { getStockSettings as getStockSettingsDb, saveStockSettings as saveStockSettingsDb } from '@/modules/core/lib/db';
-import type { WarehouseSettings, WarehouseLocation, WarehouseInventoryItem, MovementLog, ItemLocation, InventoryUnit, StockSettings, User, ErpInvoiceHeader, ErpInvoiceLine, DispatchLog, Company, VerificationItem, DateRange } from '@/modules/core/types';
+import type { WarehouseSettings, WarehouseLocation, WarehouseInventoryItem, MovementLog, ItemLocation, InventoryUnit, StockSettings, User, ErpInvoiceHeader, ErpInvoiceLine, DispatchLog, Company, VerificationItem, DateRange, DispatchContainer, DispatchAssignment } from '@/modules/core/types';
 import { logInfo, logWarn, logError } from '@/modules/core/lib/logger';
 import { generateDocument } from '@/modules/core/lib/pdf-generator';
 import { format } from 'date-fns';
@@ -213,3 +218,10 @@ export async function sendDispatchEmail(payload: {
         throw new Error('No se pudo enviar el correo de despacho. Verifica la configuración de SMTP.');
     }
 }
+
+// --- Dispatch Container Actions ---
+export const getContainers = async (): Promise<DispatchContainer[]> => getContainersServer();
+export const getAssignmentsForContainer = async (containerId: number): Promise<DispatchAssignment[]> => getAssignmentsForContainerServer(containerId);
+export const getAssignmentsByIds = async (documentIds: string[]): Promise<DispatchAssignment[]> => getAssignmentsByIdsServer(documentIds);
+export const getNextDocumentInContainer = async (containerId: number, currentDocumentId: string): Promise<string | null> => getNextDocumentInContainerServer(containerId, currentDocumentId);
+export const moveAssignmentToContainer = async (assignmentId: number, targetContainerId: number): Promise<void> => moveAssignmentToContainerServer(assignmentId, targetContainerId);
