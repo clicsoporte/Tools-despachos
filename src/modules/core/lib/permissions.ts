@@ -173,3 +173,4 @@ export const permissionTree: Record<string, string[]> = {
     "warehouse:dispatch-check:send-email": ["warehouse:dispatch-check:send-email-external"],
     "warehouse:dispatch-classifier:use": ["warehouse:dispatch:reset"],
 };
+

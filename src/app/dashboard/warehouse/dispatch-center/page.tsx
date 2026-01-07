@@ -7,11 +7,11 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useAuth } from '@/modules/core/hooks/useAuth';
 import { usePageTitle } from '@/modules/core/hooks/usePageTitle';
 import { useRouter } from 'next/navigation';
-import { getContainers, getAssignmentsForContainer, lockEntity, releaseLock, moveAssignmentToContainer, getAssignmentsByIds, updateAssignmentStatus } from '@/modules/warehouse/lib/actions';
+import { getContainers, getAssignmentsForContainer, lockEntity, releaseLock, moveAssignmentToContainer, getAssignmentsByIds, updateAssignmentStatus, resetContainerAssignments } from '@/modules/warehouse/lib/actions';
 import type { DispatchContainer, DispatchAssignment, ErpInvoiceHeader, ErpInvoiceLine } from '@/modules/core/types';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, Lock, Unlock, ArrowRight, ArrowLeft, CheckCircle, Package, AlertTriangle, Undo2 } from 'lucide-react';
+import { Loader2, Lock, Unlock, ArrowRight, ArrowLeft, CheckCircle, Package, AlertTriangle, Undo2, RefreshCcw } from 'lucide-react';
 import { useToast } from '@/modules/core/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger, DialogFooter, DialogClose } from '@/components/ui/dialog';
@@ -37,6 +37,7 @@ export default function DispatchCenterPage() {
     const [erpHeaders, setErpHeaders] = useState<Map<string, ErpInvoiceHeader>>(new Map());
 
     const [assignmentToMove, setAssignmentToMove] = useState<DispatchAssignment | null>(null);
+    const [containerToReset, setContainerToReset] = useState<DispatchContainer | null>(null);
     
     const fetchContainers = useCallback(async () => {
         setIsLoading(true);
@@ -156,6 +157,18 @@ export default function DispatchCenterPage() {
             toast({ title: "Error al Reabrir", description: error.message, variant: "destructive" });
         }
     };
+    
+    const handleResetContainer = async () => {
+        if (!containerToReset) return;
+        try {
+            await resetContainerAssignments(containerToReset.id!);
+            toast({ title: 'Ruta Reiniciada', description: `Todos los documentos en "${containerToReset.name}" están pendientes de nuevo.` });
+            setContainerToReset(null);
+            await fetchContainers(); // Refresh the main view
+        } catch (error: any) {
+             toast({ title: "Error al Reiniciar", description: `No se pudo reiniciar la ruta. ${error.message}`, variant: "destructive" });
+        }
+    };
 
     if (isLoading && !selectedContainer) {
         return <div className="flex justify-center items-center h-full"><Loader2 className="h-8 w-8 animate-spin" /></div>;
@@ -209,10 +222,31 @@ export default function DispatchCenterPage() {
                                         </div>
                                     )}
                                 </CardContent>
-                                <CardFooter>
+                                <CardFooter className="flex flex-col gap-2 items-stretch">
                                     <Button className="w-full" onClick={() => handleSelectContainer(c)} disabled={c.isLocked && c.lockedByUserId !== user?.id}>
-                                        {c.isLocked && c.lockedByUserId === user?.id ? 'Reanudar Sesión' : 'Iniciar Verificación'}
+                                        {isRouteCompleted ? 'Ver Documentos' : (c.isLocked && c.lockedByUserId === user?.id ? 'Reanudar Sesión' : 'Iniciar Verificación')}
                                     </Button>
+                                    {isRouteCompleted && hasPermission('warehouse:dispatch:reset') && (
+                                        <AlertDialog>
+                                            <AlertDialogTrigger asChild>
+                                                <Button variant="outline" size="sm" onClick={() => setContainerToReset(c)}>
+                                                    <RefreshCcw className="mr-2 h-4 w-4" /> Reiniciar Ruta
+                                                </Button>
+                                            </AlertDialogTrigger>
+                                            <AlertDialogContent>
+                                                <AlertDialogHeader>
+                                                    <AlertDialogTitle>¿Reiniciar esta ruta?</AlertDialogTitle>
+                                                    <AlertDialogDescription>
+                                                        Todos los documentos en &quot;{c.name}&quot; volverán al estado pendiente. Esta acción es útil para volver a verificar una ruta completa.
+                                                    </AlertDialogDescription>
+                                                </AlertDialogHeader>
+                                                <AlertDialogFooter>
+                                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                                    <AlertDialogAction onClick={handleResetContainer}>Sí, reiniciar</AlertDialogAction>
+                                                </AlertDialogFooter>
+                                            </AlertDialogContent>
+                                        </AlertDialog>
+                                    )}
                                 </CardFooter>
                             </Card>
                         )
@@ -310,3 +344,4 @@ export default function DispatchCenterPage() {
         </div>
     );
 }
+

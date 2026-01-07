@@ -790,3 +790,4 @@ export async function unassignDocumentFromContainer(assignmentId: number): Promi
     const db = await connectDb(WAREHOUSE_DB_FILE);
     db.prepare('DELETE FROM dispatch_assignments WHERE id = ?').run(assignmentId);
 }
+
