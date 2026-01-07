@@ -10,7 +10,15 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useAuth } from '@/modules/core/hooks/useAuth';
 import { usePageTitle } from '@/modules/core/hooks/usePageTitle';
 import { useAuthorization } from '@/modules/core/hooks/useAuthorization';
-import { getContainers, getUnassignedDocuments, getAssignmentsForContainer, assignDocumentsToContainer, updateAssignmentOrder, unassignDocumentFromContainer } from '@/modules/warehouse/lib/actions';
+import { 
+    getContainers, 
+    getUnassignedDocuments, 
+    getAssignmentsForContainer, 
+    assignDocumentsToContainer, 
+    updateAssignmentOrder, 
+    unassignItemFromLocation,
+    moveAssignmentToContainer
+} from '@/modules/warehouse/lib/actions';
 import { getInvoicesByIds } from '@/modules/core/lib/db';
 import type { DispatchContainer, ErpInvoiceHeader, DispatchAssignment } from '@/modules/core/types';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
@@ -190,6 +198,15 @@ export default function DispatchClassifierPage() {
             return;
         }
         
+        const getAssignedContainerId = (docId: string): string | null => {
+            for (const containerId in assignments) {
+                if (assignments[containerId].some(a => a.documentId === docId)) {
+                    return containerId;
+                }
+            }
+            return null;
+        };
+
         const currentContainerId = getAssignedContainerId(documentId);
         
         try {
@@ -197,7 +214,7 @@ export default function DispatchClassifierPage() {
                 // This means unassigning
                 const assignmentToRemove = assignments[currentContainerId!]?.find(a => a.documentId === documentId);
                 if (assignmentToRemove) {
-                    await unassignDocumentFromContainer(assignmentToRemove.id);
+                    await unassignItemFromLocation(assignmentToRemove.id);
                 }
             } else {
                 await assignDocumentsToContainer([documentId], Number(containerId), user.name);
@@ -226,50 +243,55 @@ export default function DispatchClassifierPage() {
             toast({ title: 'Selección requerida', description: 'Selecciona al menos un documento y un contenedor de destino.', variant: 'destructive'});
             return;
         }
-
-        const validDocsToAssign: string[] = [];
-        let cancelledCount = 0;
-
-        for (const docId of selectedDocumentIds) {
-            const doc = unassignedDocs.find(d => d.FACTURA === docId);
-            if (doc && doc.ANULADA !== 'S') {
-                validDocsToAssign.push(docId);
-            } else if (doc) {
-                cancelledCount++;
-            }
-        }
-        
-        if (cancelledCount > 0) {
-            toast({ title: 'Facturas Omitidas', description: `${cancelledCount} factura(s) estaban anuladas y no se asignaron.`, variant: 'destructive'});
-        }
-
-        if (validDocsToAssign.length === 0) {
-            toast({ title: 'Sin Documentos Válidos', description: 'No hay documentos válidos para asignar.', variant: 'destructive'});
-            return;
-        }
-        
+    
+        setIsLoadingDocs(true); // Re-use loading state for user feedback
+    
         try {
+            const validDocsToAssign: string[] = [];
+            let cancelledCount = 0;
+    
+            for (const docId of selectedDocumentIds) {
+                const doc = unassignedDocs.find(d => d.FACTURA === docId);
+                if (doc && doc.ANULADA !== 'S') {
+                    validDocsToAssign.push(docId);
+                } else if (doc) {
+                    cancelledCount++;
+                }
+            }
+            
+            if (cancelledCount > 0) {
+                toast({ title: 'Facturas Omitidas', description: `${cancelledCount} factura(s) estaban anuladas y no se asignaron.`, variant: 'destructive'});
+            }
+    
+            if (validDocsToAssign.length === 0) {
+                toast({ title: 'Sin Documentos Válidos', description: 'No hay documentos válidos para asignar.', variant: 'destructive'});
+                setIsLoadingDocs(false);
+                return;
+            }
+            
             await assignDocumentsToContainer(validDocsToAssign, Number(bulkAssignContainerId), user.name);
             toast({ title: "Asignación Completa", description: `Se asignaron ${validDocsToAssign.length} documentos.` });
             
-            // Refresh data
-            handleFetchDocuments();
+            // Re-fetch data to reflect changes
+            await handleFetchDocuments();
             const freshAssignments: Record<string, DispatchAssignment[]> = {};
             for (const container of containers) {
                 freshAssignments[container.id!] = await getAssignmentsForContainer(container.id!);
             }
             setAssignments(freshAssignments);
-
+    
             setSelectedDocumentIds(new Set());
             setBulkAssignContainerId('');
         } catch (error: any) {
             toast({ title: 'Error al Asignar', description: error.message, variant: 'destructive' });
+        } finally {
+            setIsLoadingDocs(false);
         }
     }, [user, selectedDocumentIds, bulkAssignContainerId, unassignedDocs, toast, handleFetchDocuments, containers]);
 
     const handleUnassign = async (assignment: DispatchAssignment) => {
         try {
-            await unassignDocumentFromContainer(assignment.id);
+            await unassignItemFromLocation(assignment.id);
             setAssignments(prev => {
                 const newAssignments = {...prev};
                 newAssignments[assignment.containerId] = newAssignments[assignment.containerId].filter(a => a.id !== assignment.id);

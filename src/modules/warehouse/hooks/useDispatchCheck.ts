@@ -147,7 +147,10 @@ export function useDispatchCheck() {
             emailBody: '',
             nextDocumentInContainer: null,
         });
-    }, [updateState]);
+        // Clear URL params
+        router.replace('/dashboard/warehouse/dispatch-check');
+    }, [updateState, router]);
+
 
     const handleDocumentSelect = useCallback(async (documentId: string, containerId?: number) => {
         updateState({ isLoading: true, isDocumentSearchOpen: false, step: 'loading' });
@@ -199,6 +202,13 @@ export function useDispatchCheck() {
         }
     }, [products, customers, toast, updateState]);
     
+    const handleDocumentSearchKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === 'Enter' && state.documentOptions.length > 0) {
+            e.preventDefault();
+            handleDocumentSelect(state.documentOptions[0].value);
+        }
+    }, [state.documentOptions, handleDocumentSelect]);
+
     useEffect(() => {
         setTitle('Chequeo de Despacho');
         const loadInitial = async () => {
