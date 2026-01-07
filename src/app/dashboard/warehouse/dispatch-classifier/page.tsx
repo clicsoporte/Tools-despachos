@@ -16,14 +16,16 @@ import {
     getAssignmentsForContainer, 
     assignDocumentsToContainer, 
     updateAssignmentOrder, 
-    unassignItemFromLocation,
-    moveAssignmentToContainer
+    unassignDocumentFromContainer,
+    moveAssignmentToContainer,
+    unassignAllFromContainer,
+    resetContainerAssignments,
 } from '@/modules/warehouse/lib/actions';
 import { getInvoicesByIds } from '@/modules/core/lib/db';
 import type { DispatchContainer, ErpInvoiceHeader, DispatchAssignment } from '@/modules/core/types';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, Search, CalendarIcon, Truck, AlertTriangle, List, Check, ChevronsUpDown, Send, Trash2, GripVertical } from 'lucide-react';
+import { Loader2, Search, CalendarIcon, Truck, AlertTriangle, List, Check, ChevronsUpDown, Send, Trash2, GripVertical, RefreshCcw } from 'lucide-react';
 import { useToast } from '@/modules/core/hooks/use-toast';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -39,13 +41,14 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Label } from '@/components/ui/label';
+import { AlertDialog, AlertDialogTrigger, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from '@/components/ui/alert-dialog';
 
 const DraggableItem = ({ item, erpHeaders, index, onUnassign }: { item: DispatchAssignment, erpHeaders: Map<string, ErpInvoiceHeader>, index: number, onUnassign: (assignment: DispatchAssignment) => void }) => {
     const erpHeader = erpHeaders.get(item.documentId);
     const isCancelled = erpHeader?.ANULADA === 'S';
 
     return (
-        <Draggable draggableId={item.documentId} index={index}>
+        <Draggable draggableId={String(item.id)} index={index}>
             {(provided) => (
                 <div
                     ref={provided.innerRef}
@@ -78,7 +81,7 @@ const DraggableItem = ({ item, erpHeaders, index, onUnassign }: { item: Dispatch
 type EnrichedErpHeader = ErpInvoiceHeader & { suggestedContainerId?: string };
 
 export default function DispatchClassifierPage() {
-    useAuthorization(['warehouse:dispatch-classifier:use']);
+    const { hasPermission } = useAuthorization(['warehouse:dispatch-classifier:use']);
     const { setTitle } = usePageTitle();
     const { user } = useAuth();
     const { toast } = useToast();
@@ -94,39 +97,48 @@ export default function DispatchClassifierPage() {
     const [dateRange, setDateRange] = useState<DateRange | undefined>({ from: startOfDay(subDays(new Date(), 7)), to: new Date() });
     const [selectedDocumentIds, setSelectedDocumentIds] = useState<Set<string>>(new Set());
     const [bulkAssignContainerId, setBulkAssignContainerId] = useState<string>('');
+
+    const [isClearConfirmOpen, setIsClearConfirmOpen] = useState(false);
+    const [containerToModify, setContainerToModify] = useState<DispatchContainer | null>(null);
+
+    const fetchAllData = useCallback(async () => {
+        setIsLoading(true);
+        try {
+            const fetchedContainers = await getContainers();
+            setContainers(fetchedContainers);
+
+            const assignmentsByContainer: Record<string, DispatchAssignment[]> = {};
+            const allDocumentIds: string[] = [];
+
+            for (const container of fetchedContainers) {
+                const containerAssignments = await getAssignmentsForContainer(container.id!);
+                assignmentsByContainer[container.id!] = containerAssignments;
+                allDocumentIds.push(...containerAssignments.map(a => a.documentId));
+            }
+            
+            if (allDocumentIds.length > 0) {
+                const invoiceDetails = await getInvoicesByIds(allDocumentIds);
+                const headersMap = new Map<string, ErpInvoiceHeader>(invoiceDetails.map((h: ErpInvoiceHeader) => [h.FACTURA, h]));
+                setErpHeaders(headersMap);
+            }
+
+            setAssignments(assignmentsByContainer);
+        } catch (error: any) {
+            toast({ title: 'Error', description: `No se pudieron cargar los datos iniciales: ${error.message}`, variant: 'destructive' });
+        } finally {
+            setIsLoading(false);
+        }
+    }, [toast]);
     
     useEffect(() => {
         setTitle("Clasificador de Despachos");
-        const loadInitialData = async () => {
-            setIsLoading(true);
-            try {
-                const fetchedContainers = await getContainers();
-                setContainers(fetchedContainers);
-
-                const assignmentsByContainer: Record<string, DispatchAssignment[]> = {};
-                const allDocumentIds: string[] = [];
-
-                for (const container of fetchedContainers) {
-                    const containerAssignments = await getAssignmentsForContainer(container.id!);
-                    assignmentsByContainer[container.id!] = containerAssignments;
-                    allDocumentIds.push(...containerAssignments.map(a => a.documentId));
-                }
-                
-                if (allDocumentIds.length > 0) {
-                    const invoiceDetails = await getInvoicesByIds(allDocumentIds);
-                    const headersMap = new Map<string, ErpInvoiceHeader>(invoiceDetails.map((h: ErpInvoiceHeader) => [h.FACTURA, h]));
-                    setErpHeaders(headersMap);
-                }
-
-                setAssignments(assignmentsByContainer);
-            } catch (error: any) {
-                toast({ title: 'Error', description: `No se pudieron cargar los datos iniciales: ${error.message}`, variant: 'destructive' });
-            } finally {
-                setIsLoading(false);
-            }
-        };
-        loadInitialData();
-    }, [setTitle, toast]);
+        if (hasPermission) {
+            fetchAllData();
+        } else {
+            setIsLoading(false);
+        }
+    }, [setTitle, hasPermission, fetchAllData]);
+    
 
     const handleFetchDocuments = useCallback(async () => {
         if (!dateRange?.from) {
@@ -214,7 +226,7 @@ export default function DispatchClassifierPage() {
                 // This means unassigning
                 const assignmentToRemove = assignments[currentContainerId!]?.find(a => a.documentId === documentId);
                 if (assignmentToRemove) {
-                    await unassignItemFromLocation(assignmentToRemove.id);
+                    await unassignDocumentFromContainer(assignmentToRemove.id);
                 }
             } else {
                 await assignDocumentsToContainer([documentId], Number(containerId), user.name);
@@ -291,7 +303,7 @@ export default function DispatchClassifierPage() {
 
     const handleUnassign = async (assignment: DispatchAssignment) => {
         try {
-            await unassignItemFromLocation(assignment.id);
+            await unassignDocumentFromContainer(assignment.id);
             setAssignments(prev => {
                 const newAssignments = {...prev};
                 newAssignments[assignment.containerId] = newAssignments[assignment.containerId].filter(a => a.id !== assignment.id);
@@ -304,6 +316,44 @@ export default function DispatchClassifierPage() {
         }
     };
     
+    const handleClearContainer = async () => {
+        if (!containerToModify) return;
+        try {
+            await unassignAllFromContainer(containerToModify.id!);
+            toast({ title: 'Contenedor Limpiado', description: `Se desasignaron todos los documentos de "${containerToModify.name}".`, variant: "destructive"});
+            
+            setAssignments(prev => ({
+                ...prev,
+                [containerToModify.id!]: []
+            }));
+
+        } catch (error: any) {
+            toast({ title: 'Error al Limpiar', description: `No se pudieron limpiar las asignaciones. ${error.message}`, variant: 'destructive'});
+        } finally {
+            setContainerToModify(null);
+            setIsClearConfirmOpen(false);
+        }
+    };
+
+    const handleResetContainer = async () => {
+        if (!containerToModify) return;
+        try {
+            await resetContainerAssignments(containerToModify.id!);
+            toast({ title: 'Ruta Reiniciada', description: `Todos los documentos en "${containerToModify.name}" están pendientes de nuevo.` });
+            
+            const freshAssignments = await getAssignmentsForContainer(containerToModify.id!);
+            setAssignments(prev => ({
+                ...prev,
+                [containerToModify.id!]: freshAssignments
+            }));
+
+        } catch (error: any) {
+             toast({ title: "Error al Reiniciar", description: `No se pudo reiniciar la ruta. ${error.message}`, variant: "destructive" });
+        } finally {
+             setContainerToModify(null);
+        }
+    };
+
     if (isLoading) {
         return <div className="flex justify-center items-center h-screen"><Loader2 className="h-8 w-8 animate-spin" /></div>;
     }
@@ -436,14 +486,60 @@ export default function DispatchClassifierPage() {
                                     {(provided) => (
                                         <Card ref={provided.innerRef} {...provided.droppableProps} className="flex flex-col">
                                             <CardHeader>
-                                                <CardTitle className="flex items-center gap-2"><Truck className="h-5 w-5"/>{container.name}</CardTitle>
+                                                 <div className="flex justify-between items-start">
+                                                    <CardTitle className="flex items-center gap-2"><Truck className="h-5 w-5"/>{container.name}</CardTitle>
+                                                    {hasPermission('warehouse:dispatch-containers:manage') && (
+                                                        <AlertDialog open={isClearConfirmOpen && containerToModify?.id === container.id} onOpenChange={(open) => { if (!open) { setIsClearConfirmOpen(false); setContainerToModify(null); }}}>
+                                                            <AlertDialogTrigger asChild>
+                                                                <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive" onClick={() => { setIsClearConfirmOpen(true); setContainerToModify(container); }}>
+                                                                    <Trash2 className="h-4 w-4" />
+                                                                </Button>
+                                                            </AlertDialogTrigger>
+                                                            <AlertDialogContent>
+                                                                <AlertDialogHeader>
+                                                                    <AlertDialogTitle>¿Limpiar Contenedor "{container.name}"?</AlertDialogTitle>
+                                                                    <AlertDialogDescription>
+                                                                        Esta acción desasignará **TODOS** los documentos del contenedor. Es útil para reiniciar la ruta para el día siguiente. No se borra ningún registro de verificación.
+                                                                    </AlertDialogDescription>
+                                                                </AlertDialogHeader>
+                                                                <AlertDialogFooter>
+                                                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                                                    <AlertDialogAction onClick={handleClearContainer} className="bg-destructive hover:bg-destructive/90">Sí, Limpiar Contenedor</AlertDialogAction>
+                                                                </AlertDialogFooter>
+                                                            </AlertDialogContent>
+                                                        </AlertDialog>
+                                                    )}
+                                                </div>
                                             </CardHeader>
                                             <CardContent className="flex-1 p-4 bg-muted/40 rounded-b-lg overflow-y-auto">
                                                 {(assignments[container.id!] || []).map((item, index) => (
-                                                    <DraggableItem key={item.documentId} item={item} erpHeaders={erpHeaders} index={index} onUnassign={handleUnassign} />
+                                                    <DraggableItem key={item.id} item={item} erpHeaders={erpHeaders} index={index} onUnassign={handleUnassign} />
                                                 ))}
                                                 {provided.placeholder}
                                             </CardContent>
+                                             <CardFooter className="p-2">
+                                                {((assignments[container.id!] || []).length > 0) && hasPermission('warehouse:dispatch:reset') && (
+                                                    <AlertDialog>
+                                                        <AlertDialogTrigger asChild>
+                                                            <Button variant="outline" size="sm" className="w-full" onClick={() => setContainerToModify(container)}>
+                                                                <RefreshCcw className="mr-2 h-4 w-4" /> Reiniciar Ruta
+                                                            </Button>
+                                                        </AlertDialogTrigger>
+                                                        <AlertDialogContent>
+                                                            <AlertDialogHeader>
+                                                                <AlertDialogTitle>¿Reiniciar la ruta "{container.name}"?</AlertDialogTitle>
+                                                                <AlertDialogDescription>
+                                                                    Todos los documentos en este contenedor volverán al estado "pendiente", permitiendo que sean verificados de nuevo.
+                                                                </AlertDialogDescription>
+                                                            </AlertDialogHeader>
+                                                            <AlertDialogFooter>
+                                                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                                                <AlertDialogAction onClick={handleResetContainer}>Sí, reiniciar</AlertDialogAction>
+                                                            </AlertDialogFooter>
+                                                        </AlertDialogContent>
+                                                    </AlertDialog>
+                                                )}
+                                            </CardFooter>
                                         </Card>
                                     )}
                                 </Droppable>
