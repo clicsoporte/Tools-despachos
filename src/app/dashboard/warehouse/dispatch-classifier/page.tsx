@@ -176,19 +176,20 @@ export default function DispatchClassifierPage() {
             }));
 
             await updateAssignmentOrder(Number(destinationId), destinationItems.map(item => item.documentId));
-            await unassignDocumentFromContainer(movedItem.id).then(() => assignDocumentsToContainer([movedItem.documentId], Number(destinationId), user?.name || ''));
+            await unassignDocumentFromContainer(movedItem.id, true); // Soft-delete
+            await assignDocumentsToContainer([movedItem.documentId], Number(destinationId), user?.name || '');
         }
     };
 
     const handleSingleAssign = useCallback(async (documentId: string, containerId: string | null) => {
         if (!user) return;
-
+    
         const doc = unassignedDocs.find(d => d.FACTURA === documentId);
         if (doc?.ANULADA === 'S') {
             toast({ title: "Acción no permitida", description: "No se puede asignar una factura anulada.", variant: "destructive" });
             return;
         }
-
+    
         if (containerId === null) { // Unassigning
             const currentAssignment = Object.values(assignments).flat().find(a => a.documentId === documentId);
             if (currentAssignment) {
@@ -198,15 +199,15 @@ export default function DispatchClassifierPage() {
                     newAssignments[currentAssignment.containerId] = newAssignments[currentAssignment.containerId].filter(a => a.id !== currentAssignment.id);
                     return newAssignments;
                 });
-                await handleFetchDocuments(); // Refresh unassigned list
+                await handleFetchDocuments();
             }
         } else { // Assigning
             await assignDocumentsToContainer([documentId], Number(containerId), user.name);
             const docToMove = unassignedDocs.find(d => d.FACTURA === documentId);
             if (docToMove) {
-                setUnassignedDocs(prev => prev.filter(d => d.FACTURA !== documentId));
+                // Instead of removing from unassignedDocs, we update the `assignments` state
                 const newAssignment: DispatchAssignment = {
-                    id: -1, // Temporary, will be updated on next full load
+                    id: Date.now(), // Temporary ID for UI
                     containerId: Number(containerId),
                     documentId: docToMove.FACTURA, documentType: docToMove.TIPO_DOCUMENTO,
                     documentDate: typeof docToMove.FECHA === 'string' ? docToMove.FECHA : (docToMove.FECHA as Date).toISOString(),
@@ -215,6 +216,7 @@ export default function DispatchClassifierPage() {
                     sortOrder: (assignments[containerId]?.length || 0) + 1, status: 'pending',
                 };
                 setAssignments(prev => ({ ...prev, [containerId]: [...(prev[containerId] || []), newAssignment] }));
+                // No longer remove from unassignedDocs
             }
         }
     }, [user, assignments, unassignedDocs, handleFetchDocuments, toast]);
@@ -250,7 +252,8 @@ export default function DispatchClassifierPage() {
         
         const docsToMove = unassignedDocs.filter(d => validDocsToAssign.includes(d.FACTURA));
         const newAssignments: DispatchAssignment[] = docsToMove.map(doc => ({
-            id: -1, containerId: Number(bulkAssignContainerId),
+            id: Date.now() + Math.random(), // Temp UI ID
+            containerId: Number(bulkAssignContainerId),
             documentId: doc.FACTURA, documentType: doc.TIPO_DOCUMENTO,
             documentDate: typeof doc.FECHA === 'string' ? doc.FECHA : (doc.FECHA as Date).toISOString(),
             clientId: doc.CLIENTE, clientName: doc.NOMBRE_CLIENTE,
@@ -258,7 +261,6 @@ export default function DispatchClassifierPage() {
             sortOrder: 0, status: 'pending',
         }));
 
-        setUnassignedDocs(prev => prev.filter(d => !validDocsToAssign.includes(d.FACTURA)));
         setAssignments(prev => ({...prev, [bulkAssignContainerId]: [...(prev[bulkAssignContainerId] || []), ...newAssignments] }));
         setSelectedDocumentIds(new Set());
         setBulkAssignContainerId('');
@@ -325,8 +327,8 @@ export default function DispatchClassifierPage() {
                                 <div className="flex items-center gap-2">
                                     <Checkbox
                                         id="select-all-docs"
-                                        checked={selectedDocumentIds.size > 0 && selectedDocumentIds.size === unassignedDocs.length}
-                                        onCheckedChange={(checked) => setSelectedDocumentIds(checked ? new Set(unassignedDocs.map(d => d.FACTURA)) : new Set())}
+                                        checked={selectedDocumentIds.size > 0 && selectedDocumentIds.size === unassignedDocs.filter(d => d.ANULADA !== 'S').length}
+                                        onCheckedChange={(checked) => setSelectedDocumentIds(checked ? new Set(unassignedDocs.filter(d => d.ANULADA !== 'S').map(d => d.FACTURA)) : new Set())}
                                     />
                                     <Label htmlFor="select-all-docs" className="font-semibold">{selectedDocumentIds.size} seleccionados</Label>
                                 </div>
@@ -353,6 +355,7 @@ export default function DispatchClassifierPage() {
                                             <TableHead>Vendedor</TableHead>
                                             <TableHead>Ruta (ERP)</TableHead>
                                             <TableHead>Embarcar A</TableHead>
+                                            <TableHead>Observaciones</TableHead>
                                             <TableHead className="w-[250px]">Asignar a Contenedor</TableHead>
                                         </TableRow>
                                     </TableHeader>
@@ -361,9 +364,9 @@ export default function DispatchClassifierPage() {
                                             const assignedContainerId = getAssignedContainerId(doc.FACTURA);
                                             const isCancelled = doc.ANULADA === 'S';
                                             return (
-                                                <TableRow key={doc.FACTURA} className={isCancelled ? 'bg-destructive/10' : ''}>
+                                                <TableRow key={doc.FACTURA} className={cn(isCancelled ? 'bg-destructive/10' : '', assignedContainerId && 'bg-green-100/50')}>
                                                     <TableCell>
-                                                        {!assignedContainerId && !isCancelled && <Checkbox checked={selectedDocumentIds.has(doc.FACTURA)} onCheckedChange={(checked) => {
+                                                        {!isCancelled && <Checkbox checked={selectedDocumentIds.has(doc.FACTURA)} onCheckedChange={(checked) => {
                                                             const newSet = new Set(selectedDocumentIds);
                                                             if (checked) newSet.add(doc.FACTURA); else newSet.delete(doc.FACTURA);
                                                             setSelectedDocumentIds(newSet);
@@ -374,6 +377,7 @@ export default function DispatchClassifierPage() {
                                                     <TableCell>{doc.VENDEDOR}</TableCell>
                                                     <TableCell><Badge variant="outline">{doc.RUTA || 'Sin Ruta'}</Badge></TableCell>
                                                     <TableCell className="text-xs">{doc.EMBARCAR_A}</TableCell>
+                                                     <TableCell className="text-xs max-w-xs truncate" title={doc.OBSERVACIONES}>{doc.OBSERVACIONES}</TableCell>
                                                     <TableCell>
                                                         <Select
                                                             value={assignedContainerId || doc.suggestedContainerId || ''}
