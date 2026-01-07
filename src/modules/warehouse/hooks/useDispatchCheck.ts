@@ -147,8 +147,7 @@ export function useDispatchCheck() {
             emailBody: '',
             nextDocumentInContainer: null,
         });
-        router.replace('/dashboard/warehouse/dispatch-check');
-    }, [updateState, router]);
+    }, [updateState]);
 
     const handleDocumentSelect = useCallback(async (documentId: string, containerId?: number) => {
         updateState({ isLoading: true, isDocumentSearchOpen: false, step: 'loading' });
@@ -244,16 +243,6 @@ export function useDispatchCheck() {
         fetchDocs();
     }, [debouncedDocSearch, updateState]);
 
-    const handleDocumentSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            const term = state.documentSearchTerm.trim();
-            if (term) {
-                 handleDocumentSelect(term);
-            }
-        }
-    };
-    
     const clearError = useCallback(() => {
         updateState({ errorState: null });
         setTimeout(() => { if(state.scannerInputRef.current) state.scannerInputRef.current.focus() }, 50);

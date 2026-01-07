@@ -175,39 +175,53 @@ export default function DispatchClassifierPage() {
                 [sourceId]: sourceItems,
                 [destinationId]: destinationItems
             }));
-
-            // Use the correct single-argument unassignment function
-            await unassignDocumentFromContainer(movedItem.id); 
-            await assignDocumentsToContainer([movedItem.documentId], Number(destinationId), user?.name || '');
+            
+            // Persist the change
+            await moveAssignmentToContainer(movedItem.id, Number(destinationId), movedItem.documentId);
         }
     };
 
     const handleSingleAssign = useCallback(async (documentId: string, containerId: string | null) => {
         if (!user) return;
-
+        
         const doc = unassignedDocs.find(d => d.FACTURA === documentId);
         if (doc?.ANULADA === 'S') {
             toast({ title: "Acción no permitida", description: "No se puede asignar una factura anulada.", variant: "destructive" });
             return;
         }
+        
+        const currentContainerId = getAssignedContainerId(documentId);
+        
+        try {
+            if (containerId === null) {
+                // This means unassigning
+                const assignmentToRemove = assignments[currentContainerId!]?.find(a => a.documentId === documentId);
+                if (assignmentToRemove) {
+                    await unassignDocumentFromContainer(assignmentToRemove.id);
+                }
+            } else {
+                await assignDocumentsToContainer([documentId], Number(containerId), user.name);
+            }
 
-        await assignDocumentsToContainer([documentId], containerId ? Number(containerId) : 0, user.name);
+            // Always re-fetch assignments for all containers to ensure UI consistency
+            const freshAssignments: Record<string, DispatchAssignment[]> = {};
+            for (const container of containers) {
+                freshAssignments[container.id!] = await getAssignmentsForContainer(container.id!);
+            }
+            setAssignments(freshAssignments);
+            
+            // Optionally, remove the document from the unassigned list if it was assigned
+            if (containerId !== null) {
+                setUnassignedDocs(prev => prev.filter(d => d.FACTURA !== documentId));
+            }
 
-        const docToUpdate = unassignedDocs.find(d => d.FACTURA === documentId);
-        if (docToUpdate) {
-            const newAssignments = await getAssignmentsForContainer(containerId ? Number(containerId) : 0);
-            setAssignments(prev => ({ ...prev, [containerId || '']: newAssignments }));
+
+        } catch(error: any) {
+            toast({ title: 'Error', description: `Ocurrió un error: ${error.message}`, variant: 'destructive' });
         }
-
-        // Re-fetch all assignments to get the latest state after assigning/unassigning
-        const freshAssignments: Record<string, DispatchAssignment[]> = {};
-        for (const container of containers) {
-            freshAssignments[container.id!] = await getAssignmentsForContainer(container.id!);
-        }
-        setAssignments(freshAssignments);
-    }, [user, unassignedDocs, containers, toast]);
+    }, [user, unassignedDocs, containers, toast, assignments]);
     
-    const handleBulkAssign = useCallback(() => {
+    const handleBulkAssign = useCallback(async () => {
         if (!user || selectedDocumentIds.size === 0 || !bulkAssignContainerId) {
             toast({ title: 'Selección requerida', description: 'Selecciona al menos un documento y un contenedor de destino.', variant: 'destructive'});
             return;
@@ -234,40 +248,38 @@ export default function DispatchClassifierPage() {
             return;
         }
         
-        const assignPromise = assignDocumentsToContainer(validDocsToAssign, Number(bulkAssignContainerId), user.name);
+        try {
+            await assignDocumentsToContainer(validDocsToAssign, Number(bulkAssignContainerId), user.name);
+            toast({ title: "Asignación Completa", description: `Se asignaron ${validDocsToAssign.length} documentos.` });
+            
+            // Refresh data
+            handleFetchDocuments();
+            const freshAssignments: Record<string, DispatchAssignment[]> = {};
+            for (const container of containers) {
+                freshAssignments[container.id!] = await getAssignmentsForContainer(container.id!);
+            }
+            setAssignments(freshAssignments);
 
-        toast.promise(assignPromise, {
-            loading: 'Asignando documentos...',
-            success: (result) => {
-                // Refresh the list of unassigned documents and assignments
-                handleFetchDocuments();
-                
-                const fetchAssignments = async () => {
-                    const freshAssignments: Record<string, DispatchAssignment[]> = {};
-                    for (const container of containers) {
-                        freshAssignments[container.id!] = await getAssignmentsForContainer(container.id!);
-                    }
-                    setAssignments(freshAssignments);
-                };
-                fetchAssignments();
-
-                setSelectedDocumentIds(new Set());
-                setBulkAssignContainerId('');
-                return `Se asignaron ${validDocsToAssign.length} documentos.`;
-            },
-            error: 'Error al asignar los documentos.',
-        });
+            setSelectedDocumentIds(new Set());
+            setBulkAssignContainerId('');
+        } catch (error: any) {
+            toast({ title: 'Error al Asignar', description: error.message, variant: 'destructive' });
+        }
     }, [user, selectedDocumentIds, bulkAssignContainerId, unassignedDocs, toast, handleFetchDocuments, containers]);
 
     const handleUnassign = async (assignment: DispatchAssignment) => {
-        await unassignDocumentFromContainer(assignment.id);
-        setAssignments(prev => {
-            const newAssignments = {...prev};
-            newAssignments[assignment.containerId] = newAssignments[assignment.containerId].filter(a => a.id !== assignment.id);
-            return newAssignments;
-        });
-        handleFetchDocuments();
-        toast({ title: 'Documento Desasignado', variant: 'destructive'});
+        try {
+            await unassignDocumentFromContainer(assignment.id);
+            setAssignments(prev => {
+                const newAssignments = {...prev};
+                newAssignments[assignment.containerId] = newAssignments[assignment.containerId].filter(a => a.id !== assignment.id);
+                return newAssignments;
+            });
+            handleFetchDocuments();
+            toast({ title: 'Documento Desasignado', variant: 'destructive'});
+        } catch (error: any) {
+            toast({ title: 'Error al desasignar', description: error.message, variant: 'destructive' });
+        }
     };
     
     if (isLoading) {
