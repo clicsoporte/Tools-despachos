@@ -148,8 +148,10 @@ export function useDispatchCheck() {
             emailBody: '',
             nextDocumentInContainer: null,
         });
-        // Clear URL params without triggering a full page reload.
-        router.replace('/dashboard/warehouse/dispatch-check');
+        // Clean URL params without triggering a full page reload if we are resetting to the initial state.
+        if (window.location.pathname === '/dashboard/warehouse/dispatch-check') {
+            router.replace('/dashboard/warehouse/dispatch-check');
+        }
     }, [updateState, router]);
 
 
@@ -507,7 +509,6 @@ export function useDispatchCheck() {
     
             toast({ title: 'Verificación Finalizada', description: 'El despacho ha sido registrado.' });
             
-            // Set step to finished BUT keep currentDocument data for the summary screen.
             updateState({ step: 'finished', isLoading: false });
     
         } catch (error: any) {
@@ -598,6 +599,7 @@ export function useDispatchCheck() {
         setDocumentSearchTerm: (term: string) => updateState({ documentSearchTerm: term }),
         setIsDocumentSearchOpen: (isOpen: boolean) => updateState({ isDocumentSearchOpen: isOpen }),
         handleDocumentSelect,
+        handleDocumentSearchKeyDown,
         setScannedCode: (code: string) => updateState({ scannedCode: code }),
         handleScan,
         clearError,
@@ -621,19 +623,18 @@ export function useDispatchCheck() {
             if (state.nextDocumentInContainer && state.currentDocument?.containerId) {
                 const containerId = state.currentDocument.containerId;
                 const nextDocId = state.nextDocumentInContainer;
-                // We need to reset *before* navigating.
+                // Reset step but keep other state to avoid re-fetching containers etc.
                 updateState({
                     step: 'loading',
                     isLoading: true,
                     currentDocument: null,
-                    verificationItems: []
+                    verificationItems: [],
                 });
                 router.replace(`/dashboard/warehouse/dispatch-check?docId=${nextDocId}&containerId=${containerId}`);
             } else {
                  handleGoBack();
             }
         },
-        handleDocumentSearchKeyDown,
     };
 
     return {

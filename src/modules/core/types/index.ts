@@ -489,6 +489,7 @@ export type WarehouseLocation = {
     isLocked?: 0 | 1;
     lockedBy?: string | null;
     lockedByUserId?: number;
+    lockedAt?: string;
 };
 
 /** Tracks physical quantity in a specific location */

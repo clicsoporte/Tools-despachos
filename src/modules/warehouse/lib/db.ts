@@ -651,8 +651,9 @@ export async function getUnassignedDocuments(dateRange: DateRange): Promise<ErpI
     const mainDb = await connectDb();
     const warehouseDb = await connectDb(WAREHOUSE_DB_FILE);
     
-    const assignedDocIds = new Set(
-        warehouseDb.prepare('SELECT documentId FROM dispatch_assignments').all().map((row: any) => row.documentId)
+    // Get IDs of documents that are already completed and dispatched
+    const dispatchedDocIds = new Set(
+        warehouseDb.prepare("SELECT documentId FROM dispatch_assignments WHERE status IN ('completed', 'discrepancy')").all().map((row: any) => row.documentId)
     );
     
     let query = `SELECT * FROM erp_invoice_headers WHERE TIPO_DOCUMENTO IN ('F', 'R')`;
@@ -672,7 +673,8 @@ export async function getUnassignedDocuments(dateRange: DateRange): Promise<ErpI
     query += ' ORDER BY FECHA DESC';
 
     const allInvoices = mainDb.prepare(query).all(...params) as ErpInvoiceHeader[];
-    const unassigned = allInvoices.filter(invoice => !assignedDocIds.has(invoice.FACTURA));
+    // Filter out documents that have already been dispatched
+    const unassigned = allInvoices.filter(invoice => !dispatchedDocIds.has(invoice.FACTURA));
     
     return JSON.parse(JSON.stringify(unassigned));
 }
@@ -683,9 +685,6 @@ export async function assignDocumentsToContainer(documentIds: string[], containe
 
     const placeholders = documentIds.map(() => '?').join(',');
     
-    // First, remove these documents from any other container to prevent duplicates.
-    warehouseDb.prepare(`DELETE FROM dispatch_assignments WHERE documentId IN (${placeholders})`).run(...documentIds);
-
     const invoices = mainDb.prepare(`SELECT * FROM erp_invoice_headers WHERE FACTURA IN (${placeholders})`).all(...documentIds) as ErpInvoiceHeader[];
     
     const insert = warehouseDb.prepare(`
@@ -694,6 +693,13 @@ export async function assignDocumentsToContainer(documentIds: string[], containe
     `);
 
     const transaction = warehouseDb.transaction((docs) => {
+        // First, unassign these docs from ANY container they might already be in
+        if (docs.length > 0) {
+            const docIdsToUnassign = docs.map(d => d.FACTURA);
+            const unassignPlaceholders = docIdsToUnassign.map(() => '?').join(',');
+            warehouseDb.prepare(`DELETE FROM dispatch_assignments WHERE documentId IN (${unassignPlaceholders})`).run(...docIdsToUnassign);
+        }
+
         for (const doc of docs) {
             insert.run({
                 containerId: containerId,
@@ -791,3 +797,9 @@ export async function unassignDocumentFromContainer(assignmentId: number): Promi
     db.prepare('DELETE FROM dispatch_assignments WHERE id = ?').run(assignmentId);
 }
 
+
+export async function unassignAllFromContainer(containerId: number): Promise<void> {
+    const db = await connectDb(WAREHOUSE_DB_FILE);
+    db.prepare('DELETE FROM dispatch_assignments WHERE containerId = ?').run(containerId);
+    await logInfo(`All assignments cleared from container ${containerId}.`);
+}
