@@ -8,8 +8,8 @@ import { useToast } from '@/modules/core/hooks/use-toast';
 import { usePageTitle } from '@/modules/core/hooks/usePageTitle';
 import { useAuthorization } from '@/modules/core/hooks/useAuthorization';
 import { logError, logInfo } from '@/modules/core/lib/logger';
-import { getInvoiceData, searchDocuments, logDispatch, sendDispatchEmail } from '../lib/actions';
-import type { User, Product, ErpInvoiceHeader, ErpInvoiceLine, UserPreferences, Company, VerificationItem, DispatchLog } from '@/modules/core/types';
+import { getInvoiceData, searchDocuments, logDispatch, sendDispatchEmail, getNextDocumentInContainer, moveAssignmentToContainer } from '../lib/actions';
+import type { User, Product, ErpInvoiceHeader, ErpInvoiceLine, UserPreferences, Company, VerificationItem, DispatchLog, DispatchContainer } from '@/modules/core/types';
 import { useAuth } from '@/modules/core/hooks/useAuth';
 import { useDebounce } from 'use-debounce';
 import { getUserPreferences, saveUserPreferences } from '@/modules/core/lib/db';
@@ -18,8 +18,9 @@ import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import type { HAlignType, FontStyle, RowInput } from 'jspdf-autotable';
 import { triggerNotificationEvent } from '@/modules/notifications/lib/notifications-engine';
+import { useSearchParams, useRouter } from 'next/navigation';
 
-type WizardStep = 'initial' | 'verifying' | 'finished';
+type WizardStep = 'initial' | 'loading' | 'verifying' | 'finished';
 
 type CurrentDocument = {
     id: string;
@@ -30,6 +31,7 @@ type CurrentDocument = {
     shippingAddress: string;
     date: string;
     erpUser?: string;
+    containerId?: number;
 };
 
 type ConfirmationState = {
@@ -75,6 +77,11 @@ type State = {
 
     scannerInputRef: React.RefObject<HTMLInputElement>;
     quantityInputRefs: React.RefObject<Map<number, HTMLInputElement>>;
+
+    // New states for container flow
+    availableContainers: DispatchContainer[];
+    isMoveDocOpen: boolean;
+    targetContainerId: number | null;
 };
 
 export function useDispatchCheck() {
@@ -82,13 +89,15 @@ export function useDispatchCheck() {
     const { setTitle } = usePageTitle();
     const { toast } = useToast();
     const { user, products, users, customers, companyData } = useAuth();
+    const router = useRouter();
+    const searchParams = useSearchParams();
     
     const scannerInputRef = useRef<HTMLInputElement>(null);
     const quantityInputRefs = useRef<Map<number, HTMLInputElement>>(new Map());
 
     const [state, setState] = useState<State>({
         isLoading: true,
-        step: 'initial',
+        step: 'loading',
         documentSearchTerm: '',
         isDocumentSearchOpen: false,
         documentOptions: [],
@@ -106,6 +115,9 @@ export function useDispatchCheck() {
         emailBody: '',
         scannerInputRef,
         quantityInputRefs,
+        availableContainers: [],
+        isMoveDocOpen: false,
+        targetContainerId: null,
     });
 
     const [debouncedDocSearch] = useDebounce(state.documentSearchTerm, 300);
@@ -114,45 +126,7 @@ export function useDispatchCheck() {
         setState(prevState => ({ ...prevState, ...newState }));
     }, []);
     
-    useEffect(() => {
-        setTitle('Chequeo de Despacho');
-        const loadPrefs = async () => {
-            if (user) {
-                const prefs = await getUserPreferences(user.id, 'dispatchCheckPrefs');
-                if (prefs) {
-                    updateState({ isStrictMode: prefs.isStrictMode || false });
-                }
-            }
-            updateState({ isLoading: false });
-        };
-        if (isAuthorized) {
-            loadPrefs();
-        } else {
-            updateState({ isLoading: false });
-        }
-    }, [setTitle, isAuthorized, user, updateState]);
-    
-    useEffect(() => {
-        const fetchDocs = async () => {
-            if (debouncedDocSearch.length < 3) {
-                updateState({ documentOptions: [] });
-                return;
-            }
-            try {
-                const results = await searchDocuments(debouncedDocSearch);
-                const options = results.map(r => ({
-                    value: r.id,
-                    label: `[${r.type}] ${r.id} - ${r.clientName} (${r.clientId})`
-                }));
-                updateState({ documentOptions: options });
-            } catch (error: any) {
-                logError('Error searching documents', { error: error.message });
-            }
-        };
-        fetchDocs();
-    }, [debouncedDocSearch, updateState]);
-
-    const handleDocumentSelect = useCallback(async (documentId: string) => {
+    const handleDocumentSelect = useCallback(async (documentId: string, containerId?: number) => {
         updateState({ isLoading: true, isDocumentSearchOpen: false });
         try {
             const data = await getInvoiceData(documentId);
@@ -183,6 +157,7 @@ export function useDispatchCheck() {
                     shippingAddress: data.header.DIRECCION_FACTURA,
                     date: typeof data.header.FECHA === 'string' ? data.header.FECHA : data.header.FECHA.toISOString(),
                     erpUser: data.header.USUARIO,
+                    containerId: containerId,
                 },
                 verificationItems,
                 step: 'verifying'
@@ -196,6 +171,53 @@ export function useDispatchCheck() {
         }
     }, [products, customers, toast, updateState]);
     
+    useEffect(() => {
+        setTitle('Chequeo de Despacho');
+        const loadInitial = async () => {
+            const docId = searchParams.get('docId');
+            const containerId = searchParams.get('containerId');
+            
+            if (user) {
+                const prefs = await getUserPreferences(user.id, 'dispatchCheckPrefs');
+                if (prefs) {
+                    updateState({ isStrictMode: prefs.isStrictMode || false });
+                }
+            }
+            
+            if (docId) {
+                await handleDocumentSelect(docId, containerId ? Number(containerId) : undefined);
+            } else {
+                updateState({ isLoading: false, step: 'initial' });
+            }
+        };
+
+        if (isAuthorized) {
+            loadInitial();
+        } else {
+             updateState({ isLoading: false });
+        }
+    }, [setTitle, isAuthorized, user, updateState, searchParams, handleDocumentSelect]);
+    
+    useEffect(() => {
+        const fetchDocs = async () => {
+            if (debouncedDocSearch.length < 3) {
+                updateState({ documentOptions: [] });
+                return;
+            }
+            try {
+                const results = await searchDocuments(debouncedDocSearch);
+                const options = results.map(r => ({
+                    value: r.id,
+                    label: `[${r.type}] ${r.id} - ${r.clientName} (${r.clientId})`
+                }));
+                updateState({ documentOptions: options });
+            } catch (error: any) {
+                logError('Error searching documents', { error: error.message });
+            }
+        };
+        fetchDocs();
+    }, [debouncedDocSearch, updateState]);
+
     const handleDocumentSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
         if (e.key === 'Enter') {
             e.preventDefault();
@@ -328,7 +350,9 @@ export function useDispatchCheck() {
     }, [user, updateState]);
 
     const handleGoBack = () => {
-        if (state.step === 'verifying') {
+        if (state.currentDocument?.containerId) {
+            router.push('/dashboard/warehouse/dispatch-center');
+        } else {
             reset();
         }
     };
@@ -397,6 +421,31 @@ export function useDispatchCheck() {
         });
         doc.save(`Comprobante-${document.id}.pdf`);
     }, []);
+    
+    const proceedToNextStep = async () => {
+        if (!state.currentDocument?.containerId) {
+            updateState({ step: 'finished' });
+            return;
+        }
+        
+        updateState({ isLoading: true });
+        const nextDocId = await getNextDocumentInContainer(state.currentDocument.containerId, state.currentDocument.id);
+        
+        if (nextDocId) {
+            // Navigate to the next document in the same container
+            router.push(`/dashboard/warehouse/dispatch-check?docId=${nextDocId}&containerId=${state.currentDocument.containerId}`);
+            // Manually reset some state as the page will re-render with new data
+            updateState({
+                currentDocument: null,
+                verificationItems: [],
+                scannedCode: '',
+            });
+        } else {
+            // All documents in container are done
+            updateState({ step: 'finished' });
+        }
+    };
+
 
     const proceedWithFinalize = useCallback(async (action: 'finish' | 'email' | 'pdf') => {
         if (!user || !state.currentDocument || !companyData) return;
@@ -419,10 +468,21 @@ export function useDispatchCheck() {
     
             if (action === 'pdf') {
                 handlePrintPdf({ document: state.currentDocument, items: state.verificationItems, verifiedBy: user.name, companyData });
+            } else if (action === 'email') {
+                const recipients = state.selectedUsers.map(u => u.email);
+                await sendDispatchEmail({
+                    to: recipients,
+                    cc: state.externalEmail,
+                    body: state.emailBody,
+                    document: state.currentDocument,
+                    items: state.verificationItems,
+                    verifiedBy: user.name
+                });
             }
     
             toast({ title: 'Verificación Finalizada', description: 'El despacho ha sido registrado.' });
-            updateState({ step: 'finished' });
+            
+            await proceedToNextStep();
     
         } catch (error: any) {
             logError('Failed to finalize dispatch', { error: error.message });
@@ -430,7 +490,7 @@ export function useDispatchCheck() {
         } finally {
             updateState({ isLoading: false });
         }
-    }, [user, state.currentDocument, state.verificationItems, companyData, toast, updateState, handlePrintPdf]);
+    }, [user, state.currentDocument, state.verificationItems, companyData, toast, updateState, handlePrintPdf, state.selectedUsers, state.externalEmail, state.emailBody, proceedToNextStep]);
     
     const handleFinalizeAndAction = useCallback(async (action: 'finish' | 'email' | 'pdf') => {
         const hasDiscrepancy = state.verificationItems.some(item => item.requiredQuantity !== item.verifiedQuantity);
@@ -481,7 +541,7 @@ export function useDispatchCheck() {
         canSwitchMode: hasPermission('warehouse:dispatch-check:switch-mode'),
         canManuallyOverride: hasPermission('warehouse:dispatch-check:manual-override'),
         canSendExternalEmail: hasPermission('warehouse:dispatch-check:send-email-external'),
-        isVerificationComplete: state.verificationItems.length > 0,
+        isVerificationComplete: state.verificationItems.length > 0 && state.verificationItems.every(item => item.verifiedQuantity > 0),
         progressPercentage: (state.verificationItems.filter(item => item.verifiedQuantity >= item.requiredQuantity).length / (state.verificationItems.length || 1)) * 100,
         progressText: `${state.verificationItems.filter(item => item.verifiedQuantity >= item.requiredQuantity).length} de ${state.verificationItems.length} líneas completadas`,
         documentOptions: state.documentOptions,

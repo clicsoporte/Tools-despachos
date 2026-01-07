@@ -21,7 +21,7 @@ const DB_FILE = 'intratool.db';
  * @throws {Error} If a user already exists in the database.
  */
 export async function createFirstUser(
-  userData: Omit<User, 'id' | 'role' | 'avatar' | 'recentActivity' | 'securityQuestion' | 'securityAnswer' | 'forcePasswordChange'> & { password: string },
+  userData: Omit<User, 'id' | 'role' | 'avatar' | 'recentActivity' | 'securityQuestion' | 'securityAnswer' | 'forcePasswordChange' | 'activeWizardSession'> & { password: string },
   clientInfo: { ip: string, host: string }
 ): Promise<void> {
   const userCount = await getUserCount();
