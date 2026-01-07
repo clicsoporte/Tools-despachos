@@ -16,7 +16,7 @@ import { logError, logInfo } from '@/modules/core/lib/logger';
 import { usePageTitle } from '@/modules/core/hooks/usePageTitle';
 import { useAuthorization } from '@/modules/core/hooks/useAuthorization';
 import { getWarehouseSettings, saveWarehouseSettings, getStockSettings, saveStockSettings, getContainers, saveContainer, deleteContainer } from '@/modules/warehouse/lib/actions';
-import { Save, PlusCircle, Trash2, Palette, Mail, Truck } from 'lucide-react';
+import { Save, PlusCircle, Trash2, Palette, Mail, Truck, Loader2 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { WarehouseSettings, StockSettings, Warehouse, DispatchContainer } from '@/modules/core/types';
 import { Separator } from '@/components/ui/separator';

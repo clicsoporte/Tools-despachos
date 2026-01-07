@@ -3,6 +3,7 @@
  */
 'use client';
 
+import React from 'react';
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useToast } from '@/modules/core/hooks/use-toast';
 import { usePageTitle } from '@/modules/core/hooks/usePageTitle';
@@ -19,6 +20,7 @@ import { es } from 'date-fns/locale';
 import type { HAlignType, FontStyle, RowInput } from 'jspdf-autotable';
 import { triggerNotificationEvent } from '@/modules/notifications/lib/notifications-engine';
 import { useSearchParams, useRouter } from 'next/navigation';
+import { Loader2 } from 'lucide-react';
 
 type WizardStep = 'initial' | 'loading' | 'verifying' | 'finished';
 
