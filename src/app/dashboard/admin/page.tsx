@@ -33,7 +33,13 @@ export default function AdminDashboardPage() {
                 case 'roles:read':
                     return hasPermission('roles:read') || hasPermission('roles:create') || hasPermission('roles:update') || hasPermission('roles:delete');
                 case 'admin:settings:general':
-                    return hasPermission('admin:settings:general') || hasPermission('admin:settings:api') || hasPermission('admin:settings:email') || hasPermission('admin:settings:notifications');
+                    return hasPermission('admin:settings:general');
+                case 'admin:settings:api':
+                    return hasPermission('admin:settings:api');
+                case 'admin:settings:email':
+                    return hasPermission('admin:settings:email');
+                case 'admin:notifications:read':
+                    return hasPermission('admin:notifications:read');
                 case 'admin:settings:planner':
                     return hasPermission('admin:settings:planner');
                 case 'admin:settings:requests':

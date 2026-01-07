@@ -78,7 +78,9 @@ export const initialCompany: Company = {
     cabysFilePath: "",
     supplierFilePath: "",
     erpPurchaseOrderHeaderFilePath: "",
-    erpPurchaseOrderLineFilePath: ""
+    erpPurchaseOrderLineFilePath: "",
+    erpInvoiceHeaderFilePath: "",
+    erpInvoiceLineFilePath: ""
 };
 
 /**
@@ -290,7 +292,7 @@ export const adminTools: Tool[] = [
         description: "Gestionar prefijos y consecutivos del cotizador.",
         href: "/dashboard/admin/quoter", 
         icon: Sheet,
-        bgColor: 'bg-blue-600',
+        bgColor: 'bg-sky-500',
       },
       {
         id: "admin:settings:cost-assistant",
@@ -298,7 +300,31 @@ export const adminTools: Tool[] = [
         description: "Gestionar ajustes para el asistente de costos.",
         href: "/dashboard/admin/cost-assistant",
         icon: Calculator,
-        bgColor: 'bg-orange-500',
+        bgColor: 'bg-amber-500',
+      },
+      {
+        id: "admin:settings:requests",
+        name: "Config. Compras",
+        description: "Gestionar rutas y otros ajustes de compras.",
+        href: "/dashboard/admin/requests",
+        icon: Store,
+        bgColor: 'bg-amber-700',
+      },
+      {
+        id: "admin:settings:planner",
+        name: "Config. Planificador",
+        description: "Gestionar máquinas y otros ajustes del...",
+        href: "/dashboard/admin/planner",
+        icon: Factory,
+        bgColor: 'bg-slate-600',
+      },
+      {
+        id: "admin:settings:warehouse",
+        name: "Config. Almacenes",
+        description: "Gestionar bodegas, unidades y jerarquía del almacén.",
+        href: "/dashboard/admin/warehouse",
+        icon: Wrench,
+        bgColor: 'bg-cyan-600',
       },
       {
         id: "admin:import:run",
@@ -325,30 +351,6 @@ export const adminTools: Tool[] = [
         bgColor: 'bg-indigo-500',
       },
        {
-        id: "admin:settings:planner",
-        name: "Config. Planificador",
-        description: "Gestionar máquinas y otros ajustes del...",
-        href: "/dashboard/admin/planner",
-        icon: Factory,
-        bgColor: 'bg-slate-600',
-      },
-       {
-        id: "admin:settings:requests",
-        name: "Config. Compras",
-        description: "Gestionar rutas y otros ajustes de compras.",
-        href: "/dashboard/admin/requests",
-        icon: Store,
-        bgColor: 'bg-amber-700',
-      },
-      {
-        id: "admin:settings:warehouse",
-        name: "Config. Almacenes e Inventario",
-        description: "Gestionar bodegas, unidades y jerarquía del almacén.",
-        href: "/dashboard/admin/warehouse",
-        icon: Wrench,
-        bgColor: 'bg-purple-600',
-      },
-      {
         id: "admin:logs:read",
         name: "Visor de Eventos",
         description: "Revisar los registros y errores del sistema.",
