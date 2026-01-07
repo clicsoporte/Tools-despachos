@@ -1,4 +1,3 @@
-
 /**
  * @fileoverview Client-side functions for interacting with the warehouse module's server-side DB functions.
  * This abstraction layer ensures components only call client-safe functions.
@@ -45,7 +44,8 @@ import {
     getAssignmentsByIds as getAssignmentsByIdsServer,
     getNextDocumentInContainer as getNextDocumentInContainerServer,
     moveAssignmentToContainer as moveAssignmentToContainerServer,
-    updateAssignmentStatus as updateAssignmentStatusServer
+    updateAssignmentStatus as updateAssignmentStatusServer,
+    resetContainerAssignments as resetContainerAssignmentsServer
 } from './db';
 import { sendEmail as sendEmailServer } from '@/modules/core/lib/email-service';
 import { getStockSettings as getStockSettingsDb, saveStockSettings as saveStockSettingsDb } from '@/modules/core/lib/db';
@@ -227,3 +227,4 @@ export const getAssignmentsByIds = async (documentIds: string[]): Promise<Dispat
 export const getNextDocumentInContainer = async (containerId: number, currentDocumentId: string): Promise<string | null> => getNextDocumentInContainerServer(containerId, currentDocumentId);
 export const moveAssignmentToContainer = async (assignmentId: number, targetContainerId: number, documentId?: string): Promise<void> => moveAssignmentToContainerServer(assignmentId, targetContainerId, documentId);
 export const updateAssignmentStatus = async (documentId: string, status: 'pending' | 'in-progress' | 'completed' | 'discrepancy' | 'partial'): Promise<void> => updateAssignmentStatusServer(documentId, status);
+export const resetContainerAssignments = async (containerId: number): Promise<void> => resetContainerAssignmentsServer(containerId);

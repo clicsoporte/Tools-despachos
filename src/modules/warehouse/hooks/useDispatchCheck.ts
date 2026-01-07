@@ -20,7 +20,7 @@ import { es } from 'date-fns/locale';
 import type { HAlignType, FontStyle, RowInput } from 'jspdf-autotable';
 import { triggerNotificationEvent } from '@/modules/notifications/lib/notifications-engine';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { Loader2, Search, CheckCircle, XCircle, Info, ClipboardCheck, Circle, User, FileDown, Mail, ArrowRight, AlertTriangle, ArrowLeft, Printer } from 'lucide-react';
+import { Loader2, Search, CheckCircle, XCircle, Info, ClipboardCheck, Circle, FileDown, Mail, ArrowRight, AlertTriangle, ArrowLeft, Printer } from 'lucide-react';
 
 type WizardStep = 'initial' | 'loading' | 'verifying' | 'finished';
 
@@ -438,15 +438,9 @@ export function useDispatchCheck() {
         if (nextDocId) {
             // Navigate to the next document in the same container
             router.push(`/dashboard/warehouse/dispatch-check?docId=${nextDocId}&containerId=${state.currentDocument.containerId}`);
-            // Manually reset some state as the page will re-render with new data
-            updateState({
-                currentDocument: null,
-                verificationItems: [],
-                scannedCode: '',
-            });
         } else {
-            // All documents in container are done
-            updateState({ step: 'finished' });
+            // All documents in container are done, redirect to dispatch center
+            router.push('/dashboard/warehouse/dispatch-center');
         }
     }, [state.currentDocument, router, updateState]);
 
@@ -498,7 +492,9 @@ export function useDispatchCheck() {
                 verifiedByUserId: user.id,
                 verifiedByUserName: user.name,
                 items: state.verificationItems,
-                notes: `Acción: ${action}`
+                notes: `Acción: ${action}`,
+                vehiclePlate: null,
+                driverName: null,
             };
 
             await logDispatch(dispatchLogData);
