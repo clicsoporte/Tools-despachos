@@ -651,6 +651,7 @@ export async function getUnassignedDocuments(dateRange: DateRange): Promise<ErpI
     const mainDb = await connectDb();
     const warehouseDb = await connectDb(WAREHOUSE_DB_FILE);
     
+    // Get all document IDs that have a log entry, meaning they have been dispatched at least once.
     const dispatchedDocIds = new Set(
         warehouseDb.prepare("SELECT DISTINCT documentId FROM dispatch_logs").all().map((row: any) => row.documentId)
     );
@@ -672,6 +673,7 @@ export async function getUnassignedDocuments(dateRange: DateRange): Promise<ErpI
     query += ' ORDER BY FECHA DESC';
 
     const allInvoices = mainDb.prepare(query).all(...params) as ErpInvoiceHeader[];
+    // Filter out invoices that are already in the dispatch logs.
     const unassigned = allInvoices.filter(invoice => !dispatchedDocIds.has(invoice.FACTURA));
     
     return JSON.parse(JSON.stringify(unassigned));
@@ -793,6 +795,7 @@ export async function resetContainerAssignments(containerId: number): Promise<vo
 export async function unassignDocumentFromContainer(assignmentId: number): Promise<void> {
     const db = await connectDb(WAREHOUSE_DB_FILE);
     db.prepare('DELETE FROM dispatch_assignments WHERE id = ?').run(assignmentId);
+    await logInfo(`Assignment with ID ${assignmentId} was unassigned.`);
 }
 
 

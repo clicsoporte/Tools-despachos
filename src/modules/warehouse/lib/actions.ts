@@ -229,3 +229,4 @@ export const updateAssignmentStatus = async (documentId: string, status: 'pendin
 export const resetContainerAssignments = async (containerId: number): Promise<void> => resetContainerAssignmentsServer(containerId);
 export const unassignDocumentFromContainer = async (assignmentId: number): Promise<void> => unassignItemFromLocationServer(assignmentId);
 export const unassignAllFromContainer = async (containerId: number): Promise<void> => unassignAllFromContainerServer(containerId);
+

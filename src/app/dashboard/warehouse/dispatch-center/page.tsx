@@ -12,10 +12,11 @@ import {
     lockEntity, 
     releaseLock, 
     getAssignmentsForContainer, 
-    moveAssignmentToContainer, 
+    moveAssignmentToContainer,
     updateAssignmentStatus, 
     resetContainerAssignments,
-    unassignAllFromContainer
+    unassignAllFromContainer,
+    unassignDocumentFromContainer
 } from '@/modules/warehouse/lib/actions';
 import type { DispatchContainer, DispatchAssignment, ErpInvoiceHeader } from '@/modules/core/types';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
@@ -30,6 +31,20 @@ import { cn } from '@/lib/utils';
 import { useAuthorization } from '@/modules/core/hooks/useAuthorization';
 import { getInvoicesByIds } from '@/modules/core/lib/db';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { DateRange } from 'react-day-picker';
+import { startOfDay, subDays } from 'date-fns';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { CalendarIcon, Search, Send } from 'lucide-react';
+import { getUnassignedDocuments, assignDocumentsToContainer } from '@/modules/warehouse/lib/actions';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+
 
 export default function DispatchCenterPage() {
     const { isAuthorized, hasPermission } = useAuthorization(['warehouse:dispatch-check:use']);
@@ -198,9 +213,20 @@ export default function DispatchCenterPage() {
         }
     };
 
-    const renderSelectedContainer = () => {
-        if (!selectedContainer) return null;
-
+    if (isLoading) {
+        return <div className="flex justify-center items-center h-screen"><Loader2 className="h-8 w-8 animate-spin" /></div>;
+    }
+    
+    if (!isAuthorized) {
+        return (
+            <div className="p-8 text-center">
+                <h1 className="text-2xl font-bold text-destructive">Acceso Denegado</h1>
+                <p className="text-muted-foreground">No tienes permiso para usar el centro de despacho.</p>
+            </div>
+        );
+    }
+    
+    if (selectedContainer) {
         const allCompleted = assignments.length > 0 && assignments.every(a => a.status === 'completed' || a.status === 'discrepancy');
 
         return (
@@ -290,20 +316,7 @@ export default function DispatchCenterPage() {
         );
     }
     
-    if (isLoading) {
-        return <div className="flex justify-center items-center h-screen"><Loader2 className="h-8 w-8 animate-spin" /></div>;
-    }
-    
-    if (!isAuthorized) {
-        return (
-            <div className="p-8 text-center">
-                <h1 className="text-2xl font-bold text-destructive">Acceso Denegado</h1>
-                <p className="text-muted-foreground">No tienes permiso para usar el centro de despacho.</p>
-            </div>
-        );
-    }
-    
-    return selectedContainer ? renderSelectedContainer() : (
+    return (
         <div className="p-4 md:p-8">
             <div className="text-center mb-8">
                 <h1 className="text-3xl font-bold tracking-tight">Centro de Despacho</h1>
@@ -320,6 +333,32 @@ export default function DispatchCenterPage() {
                                         {isRouteCompleted && <CheckCircle className="h-6 w-6 text-green-600" />}
                                         {c.name}
                                     </CardTitle>
+                                    {hasPermission('warehouse:dispatch-containers:manage') && (
+                                        <AlertDialog open={isClearConfirmOpen && containerToModify?.id === c.id} onOpenChange={(open) => {
+                                            if (!open) {
+                                                setIsClearConfirmOpen(false);
+                                                setContainerToModify(null);
+                                            }
+                                        }}>
+                                            <AlertDialogTrigger asChild>
+                                                <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive" onClick={() => { setIsClearConfirmOpen(true); setContainerToModify(c); }}>
+                                                    <Trash2 className="h-4 w-4" />
+                                                </Button>
+                                            </AlertDialogTrigger>
+                                            <AlertDialogContent>
+                                                <AlertDialogHeader>
+                                                    <AlertDialogTitle>¿Limpiar Contenedor?</AlertDialogTitle>
+                                                    <AlertDialogDescription>
+                                                        Esta acción desasignará **TODOS** los documentos de "{c.name}". Los documentos volverán a la lista de pendientes. Esta acción es útil para reiniciar una ruta para el día siguiente. No se borra ningún registro de verificación.
+                                                    </AlertDialogDescription>
+                                                </AlertDialogHeader>
+                                                <AlertDialogFooter>
+                                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                                    <AlertDialogAction onClick={handleClearContainer} className="bg-destructive hover:bg-destructive/90">Sí, Limpiar Contenedor</AlertDialogAction>
+                                                </AlertDialogFooter>
+                                            </AlertDialogContent>
+                                        </AlertDialog>
+                                    )}
                                 </div>
                                 <CardDescription>Creado el {format(parseISO(c.createdAt), 'dd/MM/yyyy')}</CardDescription>
                             </CardHeader>
@@ -338,7 +377,7 @@ export default function DispatchCenterPage() {
                                     <div className="flex items-center gap-2 text-muted-foreground">
                                         <Package className="h-4 w-4" />
                                         <span className="text-sm font-semibold">
-                                            {(c.assignmentCount ?? 0)} documento(s)
+                                            {c.assignmentCount || 0} documento(s)
                                         </span>
                                     </div>
                                 )}
@@ -358,7 +397,7 @@ export default function DispatchCenterPage() {
                                             <AlertDialogHeader>
                                                 <AlertDialogTitle>¿Reiniciar esta ruta?</AlertDialogTitle>
                                                 <AlertDialogDescription>
-                                                    Todos los documentos en "{c.name}" volverán al estado pendiente.
+                                                    Todos los documentos en "{c.name}" volverán al estado pendiente, permitiendo que sean verificados de nuevo.
                                                 </AlertDialogDescription>
                                             </AlertDialogHeader>
                                             <AlertDialogFooter>
@@ -376,3 +415,4 @@ export default function DispatchCenterPage() {
         </div>
     );
 }
+
