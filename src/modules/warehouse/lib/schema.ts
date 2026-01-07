@@ -16,4 +16,3 @@ export const warehouseSchema: ExpectedSchema = {
     'dispatch_containers': ['id', 'name', 'createdBy', 'createdAt', 'isLocked', 'lockedBy', 'lockedByUserId', 'lockedAt'],
     'dispatch_assignments': ['id', 'containerId', 'documentId', 'documentType', 'documentDate', 'clientId', 'clientName', 'assignedBy', 'assignedAt', 'sortOrder', 'status'],
 };
-```

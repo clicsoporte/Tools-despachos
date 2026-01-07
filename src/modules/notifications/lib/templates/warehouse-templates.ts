@@ -67,4 +67,3 @@ export const getRackCreatedTemplate = async (payload: { rack: WarehouseLocation,
     const url = await getWarehouseLocationsUrl();
     return generateBaseWarehouseTemplate('Nuevo Rack Creado', content, url, 'Ir a Gestión de Ubicaciones');
 };
-```

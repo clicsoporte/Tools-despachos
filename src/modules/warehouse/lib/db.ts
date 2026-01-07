@@ -481,8 +481,9 @@ export async function getActiveLocks(): Promise<any[]> {
 }
 
 export async function lockEntity(payload: { entityIds: number[]; entityType: 'location' | 'container', userName: string; userId: number; }): Promise<{ locked: boolean; error?: string }> {
+    const { entityType, ...rest } = payload;
     const db = await connectDb(WAREHOUSE_DB_FILE);
-    const { entityIds, entityType, userName, userId } = payload;
+    const { entityIds, userName, userId } = rest;
     const tableName = entityType === 'location' ? 'locations' : 'dispatch_containers';
 
     const transaction = db.transaction(() => {
@@ -517,7 +518,6 @@ export async function forceReleaseLock(entityId: number, entityType: 'location' 
     const tableName = entityType === 'location' ? 'locations' : 'dispatch_containers';
     db.prepare(`UPDATE ${tableName} SET isLocked = 0, lockedBy = NULL, lockedByUserId = NULL, lockedAt = NULL WHERE id = ?`).run(entityId);
 }
-
 export async function getChildLocations(parentIds: number[]): Promise<WarehouseLocation[]> {
     const db = await connectDb(WAREHOUSE_DB_FILE);
     if (parentIds.length === 0) return [];
