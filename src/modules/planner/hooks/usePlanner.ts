@@ -31,7 +31,7 @@ import { generateDocument } from '@/modules/core/lib/pdf-generator';
 import type { RowInput } from 'jspdf-autotable';
 import { addNoteToOrder as addNoteServer } from '@/modules/planner/lib/actions';
 import { exportToExcel } from '@/modules/core/lib/excel-export';
-import { AlertTriangle, Undo2, ChevronsLeft, ChevronsRight, Send, ShoppingBag } from 'lucide-react';
+import { AlertTriangle, Undo2, ChevronsLeft, ChevronsRight, Send, ShoppingBag, Filter } from 'lucide-react';
 import { getStatusConfig } from '../lib/utils';
 import { saveUserPreferences, getUserPreferences } from '@/modules/core/lib/db';
 
@@ -528,7 +528,7 @@ export const usePlanner = () => {
         },
 
         handleSelectProduct: (value: string) => {
-            updateState({ isProductSearchOpen: false, activeOrdersForSelectedProduct: [] });
+            updateState({ isProductSearchOpen: false });
             const product = products.find(p => p.id === value);
             if (product) {
                 const stock = stockLevels.find(s => s.itemId === product.id)?.totalStock ?? 0;
@@ -537,21 +537,23 @@ export const usePlanner = () => {
                     productId: product.id, 
                     productDescription: product.description || '', 
                     inventoryErp: stock,
-                    inventory: state.newOrder.inventory || stock,
+                    inventory: stock, // Set manual inventory to ERP stock by default
                 };
-
-                const existingActive = state.orders.filter(o => o.productId === product.id && !state.viewingArchived);
-                updateState({ activeOrdersForSelectedProduct: existingActive });
-
+        
+                const activeOrdersForProduct = state.orders.filter(o => 
+                    !['completed', 'received-in-warehouse', 'canceled'].includes(o.status) && o.productId === product.id
+                );
+                updateState({ activeOrdersForSelectedProduct: activeOrdersForProduct });
+        
                 if (state.orderToEdit) {
                     actions.setOrderToEdit({ ...state.orderToEdit, ...dataToUpdate });
                 } else {
-                    updateState({ newOrder: { ...state.newOrder, ...dataToUpdate }});
+                    updateState({ newOrder: { ...state.newOrder, ...dataToUpdate } });
                 }
-
+        
                 updateState({ productSearchTerm: `[${product.id}] - ${product.description}` });
             } else {
-                 updateState({ productSearchTerm: '' });
+                updateState({ productSearchTerm: '' });
             }
         },
     

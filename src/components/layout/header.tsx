@@ -22,14 +22,15 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Loader2, RefreshCw, Clock, DollarSign, Send, MessageSquare, PanelLeft } from "lucide-react";
+import { Skeleton } from "../ui/skeleton";
 
 interface HeaderProps {
   title: string;
 }
 
 function HeaderActions() {
-    const { user, companyData, setCompanyData, exchangeRateData, refreshExchangeRate, updateUnreadSuggestionsCount } = useAuth();
-    const { hasPermission } = useAuthorization(['admin:import:run']);
+    const { user, companyData, setCompanyData, exchangeRateData, refreshExchangeRate, updateUnreadSuggestionsCount, isReady } = useAuth();
+    const { hasPermission, isAuthorized } = useAuthorization(['admin:import:run']);
     const { toast } = useToast();
 
     const [isSyncing, setIsSyncing] = useState(false);
@@ -89,6 +90,17 @@ function HeaderActions() {
             setIsSubmittingSuggestion(false);
         }
     };
+
+    if (!isReady) {
+        return (
+            <>
+                <Skeleton className="h-9 w-24 hidden sm:block" />
+                <Skeleton className="h-9 w-32 hidden sm:block" />
+                <Skeleton className="h-9 w-9 sm:w-28" />
+                <Skeleton className="h-9 w-9 rounded-full" />
+            </>
+        )
+    }
 
     return (
         <>

@@ -140,6 +140,17 @@ export default function PopulationWizardPage() {
         });
     };
 
+    const handleToggleAllLevels = () => {
+        const availableLevels = rackLevels.filter(level => !level.isLocked).map(level => level.id);
+        const allSelected = availableLevels.length > 0 && availableLevels.every(id => selectedLevelIds.has(id));
+    
+        if (allSelected) {
+            setSelectedLevelIds(new Set());
+        } else {
+            setSelectedLevelIds(new Set(availableLevels));
+        }
+    };
+
     const handleStartWizard = async () => {
         if (!user || !selectedRackId || selectedLevelIds.size === 0) {
             toast({ title: 'Selección Incompleta', description: 'Por favor, selecciona un rack y al menos un nivel para continuar.', variant: 'destructive' });
@@ -334,6 +345,15 @@ export default function PopulationWizardPage() {
                             <div className="space-y-2">
                                 <Label>2. Selecciona los Niveles a Poblar</Label>
                                 <div className="p-4 border rounded-md max-h-60 overflow-y-auto space-y-2">
+                                    <div className="flex items-center space-x-2 border-b pb-2 mb-2">
+                                        <Checkbox
+                                            id="select-all-levels"
+                                            onCheckedChange={handleToggleAllLevels}
+                                            checked={rackLevels.filter(l => !l.isLocked).length > 0 && rackLevels.filter(l => !l.isLocked).every(l => selectedLevelIds.has(l.id))}
+                                            disabled={rackLevels.filter(l => !l.isLocked).length === 0}
+                                        />
+                                        <Label htmlFor="select-all-levels" className="font-semibold">Seleccionar Todos los Disponibles</Label>
+                                    </div>
                                     {rackLevels.map(level => (
                                         <div key={level.id} className="flex items-center space-x-2">
                                             <Checkbox
