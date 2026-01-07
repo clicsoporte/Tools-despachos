@@ -1,3 +1,4 @@
+
 /**
  * @fileoverview Client-side functions for interacting with the warehouse module's server-side DB functions.
  * This abstraction layer ensures components only call client-safe functions.
@@ -17,7 +18,7 @@ import {
     getItemLocations as getItemLocationsServer,
     getAllItemLocations as getAllItemLocationsServer,
     assignItemToLocation as assignItemToLocationServer,
-    unassignDocumentFromContainer as unassignDocumentFromContainerServer,
+    unassignItemFromLocation as unassignItemFromLocationServer,
     getWarehouseData as getWarehouseDataServer,
     getMovements as getMovementsServer,
     addInventoryUnit as addInventoryUnitServer,
@@ -97,9 +98,9 @@ export const getItemLocations = async (itemId: string): Promise<ItemLocation[]> 
 export const getAllItemLocations = async (): Promise<ItemLocation[]> => getAllItemLocationsServer();
 export const assignItemToLocation = async (itemId: string, locationId: number, clientId: string | null, updatedBy: string): Promise<ItemLocation> => assignItemToLocationServer(itemId, locationId, clientId, updatedBy);
 
-export async function unassignDocumentFromContainer(assignmentId: number): Promise<void> {
+export async function unassignItemFromLocation(assignmentId: number): Promise<void> {
     await logInfo(`Assignment with ID ${assignmentId} was unassigned.`);
-    return unassignDocumentFromContainerServer(assignmentId);
+    return unassignItemFromLocationServer(assignmentId);
 }
 
 // --- Page-specific data loaders ---

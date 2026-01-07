@@ -24,7 +24,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
 type ImportType = ImportQuery['type'];
-const importTypes: ImportType[] = ['customers', 'products', 'exemptions', 'stock', 'locations', 'cabys', 'suppliers', 'erp_order_headers', 'erp_order_lines', 'erp_purchase_order_headers', 'erp_purchase_order_lines', 'erp_invoice_headers', 'erp_invoice_lines', 'vendedores', 'direcciones_embarque', 'nominas', 'puestos', 'departamentos', 'empleados'];
+const importTypes: ImportType[] = ['customers', 'products', 'exemptions', 'stock', 'locations', 'cabys', 'suppliers', 'erp_order_headers', 'erp_order_lines', 'erp_purchase_order_headers', 'erp_purchase_order_lines', 'erp_invoice_headers', 'erp_invoice_lines', 'vendedores', 'direcciones_embarque', 'nominas', 'puestos', 'departamentos', 'empleados', 'vehiculos'];
 
 const importTypeTranslations: { [key in ImportType]: string } = {
     customers: 'Clientes',
@@ -46,6 +46,7 @@ const importTypeTranslations: { [key in ImportType]: string } = {
     puestos: 'Puestos',
     departamentos: 'Departamentos',
     empleados: 'Empleados',
+    vehiculos: 'Vehículos',
 };
 
 const defaultQueries: { [key in ImportType]?: string } = {
@@ -67,6 +68,7 @@ const defaultQueries: { [key in ImportType]?: string } = {
     puestos: "SELECT [PUESTO], [DESCRIPCION], [ACTIVO] FROM [SOFTLAND].[GAREND].[PUESTO]",
     departamentos: "SELECT [DEPARTAMENTO], [DESCRIPCION], [ACTIVO] FROM [SOFTLAND].[GAREND].[DEPARTAMENTO]",
     empleados: "SELECT [EMPLEADO], [NOMBRE], [ACTIVO], [DEPARTAMENTO], [PUESTO], [NOMINA] FROM [SOFTLAND].[GAREND].[EMPLEADO]",
+    vehiculos: "SELECT [NUMERO_PLACA], [ENTIDAD_EMISORA] FROM [SOFTLAND].[GAREND].[VEHICULO]",
 };
 
 

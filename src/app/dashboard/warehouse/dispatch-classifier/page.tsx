@@ -1,3 +1,4 @@
+
 /**
  * @fileoverview Page for the Dispatch Classifier.
  * This component allows logistics managers to view unassigned ERP documents (invoices, etc.)
@@ -10,7 +11,7 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useAuth } from '@/modules/core/hooks/useAuth';
 import { usePageTitle } from '@/modules/core/hooks/usePageTitle';
 import { useAuthorization } from '@/modules/core/hooks/useAuthorization';
-import { getContainers, getUnassignedDocuments, getAssignmentsForContainer, assignDocumentsToContainer, updateAssignmentOrder, unassignDocumentFromContainer } from '@/modules/warehouse/lib/actions';
+import { getContainers, getUnassignedDocuments, getAssignmentsForContainer, assignDocumentsToContainer, updateAssignmentOrder, unassignItemFromLocation } from '@/modules/warehouse/lib/actions';
 import { getInvoicesByIds } from '@/modules/core/lib/db';
 import type { DispatchContainer, ErpInvoiceHeader, DispatchAssignment } from '@/modules/core/types';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
@@ -177,7 +178,7 @@ export default function DispatchClassifierPage() {
             }));
 
             await updateAssignmentOrder(Number(destinationId), destinationItems.map(item => item.documentId));
-            await unassignDocumentFromContainer(movedItem.id, true); // Soft-delete
+            await unassignItemFromLocation(movedItem.id); // Soft-delete
             await assignDocumentsToContainer([movedItem.documentId], Number(destinationId), user?.name || '');
         }
     };
@@ -190,11 +191,12 @@ export default function DispatchClassifierPage() {
             toast({ title: "Acción no permitida", description: "No se puede asignar una factura anulada.", variant: "destructive" });
             return;
         }
+
+        const currentAssignment = Object.values(assignments).flat().find(a => a.documentId === documentId);
     
         if (containerId === null) { // Unassigning
-            const currentAssignment = Object.values(assignments).flat().find(a => a.documentId === documentId);
             if (currentAssignment) {
-                await unassignDocumentFromContainer(currentAssignment.id);
+                await unassignItemFromLocation(currentAssignment.id);
                 setAssignments(prev => {
                     const newAssignments = {...prev};
                     newAssignments[currentAssignment.containerId] = newAssignments[currentAssignment.containerId].filter(a => a.id !== currentAssignment.id);
@@ -205,7 +207,13 @@ export default function DispatchClassifierPage() {
             await assignDocumentsToContainer([documentId], Number(containerId), user.name);
             const docToMove = unassignedDocs.find(d => d.FACTURA === documentId);
             if (docToMove) {
-                // Instead of removing from unassignedDocs, we update the `assignments` state
+                // Remove from any previous container if it exists
+                let updatedAssignments = {...assignments};
+                if(currentAssignment) {
+                    updatedAssignments[currentAssignment.containerId] = updatedAssignments[currentAssignment.containerId].filter(a => a.id !== currentAssignment.id);
+                }
+
+                // Add to the new container
                 const newAssignment: DispatchAssignment = {
                     id: Date.now(), // Temporary ID for UI
                     containerId: Number(containerId),
@@ -213,9 +221,10 @@ export default function DispatchClassifierPage() {
                     documentDate: typeof docToMove.FECHA === 'string' ? docToMove.FECHA : (docToMove.FECHA as Date).toISOString(),
                     clientId: docToMove.CLIENTE, clientName: docToMove.NOMBRE_CLIENTE,
                     assignedBy: user.name, assignedAt: new Date().toISOString(),
-                    sortOrder: (assignments[containerId]?.length || 0) + 1, status: 'pending',
+                    sortOrder: (updatedAssignments[containerId]?.length || 0) + 1, status: 'pending',
                 };
-                setAssignments(prev => ({ ...prev, [containerId]: [...(prev[containerId] || []), newAssignment] }));
+                updatedAssignments[containerId] = [...(updatedAssignments[containerId] || []), newAssignment];
+                setAssignments(updatedAssignments);
             }
         }
     }, [user, assignments, unassignedDocs, toast]);
@@ -267,7 +276,7 @@ export default function DispatchClassifierPage() {
     }, [user, selectedDocumentIds, bulkAssignContainerId, unassignedDocs, toast, assignments]);
 
     const handleUnassign = async (assignment: DispatchAssignment) => {
-        await unassignDocumentFromContainer(assignment.id);
+        await unassignItemFromLocation(assignment.id);
         setAssignments(prev => {
             const newAssignments = {...prev};
             newAssignments[assignment.containerId] = newAssignments[assignment.containerId].filter(a => a.id !== assignment.id);

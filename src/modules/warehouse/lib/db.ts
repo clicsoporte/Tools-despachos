@@ -1,3 +1,4 @@
+
 /**
  * @fileoverview Server-side functions for the warehouse database.
  */
@@ -381,9 +382,9 @@ export async function assignItemToLocation(itemId: string, locationId: number, c
     return newItemLocation;
 }
 
-export async function unassignDocumentFromContainer(assignmentId: number): Promise<void> {
+export async function unassignItemFromLocation(assignmentId: number): Promise<void> {
     const db = await connectDb(WAREHOUSE_DB_FILE);
-    db.prepare('DELETE FROM dispatch_assignments WHERE id = ?').run(assignmentId);
+    db.prepare('DELETE FROM item_locations WHERE id = ?').run(assignmentId);
 }
 
 export async function addInventoryUnit(unit: Omit<InventoryUnit, 'id' | 'createdAt' | 'unitCode'>): Promise<InventoryUnit> {
@@ -583,11 +584,13 @@ export async function getInvoiceData(documentId: string): Promise<{ header: ErpI
 export async function logDispatch(dispatchData: any): Promise<void> {
     const db = await connectDb(WAREHOUSE_DB_FILE);
     db.prepare(`
-        INSERT INTO dispatch_logs (documentId, documentType, verifiedAt, verifiedByUserId, verifiedByUserName, items, notes)
-        VALUES (@documentId, @documentType, @verifiedAt, @verifiedByUserId, @verifiedByUserName, @items, @notes)
+        INSERT INTO dispatch_logs (documentId, documentType, verifiedAt, verifiedByUserId, verifiedByUserName, items, notes, vehiclePlate, driverName)
+        VALUES (@documentId, @documentType, @verifiedAt, @verifiedByUserId, @verifiedByUserName, @items, @notes, @vehiclePlate, @driverName)
     `).run({
         ...dispatchData,
         items: JSON.stringify(dispatchData.items),
+        vehiclePlate: dispatchData.vehiclePlate || null,
+        driverName: dispatchData.driverName || null,
     });
 }
 
