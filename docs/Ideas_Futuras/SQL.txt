@@ -1,181 +1,40 @@
-Esta consulta es del vendedor ya que actualmente solo ponemos "vendedor 0008" pero quien es 08 ok ya con esta sabremos quien es 0008
+SELECT [NUMERO_PLACA]
+      ,[ENTIDAD_EMISORA]
+  FROM [GAREND].[VEHICULO]
+  
 SELECT [VENDEDOR]
       ,[NOMBRE]
       ,[EMPLEADO]
-  FROM [SOFTLAND].[GAREND].[VENDEDOR]
-
-Datos obtenidos donde la columna empleado tiene el código de empleado el cual se liga al código de empleado de la consulta SQL de empleados de la planilla:
-VENDEDOR	NOMBRE	EMPLEADO
-ND	NO DEFINIDO	ND
-0001	CARLOS GAMBOA	ND
-0002	CARLOS GAMBOA	ND
-0004	HEIDY ALVAREZ FLORES	ND
-0005	OFICINA	ND
-0006	ESTEBAN JIMENEZ	ND
-0008	ROLANDO GAMBOA	ND
-0009	CARLOS ROJAS PAEZ	ND
-0014	Pamela Morera Hernandez	ND
-0003	CAROL MESEN PORRAS	0099
-0007	Carolina Soto Arrieta	ND
-0010	Deily Portugez Murillo	0227
-0011	DESARROLLAR	ND
-0012	Leticia Rojas Soto	0155
-0013	Alberto Herrera Sanchez	0364
-0015	Karen Castro Arroyo	0058
-
-Esta otra es consulta dirección de embarque no se es necesario que tengamos la lista la cual se asocia al cliente por la columna cliente y su código de cliente, si crees que nos puede funcionar la agregamos también.
+  FROM [GAREND].[VENDEDOR]
 
 SELECT [CLIENTE]
       ,[DIRECCION]
       ,[DETALLE_DIRECCION]
       ,[DESCRIPCION]
-  FROM [SOFTLAND].[GAREND].[DIRECC_EMBARQUE]
-Datos obtenidos cada cliente podría tener una o varias direcciones de embarque o entrega:
-CLIENTE	DIRECCION	DETALLE_DIRECCION	DESCRIPCION
-00001	EMB0	1	DETALLE: PASEO COLON 175 METROS OESTE DE LA JUNTA DE PROTECCION SOCIAL                                       
-00001	ND	NULL	
-00002	EMB0	2	DETALLE: URUCA 400 OESTE DE LA PLAZA DE DEPORTES FRENTE A LA KIA                                             
-00002	ND	NULL	
-00003	EMB0	3	DETALLE: BARRIAL DE HEREDIA PLANTA PEPSI A003                                                                
-00003	ND	NULL	
-00004	CALL CEN	2263	DETALLE: CALL CENTER (UNIVERSIDAD)
-00004	CEDI	2264	DETALLE: CEDI COYOL
-00004	EMB0	4	DETALLE: EL COYOL DE ALAJUELA (MANTENIMIENTO)                                                                
-00004	ND	NULL	
-00004	OPTICAS	2325	DETALLE: OPTICAS
-00004	SERVITOT	2262	DETALLE: ALAJUELA 300 SUR, 300 OESTE MOLINOS CR FRENTE GYM CONTIGUO A SONDEL
-00005	EMB0	5	DETALLE: DESAMPARADOS SAN JOSE                                                                               
-00005	ND	NULL	
-00006	EMB0	6	DETALLE: ENVIAR POR CURUBANDE                                                                                
-00006	ND	NULL	
-00007	EMB0	7	DETALLE: PLANTA CRISTAL RIO SEGUNDO ALAJUELA                                                                 
-00007	ND	NULL	
-00008	EMB0	8	DETALLE: RIO GRANDE  ATENAS
-00008	ND	NULL	
-
-Las consultas SQL para las nóminas código y descripción
-la consulta SQL
+  FROM [GAREND].[DIRECC_EMBARQUE]
+  
 SELECT [NOMINA]
       ,[DESCRIPCION]
       ,[TIPO_NOMINA]
-  FROM [SOFTLAND].[GAREND].[NOMINA]
-Datos obtenidos:
-NOMINA	DESCRIPCION	TIPO_NOMINA
-0001	NOMINA ADMINISTRACION	Q
-0003	NOMINA OPERACIONES	S
-0098	HISTORICA ADMINISTRACION	Q
-0099	HISTORICA OPERACIONES	S
-0010	NOMINA AGUINALDO	M
-
-La consulta SQL Nombre de puestos de colaborador
+  FROM [GAREND].[NOMINA]
+  
 SELECT [PUESTO]
       ,[DESCRIPCION]
       ,[ACTIVO]
-  FROM [SOFTLAND].[GAREND].[PUESTO]
-Datos obtenidos
-PUESTO	DESCRIPCION	ACTIVO
-043	Chofer 2 	S
-ND	No definido	S
-001	Director General	S
-002	Gerente General	S
-003	Gerente Ventas	S
-004	Jefe de Contabilidad	S
-005	Jefe de Logística	S
-006	Jefe Tecnico de Producción 	S
-007	Encargado Aseguramiento Calidad y SGC	S
-008	Encargado RRHH	S
-009	Encargado Sistemas (TI)	S
-010	Encargada Seguridad Industrial	S
-011	Supervisor de Bodega	S
-012	Supervisor de Ventas	S
-013	Supervisor de Producción 1	S
-014	Supervisor de Producción 2	S
-015	Supervisor de Producción 3	S
-016	Supervisor de Transportes 1	S
-017	Supervisor de Transportes 2	S
-018	Asistente Contabilidad	S
-019	Asistente Producción 	S
-020	Auxiliar producción	S
-021	Ayudante bodega 1	S
-022	Ayudante bodega 2	S
-023	Ayudante bodega 3	S
-024	Ayudante transporte	S
-025	Chofer 1	S
-026	Ejecutivo de Ventas 1	S
-027	Ejecutivo de Ventas 2	S
-028	Electromecánico 1	S
-029	Impresor 	S
-030	Mecánico 1	S
-031	Mensajero	S
-032	Miscelaneo	S
-033	Operador 1 	S
-034	Operador 2	S
-035	Operador 3	S
-036	Operador químicos	S
-037	Recepcionista	S
-038	Servicio al Cliente 1	S
-039	Servicio al Cliente 2	S
-040	Técnicos Aseguramiento Calidad	S
-041	Mantenimiento Edificios	S
-042	Jardinero	S
-044	Chofer 3 	S
-045	Auxiliar de Compras 	S
-046	Jefe de Operaciones	S
-047	Arte Finalista 	S
-048	Gerente de Tienda 	S
-049	Asistente de Gerencia 	S
-050	Cajero (a) - Servicio al Cliente Ventas 	S
-051	Supervisor de Mantenimiento	S
-052	Gerente de Produccion	S
-053	Encargado de compras y transportes	S
-054	Mecánico de Precision	S
-055	Jefe de Ventas 	S
-Consulta SQL del departamento al que pertenece el empleado:
+  FROM [GAREND].[PUESTO]
+  
 SELECT [DEPARTAMENTO]
       ,[DESCRIPCION]
       ,[ACTIVO]
-  FROM [SOFTLAND].[GAREND].[DEPARTAMENTO]
-Datos obtenidos:
-DEPARTAMENTO	DESCRIPCION	ACTIVO
-RH	Recursos Humanos	S
-GG	Gerencia General	S
-FI	Finanzas y Administración	S
-MV	Mercadeo y Ventas	S
-PR	Producción	S
-FA	Ventas	S
-CG	Contabilidad	S
-EH	Elena´s Haus	S
-TES	Tesorería	S
-CO	Compras	S
-SG	Servicios Generales	S
-ND	No definido	S
-TR	Transportes	S
-LO	Logística	S
-BO	Bodegas	S
-AS	Aseguramiento Calidad	S
-MT	Mantenimiento	S
-
-Consulta SQL de lista de empleados donde se indica si esta activo "S" o no "N" se asocia con un código el departamento, puesto y nomina lo cual hace relación con las otras consultas.
+  FROM [GAREND].[DEPARTAMENTO]
+  
 SELECT [EMPLEADO]
       ,[NOMBRE]
       ,[ACTIVO]
       ,[DEPARTAMENTO]
       ,[PUESTO]
       ,[NOMINA]
-  FROM [SOFTLAND].[GAREND].[EMPLEADO]
-Datos obtenidos:
-EMPLEADO	NOMBRE	ACTIVO	DEPARTAMENTO	PUESTO	NOMINA
-0202	Arguedas Hidalgo Brandon	N	BO	021	0003
-0203	Barquero Alfaro Josue Alberto	N	BO	021	0003
-0204	Valverde Cheves Ronald	S	PR	033	0003
-0206	Alfaro Rosales Max	N	TR	025	0003
-0207	Sanchez Perez Julio David	N	BO	021	0003
-0001	Fonseca Campos Alexander	S	BO	021	0003
-0002	Quesada Murillo Alexander	S	PR	006	0001
-0003	Villalobos Villalobos Alexis	N	LO	005	0001
-0004	Arrieta Campos Alvaro	S	PR	014	0003
-0005	Gonzalez Cespedez Ana	N	FA	038	0001
-0006	Arroyo Naranjo Andrea	S	GG	049	0001
-0033	Elizondo Salas Ricardo	N	BO	011	0001
-0034	Rojas Mendez Geovanny	S	TR	044	0003
-0035	Rojas Vargas Geraldine	S	ND	010	0001
+  FROM [GAREND].[EMPLEADO]
+  
+  
+  

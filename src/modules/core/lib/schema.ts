@@ -38,4 +38,5 @@ export const mainDbSchema: ExpectedSchema = {
     'puestos': ['PUESTO', 'DESCRIPCION', 'ACTIVO'],
     'departamentos': ['DEPARTAMENTO', 'DESCRIPCION', 'ACTIVO'],
     'empleados': ['EMPLEADO', 'NOMBRE', 'ACTIVO', 'DEPARTAMENTO', 'PUESTO', 'NOMINA'],
+    'vehiculos': ['placa', 'marca'],
 };
