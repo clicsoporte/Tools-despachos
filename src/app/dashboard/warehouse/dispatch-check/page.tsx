@@ -52,7 +52,7 @@ export default function DispatchCheckPage() {
         isAuthorized,
     } = useDispatchCheck();
     
-    if (!isReady || isAuthorized === null) {
+    if (!isReady || isAuthorized === null || state.isLoading) {
         return (
              <main className="flex-1 p-4 md:p-6 lg:p-8 flex items-center justify-center">
                 <Skeleton className="h-96 w-full max-w-4xl" />
@@ -208,7 +208,7 @@ export default function DispatchCheckPage() {
                             </div>
                         </CardContent>
                         <CardFooter className="justify-between">
-                            <Button variant="destructive" onClick={actions.reset}>Cancelar Verificación</Button>
+                            <Button variant="ghost" onClick={actions.handleGoBack}>Cancelar Verificación</Button>
                             {selectors.isVerificationComplete && (
                                 <div className="flex gap-2">
                                     <Dialog>
@@ -315,20 +315,32 @@ export default function DispatchCheckPage() {
         );
     }
     
-    return (
-        <main className="flex-1 p-4 md:p-6 lg:p-8 flex items-center justify-center">
-             <Card className="w-full max-w-md text-center">
-                <CardHeader>
-                    <CheckCircle className="mx-auto h-16 w-16 text-green-500"/>
-                    <CardTitle className="mt-4 text-2xl">¡Despacho Verificado!</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <p className="text-muted-foreground">La verificación para el documento <strong>{state.currentDocument?.id}</strong> se ha completado y registrado.</p>
-                </CardContent>
-                <CardFooter className="justify-center">
-                    <Button onClick={actions.reset}>Verificar Otro Documento</Button>
-                </CardFooter>
-            </Card>
-        </main>
-    );
+    if (state.step === 'finished') {
+        return (
+            <main className="flex-1 p-4 md:p-6 lg:p-8 flex items-center justify-center">
+                <Card className="w-full max-w-md text-center">
+                    <CardHeader>
+                        <CheckCircle className="mx-auto h-16 w-16 text-green-500"/>
+                        <CardTitle className="mt-4 text-2xl">¡Despacho Verificado!</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <p className="text-muted-foreground">La verificación para el documento <strong>{state.currentDocument?.id}</strong> se ha completado y registrado.</p>
+                    </CardContent>
+                    <CardFooter className="flex-col gap-2">
+                        {state.nextDocumentInContainer ? (
+                            <Button onClick={actions.proceedToNextStep} className="w-full">
+                                <ArrowRight className="mr-2 h-4 w-4" />
+                                Siguiente Documento
+                            </Button>
+                        ) : state.currentDocument?.containerId ? (
+                            <Button onClick={actions.handleGoBack} className="w-full">Volver al Contenedor</Button>
+                        ) : null}
+                        <Button onClick={actions.reset} variant="outline" className="w-full">Verificar Otro Documento</Button>
+                    </CardFooter>
+                </Card>
+            </main>
+        );
+    }
+
+    return null; // Fallback for loading or other states
 }
