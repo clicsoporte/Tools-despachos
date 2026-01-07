@@ -45,13 +45,11 @@ export default function AdminDashboardPage() {
                 case 'admin:settings:requests':
                     return hasPermission('admin:settings:requests');
                 case 'admin:settings:warehouse':
-                     return hasPermission('admin:settings:warehouse');
+                     return hasPermission('admin:settings:warehouse') || hasPermission('admin:settings:stock') || hasPermission('warehouse:dispatch-containers:manage');
                 case 'admin:settings:cost-assistant':
                     return hasPermission('admin:settings:cost-assistant');
                 case 'admin:settings:quoter':
                     return hasPermission('admin:settings:quoter');
-                case 'warehouse:dispatch-containers:manage':
-                    return hasPermission('warehouse:dispatch-containers:manage');
                 case 'admin:import:run':
                     return hasPermission('admin:import:run') || hasPermission('admin:import:files') || hasPermission('admin:import:sql') || hasPermission('admin:import:sql-config');
                 case 'admin:logs:read':

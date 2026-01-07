@@ -172,10 +172,17 @@ export default function DispatchCenterPage() {
                                 <CardDescription>Creado el {format(parseISO(c.createdAt), 'dd/MM/yyyy')}</CardDescription>
                             </CardHeader>
                             <CardContent className="flex-grow">
-                                {c.isLocked && (
+                                {c.isLocked ? (
                                     <div className="flex items-center gap-2 text-destructive">
                                         <Lock className="h-4 w-4"/>
                                         <span className="text-sm font-semibold">En uso por: {c.lockedBy}</span>
+                                    </div>
+                                ) : (
+                                    <div className="flex items-center gap-2 text-muted-foreground">
+                                        <Package className="h-4 w-4" />
+                                        <span className="text-sm font-semibold">
+                                            {c.assignmentCount || 0} documento(s)
+                                        </span>
                                     </div>
                                 )}
                             </CardContent>
