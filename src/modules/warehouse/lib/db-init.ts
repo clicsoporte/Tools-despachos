@@ -81,7 +81,9 @@ export async function initializeWarehouseDb(db: import('better-sqlite3').Databas
             verifiedByUserId INTEGER NOT NULL,
             verifiedByUserName TEXT NOT NULL,
             items TEXT NOT NULL,
-            notes TEXT
+            notes TEXT,
+            vehiclePlate TEXT,
+            driverName TEXT
         );
 
         CREATE TABLE IF NOT EXISTS dispatch_containers (
@@ -162,8 +164,15 @@ export async function runWarehouseMigrations(db: import('better-sqlite3').Databa
                 verifiedByUserId INTEGER NOT NULL,
                 verifiedByUserName TEXT NOT NULL,
                 items TEXT NOT NULL,
-                notes TEXT
+                notes TEXT,
+                vehiclePlate TEXT,
+                driverName TEXT
             );`);
+        } else {
+            const dispatchLogsTableInfo = db.prepare(`PRAGMA table_info(dispatch_logs)`).all() as { name: string }[];
+            const dispatchLogsColumns = new Set(dispatchLogsTableInfo.map(c => c.name));
+            if (!dispatchLogsColumns.has('vehiclePlate')) db.exec(`ALTER TABLE dispatch_logs ADD COLUMN vehiclePlate TEXT`);
+            if (!dispatchLogsColumns.has('driverName')) db.exec(`ALTER TABLE dispatch_logs ADD COLUMN driverName TEXT`);
         }
 
         if (!db.prepare(`SELECT name FROM sqlite_master WHERE type='table' AND name='dispatch_containers'`).get()) {

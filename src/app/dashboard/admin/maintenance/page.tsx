@@ -327,6 +327,7 @@ export default function MaintenancePage() {
         setIsAuditing(true);
         setAuditResults(null);
         try {
+            logInfo('Database audit started', { user: user.name });
             const results = await runDatabaseAudit(user.name);
             setAuditResults(results);
         } catch (error: any) {
@@ -707,3 +708,4 @@ export default function MaintenancePage() {
         </main>
     );
 }
+

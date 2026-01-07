@@ -20,7 +20,7 @@ import { es } from 'date-fns/locale';
 import type { HAlignType, FontStyle, RowInput } from 'jspdf-autotable';
 import { triggerNotificationEvent } from '@/modules/notifications/lib/notifications-engine';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Search, CheckCircle, XCircle, Info, ClipboardCheck, Circle, User, FileDown, Mail, ArrowRight, AlertTriangle, ArrowLeft, Printer } from 'lucide-react';
 
 type WizardStep = 'initial' | 'loading' | 'verifying' | 'finished';
 
