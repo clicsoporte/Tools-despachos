@@ -351,14 +351,6 @@ export function useDispatchCheck() {
             await saveUserPreferences(user.id, 'dispatchCheckPrefs', { isStrictMode });
         }
     }, [user, updateState]);
-
-    const handleGoBack = () => {
-        if (state.currentDocument?.containerId) {
-            router.push('/dashboard/warehouse/dispatch-center');
-        } else {
-            reset();
-        }
-    };
     
     const reset = useCallback(() => {
         updateState({
@@ -376,6 +368,13 @@ export function useDispatchCheck() {
         });
     }, [updateState]);
 
+    const handleGoBack = useCallback(() => {
+        if (state.currentDocument?.containerId) {
+            router.push('/dashboard/warehouse/dispatch-center');
+        } else {
+            reset();
+        }
+    }, [state.currentDocument, router, reset]);
     
     const handlePrintPdf = useCallback((docData: {
         document: CurrentDocument;
@@ -425,7 +424,7 @@ export function useDispatchCheck() {
         doc.save(`Comprobante-${document.id}.pdf`);
     }, []);
     
-    const proceedToNextStep = async () => {
+    const proceedToNextStep = useCallback(async () => {
         if (!state.currentDocument?.containerId) {
             updateState({ step: 'finished' });
             return;
@@ -447,7 +446,7 @@ export function useDispatchCheck() {
             // All documents in container are done
             updateState({ step: 'finished' });
         }
-    };
+    }, [state.currentDocument, router, updateState]);
 
     const handleMoveAssignment = async (targetContainerId: number) => {
         if (!state.currentDocument || !state.currentDocument.containerId) return;
@@ -531,7 +530,7 @@ export function useDispatchCheck() {
         } finally {
             updateState({ isLoading: false });
         }
-    }, [user, state.currentDocument, state.verificationItems, companyData, toast, updateState, handlePrintPdf, state.selectedUsers, state.externalEmail, state.emailBody]);
+    }, [user, state.currentDocument, state.verificationItems, companyData, toast, updateState, handlePrintPdf, state.selectedUsers, state.externalEmail, state.emailBody, proceedToNextStep]);
     
     const handleFinalizeAndAction = useCallback(async (action: 'finish' | 'email' | 'pdf') => {
         const hasUnverifiedItems = state.verificationItems.some(item => item.verifiedQuantity === 0 && item.requiredQuantity > 0);

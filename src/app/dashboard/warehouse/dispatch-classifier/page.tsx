@@ -156,8 +156,8 @@ export default function DispatchClassifierPage() {
                     clientName: docToAssign.NOMBRE_CLIENTE,
                     assignedBy: user.name,
                     assignedAt: new Date().toISOString(),
+                    sortOrder: 0,
                     status: 'pending',
-                    sortOrder: 0
                 };
                 
                 const destItems = Array.from(assignments[destId] || []);
@@ -209,7 +209,7 @@ export default function DispatchClassifierPage() {
                                                 {dateRange?.from ? (dateRange.to ? (`${format(dateRange.from, 'LLL dd, y', { locale: es })} - ${format(dateRange.to, 'LLL dd, y', { locale: es })}`) : format(dateRange.from, 'LLL dd, y', { locale: es })) : (<span>Rango de Fechas</span>)}
                                             </Button>
                                         </PopoverTrigger>
-                                        <PopoverContent className="w-auto p-0" align="start"><Calendar initialFocus mode="range" defaultMonth={dateRange?.from} selected={dateRange} onSelect={(range) => setDateRange(range)} numberOfMonths={2} locale={es} /></PopoverContent>
+                                        <PopoverContent className="w-auto p-0" align="start"><Calendar initialFocus mode="range" defaultMonth={dateRange?.from} selected={dateRange} onSelect={setDateRange} numberOfMonths={2} locale={es} /></PopoverContent>
                                     </Popover>
                                     <Button onClick={handleFetchDocuments} disabled={isLoadingDocs} className="w-full">
                                         {isLoadingDocs ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Search className="mr-2 h-4 w-4" />}

@@ -9,11 +9,9 @@ import type { WarehouseLocation, WarehouseInventoryItem, MovementLog, WarehouseS
 import { logError, logInfo, logWarn } from '../../core/lib/logger';
 import { triggerNotificationEvent } from '@/modules/notifications/lib/notifications-engine';
 import path from 'path';
-import { initializeWarehouseDb, runWarehouseMigrations } from './db-init';
 
 const WAREHOUSE_DB_FILE = 'warehouse.db';
 
-export { initializeWarehouseDb, runWarehouseMigrations };
 
 export async function getWarehouseSettings(): Promise<WarehouseSettings> {
     const db = await connectDb(WAREHOUSE_DB_FILE);
@@ -103,7 +101,7 @@ export async function getSelectableLocations(): Promise<WarehouseLocation[]> {
     return JSON.parse(JSON.stringify(selectable));
 }
 
-const renderLocationPathAsString = (locationId: number, locations: any[]): string => {
+export const renderLocationPathAsString = (locationId: number, locations: any[]): string => {
     if (!locationId) return "N/A";
     const path: any[] = [];
     let current = locations.find(l => l.id === locationId);

@@ -5,6 +5,8 @@
 'use server';
 
 import type { WarehouseSettings, CustomStatus } from '@/modules/core/types';
+import { triggerNotificationEvent } from '@/modules/notifications/lib/notifications-engine';
+import { renderLocationPathAsString } from './db';
 
 export async function initializeWarehouseDb(db: import('better-sqlite3').Database) {
     const schema = `
@@ -119,7 +121,8 @@ export async function initializeWarehouseDb(db: import('better-sqlite3').Databas
             { type: 'bin', name: 'Casilla' }
         ],
         unitPrefix: 'U',
-        nextUnitNumber: 1
+        nextUnitNumber: 1,
+        dispatchNotificationEmails: '',
     };
 
     db.prepare(`INSERT OR IGNORE INTO warehouse_config (key, value) VALUES ('settings', ?)`).run(JSON.stringify(defaultSettings));
