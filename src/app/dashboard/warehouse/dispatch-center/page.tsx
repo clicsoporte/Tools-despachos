@@ -82,7 +82,7 @@ const DraggableItem = ({ item, erpHeaders, index, onUnassign }: { item: Dispatch
 type EnrichedErpHeader = ErpInvoiceHeader & { suggestedContainerId?: string };
 
 export default function DispatchCenterPage() {
-    const { isAuthorized, hasPermission } = useAuthorization(['warehouse:dispatch-check:use']);
+    const { isAuthorized, hasPermission } = useAuthorization(['warehouse:dispatch-check:use', 'warehouse:dispatch-classifier:use']);
     const { setTitle } = usePageTitle();
     const { user, isReady } = useAuth();
     const router = useRouter();
@@ -104,7 +104,7 @@ export default function DispatchCenterPage() {
     const [unassignedDocs, setUnassignedDocs] = useState<EnrichedErpHeader[]>([]);
     const [selectedDocumentIds, setSelectedDocumentIds] = useState<Set<string>>(new Set());
     const [bulkAssignContainerId, setBulkAssignContainerId] = useState<string>('');
-
+    const [activeTab, setActiveTab] = useState('assign');
     
     const fetchContainers = useCallback(async (showLoading = true) => {
         if (showLoading) setIsLoading(true);
@@ -260,10 +260,11 @@ export default function DispatchCenterPage() {
         try {
             await resetContainerAssignments(containerToModify.id!);
             toast({ title: 'Ruta Reiniciada', description: `Todos los documentos en "${containerToModify.name}" están pendientes de nuevo.` });
-            setContainerToModify(null);
-            await fetchAllAssignments(); // Refresh all assignments
+            await fetchAllAssignments();
         } catch (error: any) {
              toast({ title: "Error al Reiniciar", description: `No se pudo reiniciar la ruta. ${error.message}`, variant: "destructive" });
+        } finally {
+             setContainerToModify(null);
         }
     };
     
@@ -271,8 +272,8 @@ export default function DispatchCenterPage() {
         if (!containerToModify) return;
         try {
             await unassignAllFromContainer(containerToModify.id!);
-            toast({ title: 'Contenedor Limpiado', description: `Se desasignaron todos los documentos de "${containerToModify.name}".`, variant: "destructive"});
-            await fetchContainers(); // This will trigger a re-fetch of assignments
+            setAssignments(prev => ({ ...prev, [containerToModify.id!]: [] }));
+            toast({ title: 'Contenedor Limpiado', description: `Se desasignaron todos los documentos de "${containerToModify.name}".`, variant: 'destructive'});
         } catch (error: any) {
             toast({ title: 'Error al Limpiar', description: `No se pudieron limpiar las asignaciones. ${error.message}`, variant: 'destructive'});
         } finally {
@@ -397,7 +398,7 @@ export default function DispatchCenterPage() {
             });
             await handleFetchDocuments();
             toast({ title: 'Documento Desasignado', variant: 'destructive'});
-        } catch (error: any) {
+        } catch (error: any) => {
             toast({ title: 'Error al desasignar', description: error.message, variant: 'destructive' });
         }
     };
@@ -415,9 +416,11 @@ export default function DispatchCenterPage() {
         );
     }
     
+    const isRouteCompleted = (c: DispatchContainer) => (c.assignmentCount ?? 0) > 0 && c.completedAssignmentCount === c.assignmentCount;
+
     if (selectedContainer) {
         const containerAssignments = assignments[selectedContainer.id!] || [];
-        const allCompleted = containerAssignments.length > 0 && containerAssignments.every(a => a.status === 'completed' || a.status === 'discrepancy');
+        const allCompleted = isRouteCompleted(selectedContainer);
 
         return (
             <div className="p-4 md:p-8 max-w-4xl mx-auto">
@@ -508,185 +511,59 @@ export default function DispatchCenterPage() {
     
     return (
         <div className="flex flex-col h-screen bg-muted/30">
-            <header className="p-4 border-b bg-background">
-                <h1 className="text-2xl font-bold">Clasificador de Despachos</h1>
-                <p className="text-muted-foreground">Asigna facturas a contenedores y luego ordénalas según la ruta de entrega.</p>
-            </header>
-            <Tabs defaultValue="assign" className="flex-1 flex flex-col p-4 gap-4">
-                <TabsList className="grid w-full grid-cols-2">
-                    <TabsTrigger value="assign">Asignar Documentos</TabsTrigger>
-                    <TabsTrigger value="order">Ordenar Contenedores</TabsTrigger>
-                </TabsList>
-                <TabsContent value="assign" className="flex-1 overflow-auto">
-                     <Card>
-                        <CardHeader>
-                            <CardTitle>Paso 1: Cargar Documentos del ERP</CardTitle>
-                            <div className="flex flex-col sm:flex-row gap-4 items-center pt-2">
-                                <Popover>
-                                    <PopoverTrigger asChild>
-                                        <Button id="date" variant={'outline'} className={cn('w-full sm:w-[280px] justify-start text-left font-normal', !dateRange && 'text-muted-foreground')}>
-                                            <CalendarIcon className="mr-2 h-4 w-4" />
-                                            {dateRange?.from ? (dateRange.to ? (`${format(dateRange.from, 'LLL dd, y', { locale: es })} - ${format(dateRange.to, 'LLL dd, y', { locale: es })}`) : format(dateRange.from, 'LLL dd, y', { locale: es })) : (<span>Rango de Fechas</span>)}
-                                        </Button>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="w-auto p-0" align="start"><Calendar initialFocus mode="range" defaultMonth={dateRange?.from} selected={dateRange} onSelect={(range) => setDateRange(range)} numberOfMonths={2} locale={es} /></PopoverContent>
-                                </Popover>
-                                <Button onClick={handleFetchDocuments} disabled={isLoadingDocs} className="w-full sm:w-auto">
-                                    {isLoadingDocs ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Search className="mr-2 h-4 w-4" />}
-                                    Buscar Documentos Pendientes
-                                </Button>
-                            </div>
-                        </CardHeader>
-                        <CardContent>
-                             <div className="flex items-center gap-4 mb-4 p-2 border rounded-lg">
-                                <div className="flex items-center gap-2">
-                                    <Checkbox
-                                        id="select-all-docs"
-                                        checked={selectedDocumentIds.size > 0 && selectedDocumentIds.size === unassignedDocs.filter(d => d.ANULADA !== 'S').length}
-                                        onCheckedChange={(checked) => setSelectedDocumentIds(checked ? new Set(unassignedDocs.filter(d => d.ANULADA !== 'S').map(d => d.FACTURA)) : new Set())}
-                                    />
-                                    <Label htmlFor="select-all-docs" className="font-semibold">{selectedDocumentIds.size} seleccionados</Label>
+             <div className="p-4 border-b bg-background flex justify-between items-center">
+                 <div>
+                    <h1 className="text-2xl font-bold">Centro de Despacho</h1>
+                    <p className="text-muted-foreground">Selecciona una ruta para empezar a verificar o gestiona las asignaciones.</p>
+                 </div>
+            </div>
+            <div className="p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 overflow-y-auto">
+                {containers.map(c => {
+                    const isLocked = c.isLocked && c.lockedByUserId !== user?.id;
+                    const isCompleted = isRouteCompleted(c);
+                    
+                    return (
+                        <Card 
+                            key={c.id} 
+                            onClick={() => !isLocked && !isCompleted && handleSelectContainer(c)}
+                            className={cn(
+                                "flex flex-col cursor-pointer transition-all hover:shadow-lg hover:-translate-y-1",
+                                isLocked && "bg-muted/60 cursor-not-allowed border-dashed",
+                                isCompleted && "bg-green-50 border-green-500 cursor-default"
+                            )}
+                        >
+                            <CardHeader>
+                                <div className="flex justify-between items-center">
+                                    <CardTitle className="flex items-center gap-2">{c.name}</CardTitle>
+                                    {isLocked && <Badge variant="destructive"><Lock className="mr-1 h-3 w-3"/> En Uso</Badge>}
+                                    {isCompleted && <Badge variant="default" className="bg-green-600"><CheckCircle className="mr-1 h-3 w-3"/> Completada</Badge>}
                                 </div>
-                                <Select value={bulkAssignContainerId} onValueChange={setBulkAssignContainerId}>
-                                    <SelectTrigger className="w-[250px]">
-                                        <SelectValue placeholder="Asignar en bloque a..." />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {containers.map(c => <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>)}
-                                    </SelectContent>
-                                </Select>
-                                <Button onClick={handleBulkAssign} disabled={selectedDocumentIds.size === 0 || !bulkAssignContainerId}>
-                                    <Send className="mr-2 h-4 w-4"/>
-                                    Asignar
-                                </Button>
-                            </div>
-                            <ScrollArea className="h-[55vh]">
-                                <Table>
-                                    <TableHeader>
-                                        <TableRow>
-                                            <TableHead className="w-12"></TableHead>
-                                            <TableHead>Documento</TableHead>
-                                            <TableHead>Cliente</TableHead>
-                                            <TableHead>Vendedor</TableHead>
-                                            <TableHead>Ruta (ERP)</TableHead>
-                                            <TableHead>Embarcar A</TableHead>
-                                            <TableHead>Observaciones</TableHead>
-                                            <TableHead className="w-[250px]">Asignar a Contenedor</TableHead>
-                                        </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                        {unassignedDocs.map(doc => {
-                                            const assignedContainerId = getAssignedContainerId(doc.FACTURA);
-                                            const isCancelled = doc.ANULADA === 'S';
-                                            return (
-                                                <TableRow key={doc.FACTURA} className={cn(isCancelled ? 'bg-destructive/10' : '', assignedContainerId && 'bg-green-100/50')}>
-                                                    <TableCell>
-                                                        {!isCancelled && <Checkbox checked={selectedDocumentIds.has(doc.FACTURA)} onCheckedChange={(checked) => {
-                                                            const newSet = new Set(selectedDocumentIds);
-                                                            if (checked) newSet.add(doc.FACTURA); else newSet.delete(doc.FACTURA);
-                                                            setSelectedDocumentIds(newSet);
-                                                        }} />}
-                                                    </TableCell>
-                                                    <TableCell className="font-mono">{doc.FACTURA}{isCancelled && <Badge variant="destructive" className="ml-2">ANULADA</Badge>}</TableCell>
-                                                    <TableCell>{doc.NOMBRE_CLIENTE}</TableCell>
-                                                    <TableCell>{doc.VENDEDOR}</TableCell>
-                                                    <TableCell><Badge variant="outline">{doc.RUTA || 'Sin Ruta'}</Badge></TableCell>
-                                                    <TableCell className="text-xs">{doc.EMBARCAR_A}</TableCell>
-                                                     <TableCell className="text-xs max-w-xs truncate" title={doc.OBSERVACIONES}>{doc.OBSERVACIONES}</TableCell>
-                                                    <TableCell>
-                                                        <Select
-                                                            value={assignedContainerId || doc.suggestedContainerId || ''}
-                                                            onValueChange={(value) => handleSingleAssign(doc.FACTURA, value === 'unassign' ? null : value)}
-                                                            disabled={isCancelled}
-                                                        >
-                                                            <SelectTrigger>
-                                                                <SelectValue placeholder="Seleccionar..." />
-                                                            </SelectTrigger>
-                                                            <SelectContent>
-                                                                {assignedContainerId && <SelectItem value="unassign" className="text-destructive">Quitar Asignación</SelectItem>}
-                                                                {containers.map(c => <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>)}
-                                                            </SelectContent>
-                                                        </Select>
-                                                    </TableCell>
-                                                </TableRow>
-                                            )
-                                        })}
-                                    </TableBody>
-                                </Table>
-                             </ScrollArea>
-                        </CardContent>
-                    </Card>
-                </TabsContent>
-                <TabsContent value="order" className="flex-1 overflow-auto">
-                    <DragDropContext onDragEnd={handleOnDragEnd}>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 h-full">
-                            {containers.map(container => (
-                                <Droppable key={container.id} droppableId={String(container.id)}>
-                                    {(provided) => (
-                                        <Card ref={provided.innerRef} {...provided.droppableProps} className="flex flex-col">
-                                            <CardHeader>
-                                                 <div className="flex justify-between items-start">
-                                                    <CardTitle className="flex items-center gap-2"><Truck className="h-5 w-5"/>{container.name}</CardTitle>
-                                                    {hasPermission('warehouse:dispatch-containers:manage') && (
-                                                        <AlertDialog open={isClearConfirmOpen && containerToModify?.id === container.id} onOpenChange={(open) => { if (!open) { setIsClearConfirmOpen(false); setContainerToModify(null); }}}>
-                                                            <AlertDialogTrigger asChild>
-                                                                <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive" onClick={() => { setIsClearConfirmOpen(true); setContainerToModify(container); }}>
-                                                                    <Trash2 className="h-4 w-4" />
-                                                                </Button>
-                                                            </AlertDialogTrigger>
-                                                            <AlertDialogContent>
-                                                                <AlertDialogHeader>
-                                                                    <AlertDialogTitle>¿Limpiar Contenedor &quot;{container.name}&quot;?</AlertDialogTitle>
-                                                                    <AlertDialogDescription>
-                                                                        Esta acción desasignará **TODOS** los documentos del contenedor. Es útil para reiniciar la ruta para el día siguiente. No se borra ningún registro de verificación.
-                                                                    </AlertDialogDescription>
-                                                                </AlertDialogHeader>
-                                                                <AlertDialogFooter>
-                                                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                                                    <AlertDialogAction onClick={handleClearContainer} className="bg-destructive hover:bg-destructive/90">Sí, Limpiar Contenedor</AlertDialogAction>
-                                                                </AlertDialogFooter>
-                                                            </AlertDialogContent>
-                                                        </AlertDialog>
-                                                    )}
-                                                </div>
-                                            </CardHeader>
-                                            <CardContent className="flex-1 p-4 bg-muted/40 rounded-b-lg overflow-y-auto">
-                                                {(assignments[container.id!] || []).map((item, index) => (
-                                                    <DraggableItem key={item.id} item={item} erpHeaders={erpHeaders} index={index} onUnassign={handleUnassign} />
-                                                ))}
-                                                {provided.placeholder}
-                                            </CardContent>
-                                             <CardFooter className="p-2">
-                                                {((assignments[container.id!] || []).length > 0) && hasPermission('warehouse:dispatch:reset') && (
-                                                    <AlertDialog>
-                                                        <AlertDialogTrigger asChild>
-                                                            <Button variant="outline" size="sm" className="w-full" onClick={() => setContainerToModify(container)}>
-                                                                <RefreshCcw className="mr-2 h-4 w-4" /> Reiniciar Ruta
-                                                            </Button>
-                                                        </AlertDialogTrigger>
-                                                        <AlertDialogContent>
-                                                            <AlertDialogHeader>
-                                                                <AlertDialogTitle>¿Reiniciar la ruta &quot;{container.name}&quot;?</AlertDialogTitle>
-                                                                <AlertDialogDescription>
-                                                                    Todos los documentos en este contenedor volverán al estado &quot;pendiente&quot;, permitiendo que sean verificados de nuevo.
-                                                                </AlertDialogDescription>
-                                                            </AlertDialogHeader>
-                                                            <AlertDialogFooter>
-                                                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                                                <AlertDialogAction onClick={handleResetContainer}>Sí, reiniciar</AlertDialogAction>
-                                                            </AlertDialogFooter>
-                                                        </AlertDialogContent>
-                                                    </AlertDialog>
-                                                )}
-                                            </CardFooter>
-                                        </Card>
-                                    )}
-                                </Droppable>
-                            ))}
-                        </div>
-                    </DragDropContext>
-                </TabsContent>
-            </Tabs>
+                                <CardDescription>
+                                    {c.assignmentCount ?? 0} documentos asignados.
+                                </CardDescription>
+                            </CardHeader>
+                             <CardContent className="flex-grow">
+                                {isLocked ? (
+                                    <p className="text-sm font-semibold text-destructive">Bloqueado por: {c.lockedBy}</p>
+                                ) : isCompleted ? (
+                                     <p className="text-sm text-green-700">Verificado por {c.lastVerifiedBy} el {c.lastVerifiedAt ? format(parseISO(c.lastVerifiedAt), 'dd/MM/yy HH:mm') : ''}</p>
+                                ) : (
+                                    <p className="text-sm text-muted-foreground">{c.completedAssignmentCount ?? 0} de {c.assignmentCount ?? 0} verificados.</p>
+                                )}
+                            </CardContent>
+                            <CardFooter>
+                                {isCompleted ? (
+                                    <Button variant="outline" className="w-full" onClick={() => handleSelectContainer(c)}>Ver Detalles</Button>
+                                ) : (
+                                    <Button className="w-full" disabled={isLocked}>
+                                        {isLocked ? 'Ruta en Uso' : 'Empezar Verificación'}
+                                    </Button>
+                                )}
+                            </CardFooter>
+                        </Card>
+                    )
+                })}
+            </div>
         </div>
     );
 }

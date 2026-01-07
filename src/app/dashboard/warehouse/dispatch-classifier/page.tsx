@@ -26,7 +26,7 @@ import type { DispatchContainer, ErpInvoiceHeader, DispatchAssignment } from '@/
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Loader2, Search, CalendarIcon, Truck, AlertTriangle, List, Check, ChevronsUpDown, Send, Trash2, GripVertical, RefreshCcw } from 'lucide-react';
-import { useToast } from '@/modules/core/hooks/use-toast';
+import { useToast } from '@/components/ui/use-toast';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
@@ -238,7 +238,7 @@ export default function DispatchClassifierPage() {
         } catch(error: any) {
             toast({ title: 'Error', description: `Ocurrió un error: ${error.message}`, variant: 'destructive' });
         }
-    }, [user, unassignedDocs, containers, toast, assignments, handleFetchDocuments]);
+    }, [user, unassignedDocs, toast, assignments, handleFetchDocuments]);
     
     const handleBulkAssign = useCallback(async () => {
         if (!user || selectedDocumentIds.size === 0 || !bulkAssignContainerId) {
@@ -284,7 +284,7 @@ export default function DispatchClassifierPage() {
         } finally {
             setIsLoadingDocs(false);
         }
-    }, [user, selectedDocumentIds, bulkAssignContainerId, unassignedDocs, toast, containers]);
+    }, [user, selectedDocumentIds, bulkAssignContainerId, unassignedDocs, toast]);
 
     const handleUnassign = async (assignment: DispatchAssignment) => {
         try {
@@ -309,9 +309,10 @@ export default function DispatchClassifierPage() {
             await unassignAllFromContainer(containerToModify.id!);
             toast({ title: 'Contenedor Limpiado', description: `Se desasignaron todos los documentos de "${containerToModify.name}".`, variant: "destructive"});
             
+            // Correctly update local state
             setAssignments(prev => ({
                 ...prev,
-                [containerToModify.id!]: []
+                [containerToModify!.id!]: []
             }));
 
         } catch (error: any) {
@@ -331,7 +332,7 @@ export default function DispatchClassifierPage() {
             const freshAssignments = await getAssignmentsForContainer(containerToModify.id!);
             setAssignments(prev => ({
                 ...prev,
-                [containerToModify.id!]: freshAssignments
+                [containerToModify!.id!]: freshAssignments
             }));
 
         } catch (error: any) {
@@ -351,7 +352,7 @@ export default function DispatchClassifierPage() {
                 <h1 className="text-2xl font-bold">Clasificador de Despachos</h1>
                 <p className="text-muted-foreground">Asigna facturas a contenedores y luego ordénalas según la ruta de entrega.</p>
             </header>
-            <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value)} className="flex-1 flex flex-col p-4 gap-4">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col p-4 gap-4">
                 <TabsList className="grid w-full grid-cols-2">
                     <TabsTrigger value="assign">Asignar Documentos</TabsTrigger>
                     <TabsTrigger value="order">Ordenar Contenedores</TabsTrigger>

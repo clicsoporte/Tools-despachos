@@ -381,12 +381,6 @@ export async function assignItemToLocation(itemId: string, locationId: number, c
     return newItemLocation;
 }
 
-export async function unassignItemFromLocation(assignmentId: number): Promise<void> {
-    const db = await connectDb(WAREHOUSE_DB_FILE);
-    db.prepare('DELETE FROM item_locations WHERE id = ?').run(assignmentId);
-    await logInfo(`Assignment with ID ${assignmentId} was unassigned.`);
-}
-
 export async function addInventoryUnit(unit: Omit<InventoryUnit, 'id' | 'createdAt' | 'unitCode'>): Promise<InventoryUnit> {
     const db = await connectDb(WAREHOUSE_DB_FILE);
     
@@ -804,3 +798,4 @@ export async function unassignAllFromContainer(containerId: number): Promise<voi
     db.prepare('DELETE FROM dispatch_assignments WHERE containerId = ?').run(containerId);
     await logInfo(`All assignments cleared from container ${containerId}.`);
 }
+
