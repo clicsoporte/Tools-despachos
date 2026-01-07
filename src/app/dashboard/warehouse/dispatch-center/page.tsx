@@ -276,11 +276,14 @@ export default function DispatchCenterPage() {
         if (!containerToModify) return;
         try {
             await unassignAllFromContainer(containerToModify.id!);
+            toast({ title: 'Contenedor Limpiado', description: `Se desasignaron todos los documentos de "${containerToModify.name}".`, variant: 'destructive'});
+            
+            // Correctly update local state
             setAssignments(prev => ({
                 ...prev,
                 [containerToModify!.id!]: []
             }));
-            toast({ title: 'Contenedor Limpiado', description: `Se desasignaron todos los documentos de "${containerToModify.name}".`, variant: 'destructive'});
+
         } catch (error: any) {
             toast({ title: 'Error al Limpiar', description: `No se pudieron limpiar las asignaciones. ${error.message}`, variant: 'destructive'});
         } finally {
@@ -338,14 +341,14 @@ export default function DispatchCenterPage() {
         }
     }, [dateRange, toast, containers]);
 
-    const getAssignedContainerId = (docId: string): string | null => {
+    const getAssignedContainerId = useCallback((docId: string): string | null => {
         for (const containerId in assignments) {
             if (assignments[containerId].some(a => a.documentId === docId)) {
                 return containerId;
             }
         }
         return null;
-    };
+    }, [assignments]);
     
     const handleSingleAssign = useCallback(async (documentId: string, containerId: string | null) => {
         if (!user) return;
@@ -372,7 +375,7 @@ export default function DispatchCenterPage() {
         } catch(error: any) {
             toast({ title: 'Error', description: `Ocurrió un error: ${error.message}`, variant: 'destructive' });
         }
-    }, [user, unassignedDocs, toast, assignments, fetchAllAssignments]);
+    }, [user, unassignedDocs, toast, assignments, fetchAllAssignments, getAssignedContainerId]);
     
     const handleBulkAssign = useCallback(async () => {
         if (!user || selectedDocumentIds.size === 0 || !bulkAssignContainerId) {
@@ -382,10 +385,35 @@ export default function DispatchCenterPage() {
     
         setIsLoadingDocs(true);
         try {
-            await assignDocumentsToContainer(Array.from(selectedDocumentIds), Number(bulkAssignContainerId), user.name);
-            toast({ title: "Asignación Completa", description: `Se asignaron ${selectedDocumentIds.size} documentos.` });
-            await handleFetchDocuments();
-            await fetchAllAssignments();
+            const validDocsToAssign: string[] = [];
+            let cancelledCount = 0;
+    
+            for (const docId of selectedDocumentIds) {
+                const doc = unassignedDocs.find(d => d.FACTURA === docId);
+                if (doc && doc.ANULADA !== 'S') {
+                    validDocsToAssign.push(docId);
+                } else if (doc) {
+                    cancelledCount++;
+                }
+            }
+            
+            if (cancelledCount > 0) {
+                toast({ title: 'Facturas Omitidas', description: `${cancelledCount} factura(s) estaban anuladas y no se asignaron.`, variant: 'destructive'});
+            }
+    
+            if (validDocsToAssign.length === 0) {
+                toast({ title: 'Sin Documentos Válidos', description: 'No hay documentos válidos para asignar.', variant: 'destructive'});
+                setIsLoadingDocs(false);
+                return;
+            }
+            
+            await assignDocumentsToContainer(validDocsToAssign, Number(bulkAssignContainerId), user.name);
+            toast({ title: "Asignación Completa", description: `Se asignaron ${validDocsToAssign.length} documentos.` });
+            
+            const freshAssignments = await getAssignmentsForContainer(Number(bulkAssignContainerId));
+            setAssignments(prev => ({...prev, [bulkAssignContainerId]: freshAssignments }));
+    
+            setUnassignedDocs(prev => prev.filter(d => !validDocsToAssign.includes(d.FACTURA)));
             setSelectedDocumentIds(new Set());
             setBulkAssignContainerId('');
         } catch (error: any) {
@@ -393,7 +421,7 @@ export default function DispatchCenterPage() {
         } finally {
             setIsLoadingDocs(false);
         }
-    }, [user, selectedDocumentIds, bulkAssignContainerId, toast, handleFetchDocuments, fetchAllAssignments]);
+    }, [user, selectedDocumentIds, bulkAssignContainerId, unassignedDocs, toast]);
 
     const handleUnassign = async (assignment: DispatchAssignment) => {
         try {
@@ -411,15 +439,6 @@ export default function DispatchCenterPage() {
             toast({ title: 'Error al desasignar', description: error.message, variant: 'destructive' });
         }
     };
-    
-    if (!isAuthorized) {
-        return (
-            <div className="p-8 text-center">
-                <h1 className="text-2xl font-bold text-destructive">Acceso Denegado</h1>
-                <p className="text-muted-foreground">No tienes permiso para usar el centro de despacho.</p>
-            </div>
-        );
-    }
     
     const isRouteCompleted = (c: DispatchContainer) => {
         const assignmentCount = c.assignmentCount ?? 0;
@@ -517,6 +536,15 @@ export default function DispatchCenterPage() {
                         })}
                     </div>
                 )}
+            </div>
+        );
+    }
+    
+    if (!hasPermission('warehouse:dispatch-check:use')) {
+        return (
+            <div className="p-8 text-center">
+                <h1 className="text-2xl font-bold text-destructive">Acceso Denegado</h1>
+                <p className="text-muted-foreground">No tienes permiso para usar el centro de despacho.</p>
             </div>
         );
     }

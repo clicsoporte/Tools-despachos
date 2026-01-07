@@ -193,14 +193,14 @@ export default function DispatchClassifierPage() {
         }
     };
 
-    const getAssignedContainerId = (docId: string): string | null => {
+    const getAssignedContainerId = useCallback((docId: string): string | null => {
         for (const containerId in assignments) {
             if (assignments[containerId].some(a => a.documentId === docId)) {
                 return containerId;
             }
         }
         return null;
-    };
+    }, [assignments]);
 
     const handleSingleAssign = useCallback(async (documentId: string, containerId: string | null) => {
         if (!user) return;
@@ -238,7 +238,7 @@ export default function DispatchClassifierPage() {
         } catch(error: any) {
             toast({ title: 'Error', description: `Ocurrió un error: ${error.message}`, variant: 'destructive' });
         }
-    }, [user, unassignedDocs, toast, assignments, handleFetchDocuments]);
+    }, [user, unassignedDocs, toast, assignments, handleFetchDocuments, getAssignedContainerId]);
     
     const handleBulkAssign = useCallback(async () => {
         if (!user || selectedDocumentIds.size === 0 || !bulkAssignContainerId) {
@@ -303,13 +303,12 @@ export default function DispatchClassifierPage() {
         }
     };
     
-    const handleClearContainer = async () => {
+    const handleClearContainer = useCallback(async () => {
         if (!containerToModify) return;
         try {
             await unassignAllFromContainer(containerToModify.id!);
             toast({ title: 'Contenedor Limpiado', description: `Se desasignaron todos los documentos de "${containerToModify.name}".`, variant: "destructive"});
             
-            // Correctly update local state
             setAssignments(prev => ({
                 ...prev,
                 [containerToModify!.id!]: []
@@ -321,7 +320,7 @@ export default function DispatchClassifierPage() {
             setContainerToModify(null);
             setIsClearConfirmOpen(false);
         }
-    };
+    }, [containerToModify, toast]);
 
     const handleResetContainer = async () => {
         if (!containerToModify) return;
@@ -476,7 +475,7 @@ export default function DispatchClassifierPage() {
                                                             </AlertDialogTrigger>
                                                             <AlertDialogContent>
                                                                 <AlertDialogHeader>
-                                                                    <AlertDialogTitle>¿Limpiar Contenedor "{container.name}"?</AlertDialogTitle>
+                                                                    <AlertDialogTitle>¿Limpiar Contenedor &quot;{container.name}&quot;?</AlertDialogTitle>
                                                                     <AlertDialogDescription>
                                                                         Esta acción desasignará **TODOS** los documentos del contenedor. Es útil para reiniciar la ruta para el día siguiente. No se borra ningún registro de verificación.
                                                                     </AlertDialogDescription>
@@ -506,9 +505,9 @@ export default function DispatchClassifierPage() {
                                                         </AlertDialogTrigger>
                                                         <AlertDialogContent>
                                                             <AlertDialogHeader>
-                                                                <AlertDialogTitle>¿Reiniciar la ruta "{container.name}"?</AlertDialogTitle>
+                                                                <AlertDialogTitle>¿Reiniciar la ruta &quot;{container.name}&quot;?</AlertDialogTitle>
                                                                 <AlertDialogDescription>
-                                                                    Todos los documentos en este contenedor volverán al estado "pendiente", permitiendo que sean verificados de nuevo.
+                                                                    Todos los documentos en este contenedor volverán al estado &quot;pendiente&quot;, permitiendo que sean verificados de nuevo.
                                                                 </AlertDialogDescription>
                                                             </AlertDialogHeader>
                                                             <AlertDialogFooter>
