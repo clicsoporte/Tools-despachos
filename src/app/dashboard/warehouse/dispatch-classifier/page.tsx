@@ -102,34 +102,37 @@ export default function DispatchClassifierPage() {
     const [isClearConfirmOpen, setIsClearConfirmOpen] = useState(false);
     const [containerToModify, setContainerToModify] = useState<DispatchContainer | null>(null);
 
+    const fetchAllAssignments = useCallback(async (allContainers: DispatchContainer[]) => {
+        const assignmentsByContainer: Record<string, DispatchAssignment[]> = {};
+        const allDocumentIds: string[] = [];
+
+        for (const container of allContainers) {
+            const containerAssignments = await getAssignmentsForContainer(container.id!);
+            assignmentsByContainer[container.id!] = containerAssignments;
+            allDocumentIds.push(...containerAssignments.map(a => a.documentId));
+        }
+        
+        if (allDocumentIds.length > 0) {
+            const invoiceDetails = await getInvoicesByIds(allDocumentIds);
+            const headersMap = new Map<string, ErpInvoiceHeader>(invoiceDetails.map((h: ErpInvoiceHeader) => [h.FACTURA, h]));
+            setErpHeaders(headersMap);
+        }
+
+        setAssignments(assignmentsByContainer);
+    }, []);
+
     const fetchAllData = useCallback(async () => {
         setIsLoading(true);
         try {
             const fetchedContainers = await getContainers();
             setContainers(fetchedContainers);
-
-            const assignmentsByContainer: Record<string, DispatchAssignment[]> = {};
-            const allDocumentIds: string[] = [];
-
-            for (const container of fetchedContainers) {
-                const containerAssignments = await getAssignmentsForContainer(container.id!);
-                assignmentsByContainer[container.id!] = containerAssignments;
-                allDocumentIds.push(...containerAssignments.map(a => a.documentId));
-            }
-            
-            if (allDocumentIds.length > 0) {
-                const invoiceDetails = await getInvoicesByIds(allDocumentIds);
-                const headersMap = new Map<string, ErpInvoiceHeader>(invoiceDetails.map((h: ErpInvoiceHeader) => [h.FACTURA, h]));
-                setErpHeaders(headersMap);
-            }
-
-            setAssignments(assignmentsByContainer);
+            await fetchAllAssignments(fetchedContainers);
         } catch (error: any) {
             toast({ title: 'Error', description: `No se pudieron cargar los datos iniciales: ${error.message}`, variant: 'destructive' });
         } finally {
             setIsLoading(false);
         }
-    }, [toast]);
+    }, [toast, fetchAllAssignments]);
     
     useEffect(() => {
         setTitle("Clasificador de Despachos");
@@ -168,26 +171,15 @@ export default function DispatchClassifierPage() {
         const sourceId = source.droppableId;
         const destinationId = destination.droppableId;
     
+        const sourceItems = Array.from(assignments[sourceId] || []);
+        const [movedItem] = sourceItems.splice(source.index, 1);
+        if (!movedItem) return;
+
         if (sourceId === destinationId) {
-            // Re-ordering within the same container
-            const containerId = sourceId;
-            const items = Array.from(assignments[containerId] || []);
-            const [reorderedItem] = items.splice(source.index, 1);
-            
-            if (!reorderedItem) return; // Safeguard
-
-            items.splice(destination.index, 0, reorderedItem);
-            
-            setAssignments(prev => ({ ...prev, [containerId]: items }));
-            
-            await updateAssignmentOrder(Number(containerId), items.map(item => item.documentId));
-
+            sourceItems.splice(destination.index, 0, movedItem);
+            setAssignments(prev => ({ ...prev, [sourceId]: sourceItems }));
+            await updateAssignmentOrder(Number(sourceId), sourceItems.map(item => item.documentId));
         } else {
-            // Moving between containers
-            const sourceItems = Array.from(assignments[sourceId] || []);
-            const [movedItem] = sourceItems.splice(source.index, 1);
-            if (!movedItem) return;
-
             const destinationItems = Array.from(assignments[destinationId] || []);
             destinationItems.splice(destination.index, 0, movedItem);
 
@@ -197,7 +189,6 @@ export default function DispatchClassifierPage() {
                 [destinationId]: destinationItems
             }));
             
-            // Persist the change
             await moveAssignmentToContainer(movedItem.id, Number(destinationId), movedItem.documentId);
         }
     };
@@ -224,7 +215,6 @@ export default function DispatchClassifierPage() {
         
         try {
             if (containerId === null) {
-                // This means unassigning
                 const assignmentToRemove = assignments[currentContainerId!]?.find(a => a.documentId === documentId);
                 if (assignmentToRemove) {
                     await unassignDocumentFromContainer(assignmentToRemove.id);
@@ -233,20 +223,22 @@ export default function DispatchClassifierPage() {
                 await assignDocumentsToContainer([documentId], Number(containerId), user.name);
             }
 
-            const freshAssignments: Record<string, DispatchAssignment[]> = {};
-            for (const container of containers) {
-                freshAssignments[container.id!] = await getAssignmentsForContainer(container.id!);
-            }
-            setAssignments(freshAssignments);
+            // Efficiently update local state instead of re-fetching everything
+            const freshAssignments = await getAssignmentsForContainer(containerId ? Number(containerId) : Number(currentContainerId!));
+            setAssignments(prev => ({
+                ...prev,
+                [containerId || currentContainerId!]: freshAssignments
+            }));
             
             if (containerId !== null) {
                 setUnassignedDocs(prev => prev.filter(d => d.FACTURA !== documentId));
+            } else {
+                await handleFetchDocuments(); // Re-fetch unassigned only when an item is unassigned
             }
-
         } catch(error: any) {
             toast({ title: 'Error', description: `Ocurrió un error: ${error.message}`, variant: 'destructive' });
         }
-    }, [user, unassignedDocs, containers, toast, assignments]);
+    }, [user, unassignedDocs, containers, toast, assignments, handleFetchDocuments]);
     
     const handleBulkAssign = useCallback(async () => {
         if (!user || selectedDocumentIds.size === 0 || !bulkAssignContainerId) {
@@ -254,8 +246,7 @@ export default function DispatchClassifierPage() {
             return;
         }
     
-        setIsLoadingDocs(true); // Re-use loading state for user feedback
-    
+        setIsLoadingDocs(true);
         try {
             const validDocsToAssign: string[] = [];
             let cancelledCount = 0;
@@ -282,11 +273,8 @@ export default function DispatchClassifierPage() {
             await assignDocumentsToContainer(validDocsToAssign, Number(bulkAssignContainerId), user.name);
             toast({ title: "Asignación Completa", description: `Se asignaron ${validDocsToAssign.length} documentos.` });
             
-            const freshAssignments: Record<string, DispatchAssignment[]> = {};
-            for (const container of containers) {
-                freshAssignments[container.id!] = await getAssignmentsForContainer(container.id!);
-            }
-            setAssignments(freshAssignments);
+            const freshAssignments = await getAssignmentsForContainer(Number(bulkAssignContainerId));
+            setAssignments(prev => ({...prev, [bulkAssignContainerId]: freshAssignments }));
     
             setUnassignedDocs(prev => prev.filter(d => !validDocsToAssign.includes(d.FACTURA)));
             setSelectedDocumentIds(new Set());
@@ -303,7 +291,9 @@ export default function DispatchClassifierPage() {
             await unassignDocumentFromContainer(assignment.id);
             setAssignments(prev => {
                 const newAssignments = {...prev};
-                newAssignments[assignment.containerId] = newAssignments[assignment.containerId].filter(a => a.id !== assignment.id);
+                if (newAssignments[assignment.containerId]) {
+                    newAssignments[assignment.containerId] = newAssignments[assignment.containerId].filter(a => a.id !== assignment.id);
+                }
                 return newAssignments;
             });
             await handleFetchDocuments();
