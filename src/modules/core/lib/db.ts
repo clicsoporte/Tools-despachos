@@ -10,7 +10,7 @@ import path from 'path';
 import fs from 'fs';
 import { initialCompany, initialRoles } from './data';
 import { DB_MODULES } from './db-modules';
-import type { Company, LogEntry, ApiSettings, User, Product, Customer, Role, QuoteDraft, DatabaseModule, Exemption, ExemptionLaw, StockInfo, StockSettings, ImportQuery, ItemLocation, UpdateBackupInfo, Suggestion, DateRange, Supplier, ErpOrderHeader, ErpOrderLine, Notification, UserPreferences, AuditResult, ErpPurchaseOrderHeader, ErpPurchaseOrderLine, SqlConfig, ProductionOrder, WizardSession, ErpInvoiceHeader, ErpInvoiceLine } from '@/modules/core/types';
+import type { Company, LogEntry, ApiSettings, User, Product, Customer, Role, QuoteDraft, DatabaseModule, Exemption, ExemptionLaw, StockInfo, StockSettings, ImportQuery, ItemLocation, UpdateBackupInfo, Suggestion, DateRange, Supplier, ErpOrderHeader, ErpOrderLine, Notification, UserPreferences, AuditResult, ErpPurchaseOrderHeader, ErpPurchaseOrderLine, SqlConfig, ProductionOrder, WizardSession, ErpInvoiceHeader, ErpInvoiceLine, Empleado, Vehiculo } from '@/modules/core/types';
 import bcrypt from 'bcryptjs';
 import Papa from 'papaparse';
 import { executeQuery } from './sql-service';
@@ -1251,7 +1251,7 @@ export async function deleteSuggestion(id: number): Promise<void> {
 export async function getAllStock(): Promise<StockInfo[]> {
   const db = await connectDb();
   try {
-    const rows = db.prepare('SELECT * FROM stock').all() as { itemId: string; stockByWarehouse: string; totalStock: number }[];
+    const rows = db.prepare('SELECT * FROM stock').all() as { itemId: string; stockByWarehouse: string, totalStock: number }[];
     return rows.map(row => ({
       ...row,
       stockByWarehouse: JSON.parse(row.stockByWarehouse),
@@ -1826,3 +1826,24 @@ async function saveAllGeneric(data: any[], tableName: string, columns: string[])
         throw error;
     }
 }
+
+export async function getEmployees(): Promise<Empleado[]> {
+    const db = await connectDb();
+    try {
+        return db.prepare('SELECT * FROM empleados WHERE ACTIVO = ? ORDER BY NOMBRE').all('S') as Empleado[];
+    } catch (error) {
+        console.error("Failed to get all employees:", error);
+        return [];
+    }
+}
+
+export async function getVehicles(): Promise<Vehiculo[]> {
+    const db = await connectDb();
+    try {
+        return db.prepare('SELECT * FROM vehiculos ORDER BY placa').all() as Vehiculo[];
+    } catch (error) {
+        console.error("Failed to get all vehicles:", error);
+        return [];
+    }
+}
+

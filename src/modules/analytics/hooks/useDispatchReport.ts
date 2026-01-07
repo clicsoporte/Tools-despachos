@@ -31,6 +31,9 @@ interface State {
 const availableColumns = [
     { id: 'documentId', label: 'Documento' },
     { id: 'documentType', label: 'Tipo' },
+    { id: 'clientId', label: 'Código Cliente' },
+    { id: 'clientName', label: 'Nombre Cliente' },
+    { id: 'shippingAddress', label: 'Dirección Entrega' },
     { id: 'verifiedAt', label: 'Fecha Verificación' },
     { id: 'verifiedByUserName', label: 'Verificado por' },
     { id: 'actions', label: 'Acciones' },
@@ -97,6 +100,8 @@ export function useDispatchReport() {
                 const search = debouncedSearchTerm.toLowerCase();
                 return (
                     log.documentId.toLowerCase().includes(search) ||
+                    (log.clientId && log.clientId.toLowerCase().includes(search)) ||
+                    (log.clientName && log.clientName.toLowerCase().includes(search)) ||
                     log.verifiedByUserName.toLowerCase().includes(search) ||
                     (Array.isArray(log.items) && JSON.stringify(log.items).toLowerCase().includes(search))
                 );
@@ -155,6 +160,9 @@ export function useDispatchReport() {
             return log.items.map((item: VerificationItem) => ({
                 'Documento': log.documentId,
                 'Tipo': log.documentType,
+                'Código Cliente': log.clientId,
+                'Nombre Cliente': log.clientName,
+                'Dirección Entrega': log.shippingAddress,
                 'Fecha': format(parseISO(log.verifiedAt), 'dd/MM/yyyy HH:mm'),
                 'Usuario': log.verifiedByUserName,
                 'Código Artículo': item.itemCode,
@@ -167,7 +175,7 @@ export function useDispatchReport() {
         exportToExcel({
             fileName: 'reporte_despachos',
             sheetName: 'Despachos',
-            headers: ['Documento', 'Tipo', 'Fecha', 'Usuario', 'Código Artículo', 'Descripción', 'Cant. Requerida', 'Cant. Verificada', 'Diferencia'],
+            headers: ['Documento', 'Tipo', 'Código Cliente', 'Nombre Cliente', 'Dirección Entrega', 'Fecha', 'Usuario', 'Código Artículo', 'Descripción', 'Cant. Requerida', 'Cant. Verificada', 'Diferencia'],
             data: dataToExport.map(item => Object.values(item)),
         });
     };

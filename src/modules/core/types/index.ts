@@ -870,8 +870,11 @@ export type DispatchLog = {
     verifiedByUserName: string;
     items: VerificationItem[];
     notes: string | null;
-    vehiclePlate?: string | null;
-    driverName?: string | null;
+    vehiclePlate: string | null;
+    driverName: string | null;
+    clientId?: string;
+    clientName?: string;
+    shippingAddress?: string;
 };
 
 export interface DispatchContainer {

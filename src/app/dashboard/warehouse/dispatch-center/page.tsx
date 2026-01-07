@@ -16,12 +16,13 @@ import {
     updateAssignmentStatus, 
     resetContainerAssignments,
     unassignAllFromContainer,
-    unassignDocumentFromContainer
+    unassignDocumentFromContainer,
+    finalizeDispatch,
 } from '@/modules/warehouse/lib/actions';
-import type { DispatchContainer, DispatchAssignment, ErpInvoiceHeader } from '@/modules/core/types';
+import type { DispatchContainer, DispatchAssignment, ErpInvoiceHeader, Vehiculo, Empleado } from '@/modules/core/types';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, Lock, Unlock, ArrowRight, ArrowLeft, CheckCircle, Package, AlertTriangle, Undo2, RefreshCcw, Trash2, GripVertical, Send, Search, CalendarIcon, List, Truck } from 'lucide-react';
+import { Loader2, Lock, Unlock, ArrowRight, ArrowLeft, CheckCircle, Package, AlertTriangle, Undo2, RefreshCcw, Trash2, GripVertical, Send, Search, CalendarIcon, List, Truck, User as UserIcon } from 'lucide-react';
 import { useToast } from '@/modules/core/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger, DialogFooter, DialogClose } from '@/components/ui/dialog';
@@ -105,6 +106,12 @@ export default function DispatchCenterPage() {
     const [selectedDocumentIds, setSelectedDocumentIds] = useState<Set<string>>(new Set());
     const [bulkAssignContainerId, setBulkAssignContainerId] = useState<string>('');
     const [activeTab, setActiveTab] = useState('assign');
+
+    // State for Finalize Route Screen
+    const [vehicles, setVehicles] = useState<Vehiculo[]>([]);
+    const [employees, setEmployees] = useState<Empleado[]>([]);
+    const [selectedVehicle, setSelectedVehicle] = useState<string>('');
+    const [selectedDriver, setSelectedDriver] = useState<string>('');
     
     const fetchContainers = useCallback(async (showLoading = true) => {
         if (showLoading) setIsLoading(true);
@@ -443,7 +450,14 @@ export default function DispatchCenterPage() {
     const isRouteCompleted = (c: DispatchContainer) => {
         const assignmentCount = c.assignmentCount ?? 0;
         return (c.assignmentCount ?? 0) > 0 && c.completedAssignmentCount === assignmentCount;
-    }
+    };
+
+    const handleFinalizeDispatch = async () => {
+        if (!selectedContainer) return;
+        await finalizeDispatch(selectedContainer.id!, selectedVehicle, selectedDriver);
+        toast({ title: 'Ruta Finalizada', description: 'El vehículo y el chofer han sido asignados.' });
+        handleExitContainer();
+    };
 
     if (isLoading) {
         return <div className="flex justify-center items-center h-screen"><Loader2 className="h-8 w-8 animate-spin" /></div>;
@@ -474,8 +488,31 @@ export default function DispatchCenterPage() {
                          <CheckCircle className="mx-auto h-16 w-16 text-green-500 mb-4" />
                          <CardTitle className="text-2xl">¡Ruta Completada!</CardTitle>
                          <CardDescription className="mt-2">Todos los documentos para esta ruta han sido verificados.</CardDescription>
-                         <CardFooter className="justify-center mt-6">
-                            <Button onClick={handleExitContainer}>Volver a la Selección de Rutas</Button>
+                         <CardContent className="mt-6 space-y-4 max-w-sm mx-auto">
+                            <div className="space-y-2 text-left">
+                                <Label htmlFor="vehicle-select">Seleccionar Vehículo</Label>
+                                <Select value={selectedVehicle} onValueChange={setSelectedVehicle}>
+                                    <SelectTrigger id="vehicle-select"><SelectValue placeholder="Buscar por placa o marca..."/></SelectTrigger>
+                                    <SelectContent>
+                                        {vehicles.map(v => <SelectItem key={v.placa} value={v.placa}>{v.marca} ({v.placa})</SelectItem>)}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                             <div className="space-y-2 text-left">
+                                <Label htmlFor="driver-select">Seleccionar Chofer</Label>
+                                 <Select value={selectedDriver} onValueChange={setSelectedDriver}>
+                                    <SelectTrigger id="driver-select"><SelectValue placeholder="Buscar empleado..."/></SelectTrigger>
+                                    <SelectContent>
+                                        {employees.map(e => <SelectItem key={e.EMPLEADO} value={e.NOMBRE}>{e.NOMBRE}</SelectItem>)}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                         </CardContent>
+                         <CardFooter className="flex-col sm:flex-row justify-center gap-2 mt-6">
+                            <Button onClick={handleExitContainer} variant="outline" className="w-full sm:w-auto">Volver</Button>
+                            <Button onClick={handleFinalizeDispatch} className="w-full sm:w-auto" disabled={!selectedVehicle || !selectedDriver}>
+                                Finalizar y Registrar Despacho
+                            </Button>
                          </CardFooter>
                     </Card>
                 ) : (
@@ -567,11 +604,11 @@ export default function DispatchCenterPage() {
                     return (
                         <Card 
                             key={c.id} 
-                            onClick={() => !isLocked && !isCompleted && handleSelectContainer(c)}
+                            onClick={() => !isLocked && handleSelectContainer(c)}
                             className={cn(
-                                "flex flex-col cursor-pointer transition-all hover:shadow-lg hover:-translate-y-1",
-                                isLocked && "bg-muted/60 cursor-not-allowed border-dashed",
-                                isCompleted && "bg-green-50 border-green-500 cursor-default"
+                                "flex flex-col transition-all hover:shadow-lg hover:-translate-y-1",
+                                isLocked ? "bg-muted/60 cursor-not-allowed border-dashed" : "cursor-pointer",
+                                isCompleted && "bg-green-50 border-green-500"
                             )}
                         >
                             <CardHeader>
@@ -599,13 +636,9 @@ export default function DispatchCenterPage() {
                                 )}
                             </CardContent>
                             <CardFooter>
-                                {isCompleted ? (
-                                    <Button variant="outline" className="w-full" onClick={() => handleSelectContainer(c)}>Ver Detalles</Button>
-                                ) : (
-                                    <Button className="w-full" disabled={isLocked}>
-                                        {isLocked ? 'Ruta en Uso' : 'Empezar Verificación'}
-                                    </Button>
-                                )}
+                                <Button className="w-full" disabled={isLocked}>
+                                    {isLocked ? 'Ruta en Uso' : (isCompleted ? 'Ver Detalles' : 'Empezar Verificación')}
+                                </Button>
                             </CardFooter>
                         </Card>
                     )

@@ -5,7 +5,7 @@
 
 import { connectDb, getAllRoles as getAllRolesFromMain } from '../../core/lib/db';
 import { getAllUsers as getAllUsersFromMain } from '../../core/lib/auth';
-import type { WarehouseLocation, WarehouseInventoryItem, MovementLog, WarehouseSettings, StockSettings, StockInfo, ItemLocation, InventoryUnit, DateRange, User, ErpInvoiceHeader, ErpInvoiceLine, DispatchLog, DispatchContainer, DispatchAssignment } from '@/modules/core/types';
+import type { WarehouseLocation, WarehouseInventoryItem, MovementLog, WarehouseSettings, StockSettings, StockInfo, ItemLocation, InventoryUnit, DateRange, User, ErpInvoiceHeader, ErpInvoiceLine, DispatchLog, DispatchContainer, DispatchAssignment, Vehiculo, Empleado } from '@/modules/core/types';
 import { logError, logInfo, logWarn } from '../../core/lib/logger';
 import { triggerNotificationEvent } from '@/modules/notifications/lib/notifications-engine';
 import path from 'path';
@@ -594,24 +594,42 @@ export async function logDispatch(dispatchData: any): Promise<void> {
 }
 
 export async function getDispatchLogs(dateRange?: DateRange): Promise<DispatchLog[]> {
-    const db = await connectDb(WAREHOUSE_DB_FILE);
+    const warehouseDb = await connectDb(WAREHOUSE_DB_FILE);
+    const mainDb = await connectDb();
+
     const params: any[] = [];
-    let query = 'SELECT * FROM dispatch_logs';
+    let query = `
+        SELECT 
+            dl.id,
+            dl.documentId,
+            dl.documentType,
+            dl.verifiedAt,
+            dl.verifiedByUserId,
+            dl.verifiedByUserName,
+            dl.items,
+            dl.notes,
+            dl.vehiclePlate,
+            dl.driverName,
+            h.CLIENTE as clientId,
+            h.NOMBRE_CLIENTE as clientName,
+            h.EMBARCAR_A as shippingAddress
+        FROM dispatch_logs dl
+        LEFT JOIN erp_invoice_headers h ON dl.documentId = h.FACTURA
+    `;
 
     if (dateRange?.from) {
         const startDate = new Date(dateRange.from);
         startDate.setHours(0, 0, 0, 0);
-
         const endDate = new Date(dateRange.to || dateRange.from);
         endDate.setHours(23, 59, 59, 999);
-
-        query += ' WHERE verifiedAt BETWEEN ? AND ?';
+        
+        query += ' WHERE dl.verifiedAt BETWEEN ? AND ?';
         params.push(startDate.toISOString(), endDate.toISOString());
     }
 
-    query += ' ORDER BY verifiedAt DESC';
+    query += ' ORDER BY dl.verifiedAt DESC';
 
-    const logs = db.prepare(query).all(...params) as any[];
+    const logs = warehouseDb.prepare(query).all(...params) as any[];
     return logs.map(log => ({
         ...log,
         items: JSON.parse(log.items),
@@ -796,3 +814,27 @@ export async function unassignAllFromContainer(containerId: number): Promise<voi
     db.prepare('DELETE FROM dispatch_assignments WHERE containerId = ?').run(containerId);
     logInfo(`All assignments cleared from container ${containerId}.`);
 }
+
+export async function finalizeDispatch(containerId: number, vehiclePlate: string, driverName: string): Promise<void> {
+    const db = await connectDb(WAREHOUSE_DB_FILE);
+    // Find all documents for this container that have been logged
+    const assignments = await getAssignmentsForContainer(containerId);
+    const documentIds = assignments.map(a => a.documentId);
+    if(documentIds.length === 0) return;
+
+    const placeholders = documentIds.map(() => '?').join(',');
+    const stmt = db.prepare(`
+        UPDATE dispatch_logs
+        SET vehiclePlate = ?, driverName = ?
+        WHERE documentId IN (${placeholders})
+    `);
+    
+    const transaction = db.transaction(() => {
+        stmt.run(vehiclePlate, driverName, ...documentIds);
+    });
+
+    transaction();
+    logInfo(`Finalized dispatch for container ${containerId}`, { vehiclePlate, driverName });
+}
+
+export { unassignDocumentFromContainer } from './actions';

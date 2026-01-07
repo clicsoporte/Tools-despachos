@@ -105,6 +105,9 @@ export default function DispatchReportPage() {
                                         <TableRow key={log.id}>
                                             {visibleColumns.includes('documentId') && <TableCell className="font-mono">{log.documentId}</TableCell>}
                                             {visibleColumns.includes('documentType') && <TableCell>{log.documentType}</TableCell>}
+                                            {visibleColumns.includes('clientId') && <TableCell>{log.clientId}</TableCell>}
+                                            {visibleColumns.includes('clientName') && <TableCell>{log.clientName}</TableCell>}
+                                            {visibleColumns.includes('shippingAddress') && <TableCell className="text-xs">{log.shippingAddress}</TableCell>}
                                             {visibleColumns.includes('verifiedAt') && <TableCell>{format(parseISO(log.verifiedAt), 'dd/MM/yy HH:mm')}</TableCell>}
                                             {visibleColumns.includes('verifiedByUserName') && <TableCell>{log.verifiedByUserName}</TableCell>}
                                             {visibleColumns.includes('actions') &&
