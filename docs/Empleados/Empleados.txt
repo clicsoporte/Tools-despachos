@@ -1,0 +1,158 @@
+EMPLEADO	NOMBRE	ACTIVO	DEPARTAMENTO	PUESTO	NOMINA
+0204	Valverde Cheves Ronald	S	PR	033	0003
+0001	Fonseca Campos Alexander	S	BO	021	0003
+0002	Quesada Murillo Alexander	S	PR	006	0001
+0004	Arrieta Campos Alvaro	S	PR	014	0003
+0006	Arroyo Naranjo Andrea	S	GG	049	0001
+0034	Rojas Mendez Geovanny	S	TR	044	0003
+0035	Rojas Vargas Geraldine	S	ND	010	0001
+0037	Valerin Angulo Gleimer	S	PR	013	0003
+0039	Rivera Lopez Harold	S	PR	035	0003
+0042	Dinarte Corrales Jeison	S	PR	013	0003
+0047	Lopez Mora Johanna	S	FA	012	0001
+0052	Vega Solis Johnny	S	TR	024	0003
+0053	Ugalde Gonzalez Jonathan	S	ND	009	0001
+0055	Ulate Viquez Jason	S	PR	034	0003
+0056	Chinchilla Castillo Juan	S	PR	029	0003
+0058	Castro Arroyo Karen	S	FA	038	0001
+0061	Sanchez Molina Luis Guillermo	S	LO	017	0003
+0062	Soza Stanley Luis Alberto	S	PR	035	0003
+0063	Valdelomar Gutierrez Luis	S	AS	040	0003
+0064	Henriquez Gutierrez Luis	S	PR	033	0003
+0066	Vega Bolaños Luis Carlos	S	PR	033	0003
+0068	Benavides Soto Manuel	S	PR	034	0003
+0069	Alfaro Mejia Marvin	S	PR	033	0003
+0072	Ledezma Cortes Michael	S	TR	030	0003
+0073	Murillo Ulate Miriam	S	SG	032	0003
+0075	Salas Salazar Oscar	S	PR	019	0003
+0076	Alfaro Rodriguez Oscar	S	CG	004	0001
+0077	Sanchez Molina Oscar	S	LO	016	0003
+0078	Alvarado Murillo Oscar	S	TR	044	0003
+0079	Morera Hernandez Pamela	S	FA	026	0001
+0086	Alfaro Rodriguez Wagner	S	TR	044	0003
+0135	Soto Arrieta Carolina	S	FA	026	0001
+0138	Luna Montero Felipe	S	BO	011	0001
+0151	Carvajal Cascante Didier	S	PR	033	0003
+0179	Trejos Rodriguez Jorge Eduardo	S	TR	025	0003
+0098	Saborio Quesada Argentina	S	SG	032	0001
+0099	Mesen Porras Carol	S	FA	055	0001
+0106	Loria Vargas Ericka	S	SG	037	0001
+0128	Araya Castro Jordy	S	PR	033	0003
+0155	Rojas Soto Leticia Maria	S	FA	038	0001
+0156	Badilla Valverde German	S	SG	042	0001
+0148	Solano Fallas Grettel	S	SG	032	0003
+0186	Romero Solis Jose Ramon	S	PR	033	0003
+0187	Picado Guzman Hector	S	TR	025	0003
+0196	Vasquez Nuñez Mario	S	PR	035	0003
+0198	Campos Molina Jairo Francisco	S	PR	019	0001
+0199	Quesada Mora Joel	S	PR	033	0003
+0007	Molina Gonzalez Anibal	S	PR	033	0003
+0008	Aguilar Rivera Brandon	S	PR	035	0003
+0012	Aguilar Gomez Carmen	S	PR	033	0003
+0014	Serrano Peraza Dagoberto	S	BO	011	0001
+0189	Meza Ubeda Jorge Martin	S	PR	014	0003
+0015	Rodriguez Cruz Danilo	S	MT	041	0003
+0016	Fernandez Barrantes Danilo	S	PR	051	0001
+0019	Alfaro Viquez Dinia	S	TES	018	0001
+0021	Vega Fonseca Edgar	S	PR	033	0003
+0032	Vargas Hidalgo Fray	S	AS	007	0001
+0218	Nuñez Alvarado Cristian	S	TR	025	0003
+0224	Villalobos Villalobos Alexis	S	GG	046	0001
+0225	Starke Arias Josue Manuel	S	TR	024	0003
+0233	Navarro Gonzalez David	S	PR	013	0003
+0217	Chaves Soto Oscar Adolfo	S	BO	036	0003
+0222	Sanchez Garita Jimmy Eduardo	S	TR	025	0003
+0242	Paniagua Herrera Stephanie	S	SG	032	0001
+0248	Murillo Porras Jessica	S	GG	047	0001
+0252	Castro Orozco William	S	SG	042	0003
+0265	Lopez Vargas Edier Antonio	S	PR	033	0003
+0246	Ramos Ramirez Johan	S	BO	021	0003
+0266	Muñoz Valverde Gabriel Gerardo	S	BO	021	0003
+0267	Garcia Mejias Carlos Eduardo	S	MT	041	0003
+0271	Prendas Rojas Willy Esteban	S	BO	021	0003
+0295	Campos Cespedes Loreta	S	GG	049	0001
+0298	Rodriguez Flores Edgar	S	PR	030	0003
+0102	Davila Altamirano Reynaldo	S	PR	035	0003
+0301	Villalobos Chacon Alejandra	S	MV	050	0001
+0320	Saballos Pacheco Jerry Stevens	S	PR	035	0003
+0321	Sanchez Cordoba Martin Francisco	S	PR	033	0003
+0304	Castillo Perez Jessica	S	MV	050	0001
+0309	Pichardo Lopez Jose Ramon	S	PR	029	0003
+0331	Morera Sibaja Guillermo	S	MV	050	0001
+0335	Gonzalez Vargas Cindy	S	RH	008	0001
+0311	Alfaro Cespedes Fabio	S	TR	024	0003
+0339	Chacon Sanchez Ruth Patricia	S	SG	032	0003
+0340	Zumbado Gonzalez Arnol	S	PR	033	0003
+0342	Chacon Aguero Jose Luis	S	TR	025	0003
+0368	Flores Calero Marianela	S	FA	038	0001
+0369	Torrez Noinidcaotro Medardo Bismark	S	PR	033	0003
+0210	Quesada Alpizar Edgar Gerardo	S	BO	021	0003
+0213	Madrigal Vargas Jorge Eduardo	S	PR	033	0003
+0216	Gamboa Arend Allan Rolando	S	FA	038	0001
+0375	Murillo Delgado Justin Fabian	S	PR	033	0003
+0391	Morales Gonzalez Eduardo	S	AS	040	0003
+0396	Vargas Sandoval Luis Diego	S	PR	033	0003
+0397	Solis Vasquez Jose Esteban	S	PR	034	0003
+0401	Bolaños Lazo Irving Damian	S	TR	024	0003
+0411	Zambrana Hernandez Jovel	S	PR	013	0003
+0414	Bolaños Quiros Keylor Antonio	S	PR	033	0003
+0415	Barboza Arguedas Michael David	S	PR	033	0003
+0416	Huertas Monge Francisco Alonso	S	PR	033	0003
+0404	Campos Barquero Fabiola	S	FA	038	0001
+0408	Peralta Rugama Jimmy	S	PR	035	0003
+0409	Blair Morgan Juan Carlos	S	PR	035	0003
+0424	Medal Acevedo Thelma	S	PR	033	0003
+0425	Rostran Rostran Yadira	S	PR	033	0003
+0426	Gonzalez Aleman Moises Gabriel	S	PR	033	0003
+0428	Morera Ramirez Dimas	S	AS	040	0003
+0422	Sanchez Molina Javier Emilio	S	PR	033	0003
+0423	Cespedes Guillen Rafael	S	TR	024	0003
+0429	Laines Cañas Roicer Arturo	S	PR	054	0003
+0433	Cruz Lopez Karina Patricia	S	MV	050	0001
+0444	Alpizar Quesada Sharon	S	CO	045	0001
+0447	Mora Salazar Byron Josue	S	PR	033	0003
+0443	Oconitrillo  Solorzano  Adrian 	S	TR	025	0003
+0457	Diaz Loaiciga Emiliano	S	PR	033	0003
+0431	Vargas Mendez Juan Agustin	S	PR	033	0003
+0432	Zamora Castro Ismael	S	PR	033	0003
+0450	Barquero Campos Mario Esteban	S	CG	018	0001
+0453	Amador Marcia Oscar Mario 	S	PR	035	0003
+0455	Chacon  Salazar Davis	S	TR	024	0003
+0458	Alvarado  Perez  Daniel 	S	PR	033	0003
+0461	Gutierrez Peñaranda Vanessa	S	FA	038	0001
+0462	Sibaja  Zuñiga  Kristel	S	MV	050	0001
+0464	Sanchez Perez Eli del Carmen	S	TR	025	0003
+0471	Cisneros Vargas David	S	BO	021	0003
+0481	Lopez Espinoza Carlos Andres	S	PR	033	0003
+0451	Arce Quesada  Ramses	S	BO	021	0001
+0476	Quiros Salas Brayan	S	PR	028	0003
+0479	Vargas Vargas Luis Diego	S	BO	021	0003
+0483	Mejias  Ibarra Cristel	S	MV	050	0001
+0486	Campos Nuñez  Carlos 	S	BO	021	0003
+0487	Chaves Mendoza  Julio	S	PR	033	0003
+0490	Gamboa  Arend Carlos 	S	FA	038	0001
+0463	Alcazar Cordero   Shelsy	S	MV	050	0001
+0488	Zumbado Macoy  Aaron José	S	PR	033	0003
+0273	Mercado Campos Emerson	S	PR	033	0003
+0282	Chavarria Lopez Mileida	S	GG	049	0001
+0284	Gonzalez Duran Henry	S	PR	029	0003
+0287	Araya Alvarado Keelyn Andrea	S	AS	040	0003
+0290	Fonseca Rosales Jesus Alberto	S	MV	050	0001
+0291	Guadamuz Carbonero Gerald Antonio	S	PR	033	0003
+0294	Chaves Chaves Deibys Alonso	S	BO	021	0001
+0489	Rojas  Chacon  Rafael	S	PR	033	0003
+0336	Alpizar Murillo Alondra	S	FA	038	0001
+0341	Salazar Melendez Dairo	S	MV	050	0001
+0346	Obregon Masis Kenneth	S	PR	019	0001
+0364	Herrera Sanchez Alberto	S	FA	026	0001
+0377	Mejia Gonzalez Jovan Alexander	S	TR	024	0003
+0390	Gonzalez Oreamuno Greivin	S	PR	052	0001
+0378	Delgado Araya Alvaro	S	TR	025	0003
+0399	Traña Laguna Josue	S	PR	035	0003
+0406	Ibarra Marin Jeancarlo	S	PR	033	0003
+0468	Jimenez Ramirez Yeiner	S	PR	033	0003
+0474	Alfaro Vasquez  Douglas	S	PR	033	0003
+0477	Molina Cordoba Danny 	S	PR	033	0003
+0478	Cordero  Salas  Set Daniel	S	PR	033	0003
+0480	Zamora Gonzalez  Anderson	S	PR	028	0003
+0485	Fonseca  Hernandez Ronny	S	PR	033	0003

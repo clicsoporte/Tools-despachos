@@ -20,28 +20,25 @@ export function getInitials(name: string): string {
 }
 
 /**
- * Reformats an employee name from "LAST1 LAST2, NAME" to "NAME LAST1 LAST2".
- * @param name - The original name string from the database.
+ * Reformats an employee name from "LAST1 LAST2 NAME1 NAME2" to "NAME1 NAME2 LAST1 LAST2".
+ * Handles names with single or compound first names.
+ * @param name - The original name string from the database, e.g., "Vargas Mendez Juan Agustin".
  * @returns The reformatted name, or the original name if formatting fails.
  */
 export function reformatEmployeeName(name: string | null | undefined): string {
   if (!name) return "";
 
-  // Handle "APELLIDO1 APELLIDO2 NOMBRE" format (without comma)
   const parts = name.trim().split(/\s+/);
-  if (parts.length > 1) {
-    const firstName = parts.pop(); // The last part is the name
-    const lastNames = parts.join(' '); // The rest are last names
-    return `${firstName} ${lastNames}`;
+
+  // If there are fewer than 3 parts, we can't reliably reorder, so return as is.
+  // This also handles names that might already be in the correct format.
+  if (parts.length < 3) {
+    return name;
   }
 
-  // Fallback for names with commas, just in case
-  const commaParts = name.split(',');
-  if (commaParts.length === 2) {
-    const lastNamePart = commaParts[0].trim();
-    const firstNamePart = commaParts[1].trim();
-    return `${firstNamePart} ${lastNamePart}`;
-  }
+  // Assumes the first two words are always the last names.
+  const lastNames = parts.slice(0, 2);
+  const firstNames = parts.slice(2);
   
-  return name; // Return original if it doesn't match expected formats
+  return [...firstNames, ...lastNames].join(' ');
 }
