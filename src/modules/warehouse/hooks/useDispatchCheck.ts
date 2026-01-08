@@ -624,8 +624,9 @@ export function useDispatchCheck() {
             if (state.nextDocumentInContainer && state.currentDocument?.containerId) {
                 const containerId = state.currentDocument.containerId;
                 const nextDocId = state.nextDocumentInContainer;
-                // Full reset to prepare for the next document in the flow
-                reset();
+                // DO NOT reset state here. The navigation itself will trigger the useEffect
+                // which handles the re-initialization of the component for the new document.
+                // reset(); <--- THIS WAS THE PROBLEM
                 router.replace(`/dashboard/warehouse/dispatch-check?docId=${nextDocId}&containerId=${containerId}`);
             } else {
                  handleGoBack();
