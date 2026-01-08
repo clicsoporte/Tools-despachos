@@ -478,7 +478,7 @@ export default function DispatchCenterPage() {
         if (debouncedDriverSearch.length < 2) return [];
         const searchLower = debouncedDriverSearch.toLowerCase();
         return employees
-            .filter(e => e.NOMBRE.toLowerCase().includes(searchLower))
+            .filter(e => reformatEmployeeName(e.NOMBRE).toLowerCase().includes(searchLower))
             .map(e => ({ value: e.EMPLEADO, label: reformatEmployeeName(e.NOMBRE) }));
     }, [employees, debouncedDriverSearch]);
 
@@ -490,6 +490,7 @@ export default function DispatchCenterPage() {
         }
         setIsDriverSearchOpen(false);
     };
+
 
     if (isLoading) {
         return <div className="flex justify-center items-center h-screen"><Loader2 className="h-8 w-8 animate-spin" /></div>;
