@@ -524,7 +524,7 @@ export default function DispatchCenterPage() {
                             <div className="space-y-2 text-left">
                                 <Label htmlFor="vehicle-select">Seleccionar Vehículo</Label>
                                 <Select value={selectedVehicle} onValueChange={setSelectedVehicle}>
-                                    <SelectTrigger id="vehicle-select"><SelectValue placeholder="Buscar por placa o marca..."/></SelectTrigger>
+                                    <SelectTrigger><SelectValue placeholder="Buscar por placa o marca..."/></SelectTrigger>
                                     <SelectContent>
                                         {vehicles.map(v => <SelectItem key={v.placa} value={v.placa}>{v.marca} ({v.placa})</SelectItem>)}
                                     </SelectContent>
@@ -532,15 +532,15 @@ export default function DispatchCenterPage() {
                             </div>
                              <div className="space-y-2 text-left">
                                 <Label>Seleccionar Chofer</Label>
-                                    <SearchInput
-                                        options={driverOptions}
-                                        onSelect={handleSelectDriver}
-                                        value={driverSearchTerm}
-                                        onValueChange={setDriverSearchTerm}
-                                        placeholder="Buscar empleado..."
-                                        open={isDriverSearchOpen}
-                                        onOpenChange={setIsDriverSearchOpen}
-                                    />
+                                 <SearchInput
+                                    options={driverOptions}
+                                    onSelect={handleSelectDriver}
+                                    value={driverSearchTerm}
+                                    onValueChange={setDriverSearchTerm}
+                                    placeholder="Buscar empleado..."
+                                    open={isDriverSearchOpen}
+                                    onOpenChange={setIsDriverSearchOpen}
+                                />
                             </div>
                          </CardContent>
                          <CardFooter className="flex-col sm:flex-row justify-center gap-2 mt-6">
@@ -633,7 +633,7 @@ export default function DispatchCenterPage() {
                 {containers.map(c => {
                     const assignmentCount = c.assignmentCount ?? 0;
                     const completedCount = c.completedAssignmentCount ?? 0;
-                    const isCompleted = (c.assignmentCount ?? 0) > 0 && c.completedAssignmentCount === assignmentCount;
+                    const isCompleted = isRouteCompleted(c);
                     const isLocked = c.isLocked && c.lockedByUserId !== user?.id;
 
                     return (
@@ -658,7 +658,7 @@ export default function DispatchCenterPage() {
                                     ) : null}
                                 </div>
                                 <CardDescription>
-                                    {assignmentCount} documentos asignados.
+                                    {assignmentCount} {assignmentCount === 1 ? 'documento asignado' : 'documentos asignados'}.
                                 </CardDescription>
                             </CardHeader>
                              <CardContent className="flex-grow">

@@ -20,7 +20,7 @@ export function getInitials(name: string): string {
 }
 
 /**
- * Reformats an employee name from "LAST1 LAST2, NAME" to "NAME LAST1 LAST2".
+ * Reformats an employee name from "LAST1 LAST2, NAME" to "NAME, LAST1 LAST2".
  * @param name - The original name string from the database.
  * @returns The reformatted name, or the original name if formatting fails.
  */
@@ -31,7 +31,8 @@ export function reformatEmployeeName(name: string | null | undefined): string {
   if (parts.length === 2) {
     const lastNamePart = parts[0].trim();
     const firstNamePart = parts[1].trim();
-    return `${firstNamePart} ${lastNamePart}`;
+    // Changed to use a comma for better readability.
+    return `${firstNamePart}, ${lastNamePart}`;
   }
   
   // Return the original name if it doesn't match the expected format
