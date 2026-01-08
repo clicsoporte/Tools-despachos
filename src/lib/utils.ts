@@ -26,13 +26,22 @@ export function getInitials(name: string): string {
  */
 export function reformatEmployeeName(name: string | null | undefined): string {
   if (!name) return "";
-  
-  const parts = name.split(',');
-  if (parts.length === 2) {
-    const lastNamePart = parts[0].trim();
-    const firstNamePart = parts[1].trim();
+
+  // Handle "APELLIDO1 APELLIDO2 NOMBRE" format (without comma)
+  const parts = name.trim().split(/\s+/);
+  if (parts.length > 1) {
+    const firstName = parts.pop(); // The last part is the name
+    const lastNames = parts.join(' '); // The rest are last names
+    return `${firstName} ${lastNames}`;
+  }
+
+  // Fallback for names with commas, just in case
+  const commaParts = name.split(',');
+  if (commaParts.length === 2) {
+    const lastNamePart = commaParts[0].trim();
+    const firstNamePart = commaParts[1].trim();
     return `${firstNamePart} ${lastNamePart}`;
   }
   
-  return name;
+  return name; // Return original if it doesn't match expected formats
 }
