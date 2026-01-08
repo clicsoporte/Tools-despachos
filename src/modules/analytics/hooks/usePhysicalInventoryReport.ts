@@ -264,7 +264,11 @@ export function usePhysicalInventoryReport() {
 
     const actions = {
         fetchData,
-        setDateRange: (range: DateRange | undefined) => updateState({ dateRange: range || { from: undefined, to: undefined } }),
+        setDateRange: (range: DateRange | undefined) => {
+            if (range) {
+                updateState({ dateRange: range });
+            }
+        },
         setSearchTerm: (term: string) => updateState({ searchTerm: term }),
         setClassificationFilter: (filter: string[]) => updateState({ classificationFilter: filter }),
         setDifferenceFilter: (filter: DifferenceFilter) => updateState({ differenceFilter: filter }),

@@ -247,7 +247,9 @@ export function useTransitsReport() {
 
     const actions = {
         setDateRange: (range: DateRange | undefined) => {
-            updateState({ dateRange: range || { from: undefined, to: undefined } });
+            if (range) {
+                updateState({ dateRange: range });
+            }
         },
         setSearchTerm: (term: string) => updateState({ searchTerm: term }),
         setSupplierFilter: (filter: string[]) => updateState({ supplierFilter: filter }),

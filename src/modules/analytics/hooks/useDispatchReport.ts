@@ -193,7 +193,11 @@ export function useDispatchReport() {
     
     const actions = {
         fetchData,
-        setDateRange: (range: DateRange | undefined) => updateState({ dateRange: range || { from: new Date(), to: new Date() } }),
+        setDateRange: (range: DateRange | undefined) => {
+            if (range) {
+                updateState({ dateRange: range });
+            }
+        },
         setSearchTerm: (term: string) => updateState({ searchTerm: term }),
         handleClearFilters: () => updateState({ searchTerm: '', dateRange: { from: new Date(), to: new Date() } }),
         handlePrintPdf,
