@@ -817,7 +817,7 @@ export async function unassignDocumentFromContainer(assignmentId: number): Promi
     db.prepare('DELETE FROM dispatch_assignments WHERE id = ?').run(assignmentId);
 }
 
-export async function finalizeDispatch(containerId: number, vehiclePlate: string, driverName: string, helper1Name: string, helper2Name: string): Promise<void> {
+export async function finalizeDispatch(containerId: number, vehiclePlate: string, driverName: string, helper1Name?: string, helper2Name?: string): Promise<void> {
     const db = await connectDb(WAREHOUSE_DB_FILE);
     const logs = db.prepare(`
         SELECT dl.* 
@@ -830,7 +830,7 @@ export async function finalizeDispatch(containerId: number, vehiclePlate: string
     
     const transaction = db.transaction((logsToUpdate) => {
         for (const log of logsToUpdate) {
-            updateStmt.run(vehiclePlate, driverName, helper1Name, helper2Name, log.id);
+            updateStmt.run(vehiclePlate, driverName, helper1Name || null, helper2Name || null, log.id);
         }
     });
 
