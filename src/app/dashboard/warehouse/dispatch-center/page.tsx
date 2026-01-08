@@ -45,7 +45,10 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { getUnassignedDocuments, assignDocumentsToContainer } from '@/modules/warehouse/lib/actions';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { updateAssignmentOrder } from '@/modules/warehouse/lib/db';
+import { updateAssignmentOrder } from '@/modules/warehouse/lib/actions';
+import { SearchInput } from '@/components/ui/search-input';
+import { useDebounce } from 'use-debounce';
+
 
 const DraggableItem = ({ item, erpHeaders, index, onUnassign }: { item: DispatchAssignment, erpHeaders: Map<string, ErpInvoiceHeader>, index: number, onUnassign: (assignment: DispatchAssignment) => void }) => {
     const erpHeader = erpHeaders.get(item.documentId);
@@ -114,6 +117,9 @@ export default function DispatchCenterPage() {
     const [employees, setEmployees] = useState<Empleado[]>([]);
     const [selectedVehicle, setSelectedVehicle] = useState<string>('');
     const [selectedDriver, setSelectedDriver] = useState<string>('');
+    const [driverSearchTerm, setDriverSearchTerm] = useState('');
+    const [isDriverSearchOpen, setIsDriverSearchOpen] = useState(false);
+    const [debouncedDriverSearch] = useDebounce(driverSearchTerm, 300);
     
     const fetchContainers = useCallback(async (showLoading = true) => {
         if (showLoading) setIsLoading(true);
@@ -288,11 +294,11 @@ export default function DispatchCenterPage() {
         }
     };
     
-    const handleClearContainer = async () => {
+    const handleClearContainer = useCallback(async () => {
         if (!containerToModify) return;
         try {
             await unassignAllFromContainer(containerToModify.id!);
-            toast({ title: 'Contenedor Limpiado', description: `Se desasignaron todos los documentos de "${containerToModify.name}".`, variant: 'destructive'});
+            toast({ title: 'Contenedor Limpiado', description: `Se desasignaron todos los documentos de "${containerToModify.name}".`, variant: "destructive"});
             
             // Correctly update local state
             setAssignments(prev => ({
@@ -306,8 +312,8 @@ export default function DispatchCenterPage() {
             setContainerToModify(null);
             setIsClearConfirmOpen(false);
         }
-    };
-    
+    }, [containerToModify, toast]);
+
     const handleOnDragEnd = async (result: DropResult) => {
         const { source, destination } = result;
         if (!destination) return;
@@ -468,6 +474,20 @@ export default function DispatchCenterPage() {
         handleExitContainer();
     };
 
+    const driverOptions = useMemo(() => {
+        if (debouncedDriverSearch.length < 2) return [];
+        const searchLower = debouncedDriverSearch.toLowerCase();
+        return employees
+            .filter(e => e.NOMBRE.toLowerCase().includes(searchLower))
+            .map(e => ({ value: e.NOMBRE, label: e.NOMBRE }));
+    }, [employees, debouncedDriverSearch]);
+
+    const handleSelectDriver = (driverName: string) => {
+        setSelectedDriver(driverName);
+        setDriverSearchTerm(driverName);
+        setIsDriverSearchOpen(false);
+    };
+
     if (isLoading) {
         return <div className="flex justify-center items-center h-screen"><Loader2 className="h-8 w-8 animate-spin" /></div>;
     }
@@ -508,13 +528,17 @@ export default function DispatchCenterPage() {
                                 </Select>
                             </div>
                              <div className="space-y-2 text-left">
-                                <Label htmlFor="driver-select">Seleccionar Chofer</Label>
-                                 <Select value={selectedDriver} onValueChange={setSelectedDriver}>
-                                    <SelectTrigger id="driver-select"><SelectValue placeholder="Buscar empleado..."/></SelectTrigger>
-                                    <SelectContent>
-                                        {employees.map(e => <SelectItem key={e.EMPLEADO} value={e.NOMBRE}>{e.NOMBRE}</SelectItem>)}
-                                    </SelectContent>
-                                </Select>
+                                <Label htmlFor="driver-search">Seleccionar Chofer</Label>
+                                <SearchInput
+                                    id="driver-search"
+                                    options={driverOptions}
+                                    onSelect={handleSelectDriver}
+                                    value={driverSearchTerm}
+                                    onValueChange={setDriverSearchTerm}
+                                    placeholder="Buscar empleado..."
+                                    open={isDriverSearchOpen}
+                                    onOpenChange={setIsDriverSearchOpen}
+                                />
                             </div>
                          </CardContent>
                          <CardFooter className="flex-col sm:flex-row justify-center gap-2 mt-6">
@@ -628,7 +652,7 @@ export default function DispatchCenterPage() {
                                     ) : isCompleted ? (
                                         <Badge variant="default" className="bg-green-600"><CheckCircle className="mr-1 h-3 w-3"/> Completada</Badge>
                                     ) : assignmentCount > 0 ? (
-                                        <Badge variant="outline">{assignmentCount}</Badge>
+                                        <Badge variant="secondary">{assignmentCount}</Badge>
                                     ) : null}
                                 </div>
                                 <CardDescription>
@@ -646,7 +670,7 @@ export default function DispatchCenterPage() {
                             </CardContent>
                             <CardFooter>
                                 <Button className="w-full" disabled={isLocked}>
-                                    {isLocked ? 'Ruta en Uso' : (isCompleted ? 'Ver Detalles' : 'Empezar Verificación')}
+                                    {isLocked ? 'Ruta en Uso' : (isCompleted ? 'Finalizar Despacho' : 'Empezar Verificación')}
                                 </Button>
                             </CardFooter>
                         </Card>
