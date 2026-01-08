@@ -1,3 +1,4 @@
+
 /**
  * @fileoverview Main page for the Dispatch Center, where checkers access their assigned routes.
  */
@@ -528,17 +529,18 @@ export default function DispatchCenterPage() {
                                 </Select>
                             </div>
                              <div className="space-y-2 text-left">
-                                <Label htmlFor="driver-search">Seleccionar Chofer</Label>
-                                <SearchInput
-                                    id="driver-search"
-                                    options={driverOptions}
-                                    onSelect={handleSelectDriver}
-                                    value={driverSearchTerm}
-                                    onValueChange={setDriverSearchTerm}
-                                    placeholder="Buscar empleado..."
-                                    open={isDriverSearchOpen}
-                                    onOpenChange={setIsDriverSearchOpen}
-                                />
+                                <Label>
+                                    Seleccionar Chofer
+                                    <SearchInput
+                                        options={driverOptions}
+                                        onSelect={handleSelectDriver}
+                                        value={driverSearchTerm}
+                                        onValueChange={setDriverSearchTerm}
+                                        placeholder="Buscar empleado..."
+                                        open={isDriverSearchOpen}
+                                        onOpenChange={setIsDriverSearchOpen}
+                                    />
+                                </Label>
                             </div>
                          </CardContent>
                          <CardFooter className="flex-col sm:flex-row justify-center gap-2 mt-6">
@@ -651,7 +653,7 @@ export default function DispatchCenterPage() {
                                         <Badge variant="destructive"><Lock className="mr-1 h-3 w-3"/> En Uso</Badge>
                                     ) : isCompleted ? (
                                         <Badge variant="default" className="bg-green-600"><CheckCircle className="mr-1 h-3 w-3"/> Completada</Badge>
-                                    ) : assignmentCount > 0 ? (
+                                    ) : (assignmentCount > 0) ? (
                                         <Badge variant="secondary">{assignmentCount}</Badge>
                                     ) : null}
                                 </div>
