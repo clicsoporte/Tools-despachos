@@ -53,6 +53,7 @@ import {
     getPhysicalInventory as getPhysicalInventoryServer,
     getSelectableLocations as getSelectableLocationsServer,
     correctInventoryUnit as correctInventoryUnitServer,
+    renderLocationPathAsString,
 } from './db';
 import { sendEmail as sendEmailServer } from '@/modules/core/lib/email-service';
 import { getStockSettings as getStockSettingsDb, saveStockSettings as saveStockSettingsDb, getAllProducts, getAllStock, getAllErpPurchaseOrderHeaders, getAllErpPurchaseOrderLines } from '@/modules/core/lib/db';
@@ -63,7 +64,7 @@ import { format, parseISO } from 'date-fns';
 import type { HAlignType, FontStyle, RowInput } from 'jspdf-autotable';
 import { triggerNotificationEvent } from '@/modules/notifications/lib/notifications-engine';
 import path from 'path';
-import { renderLocationPathAsString } from './utils';
+
 
 export const getWarehouseSettings = async (): Promise<WarehouseSettings> => getWarehouseSettingsServer();
 export async function saveWarehouseSettings(settings: WarehouseSettings): Promise<void> {
@@ -107,7 +108,7 @@ export const updateInventory = async(itemId: string, locationId: number, newQuan
 };
 
 // --- Simple Mode Actions ---
-export const getAllItemLocations = async (): Promise<ItemLocation[]> => getAllItemLocationsServer();
+export const getAllItemLocations = async (itemId?: string): Promise<ItemLocation[]> => getAllItemLocationsServer(itemId);
 export const assignItemToLocation = async (itemId: string, locationId: number, clientId: string | null, updatedBy: string): Promise<ItemLocation> => assignItemToLocationServer(itemId, locationId, clientId, updatedBy);
 export async function unassignItemFromLocation(assignmentId: number): Promise<void> {
     return unassignItemFromLocationServer(assignmentId);
@@ -265,20 +266,20 @@ export async function getPhysicalInventoryReportData({ dateRange }: { dateRange?
             itemLocationMap.set(itemLoc.itemId, renderLocationPathAsString(itemLoc.locationId, allLocations));
         });
 
-        const comparisonData: PhysicalInventoryComparisonItem[] = physicalInventory.map((item: InventoryUnit) => {
-            const erpQuantity = erpStockMap.get(item.productId) ?? 0;
-            const location = locationMap.get(item.locationId!);
+        const comparisonData: PhysicalInventoryComparisonItem[] = physicalInventory.map((item: WarehouseInventoryItem) => {
+            const erpQuantity = erpStockMap.get(item.itemId) ?? 0;
+            const location: WarehouseLocation | undefined = locationMap.get(item.locationId);
             return {
-                productId: item.productId,
-                productDescription: productMap.get(item.productId) || 'Producto Desconocido',
+                productId: item.itemId,
+                productDescription: productMap.get(item.itemId) || 'Producto Desconocido',
                 locationId: item.locationId!,
                 locationName: location?.name || 'Ubicación Desconocida',
                 locationCode: location?.code || 'N/A',
                 physicalCount: item.quantity,
                 erpStock: erpQuantity,
-                difference: item.quantity - Number(erpQuantity),
-                lastCountDate: item.createdAt,
-                updatedBy: item.createdBy || 'N/A',
+                difference: Number(item.quantity) - erpQuantity,
+                lastCountDate: item.lastUpdated,
+                updatedBy: item.updatedBy || 'N/A',
                 assignedLocationPath: itemLocationMap.get(item.productId) || 'Sin Asignar',
             };
         });

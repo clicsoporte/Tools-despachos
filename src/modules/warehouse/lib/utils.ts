@@ -19,7 +19,7 @@ export const renderLocationPathAsString = (locationId: number, locations: Wareho
     while (current) {
         path.unshift(current);
         if (!current.parentId) break; // Break if there is no parent
-        // Safely find the next parent
+        // Safely find the next parent by using the current parentId
         const parentId = current.parentId;
         current = locations.find(l => l.id === parentId);
     }

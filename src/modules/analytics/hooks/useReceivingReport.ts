@@ -10,6 +10,7 @@ import { usePageTitle } from '@/modules/core/hooks/usePageTitle';
 import { useAuthorization } from '@/modules/core/hooks/useAuthorization';
 import { logError } from '@/modules/core/lib/logger';
 import { getReceivingReportData } from '@/modules/analytics/lib/actions';
+import { correctInventoryUnit } from '@/modules/warehouse/lib/actions';
 import type { DateRange, InventoryUnit, Product, WarehouseLocation, UserPreferences } from '@/modules/core/types';
 import { subDays, startOfDay, format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -19,7 +20,6 @@ import { exportToExcel } from '@/modules/core/lib/excel-export';
 import { generateDocument } from '@/modules/core/lib/pdf-generator';
 import { getUserPreferences, saveUserPreferences } from '@/modules/core/lib/db';
 import { renderLocationPathAsString } from '@/modules/warehouse/lib/utils';
-import { correctInventoryUnit } from '@/modules/warehouse/lib/actions';
 
 
 const normalizeText = (text: string | null | undefined): string => {
