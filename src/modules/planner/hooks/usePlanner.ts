@@ -678,7 +678,7 @@ export const usePlanner = () => {
                     }
                 });
             });
-            
+
             const doc = generateDocument({
                 docTitle: `Órdenes de Producción (${state.viewingArchived ? 'Archivadas' : 'Activas'})`,
                 docId: '',
