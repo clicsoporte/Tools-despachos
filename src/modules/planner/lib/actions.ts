@@ -203,5 +203,5 @@ export async function getCompletedOrdersByDateRange(options: {
         machineIds?: string[] 
     } 
 }): Promise<(ProductionOrder & { history: ProductionOrderHistoryEntry[] })[]> {
-    return getCompletedOrdersByDateRangeServer(options);
+    return getCompletedOrdersByDateRangeServer(options.dateRange, options.filters);
 }

@@ -5,8 +5,9 @@
 
 import { getAllRoles, getAllSuppliers, getAllStock, getAllProducts, getUserPreferences, saveUserPreferences, getAllErpPurchaseOrderHeaders, getAllErpPurchaseOrderLines, getPublicUrl } from '@/modules/core/lib/db';
 import { getAllUsersForReport } from '@/modules/core/lib/auth';
-import type { DateRange, ProductionOrder, PlannerSettings, ProductionOrderHistoryEntry, Product, User, Role, ErpPurchaseOrderLine, ErpPurchaseOrderHeader, Supplier, StockInfo, InventoryUnit, WarehouseLocation, PhysicalInventoryComparisonItem } from '@/modules/core/types';
-import { getLocations as getWarehouseLocations, getPhysicalInventory, getAllItemLocations, correctInventoryUnit as correctInventoryUnitServer } from '@/modules/warehouse/lib/actions';
+import type { DateRange, ProductionOrder, PlannerSettings, ProductionOrderHistoryEntry, Product, User, Role, ErpPurchaseOrderLine, ErpPurchaseOrderHeader, Supplier, StockInfo, InventoryUnit, WarehouseLocation, PhysicalInventoryComparisonItem, ItemLocation } from '@/modules/core/types';
+import { getLocations as getWarehouseLocations } from '@/modules/warehouse/lib/db';
+import { getPhysicalInventory, getAllItemLocations, correctInventoryUnit as correctInventoryUnitServer } from '@/modules/warehouse/lib/actions';
 import { differenceInDays, parseISO } from 'date-fns';
 import type { ProductionReportDetail, ProductionReportData } from '../hooks/useProductionReport';
 import { logError } from '@/modules/core/lib/logger';
@@ -199,16 +200,4 @@ export async function getPhysicalInventoryReportData({ dateRange }: { dateRange?
         logError('Failed to generate physical inventory comparison report', { error });
         throw new Error('No se pudo generar el reporte de inventario físico.');
     }
-}
-
-export async function getReceivingReportData({ dateRange }: { dateRange?: DateRange }): Promise<{ units: InventoryUnit[], locations: WarehouseLocation[] }> {
-    const [units, locations] = await Promise.all([
-        getInventoryUnits(dateRange),
-        getWarehouseLocations(),
-    ]);
-    return { units, locations };
-}
-
-export async function correctInventoryUnit(unit: InventoryUnit, newProductId: string, userId: number): Promise<void> {
-    return correctInventoryUnitServer(unit, newProductId, userId);
 }
