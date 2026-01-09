@@ -5,8 +5,8 @@
 
 import { getAllRoles, getAllSuppliers, getAllStock, getAllProducts, getUserPreferences, saveUserPreferences, getAllErpPurchaseOrderHeaders, getAllErpPurchaseOrderLines, getPublicUrl } from '@/modules/core/lib/db';
 import { getAllUsersForReport } from '@/modules/core/lib/auth';
-import type { DateRange, ProductionOrder, PlannerSettings, ProductionOrderHistoryEntry, Product, User, Role, ErpPurchaseOrderLine, ErpPurchaseOrderHeader, Supplier, StockInfo, InventoryUnit, WarehouseLocation, PhysicalInventoryComparisonItem } from '@/modules/core/types';
-import { getLocations as getWarehouseLocations, getInventoryUnits as getInventoryUnitsServer, getPhysicalInventory, getAllItemLocations } from '@/modules/warehouse/lib/actions';
+import type { DateRange, ProductionOrder, PlannerSettings, ProductionOrderHistoryEntry, Product, User, Role, ErpPurchaseOrderLine, ErpPurchaseOrderHeader, Supplier, StockInfo, InventoryUnit, WarehouseLocation, PhysicalInventoryComparisonItem, WarehouseInventoryItem } from '@/modules/core/types';
+import { getLocations as getWarehouseLocations, getInventory as getPhysicalInventory, getAllItemLocations } from '@/modules/warehouse/lib/actions';
 import { differenceInDays, parseISO } from 'date-fns';
 import type { ProductionReportDetail, ProductionReportData } from '../hooks/useProductionReport';
 import { logError } from '@/modules/core/lib/logger';
@@ -38,7 +38,10 @@ export async function getProductionReportData({ dateRange, filters = {} }: { dat
     }
     
     const [allOrders, plannerSettings, allProducts] = await Promise.all([
-        getCompletedOrdersByDateRange(dateRange),
+        getCompletedOrdersByDateRange({
+            dateRange,
+            filters,
+        }),
         getPlannerSettings(),
         getAllProducts(),
     ]);
@@ -153,15 +156,6 @@ export async function getActiveTransitsReportData(dateRange: DateRange): Promise
         });
 
     return JSON.parse(JSON.stringify(reportData));
-}
-
-
-export async function getReceivingReportData({ dateRange }: { dateRange?: DateRange }): Promise<{ units: InventoryUnit[], locations: WarehouseLocation[] }> {
-    const [units, locations] = await Promise.all([
-        getInventoryUnitsServer(dateRange),
-        getWarehouseLocations(),
-    ]);
-    return { units, locations };
 }
 
 export async function getPhysicalInventoryReportData({ dateRange }: { dateRange?: DateRange }): Promise<{ comparisonData: PhysicalInventoryComparisonItem[], allLocations: WarehouseLocation[] }> {
