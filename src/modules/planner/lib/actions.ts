@@ -14,7 +14,7 @@ import {
     updateStatus, 
     updateDetails,
     getOrderHistory as getOrderHistoryServer,
-    getSettings,
+    getPlannerSettings as getSettings,
     saveSettings,
     addNote as addNoteServer,
     updatePendingAction as updatePendingActionServer,
