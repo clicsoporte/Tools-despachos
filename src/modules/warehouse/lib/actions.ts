@@ -251,12 +251,12 @@ export const getEmployees = async (): Promise<Empleado[]> => getEmployeesServer(
 export async function getPhysicalInventoryReportData({ dateRange }: { dateRange?: DateRange }): Promise<{ comparisonData: PhysicalInventoryComparisonItem[], allLocations: WarehouseLocation[] }> {
     try {
         const [physicalInventory, erpStock, allProducts, allLocations] = await Promise.all([
-            getPhysicalInventoryServer(dateRange),
+            getInventoryUnits(dateRange),
             getAllStock(),
             getAllProducts(),
             getLocationsServer(),
         ]);
-
+        
         const allItemLocations = await getAllItemLocationsServer();
         
         const erpStockMap = new Map(erpStock.map((item: StockInfo) => [item.itemId, item.totalStock]));
@@ -267,21 +267,21 @@ export async function getPhysicalInventoryReportData({ dateRange }: { dateRange?
             itemLocationMap.set(itemLoc.itemId, renderLocationPathAsString(itemLoc.locationId, allLocations));
         });
 
-        const comparisonData: PhysicalInventoryComparisonItem[] = physicalInventory.map((item: WarehouseInventoryItem) => {
-            const erpQuantity = erpStockMap.get(item.itemId) ?? 0;
-            const location: WarehouseLocation | undefined = locationMap.get(item.locationId);
+        const comparisonData: PhysicalInventoryComparisonItem[] = physicalInventory.map((item: InventoryUnit) => {
+            const erpQuantity = erpStockMap.get(item.productId) ?? 0;
+            const location = locationMap.get(item.locationId!);
             return {
-                productId: item.itemId,
-                productDescription: productMap.get(item.itemId) || 'Producto Desconocido',
+                productId: item.productId,
+                productDescription: productMap.get(item.productId) || 'Producto Desconocido',
                 locationId: item.locationId!,
                 locationName: location?.name || 'Ubicación Desconocida',
                 locationCode: location?.code || 'N/A',
                 physicalCount: item.quantity,
                 erpStock: erpQuantity,
                 difference: Number(item.quantity) - erpQuantity,
-                lastCountDate: item.lastUpdated,
-                updatedBy: item.updatedBy || 'N/A',
-                assignedLocationPath: itemLocationMap.get(item.itemId) || 'Sin Asignar',
+                lastCountDate: item.createdAt,
+                updatedBy: item.createdBy || 'N/A',
+                assignedLocationPath: itemLocationMap.get(item.productId) || 'Sin Asignar',
             };
         });
 
