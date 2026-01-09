@@ -3,16 +3,15 @@
  */
 'use server';
 
-import { getAllRoles, getAllSuppliers, getAllStock, getAllProducts, getUserPreferences, saveUserPreferences, getAllErpPurchaseOrderHeaders, getAllErpPurchaseOrderLines, getPublicUrl, getAllItemLocations as getAllItemLocationsCore } from '@/modules/core/lib/db';
+import { getAllRoles, getAllSuppliers, getAllStock, getAllProducts, getUserPreferences, saveUserPreferences, getAllErpPurchaseOrderHeaders, getAllErpPurchaseOrderLines, getPublicUrl } from '@/modules/core/lib/db';
 import { getAllUsersForReport } from '@/modules/core/lib/auth';
 import type { DateRange, ProductionOrder, PlannerSettings, ProductionOrderHistoryEntry, Product, User, Role, ErpPurchaseOrderLine, ErpPurchaseOrderHeader, Supplier, StockInfo, InventoryUnit, WarehouseLocation, PhysicalInventoryComparisonItem } from '@/modules/core/types';
+import { getLocations as getWarehouseLocations, getInventoryUnits as getInventoryUnitsServer, getPhysicalInventory, getAllItemLocations } from '@/modules/warehouse/lib/actions';
 import { differenceInDays, parseISO } from 'date-fns';
 import type { ProductionReportDetail, ProductionReportData } from '../hooks/useProductionReport';
 import { logError } from '@/modules/core/lib/logger';
 import type { TransitReportItem } from '../hooks/useTransitsReport';
 import { getPlannerSettings, getCompletedOrdersByDateRange } from '@/modules/planner/lib/actions';
-import { getInventoryUnits as getInventoryUnitsServer, getLocations as getWarehouseLocations } from '@/modules/warehouse/lib/actions';
-import { getInventory as getPhysicalInventoryServer, getSelectableLocations } from '@/modules/warehouse/lib/db';
 import { reformatEmployeeName } from '@/lib/utils';
 import { renderLocationPathAsString } from '@/modules/warehouse/lib/utils';
 
@@ -167,13 +166,12 @@ export async function getReceivingReportData({ dateRange }: { dateRange?: DateRa
 
 export async function getPhysicalInventoryReportData({ dateRange }: { dateRange?: DateRange }): Promise<{ comparisonData: PhysicalInventoryComparisonItem[], allLocations: WarehouseLocation[] }> {
     try {
-        const [physicalInventory, erpStock, allProducts, allLocations, allItemLocations, selectableLocations] = await Promise.all([
-            getPhysicalInventoryServer(dateRange),
+        const [physicalInventory, erpStock, allProducts, allLocations, allItemLocations] = await Promise.all([
+            getPhysicalInventory(dateRange),
             getAllStock(),
             getAllProducts(),
             getWarehouseLocations(),
-            getAllItemLocationsCore(),
-            getSelectableLocations(),
+            getAllItemLocations(),
         ]);
         
         const erpStockMap = new Map(erpStock.map((item: StockInfo) => [item.itemId, item.totalStock]));
@@ -202,7 +200,7 @@ export async function getPhysicalInventoryReportData({ dateRange }: { dateRange?
             };
         });
 
-        return JSON.parse(JSON.stringify({ comparisonData, allLocations: selectableLocations }));
+        return JSON.parse(JSON.stringify({ comparisonData, allLocations: allLocations }));
     } catch (error) {
         logError('Failed to generate physical inventory comparison report', { error });
         throw new Error('No se pudo generar el reporte de inventario físico.');
