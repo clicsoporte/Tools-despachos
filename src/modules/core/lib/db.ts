@@ -26,6 +26,7 @@ import { initializeWarehouseDb, runWarehouseMigrations } from '../../warehouse/l
 import { initializeCostAssistantDb, runCostAssistantMigrations } from '../../cost-assistant/lib/db';
 import { initializeNotificationsDb, runNotificationsMigrations } from '../../notifications/lib/db';
 import { reformatEmployeeName } from '@/lib/utils';
+import { renderLocationPathAsString } from '@/modules/warehouse/lib/utils';
 
 const DB_FILE = 'intratool.db';
 const SALT_ROUNDS = 10;
@@ -1678,4 +1679,11 @@ export async function getUserPreferences(userId: number, key: string): Promise<a
 export async function saveUserPreferences(userId: number, key: string, value: any): Promise<void> {
     const db = await connectDb();
     db.prepare('INSERT OR REPLACE INTO user_preferences (userId, key, value) VALUES (?, ?, ?)').run(userId, key, JSON.stringify(value));
+}
+
+export async function getAllItemLocations(itemId?: string): Promise<ItemLocation[]> {
+    const db = await connectDb("warehouse.db");
+    const stmt = itemId ? db.prepare('SELECT * FROM item_locations WHERE itemId = ?') : db.prepare('SELECT * FROM item_locations');
+    const itemLocations = stmt.all(itemId) as ItemLocation[];
+    return JSON.parse(JSON.stringify(itemLocations));
 }

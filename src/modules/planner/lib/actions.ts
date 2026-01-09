@@ -204,5 +204,26 @@ export async function getCompletedOrdersByDateRange(options: {
         machineIds?: string[] 
     } 
 }): Promise<(ProductionOrder & { history: ProductionOrderHistoryEntry[] })[]> {
-    return getCompletedOrdersByDateRangeServer(options);
+    let allOrders = await getCompletedOrdersByDateRangeServer(options.dateRange);
+
+    if (options.filters) {
+        const allProducts = await getAllProducts();
+        allOrders = allOrders.filter(order => {
+            if (options.filters?.productId && order.productId !== options.filters.productId) {
+                return false;
+            }
+            if (options.filters?.machineIds && options.filters.machineIds.length > 0 && (!order.machineId || !options.filters.machineIds.includes(order.machineId))) {
+                return false;
+            }
+            if (options.filters?.classifications && options.filters.classifications.length > 0) {
+                const product = allProducts.find((p: Product) => p.id === order.productId);
+                if (!product || !product.classification || !options.filters.classifications.includes(product.classification)) {
+                    return false;
+                }
+            }
+            return true;
+        });
+    }
+
+    return allOrders;
 }

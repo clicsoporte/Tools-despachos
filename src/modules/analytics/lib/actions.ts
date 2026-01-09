@@ -5,12 +5,12 @@
 
 import { getAllRoles, getAllSuppliers, getAllStock, getAllProducts, getUserPreferences, saveUserPreferences, getAllErpPurchaseOrderHeaders, getAllErpPurchaseOrderLines, getPublicUrl } from '@/modules/core/lib/db';
 import type { DateRange, ProductionOrder, PlannerSettings, ProductionOrderHistoryEntry, Product, User, Role, ErpPurchaseOrderLine, ErpPurchaseOrderHeader, Supplier, StockInfo, InventoryUnit, WarehouseLocation, PhysicalInventoryComparisonItem, ItemLocation } from '@/modules/core/types';
-import { getLocations as getWarehouseLocations, getInventoryUnits, getAllItemLocations, getPhysicalInventory } from '@/modules/warehouse/lib/actions';
+import { getLocations as getWarehouseLocations, getInventoryUnits, getPhysicalInventory, getAllItemLocations } from '@/modules/warehouse/lib/actions';
 import { differenceInDays, parseISO } from 'date-fns';
 import type { ProductionReportDetail, ProductionReportData } from '../hooks/useProductionReport';
 import { logError } from '@/modules/core/lib/logger';
 import type { TransitReportItem } from '../hooks/useTransitsReport';
-import { getPlannerSettings, getCompletedOrdersByDateRange as getCompletedOrdersByDateRangeServer } from '@/modules/planner/lib/actions';
+import { getPlannerSettings, getCompletedOrdersByDateRange } from '@/modules/planner/lib/actions';
 import { reformatEmployeeName } from '@/lib/utils';
 import { renderLocationPathAsString } from '@/modules/warehouse/lib/utils';
 import { getAllUsersForReport } from '@/modules/core/lib/auth';
@@ -37,32 +37,12 @@ export async function getProductionReportData({ dateRange, filters = {} }: { dat
         throw new Error("Date 'from' is required for the production report.");
     }
     
-    const [allOrders, plannerSettings, allProducts] = await Promise.all([
-        getCompletedOrdersByDateRangeServer({
-            dateRange,
-            filters,
-        }),
+    const [allOrders, plannerSettings] = await Promise.all([
+        getCompletedOrdersByDateRange({ dateRange, filters }),
         getPlannerSettings(),
-        getAllProducts(),
     ]);
 
-    const filteredOrders = allOrders.filter((order: ProductionOrder) => {
-        if (filters.productId && order.productId !== filters.productId) {
-            return false;
-        }
-        if (filters.machineIds && filters.machineIds.length > 0 && (!order.machineId || !filters.machineIds.includes(order.machineId))) {
-            return false;
-        }
-        if (filters.classifications && filters.classifications.length > 0) {
-            const product = allProducts.find((p: Product) => p.id === order.productId);
-            if (!product || !product.classification || !filters.classifications.includes(product.classification)) {
-                return false;
-            }
-        }
-        return true;
-    });
-
-    const details: ProductionReportDetail[] = filteredOrders.map((order: (ProductionOrder & { history: ProductionOrderHistoryEntry[] })) => {
+    const details: ProductionReportDetail[] = allOrders.map((order) => {
         const history = order.history || [];
         
         const completionEntry = history.find((h: ProductionOrderHistoryEntry) => h.status === 'completed' || h.status === 'received-in-warehouse');
@@ -90,7 +70,7 @@ export async function getProductionReportData({ dateRange, filters = {} }: { dat
 
     return {
         reportData: {
-            details: JSON.parse(JSON.stringify(details)), // Ensure plain objects for serialization
+            details: JSON.parse(JSON.stringify(details)),
         },
         plannerSettings: JSON.parse(JSON.stringify(plannerSettings)),
     };

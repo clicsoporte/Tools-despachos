@@ -53,11 +53,10 @@ import {
     getPhysicalInventory as getPhysicalInventoryServer,
     getSelectableLocations as getSelectableLocationsServer,
     correctInventoryUnit as correctInventoryUnitServer,
-    renderLocationPathAsString,
 } from './db';
 import { sendEmail as sendEmailServer } from '@/modules/core/lib/email-service';
-import { getStockSettings as getStockSettingsDb, saveStockSettings as saveStockSettingsDb, getAllProducts, getAllStock, getAllErpPurchaseOrderHeaders, getAllErpPurchaseOrderLines } from '@/modules/core/lib/db';
-import type { WarehouseSettings, WarehouseLocation, WarehouseInventoryItem, MovementLog, ItemLocation, InventoryUnit, StockSettings, User, ErpInvoiceHeader, ErpInvoiceLine, DispatchLog, Company, VerificationItem, DateRange, DispatchContainer, DispatchAssignment, Vehiculo, Empleado, PhysicalInventoryComparisonItem, Product, StockInfo } from '@/modules/core/types';
+import { getStockSettings as getStockSettingsDb, saveStockSettings as saveStockSettingsDb } from '@/modules/core/lib/db';
+import type { WarehouseSettings, WarehouseLocation, WarehouseInventoryItem, MovementLog, ItemLocation, InventoryUnit, StockSettings, User, ErpInvoiceHeader, ErpInvoiceLine, DispatchLog, Company, VerificationItem, DateRange, DispatchContainer, DispatchAssignment, Vehiculo, Empleado, PhysicalInventoryComparisonItem } from '@/modules/core/types';
 import { logInfo, logWarn, logError } from '@/modules/core/lib/logger';
 import { generateDocument } from '@/modules/core/lib/pdf-generator';
 import { format, parseISO } from 'date-fns';
@@ -247,46 +246,3 @@ export const unassignDocumentFromContainer = async (assignmentId: number): Promi
 export const finalizeDispatch = async (containerId: number, vehiclePlate: string, driverName: string, helper1Name: string, helper2Name: string): Promise<void> => finalizeDispatchServer(containerId, vehiclePlate, driverName, helper1Name, helper2Name);
 export const getVehicles = async (): Promise<Vehiculo[]> => getVehiclesServer();
 export const getEmployees = async (): Promise<Empleado[]> => getEmployeesServer();
-
-export async function getPhysicalInventoryReportData({ dateRange }: { dateRange?: DateRange }): Promise<{ comparisonData: PhysicalInventoryComparisonItem[], allLocations: WarehouseLocation[] }> {
-    try {
-        const [physicalInventory, erpStock, allProducts, allLocations, allItemLocations] = await Promise.all([
-            getPhysicalInventoryServer(dateRange),
-            getAllStock(),
-            getAllProducts(),
-            getLocationsServer(),
-            getAllItemLocationsServer(),
-        ]);
-        
-        const erpStockMap = new Map(erpStock.map((item: StockInfo) => [item.itemId, item.totalStock]));
-        const productMap = new Map(allProducts.map((item: Product) => [item.id, item.description]));
-        const locationMap = new Map(allLocations.map((item: WarehouseLocation) => [item.id, item]));
-        const itemLocationMap = new Map<string, string>();
-        allItemLocations.forEach((itemLoc: ItemLocation) => {
-            itemLocationMap.set(itemLoc.itemId, renderLocationPathAsString(itemLoc.locationId, allLocations));
-        });
-
-        const comparisonData: PhysicalInventoryComparisonItem[] = physicalInventory.map((item: WarehouseInventoryItem) => {
-            const erpQuantity = erpStockMap.get(item.itemId) ?? 0;
-            const location: WarehouseLocation | undefined = locationMap.get(item.locationId);
-            return {
-                productId: item.itemId,
-                productDescription: productMap.get(item.itemId) || 'Producto Desconocido',
-                locationId: item.locationId!,
-                locationName: location?.name || 'Ubicación Desconocida',
-                locationCode: location?.code || 'N/A',
-                physicalCount: item.quantity,
-                erpStock: erpQuantity,
-                difference: Number(item.quantity) - erpQuantity,
-                lastCountDate: item.lastUpdated,
-                updatedBy: item.updatedBy || 'N/A',
-                assignedLocationPath: itemLocationMap.get(item.productId) || 'Sin Asignar',
-            };
-        });
-
-        return JSON.parse(JSON.stringify({ comparisonData, allLocations: allLocations }));
-    } catch (error) {
-        logError('Failed to generate physical inventory comparison report', { error });
-        throw new Error('No se pudo generar el reporte de inventario físico.');
-    }
-}
