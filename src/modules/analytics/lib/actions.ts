@@ -6,8 +6,9 @@
 import { getOrders as getPlannerOrders, getPlannerSettings, getCompletedOrdersByDateRange } from '@/modules/planner/lib/db';
 import { getAllRoles, getAllSuppliers, getAllStock, getAllProducts, getUserPreferences, saveUserPreferences, getAllErpPurchaseOrderHeaders, getAllErpPurchaseOrderLines } from '@/modules/core/lib/db';
 import { getAllUsersForReport } from '@/modules/core/lib/auth';
-import { getLocations as getWarehouseLocations, getInventory as getPhysicalInventory, getInventoryUnits, correctInventoryUnit as correctInventoryUnitServer } from '@/modules/warehouse/lib/actions';
-import type { DateRange, ProductionOrder, PlannerSettings, ProductionOrderHistoryEntry, Product, User, Role, ErpPurchaseOrderLine, ErpPurchaseOrderHeader, Supplier, StockInfo, InventoryUnit, WarehouseLocation } from '@/modules/core/types';
+import { getLocations as getWarehouseLocations, getInventoryUnits, correctInventoryUnit as correctInventoryUnitServer, getSelectableLocations } from '@/modules/warehouse/lib/actions';
+import { getInventory as getPhysicalInventory } from '@/modules/warehouse/lib/db';
+import type { DateRange, ProductionOrder, PlannerSettings, ProductionOrderHistoryEntry, Product, User, Role, ErpPurchaseOrderLine, ErpPurchaseOrderHeader, Supplier, StockInfo, InventoryUnit, WarehouseLocation, PhysicalInventoryComparisonItem } from '@/modules/core/types';
 import { differenceInDays, parseISO } from 'date-fns';
 import type { ProductionReportDetail, ProductionReportData } from '../hooks/useProductionReport';
 import { logError } from '@/modules/core/lib/logger';

@@ -51,18 +51,18 @@ import {
     unassignDocumentFromContainer as unassignDocumentFromContainerServer,
     getVehicles as getVehiclesServer,
     getEmployees as getEmployeesServer,
-    getInventory as getPhysicalInventoryServer, // Renamed export
-    getSelectableLocations as getSelectableLocationsServer, // Renamed export
-    correctInventoryUnit as correctInventoryUnitServer, // Renamed export
+    getInventory as getPhysicalInventory,
+    getSelectableLocations as getSelectableLocationsServer,
+    correctInventoryUnit as correctInventoryUnitServer,
 } from './db';
 import { sendEmail as sendEmailServer } from '@/modules/core/lib/email-service';
-import { getStockSettings as getStockSettingsDb, saveStockSettings as saveStockSettingsDb } from '@/modules/core/lib/db';
-import type { WarehouseSettings, WarehouseLocation, WarehouseInventoryItem, MovementLog, ItemLocation, InventoryUnit, StockSettings, User, ErpInvoiceHeader, ErpInvoiceLine, DispatchLog, Company, VerificationItem, DateRange, DispatchContainer, DispatchAssignment, Vehiculo, Empleado, PhysicalInventoryComparisonItem } from '@/modules/core/types';
+import { getStockSettings as getStockSettingsDb, saveStockSettings as saveStockSettingsDb, getAllProducts, getAllStock, getAllItemLocations as getAllItemLocationsCore, getAllErpPurchaseOrderHeaders, getAllErpPurchaseOrderLines } from '@/modules/core/lib/db';
+import type { WarehouseSettings, WarehouseLocation, WarehouseInventoryItem, MovementLog, ItemLocation, InventoryUnit, StockSettings, User, ErpInvoiceHeader, ErpInvoiceLine, DispatchLog, Company, VerificationItem, DateRange, DispatchContainer, DispatchAssignment, Vehiculo, Empleado, PhysicalInventoryComparisonItem, StockInfo, Product } from '@/modules/core/types';
 import { logInfo, logWarn, logError } from '@/modules/core/lib/logger';
 import { generateDocument } from '@/modules/core/lib/pdf-generator';
 import { format } from 'date-fns';
 import type { HAlignType, FontStyle, RowInput } from 'jspdf-autotable';
-import { getAllProducts, getAllStock, getAllItemLocations as getAllItemLocationsCore, getAllErpPurchaseOrderHeaders, getAllErpPurchaseOrderLines } from '@/modules/core/lib/db';
+import { triggerNotificationEvent } from '@/modules/notifications/lib/notifications-engine';
 
 
 export const getWarehouseSettings = async (): Promise<WarehouseSettings> => getWarehouseSettingsServer();
@@ -247,7 +247,7 @@ export const getEmployees = async (): Promise<Empleado[]> => getEmployeesServer(
 export async function getPhysicalInventoryReportData({ dateRange }: { dateRange?: DateRange }): Promise<{ comparisonData: PhysicalInventoryComparisonItem[], allLocations: WarehouseLocation[] }> {
     try {
         const [physicalInventory, erpStock, allProducts, allLocations, allItemLocations, selectableLocations] = await Promise.all([
-            getPhysicalInventoryServer(dateRange),
+            getPhysicalInventory(dateRange),
             getAllStock(),
             getAllProducts(),
             getLocationsServer(),
