@@ -50,7 +50,7 @@ import {
     unassignDocumentFromContainer as unassignDocumentFromContainerServer,
     getVehicles as getVehiclesServer,
     getEmployees as getEmployeesServer,
-    getPhysicalInventory as getPhysicalInventoryServer,
+    getInventoryUnits as getPhysicalInventoryServer,
     getSelectableLocations as getSelectableLocationsServer,
     correctInventoryUnit as correctInventoryUnitServer,
 } from './db';
@@ -78,7 +78,7 @@ export async function saveStockSettings(settings: StockSettings): Promise<void> 
 }
 export const getLocations = async (): Promise<WarehouseLocation[]> => getLocationsServer();
 export const getSelectableLocations = async (): Promise<WarehouseLocation[]> => getSelectableLocationsServer();
-export const getPhysicalInventory = async (dateRange?: DateRange): Promise<WarehouseInventoryItem[]> => getPhysicalInventoryServer(dateRange);
+export const getPhysicalInventory = async (dateRange?: DateRange): Promise<InventoryUnit[]> => getPhysicalInventoryServer(dateRange);
 
 
 export async function addLocation(location: Omit<WarehouseLocation, 'id'>): Promise<WarehouseLocation> {
@@ -251,7 +251,7 @@ export const getEmployees = async (): Promise<Empleado[]> => getEmployeesServer(
 export async function getPhysicalInventoryReportData({ dateRange }: { dateRange?: DateRange }): Promise<{ comparisonData: PhysicalInventoryComparisonItem[], allLocations: WarehouseLocation[] }> {
     try {
         const [physicalInventory, erpStock, allProducts, allLocations] = await Promise.all([
-            getInventoryUnits(dateRange),
+            getInventoryUnitsServer(dateRange),
             getAllStock(),
             getAllProducts(),
             getLocationsServer(),
@@ -269,7 +269,7 @@ export async function getPhysicalInventoryReportData({ dateRange }: { dateRange?
 
         const comparisonData: PhysicalInventoryComparisonItem[] = physicalInventory.map((item: InventoryUnit) => {
             const erpQuantity = erpStockMap.get(item.productId) ?? 0;
-            const location = locationMap.get(item.locationId!);
+            const location: WarehouseLocation | undefined = locationMap.get(item.locationId!);
             return {
                 productId: item.productId,
                 productDescription: productMap.get(item.productId) || 'Producto Desconocido',
