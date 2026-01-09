@@ -6,8 +6,8 @@
  * including schema initialization, migrations, and CRUD operations for rules and settings.
  */
 
-import { connectDb } from '@/modules/core/lib/db';
-import type { Notification, NotificationRule, NotificationServiceConfig, Suggestion } from '@/modules/core/types';
+import { connectDb, getUnreadSuggestions as dbGetUnreadSuggestions } from '@/modules/core/lib/db';
+import type { Notification, NotificationRule, NotificationServiceConfig, ScheduledTask, Suggestion } from '@/modules/core/types';
 
 const NOTIFICATIONS_DB_FILE = 'notifications.db';
 
@@ -27,6 +27,14 @@ export async function initializeNotificationsDb(db: import('better-sqlite3').Dat
             service TEXT PRIMARY KEY,
             config TEXT NOT NULL
         );
+        
+        CREATE TABLE IF NOT EXISTS scheduled_tasks (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            schedule TEXT NOT NULL,
+            taskId TEXT NOT NULL,
+            enabled INTEGER DEFAULT 1
+        );
     `;
     db.exec(schema);
     
@@ -40,7 +48,21 @@ export async function initializeNotificationsDb(db: import('better-sqlite3').Dat
 }
 
 export async function runNotificationsMigrations(db: import('better-sqlite3').Database) {
-    // Future migrations for this module will go here.
+    try {
+        if (!db.prepare(`SELECT name FROM sqlite_master WHERE type='table' AND name='scheduled_tasks'`).get()) {
+            db.exec(`
+                CREATE TABLE IF NOT EXISTS scheduled_tasks (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    name TEXT NOT NULL,
+                    schedule TEXT NOT NULL,
+                    taskId TEXT NOT NULL,
+                    enabled INTEGER DEFAULT 1
+                );
+            `);
+        }
+    } catch (error) {
+        console.error('Error during notifications DB migrations:', error);
+    }
 }
 
 // --- Rules ---
@@ -90,6 +112,34 @@ export async function deleteNotificationRule(id: number): Promise<void> {
     db.prepare('DELETE FROM notification_rules WHERE id = ?').run(id);
 }
 
+// --- Scheduled Tasks ---
+export async function getAllScheduledTasks(): Promise<ScheduledTask[]> {
+    const db = await connectDb(NOTIFICATIONS_DB_FILE);
+    const rows = db.prepare('SELECT * FROM scheduled_tasks ORDER BY name ASC').all() as any[];
+    return rows.map(row => ({
+        ...row,
+        enabled: Boolean(row.enabled),
+    }));
+}
+
+export async function saveScheduledTask(task: Omit<ScheduledTask, 'id'> | ScheduledTask): Promise<ScheduledTask> {
+    const db = await connectDb(NOTIFICATIONS_DB_FILE);
+    const dataToSave = { ...task, enabled: task.enabled ? 1 : 0 };
+
+    if ('id' in task && task.id) {
+        db.prepare(`UPDATE scheduled_tasks SET name = @name, schedule = @schedule, taskId = @taskId, enabled = @enabled WHERE id = @id`).run(dataToSave);
+        return task as ScheduledTask;
+    } else {
+        const info = db.prepare(`INSERT INTO scheduled_tasks (name, schedule, taskId, enabled) VALUES (@name, @schedule, @taskId, @enabled)`).run(dataToSave);
+        return { ...task, id: info.lastInsertRowid as number };
+    }
+}
+
+export async function deleteScheduledTask(id: number): Promise<void> {
+    const db = await connectDb(NOTIFICATIONS_DB_FILE);
+    db.prepare('DELETE FROM scheduled_tasks WHERE id = ?').run(id);
+}
+
 // --- Settings ---
 export async function getNotificationServiceSettings(service: 'telegram'): Promise<NotificationServiceConfig> {
     const db = await connectDb(NOTIFICATIONS_DB_FILE);
@@ -111,7 +161,7 @@ export async function saveNotificationServiceSettings(service: 'telegram', confi
 
 export async function getNotifications(userId: number): Promise<Notification[]> {
     const db = await connectDb();
-    const suggestions = await db.prepare('SELECT * FROM suggestions WHERE isRead = 0 ORDER BY timestamp DESC').all() as Suggestion[];
+    const suggestions = await dbGetUnreadSuggestions();
     const notifications = await db.prepare('SELECT * FROM notifications WHERE userId = ? ORDER BY timestamp DESC').all(userId) as Notification[];
     
     const suggestionNotifications: Notification[] = suggestions.map(s => ({
@@ -125,7 +175,6 @@ export async function getNotifications(userId: number): Promise<Notification[]> 
         suggestionId: s.id,
     }));
     
-    // Combine, sort, and return
     const allNotifications = [...notifications, ...suggestionNotifications].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
     
     return JSON.parse(JSON.stringify(allNotifications));

@@ -3,12 +3,15 @@
  */
 'use server';
 
-import type { NotificationRule, NotificationServiceConfig } from '@/modules/core/types';
+import type { NotificationRule, NotificationServiceConfig, ScheduledTask } from '@/modules/core/types';
 import { logInfo } from '@/modules/core/lib/logger';
 import {
     getAllNotificationRules as getAllRulesServer,
     saveNotificationRule as saveRuleServer,
     deleteNotificationRule as deleteRuleServer,
+    getAllScheduledTasks as getAllTasksServer,
+    saveScheduledTask as saveTaskServer,
+    deleteScheduledTask as deleteTaskServer,
     getNotificationServiceSettings as getServiceSettingsServer,
     saveNotificationServiceSettings as saveServiceSettingsServer
 } from './db';
@@ -30,6 +33,25 @@ export async function saveNotificationRule(rule: Omit<NotificationRule, 'id'> | 
 export async function deleteNotificationRule(id: number): Promise<void> {
     await deleteRuleServer(id);
     await logInfo(`Notification rule deleted`, { ruleId: id });
+    revalidatePath('/dashboard/admin/notifications');
+}
+
+// --- Scheduled Tasks ---
+
+export async function getAllScheduledTasks(): Promise<ScheduledTask[]> {
+    return getAllTasksServer();
+}
+
+export async function saveScheduledTask(task: Omit<ScheduledTask, 'id'> | ScheduledTask): Promise<ScheduledTask> {
+    const savedTask = await saveTaskServer(task);
+    await logInfo(`Scheduled task saved: ${savedTask.name}`, { taskId: savedTask.id, schedule: savedTask.schedule });
+    revalidatePath('/dashboard/admin/notifications');
+    return savedTask;
+}
+
+export async function deleteScheduledTask(id: number): Promise<void> {
+    await deleteTaskServer(id);
+    await logInfo(`Scheduled task deleted`, { taskId: id });
     revalidatePath('/dashboard/admin/notifications');
 }
 

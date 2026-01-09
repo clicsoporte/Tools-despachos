@@ -1010,6 +1010,14 @@ export interface NotificationRule {
   enabled: boolean;
 }
 
+export interface ScheduledTask {
+  id: number;
+  name: string;
+  schedule: string;
+  taskId: string;
+  enabled: boolean;
+}
+
 export interface TelegramSettings {
     botToken: string;
     chatId: string;

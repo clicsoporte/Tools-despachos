@@ -18,7 +18,7 @@ function stripHtml(html: string): string {
 
 /**
  * Sends a message to the configured Telegram chat.
- * @param message - The message content (can be HTML, will be stripped).
+ * @param message - The message content (can be HTML, will be stripped for plain text, but sent as HTML).
  */
 export async function sendTelegramMessage(message: string) {
     try {
@@ -32,12 +32,10 @@ export async function sendTelegramMessage(message: string) {
 
         const bot = new TelegramBot(botToken);
 
-        // Telegram API has character limits, so we truncate the message if it's too long.
-        const plainTextMessage = stripHtml(message);
         const maxLength = 4096;
-        const truncatedMessage = plainTextMessage.length > maxLength 
-            ? plainTextMessage.substring(0, maxLength - 3) + '...' 
-            : plainTextMessage;
+        const truncatedMessage = message.length > maxLength 
+            ? message.substring(0, maxLength - 3) + '...' 
+            : message;
 
         await bot.sendMessage(chatId, truncatedMessage, { parse_mode: 'HTML' });
         
