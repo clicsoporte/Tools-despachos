@@ -230,7 +230,6 @@ export const usePlanner = () => {
         const isPendingReview = order.status === 'pending-review';
         const isPendingApproval = order.status === 'pending-approval';
         const isApproved = order.status === 'approved';
-        const isInQueue = order.status === 'in-queue';
         const isInProgress = order.status === 'in-progress';
         const isOnHold = order.status === 'on-hold' || order.status === 'in-maintenance';
         const isCompleted = order.status === 'completed';
@@ -250,14 +249,14 @@ export const usePlanner = () => {
             canGoBackToReview: isPendingApproval && hasPermission('planner:status:pending-approval'),
             canApprove: isPendingApproval && hasPermission('planner:status:approve'),
             canQueue: isApproved && hasPermission('planner:status:in-progress'),
-            canStart: (isApproved || isInQueue) && hasPermission('planner:status:in-progress') && (!state.plannerSettings?.requireMachineForStart || !!order.machineId),
+            canStart: isApproved && hasPermission('planner:status:in-progress') && (!state.plannerSettings?.requireMachineForStart || !!order.machineId),
             canResumeFromHold: isOnHold && hasPermission('planner:status:in-progress'),
             canHold: isInProgress && hasPermission('planner:status:on-hold'),
             canMaintain: isInProgress && hasPermission('planner:status:on-hold'),
             canComplete: (isInProgress || isOnHold) && hasPermission('planner:status:completed') && (!state.plannerSettings?.requireShiftForCompletion || !!order.shiftId),
-            canRequestUnapproval: (isApproved || isInQueue || isOnHold || isInProgress) && hasPermission('planner:status:unapprove-request'),
+            canRequestUnapproval: (isApproved || isInProgress) && hasPermission('planner:status:unapprove-request'),
             canCancelPending: (isPending || isPendingReview || isPendingApproval) && hasPermission('planner:status:cancel'),
-            canRequestCancel: (isApproved || isInQueue) && hasPermission('planner:status:cancel-approved'),
+            canRequestCancel: isApproved && hasPermission('planner:status:cancel-approved'),
             canReceive: isCompleted && !!state.plannerSettings?.useWarehouseReception && hasPermission('planner:receive'),
             canReopen: isFinalArchived && hasPermission('planner:reopen'),
         };
