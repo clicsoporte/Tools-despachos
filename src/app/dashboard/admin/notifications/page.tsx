@@ -50,7 +50,7 @@ function CronDescription({ schedule }: { schedule: string }) {
         const nextRun = interval.next().toDate();
         return (
             <p className="text-xs text-muted-foreground">
-                Se ejecutará {readable}. Próxima ejecución: {nextRun.toLocaleString('es-CR')}.
+                Se ejecutará {readable.charAt(0).toLowerCase() + readable.slice(1)}. Próxima ejecución: {nextRun.toLocaleString('es-CR')}.
             </p>
         );
     } catch (err) {
@@ -181,7 +181,7 @@ export default function AutomationManagerPage() {
         if (!taskToDelete) return;
         setIsSubmitting(true);
         try {
-            await deleteTaskServer(taskToDelete.id);
+            await deleteScheduledTask(taskToDelete.id);
             setTasks(tasks.filter(t => t.id !== taskToDelete.id));
             toast({ title: 'Tarea Eliminada', variant: 'destructive' });
             setTaskToDelete(null);
