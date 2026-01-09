@@ -359,7 +359,7 @@ export async function getItemLocations(itemId: string): Promise<ItemLocation[]> 
 
 export async function assignItemToLocation(itemId: string, locationId: number, clientId: string | null, updatedBy: string): Promise<ItemLocation> {
     const db = await connectDb(WAREHOUSE_DB_FILE);
-    const info = db.prepare('INSERT OR REPLACE INTO item_locations (itemId, locationId, clientId, updatedBy, updatedAt) VALUES (?, ?, ?, ?, datetime('now\'))').run(itemId, locationId, clientId, updatedBy);
+    const info = db.prepare(`INSERT OR REPLACE INTO item_locations (itemId, locationId, clientId, updatedBy, updatedAt) VALUES (?, ?, ?, ?, datetime('now'))`).run(itemId, locationId, clientId, updatedBy);
     const newId = info.lastInsertRowid;
     const newItemLocation = db.prepare('SELECT * FROM item_locations WHERE id = ?').get(newId) as ItemLocation;
     return newItemLocation;
@@ -549,7 +549,7 @@ export async function searchDocuments(searchTerm: string): Promise<{ id: string,
     const combinedResults = results.map(r => ({
         ...r,
         type: r.typeCode === 'F' ? 'Factura' : (r.typeCode === 'R' ? 'Remisión' : 'Pedido')
-    }).slice(0, 10);
+    })).slice(0, 10);
 
     return JSON.parse(JSON.stringify(combinedResults));
 }
