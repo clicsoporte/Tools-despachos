@@ -20,7 +20,7 @@ export const allAdminPermissions = [
     "warehouse:locations:create", "warehouse:locations:update", "warehouse:locations:delete",
     "warehouse:units:create", "warehouse:units:delete", "warehouse:locks:manage",
     "warehouse:dispatch-check:use", "warehouse:dispatch-check:manual-override", "warehouse:dispatch-check:switch-mode", "warehouse:dispatch-check:send-email", "warehouse:dispatch-check:send-email-external", "warehouse:dispatch-check:move-document", "warehouse:dispatch-check:reopen",
-    "warehouse:dispatch:reset", // New permission
+    "warehouse:dispatch:reset",
     "warehouse:dispatch-classifier:use",
     "warehouse:dispatch-containers:manage",
     "hacienda:query",
@@ -51,7 +51,7 @@ export const permissionGroups = {
         "warehouse:locations:create", "warehouse:locations:update", "warehouse:locations:delete",
         "warehouse:units:create", "warehouse:units:delete", "warehouse:locks:manage",
         "warehouse:dispatch-check:use", "warehouse:dispatch-check:manual-override", "warehouse:dispatch-check:switch-mode", "warehouse:dispatch-check:send-email", "warehouse:dispatch-check:send-email-external", "warehouse:dispatch-check:move-document", "warehouse:dispatch-check:reopen",
-        "warehouse:dispatch:reset", // New permission
+        "warehouse:dispatch:reset",
         "warehouse:dispatch-classifier:use",
         "warehouse:dispatch-containers:manage",
     ],
@@ -173,4 +173,7 @@ export const permissionTree: Record<string, string[]> = {
     "warehouse:units:create": ["warehouse:units:delete"],
     "warehouse:dispatch-check:use": ["warehouse:dispatch-check:manual-override", "warehouse:dispatch-check:switch-mode", "warehouse:dispatch-check:send-email", "warehouse:dispatch-check:move-document", "warehouse:dispatch-check:reopen"],
     "warehouse:dispatch-check:send-email": ["warehouse:dispatch-check:send-email-external"],
-    "warehouse:dispatch-classifier:use": ["warehouse:dispatch
+    "warehouse:dispatch-classifier:use": ["warehouse:dispatch:reset"],
+};
+
+    
