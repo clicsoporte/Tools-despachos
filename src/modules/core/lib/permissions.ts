@@ -16,6 +16,7 @@ export const allAdminPermissions = [
     "cost-assistant:access", "cost-assistant:drafts:read-write",
     "warehouse:access", "warehouse:search:full", "warehouse:search:simple", 
     "warehouse:receiving-wizard:use", "warehouse:population-wizard:use", "warehouse:inventory-count:create", "warehouse:inventory-count:edit",
+    "warehouse:correction:use", // New permission for the correction module
     "warehouse:item-assignment:create", "warehouse:item-assignment:delete",
     "warehouse:locations:create", "warehouse:locations:update", "warehouse:locations:delete",
     "warehouse:units:create", "warehouse:units:delete", "warehouse:locks:manage",
@@ -45,9 +46,9 @@ export const permissionGroups = {
     "planner:status:completed", "planner:status:cancel", "planner:status:cancel-approved", "planner:status:unapprove-request", "planner:status:unapprove-request:approve", "planner:priority:update", "planner:machine:assign", "planner:schedule"],
     "Asistente de Costos": ["cost-assistant:access", "cost-assistant:drafts:read-write"],
     "Gestión de Almacenes": [
-        "warehouse:access", "warehouse:search:full", "warehouse:search:simple",
+        "warehouse:access", "warehouse:search:full", "warehouse:search:simple", 
         "warehouse:receiving-wizard:use", "warehouse:population-wizard:use", "warehouse:inventory-count:create", "warehouse:inventory-count:edit",
-        "warehouse:item-assignment:create", "warehouse:item-assignment:delete",
+        "warehouse:correction:use", "warehouse:item-assignment:create", "warehouse:item-assignment:delete",
         "warehouse:locations:create", "warehouse:locations:update", "warehouse:locations:delete",
         "warehouse:units:create", "warehouse:units:delete", "warehouse:locks:manage",
         "warehouse:dispatch-check:use", "warehouse:dispatch-check:manual-override", "warehouse:dispatch-check:switch-mode", "warehouse:dispatch-check:send-email", "warehouse:dispatch-check:send-email-external", "warehouse:dispatch-check:move-document", "warehouse:dispatch-check:reopen",
@@ -81,6 +82,7 @@ export const permissionTranslations: { [key: string]: string } = {
     "cost-assistant:access": "Asist. Costos: Acceso", "cost-assistant:drafts:read-write": "Asist. Costos: Guardar Borradores",
     "warehouse:access": "Almacén: Acceso General", "warehouse:search:full": "Almacén: Consulta Completa", "warehouse:search:simple": "Almacén: Búsqueda Rápida", 
     "warehouse:receiving-wizard:use": "Almacén: Usar Asist. Recepción", "warehouse:population-wizard:use": "Almacén: Usar Asist. Poblado", "warehouse:inventory-count:create": "Almacén: Registrar Conteo", "warehouse:inventory-count:edit": "Almacén: Corregir Ingresos",
+    "warehouse:correction:use": "Almacén: Corregir Ingresos",
     "warehouse:item-assignment:create": "Almacén: Asignar Ubic./Prod.", "warehouse:item-assignment:delete": "Almacén: Eliminar Asignación",
     "warehouse:locations:create": "Almacén: Crear Ubicaciones", "warehouse:locations:update": "Almacén: Editar Ubicaciones", "warehouse:locations:delete": "Almacén: Eliminar Ubicaciones",
     "warehouse:units:create": "Almacén: Crear Lotes/QR", "warehouse:units:delete": "Almacén: Eliminar Lotes/QR", "warehouse:locks:manage": "Almacén: Gestionar Bloqueos",
@@ -132,7 +134,7 @@ export const permissionTree: Record<string, string[]> = {
     // Top-level Access
     "admin:access": ["users:read", "roles:read", "admin:settings:general", "admin:settings:api", "admin:settings:email", "admin:settings:planner", "admin:settings:requests", "admin:settings:warehouse", "admin:settings:stock", "admin:settings:cost-assistant", "admin:suggestions:read", "admin:notifications:read", "admin:import:run", "admin:logs:read", "admin:maintenance:backup"],
     "analytics:read": ["analytics:purchase-suggestions:read", "analytics:purchase-report:read", "analytics:production-report:read", "analytics:transits-report:read", "analytics:user-permissions:read", "analytics:physical-inventory-report:read", "analytics:receiving-report:read", "analytics:dispatch-report:read"],
-    "warehouse:access": ["warehouse:search:full", "warehouse:search:simple", "warehouse:receiving-wizard:use", "warehouse:population-wizard:use", "warehouse:inventory-count:create", "warehouse:item-assignment:create", "warehouse:locations:create", "warehouse:units:create", "warehouse:locks:manage", "warehouse:dispatch-check:use", "warehouse:dispatch-classifier:use", "warehouse:dispatch-containers:manage"],
+    "warehouse:access": ["warehouse:search:full", "warehouse:search:simple", "warehouse:receiving-wizard:use", "warehouse:population-wizard:use", "warehouse:inventory-count:create", "warehouse:correction:use", "warehouse:item-assignment:create", "warehouse:locations:create", "warehouse:units:create", "warehouse:locks:manage", "warehouse:dispatch-check:use", "warehouse:dispatch-classifier:use", "warehouse:dispatch-containers:manage"],
     "requests:access": ["requests:read"],
     "planner:access": ["planner:read"],
     "requests:read": ["requests:read:all", "requests:create"],

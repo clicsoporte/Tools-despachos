@@ -43,6 +43,7 @@ import {
   Box,
   Split,
   FileSearch,
+  RotateCcw,
 } from "lucide-react";
 import { allAdminPermissions } from "./permissions";
 
@@ -179,6 +180,14 @@ export const warehouseTools: Tool[] = [
         href: '/dashboard/warehouse/receiving',
         icon: PackageCheck,
         bgColor: 'bg-emerald-600',
+    },
+    {
+        id: 'warehouse-correction',
+        name: 'Corrección de Ingresos',
+        description: 'Anular y corregir un ingreso de mercadería mal registrado.',
+        href: '/dashboard/warehouse/correction',
+        icon: RotateCcw,
+        bgColor: 'bg-red-500',
     },
     {
         id: 'population-wizard',

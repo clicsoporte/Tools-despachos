@@ -1,4 +1,3 @@
-
 /**
  * @fileoverview Hook to manage the logic for the new receiving report page.
  */
@@ -11,7 +10,6 @@ import { usePageTitle } from '@/modules/core/hooks/usePageTitle';
 import { useAuthorization } from '@/modules/core/hooks/useAuthorization';
 import { logError } from '@/modules/core/lib/logger';
 import { getReceivingReportData } from '@/modules/analytics/lib/actions';
-import { correctInventoryUnit } from '@/modules/warehouse/lib/actions';
 import type { DateRange, InventoryUnit, Product, WarehouseLocation, UserPreferences } from '@/modules/core/types';
 import { subDays, startOfDay, format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -99,13 +97,12 @@ export function useReceivingReport() {
         setTitle("Reporte de Recepciones");
         if (isAuthorized) {
             const loadPrefs = async () => {
-                if(user) {
+               if(user) {
                    const prefs = await getUserPreferences(user.id, 'receivingReportPrefs');
                    if (prefs && prefs.visibleColumns) {
                        updateState({ visibleColumns: prefs.visibleColumns });
                    }
                }
-               // Do not fetch data automatically, wait for user action.
                setIsInitialLoading(false);
             }
             loadPrefs();
@@ -241,22 +238,9 @@ export function useReceivingReport() {
         });
         doc.save('reporte_recepciones.pdf');
     };
-    
-    const handleCorrection = async (unit: InventoryUnit, newProductId: string) => {
-        if (!user) return;
-        try {
-            await correctInventoryUnit(unit, newProductId, user.id);
-            toast({ title: 'Corrección Aplicada', description: `Se ha corregido el ingreso de la unidad ${unit.unitCode}.` });
-            await fetchData();
-        } catch (error: any) {
-            logError('Failed to correct inventory unit', { error, unit, newProductId });
-            toast({ title: 'Error al Corregir', description: error.message, variant: 'destructive'});
-        }
-    };
 
     const actions = {
         fetchData,
-        handleCorrection,
         setDateRange: (range: DateRange | undefined) => updateState({ dateRange: range || { from: undefined, to: undefined } }),
         setSearchTerm: (term: string) => updateState({ searchTerm: term }),
         setUserFilter: (filter: string[]) => updateState({ userFilter: filter }),

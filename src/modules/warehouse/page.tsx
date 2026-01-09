@@ -1,4 +1,3 @@
-
 /**
  * @fileoverview The main dashboard page for the warehouse section.
  * It displays a grid of available warehouse management tools.

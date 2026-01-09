@@ -1,4 +1,3 @@
-
 /**
  * @fileoverview A reusable multi-select filter component using a dialog modal.
  * This component provides a robust filtering experience with a search bar and checkboxes.
@@ -56,7 +55,7 @@ export function MultiSelectFilter({
     }
   }, [open, selectedValues]);
 
-  const options: MultiSelectOption[] = React.useMemo(() => rawOptions.map(opt =>
+  const options: MultiSelectOption[] = React.useMemo(() => (rawOptions || []).map(opt =>
     typeof opt === 'string' ? { value: opt, label: opt } : opt
   ), [rawOptions]);
 

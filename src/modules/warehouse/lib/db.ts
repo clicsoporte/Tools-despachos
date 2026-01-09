@@ -102,20 +102,22 @@ export async function getSelectableLocations(): Promise<WarehouseLocation[]> {
     return JSON.parse(JSON.stringify(selectable));
 }
 
-export async function getPhysicalInventory(dateRange?: DateRange): Promise<WarehouseInventoryItem[]> {
+export async function getInventoryUnits(dateRange?: DateRange): Promise<InventoryUnit[]> {
     const db = await connectDb(WAREHOUSE_DB_FILE);
+    
     if (dateRange?.from) {
         const toDate = new Date(dateRange.to || dateRange.from);
         toDate.setHours(23, 59, 59, 999);
-        const inventory = db.prepare(`
-            SELECT * FROM inventory 
-            WHERE lastUpdated BETWEEN ? AND ?
-            ORDER BY lastUpdated DESC
-        `).all(dateRange.from.toISOString(), toDate.toISOString()) as WarehouseInventoryItem[];
-        return JSON.parse(JSON.stringify(inventory));
+        const units = db.prepare(`
+            SELECT * FROM inventory_units 
+            WHERE createdAt BETWEEN ? AND ?
+            ORDER BY createdAt DESC
+        `).all(dateRange.from.toISOString(), toDate.toISOString()) as InventoryUnit[];
+        return JSON.parse(JSON.stringify(units));
     }
-    const inventory = db.prepare('SELECT * FROM inventory ORDER BY lastUpdated DESC').all() as WarehouseInventoryItem[];
-    return JSON.parse(JSON.stringify(inventory));
+    
+    const units = db.prepare('SELECT * FROM inventory_units ORDER BY createdAt DESC LIMIT 200').all() as InventoryUnit[];
+    return JSON.parse(JSON.stringify(units));
 }
 
 
@@ -414,24 +416,12 @@ export async function addInventoryUnit(unit: Omit<InventoryUnit, 'id' | 'created
 }
 
 
-export async function getInventoryUnits(dateRange?: DateRange): Promise<InventoryUnit[]> {
-    const db = await connectDb(WAREHOUSE_DB_FILE);
-    
-    if (dateRange?.from) {
-        const toDate = new Date(dateRange.to || dateRange.from);
-        toDate.setHours(23, 59, 59, 999);
-        const units = db.prepare(`
-            SELECT * FROM inventory_units 
-            WHERE createdAt BETWEEN ? AND ?
-            ORDER BY createdAt DESC
-        `).all(dateRange.from.toISOString(), toDate.toISOString()) as InventoryUnit[];
-        return JSON.parse(JSON.stringify(units));
-    }
-    
-    const units = db.prepare('SELECT * FROM inventory_units ORDER BY createdAt DESC LIMIT 200').all() as InventoryUnit[];
-    return JSON.parse(JSON.stringify(units));
-}
 
+
+export async function deleteInventoryUnit(id: number): Promise<void> {
+    const db = await connectDb(WAREHOUSE_DB_FILE);
+    db.prepare('DELETE FROM inventory_units WHERE id = ?').run(id);
+}
 
 export async function getInventoryUnitById(id: string | number): Promise<InventoryUnit | null> {
     const db = await connectDb(WAREHOUSE_DB_FILE);
@@ -445,11 +435,6 @@ export async function getInventoryUnitById(id: string | number): Promise<Invento
         unit = db.prepare('SELECT * FROM inventory_units WHERE id = ?').get(id) as InventoryUnit | undefined;
     }
     return unit ? JSON.parse(JSON.stringify(unit)) : null;
-}
-
-export async function deleteInventoryUnit(id: number): Promise<void> {
-    const db = await connectDb(WAREHOUSE_DB_FILE);
-    db.prepare('DELETE FROM inventory_units WHERE id = ?').run(id);
 }
 
 export async function updateInventoryUnitLocation(id: number, locationId: number): Promise<void> {
@@ -909,4 +894,3 @@ export async function correctInventoryUnit(originalUnit: InventoryUnit, newProdu
         throw err;
     }
 }
-
