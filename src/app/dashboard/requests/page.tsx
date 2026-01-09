@@ -207,7 +207,7 @@ export default function PurchaseRequestPage() {
                                 <SelectTrigger className={cn("h-8 w-32 border-0 focus:ring-0", selectors.priorityConfig[request.priority]?.className)}>
                                     <SelectValue />
                                 </SelectTrigger>
-                                <SelectContent>{Object.entries(selectors.priorityConfig).map(([key, {label}]: [string, {label: string}]) => <SelectItem key={key} value={key} disabled={!selectors.hasPermission('requests:edit:pending')}>{label}</SelectItem>)}</SelectContent>
+                                <SelectContent>{Object.entries(selectors.priorityConfig).map(([key, value]) => { const {label} = value as {label: string}; return <SelectItem key={key} value={key} disabled={!selectors.hasPermission('requests:edit:pending')}>{label}</SelectItem>})}</SelectContent>
                             </Select>
                         </div>
                         <div className="space-y-1">
@@ -293,7 +293,7 @@ export default function PurchaseRequestPage() {
             <Input placeholder="Buscar por Nº solicitud, cliente, producto o pedido ERP..." value={searchTerm} onChange={(e) => actions.setSearchTerm(e.target.value)} className="w-full md:w-64" />
             <MultiSelectFilter
                 title="Estado"
-                options={Object.entries(selectors.statusConfig).map(([key, { label }]: [string, { label: string }]) => ({ value: key, label }))}
+                options={Object.entries(selectors.statusConfig).map(([key, value]) => ({ value: key, label: (value as {label: string}).label }))}
                 selectedValues={state.statusFilter}
                 onSelectedChange={actions.setStatusFilter}
                 className="w-full md:w-auto"
@@ -493,7 +493,7 @@ export default function PurchaseRequestPage() {
                 <div className="space-y-2"><Label>Artículo / Servicio</Label><Input value={`[${requestToEdit?.itemId}] ${requestToEdit?.itemDescription}`} disabled /></div>
                 <div className="space-y-2"><Label htmlFor="edit-request-quantity">Cantidad</Label><Input id="edit-request-quantity" type="number" value={requestToEdit?.quantity || ''} onChange={e => { if (requestToEdit) actions.setRequestToEdit({ ...requestToEdit, quantity: Number(e.target.value) }); }} required /></div>
                 <div className="space-y-2"><Label htmlFor="edit-request-required-date">Fecha Requerida</Label><Input id="edit-request-required-date" type="date" value={requestToEdit?.requiredDate ? format(parseISO(requestToEdit.requiredDate), 'yyyy-MM-dd') : ''} onChange={e => { if (requestToEdit) actions.setRequestToEdit({ ...requestToEdit, requiredDate: e.target.value }); }} required /></div>
-                <div className="space-y-2"><Label htmlFor="edit-request-priority">Prioridad</Label><Select value={requestToEdit?.priority} onValueChange={(value: PurchaseRequestPriority) => { if (requestToEdit) actions.setRequestToEdit({ ...requestToEdit, priority: value }); }}><SelectTrigger id="edit-request-priority"><SelectValue /></SelectTrigger><SelectContent>{Object.entries(selectors.priorityConfig).map(([key, {label}]: [string, {label:string}]) => <SelectItem key={key} value={key}>{label}</SelectItem>)}</SelectContent></Select></div>
+                <div className="space-y-2"><Label htmlFor="edit-request-priority">Prioridad</Label><Select value={requestToEdit?.priority} onValueChange={(value: PurchaseRequestPriority) => { if (requestToEdit) actions.setRequestToEdit({ ...requestToEdit, priority: value }); }}><SelectTrigger id="edit-request-priority"><SelectValue /></SelectTrigger><SelectContent>{Object.entries(selectors.priorityConfig).map(([key, {label}]: [string, {label: string}]) => <SelectItem key={key} value={key}>{label}</SelectItem>)}</SelectContent></Select></div>
                 <div className="space-y-2"><Label>Tipo de Compra</Label><RadioGroup value={requestToEdit?.purchaseType} onValueChange={(value: 'single' | 'multiple') => { if (requestToEdit) actions.setRequestToEdit({ ...requestToEdit, purchaseType: value }); }} className="flex items-center gap-4 pt-2"><div className="flex items-center space-x-2"><RadioGroupItem value="single" id="r-edit-single" /><Label htmlFor="r-edit-single">Proveedor Único</Label></div><div className="flex items-center space-x-2"><RadioGroupItem value="multiple" id="r-edit-multiple" /><Label htmlFor="r-edit-multiple">Múltiples Proveedores</Label></div></RadioGroup></div>
                 <div className="space-y-2"><Label htmlFor="edit-request-supplier">Proveedor Manual</Label><Input id="edit-request-supplier" value={requestToEdit?.manualSupplier || ''} onChange={(e) => { if (requestToEdit) actions.setRequestToEdit({ ...requestToEdit, manualSupplier: e.target.value }); }} disabled={!['pending', 'purchasing-review'].includes(requestToEdit?.status || '')} /></div>
                 <div className="space-y-2"><Label htmlFor="edit-request-erp-order">Pedido ERP</Label><Input id="edit-request-erp-order" value={requestToEdit?.erpOrderNumber || ''} onChange={(e) => { if (requestToEdit) actions.setRequestToEdit({ ...requestToEdit, erpOrderNumber: e.target.value }); }} disabled={!['pending', 'purchasing-review'].includes(requestToEdit?.status || '')} /></div>

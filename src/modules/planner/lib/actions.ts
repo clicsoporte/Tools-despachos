@@ -8,7 +8,7 @@ import type { ProductionOrder, UpdateStatusPayload, UpdateOrderDetailsPayload, P
 import { logInfo, logError } from '@/modules/core/lib/logger';
 import { createNotificationForPermission, createNotification } from '@/modules/core/lib/notifications-actions';
 import { 
-    getOrders, 
+    getOrders as getOrdersServer, 
     addOrder, 
     updateOrder,
     updateStatus, 
@@ -37,12 +37,12 @@ export async function getProductionOrders(options: {
     filters: {
         searchTerm?: string;
         status?: string[];
-        classification?: string;
+        classification?: string[];
         showOnlyMy?: string;
         dateRange?: DateRange;
     };
 }): Promise<{ activeOrders: ProductionOrder[], archivedOrders: ProductionOrder[], totalActiveCount: number, totalArchivedCount: number }> {
-    return getOrders(options);
+    return getOrdersServer(options);
 }
 
 

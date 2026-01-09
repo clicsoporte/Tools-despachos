@@ -59,7 +59,7 @@ const emptyOrder: Omit<ProductionOrder, 'id' | 'consecutive' | 'requestDate' | '
     pendingAction: 'none',
 };
 
-const priorityConfig = { 
+const priorityConfig: { [key in ProductionOrderPriority]: { label: string, className: string } } = { 
     low: { label: "Baja", className: "text-gray-500" }, 
     medium: { label: "Media", className: "text-blue-500" }, 
     high: { label: "Alta", className: "text-yellow-600" }, 
@@ -841,6 +841,9 @@ export const usePlanner = () => {
         totalActiveCount: state.totalActiveCount,
         totalArchivedCount: state.totalArchivedCount,
         availableColumns,
+        visibleColumnsData: useMemo(() => {
+            return state.visibleColumns.map(id => availableColumns.find(col => col.id === id)).filter(Boolean) as (typeof availableColumns)[0][];
+        }, [state.visibleColumns]),
     };
 
     return {

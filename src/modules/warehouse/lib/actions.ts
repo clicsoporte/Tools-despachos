@@ -55,7 +55,7 @@ import {
     correctInventoryUnit as correctInventoryUnitServer,
 } from './db';
 import { sendEmail as sendEmailServer } from '@/modules/core/lib/email-service';
-import { getStockSettings as getStockSettingsDb, saveStockSettings as saveStockSettingsDb, getAllProducts, getAllStock, getAllItemLocations as getAllItemLocationsCore, getAllErpPurchaseOrderHeaders, getAllErpPurchaseOrderLines } from '@/modules/core/lib/db';
+import { getStockSettings as getStockSettingsDb, saveStockSettings as saveStockSettingsDb, getAllProducts, getAllStock, getAllErpPurchaseOrderHeaders, getAllErpPurchaseOrderLines, getAllItemLocations as getAllItemLocationsCore } from '@/modules/core/lib/db';
 import type { WarehouseSettings, WarehouseLocation, WarehouseInventoryItem, MovementLog, ItemLocation, InventoryUnit, StockSettings, User, ErpInvoiceHeader, ErpInvoiceLine, DispatchLog, Company, VerificationItem, DateRange, DispatchContainer, DispatchAssignment, Vehiculo, Empleado, PhysicalInventoryComparisonItem, Product, StockInfo } from '@/modules/core/types';
 import { logInfo, logWarn, logError } from '@/modules/core/lib/logger';
 import { generateDocument } from '@/modules/core/lib/pdf-generator';
@@ -77,7 +77,7 @@ export async function saveStockSettings(settings: StockSettings): Promise<void> 
 }
 export const getLocations = async (): Promise<WarehouseLocation[]> => getLocationsServer();
 export const getSelectableLocations = async (): Promise<WarehouseLocation[]> => getSelectableLocationsServer();
-export const getInventory = async (dateRange?: DateRange): Promise<WarehouseInventoryItem[]> => getPhysicalInventoryServer(dateRange);
+export const getPhysicalInventory = async (dateRange?: DateRange): Promise<WarehouseInventoryItem[]> => getPhysicalInventoryServer(dateRange);
 
 
 export async function addLocation(location: Omit<WarehouseLocation, 'id'>): Promise<WarehouseLocation> {
@@ -102,8 +102,8 @@ export async function deleteLocation(id: number, userName: string): Promise<void
 export const getInventoryForItem = async (itemId: string): Promise<WarehouseInventoryItem[]> => getInventoryForItemServer(itemId);
 export const logMovement = async (movement: Omit<MovementLog, 'id'|'timestamp'>): Promise<void> => logMovementServer(movement);
 
-export const updateInventory = async(itemId: string, locationId: number, quantity: number, userId: number): Promise<void> => {
-    return updateInventoryServer(itemId, locationId, quantity, userId);
+export const updateInventory = async(itemId: string, locationId: number, newQuantity: number, userId: number): Promise<void> => {
+    return updateInventoryServer(itemId, locationId, newQuantity, userId);
 };
 
 // --- Simple Mode Actions ---
@@ -247,6 +247,14 @@ export const unassignDocumentFromContainer = async (assignmentId: number): Promi
 export const finalizeDispatch = async (containerId: number, vehiclePlate: string, driverName: string, helper1Name: string, helper2Name: string): Promise<void> => finalizeDispatchServer(containerId, vehiclePlate, driverName, helper1Name, helper2Name);
 export const getVehicles = async (): Promise<Vehiculo[]> => getVehiclesServer();
 export const getEmployees = async (): Promise<Empleado[]> => getEmployeesServer();
+
+export async function getReceivingReportData({ dateRange }: { dateRange?: DateRange }): Promise<{ units: InventoryUnit[], locations: WarehouseLocation[] }> {
+    const [units, locations] = await Promise.all([
+        getInventoryUnitsServer(dateRange),
+        getLocationsServer(),
+    ]);
+    return { units, locations };
+}
 
 export async function getPhysicalInventoryReportData({ dateRange }: { dateRange?: DateRange }): Promise<{ comparisonData: PhysicalInventoryComparisonItem[], allLocations: WarehouseLocation[] }> {
     try {
