@@ -37,9 +37,9 @@ export default function DashboardPage() {
             case 'quoter':
                 return hasPermission('quotes:create');
             case 'purchase-request':
-                return hasPermission('requests:read');
+                return hasPermission('requests:access'); // Use general access permission
             case 'planner':
-                return hasPermission('planner:read');
+                return hasPermission('planner:access'); // Use general access permission
             case 'cost-assistant':
                 return hasPermission('cost-assistant:access');
             case 'warehouse':
