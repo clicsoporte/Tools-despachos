@@ -276,7 +276,7 @@ export async function getPhysicalInventoryReportData({ dateRange }: { dateRange?
                 locationCode: location?.code || 'N/A',
                 physicalCount: item.quantity,
                 erpStock: erpQuantity,
-                difference: item.quantity - erpQuantity,
+                difference: item.quantity - Number(erpQuantity),
                 lastCountDate: item.createdAt,
                 updatedBy: item.createdBy || 'N/A',
                 assignedLocationPath: itemLocationMap.get(item.productId) || 'Sin Asignar',

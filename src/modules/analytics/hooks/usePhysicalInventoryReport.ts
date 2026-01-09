@@ -9,7 +9,7 @@ import { useToast } from '@/modules/core/hooks/use-toast';
 import { usePageTitle } from '@/modules/core/hooks/usePageTitle';
 import { useAuthorization } from '@/modules/core/hooks/useAuthorization';
 import { logError } from '@/modules/core/lib/logger';
-import { getPhysicalInventoryReportData } from '@/modules/analytics/lib/actions';
+import { getPhysicalInventoryReportData } from '@/modules/warehouse/lib/actions';
 import type { PhysicalInventoryComparisonItem, DateRange, Product, UserPreferences, WarehouseLocation } from '@/modules/core/types';
 import { exportToExcel } from '@/modules/core/lib/excel-export';
 import { format, parseISO, startOfDay, subDays } from 'date-fns';

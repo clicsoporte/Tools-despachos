@@ -37,7 +37,7 @@ export async function getProductionOrders(options: {
     filters: {
         searchTerm?: string;
         status?: string[];
-        classification?: string;
+        classification?: string[];
         showOnlyMy?: string;
         dateRange?: DateRange;
     };
