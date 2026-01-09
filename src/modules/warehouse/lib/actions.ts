@@ -15,7 +15,6 @@ import {
     logMovement as logMovementServer,
     updateInventory as updateInventoryServer,
     getItemLocations as getItemLocationsServer,
-    getAllItemLocations as getAllItemLocationsServer,
     assignItemToLocation as assignItemToLocationServer,
     unassignItemFromLocation as unassignItemFromLocationServer,
     unassignAllFromContainer as unassignAllFromContainerServer,
@@ -54,6 +53,7 @@ import {
     getInventory as getPhysicalInventory,
     getSelectableLocations as getSelectableLocationsServer,
     correctInventoryUnit as correctInventoryUnitServer,
+    renderLocationPathAsString,
 } from './db';
 import { sendEmail as sendEmailServer } from '@/modules/core/lib/email-service';
 import { getStockSettings as getStockSettingsDb, saveStockSettings as saveStockSettingsDb, getAllProducts, getAllStock, getAllItemLocations as getAllItemLocationsCore, getAllErpPurchaseOrderHeaders, getAllErpPurchaseOrderLines } from '@/modules/core/lib/db';
@@ -105,7 +105,7 @@ export const updateInventory = async(itemId: string, locationId: number, quantit
 
 // --- Simple Mode Actions ---
 export const getItemLocations = async (itemId: string): Promise<ItemLocation[]> => getItemLocationsServer(itemId);
-export const getAllItemLocations = async (): Promise<ItemLocation[]> => getAllItemLocationsServer();
+export const getAllItemLocations = async (): Promise<ItemLocation[]> => getAllItemLocationsCore();
 export const assignItemToLocation = async (itemId: string, locationId: number, clientId: string | null, updatedBy: string): Promise<ItemLocation> => assignItemToLocationServer(itemId, locationId, clientId, updatedBy);
 export async function unassignItemFromLocation(assignmentId: number): Promise<void> {
     return unassignItemFromLocationServer(assignmentId);
@@ -241,9 +241,8 @@ export const unassignDocumentFromContainer = async (assignmentId: number): Promi
 export const finalizeDispatch = async (containerId: number, vehiclePlate: string, driverName: string, helper1Name: string, helper2Name: string): Promise<void> => finalizeDispatchServer(containerId, vehiclePlate, driverName, helper1Name, helper2Name);
 export const getVehicles = async (): Promise<Vehiculo[]> => getVehiclesServer();
 export const getEmployees = async (): Promise<Empleado[]> => getEmployeesServer();
-export const getSelectableLocations = async(): Promise<WarehouseLocation[]> => getSelectableLocationsServer();
 
-export const getPhysicalInventoryReportData = async({ dateRange }: { dateRange?: DateRange }): Promise<{ comparisonData: PhysicalInventoryComparisonItem[], allLocations: WarehouseLocation[] }> => {
+export async function getPhysicalInventoryReportData({ dateRange }: { dateRange?: DateRange }): Promise<{ comparisonData: PhysicalInventoryComparisonItem[], allLocations: WarehouseLocation[] }> {
     try {
         const [physicalInventory, erpStock, allProducts, allLocations, allItemLocations, selectableLocations] = await Promise.all([
             getPhysicalInventory(dateRange),
@@ -258,7 +257,7 @@ export const getPhysicalInventoryReportData = async({ dateRange }: { dateRange?:
         const productMap = new Map(allProducts.map((item: Product) => [item.id, item.description]));
         const locationMap = new Map(allLocations.map((item: WarehouseLocation) => [item.id, item]));
         const itemLocationMap = new Map<string, string>();
-        allItemLocations.forEach((itemLoc: ItemLocation) => {
+        allItemLocations.forEach(itemLoc => {
             itemLocationMap.set(itemLoc.itemId, renderLocationPathAsString(itemLoc.locationId, allLocations));
         });
 
@@ -286,7 +285,6 @@ export const getPhysicalInventoryReportData = async({ dateRange }: { dateRange?:
         throw new Error('No se pudo generar el reporte de inventario físico.');
     }
 }
-
 
 export async function correctInventoryUnit(originalUnit: InventoryUnit, newProductId: string, correctedByUserId: number): Promise<void> {
     return correctInventoryUnitServer(originalUnit, newProductId, correctedByUserId);

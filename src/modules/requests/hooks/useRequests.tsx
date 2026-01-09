@@ -28,7 +28,6 @@ import type {
     RequestSettings, 
     UpdatePurchaseRequestPayload, 
     DateRange, 
-    AdministrativeAction, 
     AdministrativeActionPayload,
     StockInfo, 
     ErpOrderHeader, 
@@ -47,8 +46,7 @@ import { getStatusConfig as getPlannerStatusConfig } from '@/modules/planner/lib
 import { getDaysRemaining } from '@/modules/core/lib/time-utils';
 import { exportToExcel } from '@/modules/core/lib/excel-export';
 import { generateDocument } from '@/modules/core/lib/pdf-generator';
-import { getUserPreferences, saveUserPreferences } from '@/modules/core/lib/db';
-import { getAllErpPurchaseOrderHeaders, getAllErpPurchaseOrderLines } from '@/modules/core/lib/db';
+import { getUserPreferences, saveUserPreferences, getAllErpPurchaseOrderHeaders, getAllErpPurchaseOrderLines } from '@/modules/core/lib/db';
 
 const emptyRequest: Partial<PurchaseRequest> = {
     priority: 'medium',
@@ -57,14 +55,14 @@ const emptyRequest: Partial<PurchaseRequest> = {
     requiresCurrency: false
 };
 
-const priorityConfig = { 
+const priorityConfig: { [key in PurchaseRequestPriority]: { label: string, className: string } } = { 
     low: { label: "Baja", className: "text-gray-500" }, 
     medium: { label: "Media", className: "text-blue-500" }, 
     high: { label: "Alta", className: "text-yellow-600" }, 
     urgent: { label: "Urgente", className: "text-red-600" }
 };
 
-const statusConfig = {
+const statusConfig: { [key in PurchaseRequestStatus]: { label: string, color: string } } = {
     'pending': { label: 'Pendiente', color: 'bg-yellow-500' },
     'purchasing-review': { label: 'Revisión Compras', color: 'bg-cyan-500' },
     'pending-approval': { label: 'Pendiente Aprobación', color: 'bg-orange-500' },
