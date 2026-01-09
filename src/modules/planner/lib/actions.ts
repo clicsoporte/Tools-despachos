@@ -205,7 +205,7 @@ export async function getCompletedOrdersByDateRange(options: {
     } 
 }): Promise<(ProductionOrder & { history: ProductionOrderHistoryEntry[] })[]> {
     const { dateRange, filters } = options;
-    let allOrders = await getCompletedOrdersByDateRangeServer(dateRange);
+    let allOrders = await getCompletedOrdersByDateRangeServer({dateRange});
 
     if (filters) {
         const allProducts = await getAllProducts();

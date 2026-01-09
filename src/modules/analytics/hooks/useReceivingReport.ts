@@ -96,7 +96,7 @@ export function useReceivingReport() {
     
     useEffect(() => {
         setTitle("Reporte de Recepciones");
-        const loadPrefsAndData = async () => {
+        const loadPrefs = async () => {
              if(user) {
                 const prefs = await getUserPreferences(user.id, 'receivingReportPrefs');
                 if (prefs && prefs.visibleColumns) {
@@ -107,7 +107,7 @@ export function useReceivingReport() {
              setIsInitialLoading(false);
         }
         if (isAuthorized) {
-            loadPrefsAndData();
+            loadPrefs();
         }
     }, [setTitle, isAuthorized, user, updateState]);
     

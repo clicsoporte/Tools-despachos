@@ -7,6 +7,7 @@
 import type { WarehouseSettings, CustomStatus } from '@/modules/core/types';
 import { triggerNotificationEvent } from '@/modules/notifications/lib/notifications-engine';
 import { renderLocationPathAsString } from './utils';
+import { logInfo, logError } from '@/modules/core/lib/logger';
 
 export async function initializeWarehouseDb(db: import('better-sqlite3').Database) {
     const schema = `

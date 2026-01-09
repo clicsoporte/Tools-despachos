@@ -290,4 +290,3 @@ export async function getPhysicalInventoryReportData({ dateRange }: { dateRange?
         throw new Error('No se pudo generar el reporte de inventario físico.');
     }
 }
-

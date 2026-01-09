@@ -18,9 +18,8 @@ export const renderLocationPathAsString = (locationId: number, locations: Wareho
     let current: WarehouseLocation | undefined = locations.find(l => l.id === locationId);
     while (current) {
         path.unshift(current);
-        if (!current.parentId) break; // Break if there is no parent
-        // Safely find the next parent by using the current parentId
         const parentId = current.parentId;
+        if (!parentId) break; // Break if there is no parent
         current = locations.find(l => l.id === parentId);
     }
     return path.map(l => l.name).join(' > ');
