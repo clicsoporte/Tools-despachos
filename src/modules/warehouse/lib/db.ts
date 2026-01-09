@@ -102,6 +102,23 @@ export async function getSelectableLocations(): Promise<WarehouseLocation[]> {
     return JSON.parse(JSON.stringify(selectable));
 }
 
+export async function getPhysicalInventory(dateRange?: DateRange): Promise<WarehouseInventoryItem[]> {
+    const db = await connectDb(WAREHOUSE_DB_FILE);
+    if (dateRange?.from) {
+        const toDate = new Date(dateRange.to || dateRange.from);
+        toDate.setHours(23, 59, 59, 999);
+        const inventory = db.prepare(`
+            SELECT * FROM inventory 
+            WHERE lastUpdated BETWEEN ? AND ?
+            ORDER BY lastUpdated DESC
+        `).all(dateRange.from.toISOString(), toDate.toISOString()) as WarehouseInventoryItem[];
+        return JSON.parse(JSON.stringify(inventory));
+    }
+    const inventory = db.prepare('SELECT * FROM inventory ORDER BY lastUpdated DESC').all() as WarehouseInventoryItem[];
+    return JSON.parse(JSON.stringify(inventory));
+}
+
+
 export async function addLocation(location: Omit<WarehouseLocation, 'id'>): Promise<WarehouseLocation> {
     const db = await connectDb(WAREHOUSE_DB_FILE);
     const { name, code, type, parentId } = location;
@@ -253,20 +270,12 @@ export async function getInventoryForItem(itemId: string): Promise<WarehouseInve
     return db.prepare('SELECT * FROM inventory WHERE itemId = ?').all(itemId) as WarehouseInventoryItem[];
 }
 
-export async function getInventory(dateRange?: DateRange): Promise<WarehouseInventoryItem[]> {
+export async function logMovement(movement: Omit<MovementLog, 'id' | 'timestamp'>): Promise<void> {
     const db = await connectDb(WAREHOUSE_DB_FILE);
-    if (dateRange?.from) {
-        const toDate = new Date(dateRange.to || dateRange.from);
-        toDate.setHours(23, 59, 59, 999);
-        const inventory = db.prepare(`
-            SELECT * FROM inventory 
-            WHERE lastUpdated BETWEEN ? AND ?
-            ORDER BY lastUpdated DESC
-        `).all(dateRange.from.toISOString(), toDate.toISOString()) as WarehouseInventoryItem[];
-        return JSON.parse(JSON.stringify(inventory));
-    }
-    const inventory = db.prepare('SELECT * FROM inventory ORDER BY lastUpdated DESC').all() as WarehouseInventoryItem[];
-    return JSON.parse(JSON.stringify(inventory));
+    const newMovement = { ...movement, timestamp: new Date().toISOString() };
+    db.prepare(
+        'INSERT INTO movements (itemId, quantity, fromLocationId, toLocationId, timestamp, userId, notes) VALUES (@itemId, @quantity, @fromLocationId, @toLocationId, @timestamp, @userId, @notes)'
+    ).run(newMovement);
 }
 
 export async function updateInventory(itemId: string, locationId: number, newQuantity: number, userId: number): Promise<void> {
@@ -304,14 +313,6 @@ export async function updateInventory(itemId: string, locationId: number, newQua
     }
 }
 
-
-export async function logMovement(movement: Omit<MovementLog, 'id' | 'timestamp'>): Promise<void> {
-    const db = await connectDb(WAREHOUSE_DB_FILE);
-    const newMovement = { ...movement, timestamp: new Date().toISOString() };
-    db.prepare(
-        'INSERT INTO movements (itemId, quantity, fromLocationId, toLocationId, timestamp, userId, notes) VALUES (@itemId, @quantity, @fromLocationId, @toLocationId, @timestamp, @userId, @notes)'
-    ).run(newMovement);
-}
 
 export async function getWarehouseData(): Promise<{ locations: WarehouseLocation[], inventory: WarehouseInventoryItem[], stock: StockInfo[], itemLocations: ItemLocation[], warehouseSettings: WarehouseSettings, stockSettings: StockSettings }> {
     const db = await connectDb(WAREHOUSE_DB_FILE);
@@ -351,9 +352,13 @@ export async function getMovements(itemId?: string): Promise<MovementLog[]> {
     return db.prepare('SELECT * FROM movements ORDER BY timestamp DESC').all() as MovementLog[];
 }
 
-export async function getItemLocations(itemId: string): Promise<ItemLocation[]> {
+export async function getItemLocations(itemId?: string): Promise<ItemLocation[]> {
     const db = await connectDb(WAREHOUSE_DB_FILE);
-    const itemLocations = db.prepare('SELECT * FROM item_locations WHERE itemId = ?').all(itemId) as ItemLocation[];
+    if (itemId) {
+        const itemLocations = db.prepare('SELECT * FROM item_locations WHERE itemId = ?').all(itemId) as ItemLocation[];
+        return JSON.parse(JSON.stringify(itemLocations));
+    }
+    const itemLocations = db.prepare('SELECT * FROM item_locations').all() as ItemLocation[];
     return JSON.parse(JSON.stringify(itemLocations));
 }
 
@@ -805,7 +810,7 @@ export async function finalizeDispatch(containerId: number, vehiclePlate: string
     const logs = db.prepare(`
         SELECT dl.* 
         FROM dispatch_logs dl
-        JOIN dispatch_assignments da ON dl.documentId = dl.documentId
+        JOIN dispatch_assignments da ON dl.documentId = da.documentId
         WHERE da.containerId = ? AND dl.vehiclePlate IS NULL
     `).all(containerId) as DispatchLog[];
 

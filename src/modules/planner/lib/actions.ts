@@ -204,20 +204,21 @@ export async function getCompletedOrdersByDateRange(options: {
         machineIds?: string[] 
     } 
 }): Promise<(ProductionOrder & { history: ProductionOrderHistoryEntry[] })[]> {
-    let allOrders = await getCompletedOrdersByDateRangeServer(options.dateRange);
+    const { dateRange, filters } = options;
+    let allOrders = await getCompletedOrdersByDateRangeServer(dateRange);
 
-    if (options.filters) {
+    if (filters) {
         const allProducts = await getAllProducts();
         allOrders = allOrders.filter(order => {
-            if (options.filters?.productId && order.productId !== options.filters.productId) {
+            if (filters?.productId && order.productId !== filters.productId) {
                 return false;
             }
-            if (options.filters?.machineIds && options.filters.machineIds.length > 0 && (!order.machineId || !options.filters.machineIds.includes(order.machineId))) {
+            if (filters?.machineIds && filters.machineIds.length > 0 && (!order.machineId || !filters.machineIds.includes(order.machineId))) {
                 return false;
             }
-            if (options.filters?.classifications && options.filters.classifications.length > 0) {
+            if (filters?.classifications && filters.classifications.length > 0) {
                 const product = allProducts.find((p: Product) => p.id === order.productId);
-                if (!product || !product.classification || !options.filters.classifications.includes(product.classification)) {
+                if (!product || !product.classification || !filters.classifications.includes(product.classification)) {
                     return false;
                 }
             }

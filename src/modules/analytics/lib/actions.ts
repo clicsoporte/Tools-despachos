@@ -4,13 +4,13 @@
 'use server';
 
 import { getAllRoles, getAllSuppliers, getAllStock, getAllProducts, getUserPreferences, saveUserPreferences, getAllErpPurchaseOrderHeaders, getAllErpPurchaseOrderLines, getPublicUrl } from '@/modules/core/lib/db';
-import type { DateRange, ProductionOrder, PlannerSettings, ProductionOrderHistoryEntry, Product, User, Role, ErpPurchaseOrderLine, ErpPurchaseOrderHeader, Supplier, StockInfo, InventoryUnit, WarehouseLocation, PhysicalInventoryComparisonItem, ItemLocation } from '@/modules/core/types';
+import type { DateRange, ProductionOrder, PlannerSettings, ProductionOrderHistoryEntry, Product, User, Role, ErpPurchaseOrderLine, ErpPurchaseOrderHeader, Supplier, StockInfo, InventoryUnit, WarehouseLocation, PhysicalInventoryComparisonItem, ItemLocation, WarehouseInventoryItem } from '@/modules/core/types';
 import { getLocations as getWarehouseLocations, getInventoryUnits, getPhysicalInventory, getAllItemLocations } from '@/modules/warehouse/lib/actions';
 import { differenceInDays, parseISO } from 'date-fns';
 import type { ProductionReportDetail, ProductionReportData } from '../hooks/useProductionReport';
 import { logError } from '@/modules/core/lib/logger';
 import type { TransitReportItem } from '../hooks/useTransitsReport';
-import { getPlannerSettings, getCompletedOrdersByDateRange } from '@/modules/planner/lib/actions';
+import { getPlannerSettings, getCompletedOrdersByDateRange as getCompletedOrdersByDateRangeServer } from '@/modules/planner/lib/actions';
 import { reformatEmployeeName } from '@/lib/utils';
 import { renderLocationPathAsString } from '@/modules/warehouse/lib/utils';
 import { getAllUsersForReport } from '@/modules/core/lib/auth';
@@ -32,13 +32,14 @@ interface FullProductionReportData {
  * @param filters - Additional filters for product, classification, or machine.
  * @returns A promise that resolves to the structured production report data, including planner settings.
  */
-export async function getProductionReportData({ dateRange, filters = {} }: { dateRange: DateRange, filters?: ReportFilters }): Promise<FullProductionReportData> {
+export async function getProductionReportData(options: { dateRange: DateRange, filters?: ReportFilters }): Promise<FullProductionReportData> {
+    const { dateRange, filters } = options;
     if (!dateRange.from) {
         throw new Error("Date 'from' is required for the production report.");
     }
     
     const [allOrders, plannerSettings] = await Promise.all([
-        getCompletedOrdersByDateRange({ dateRange, filters }),
+        getCompletedOrdersByDateRangeServer({ dateRange, filters }),
         getPlannerSettings(),
     ]);
 
@@ -170,7 +171,7 @@ export async function getPhysicalInventoryReportData({ dateRange }: { dateRange?
                 difference: item.quantity - erpQuantity,
                 lastCountDate: item.lastUpdated,
                 updatedBy: item.updatedBy || 'N/A',
-                assignedLocationPath: itemLocationMap.get(item.productId) || 'Sin Asignar',
+                assignedLocationPath: itemLocationMap.get(item.itemId) || 'Sin Asignar',
             };
         });
 
