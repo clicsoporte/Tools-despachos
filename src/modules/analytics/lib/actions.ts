@@ -4,13 +4,13 @@
 'use server';
 
 import { getOrders as getPlannerOrders, getPlannerSettings, getCompletedOrdersByDateRange } from '@/modules/planner/lib/db';
-import { getAllRoles, getAllSuppliers, getAllStock, getAllProducts, getAllErpPurchaseOrderHeaders, getAllErpPurchaseOrderLines } from '@/modules/core/lib/db';
+import { getAllRoles, getAllSuppliers, getAllStock, getAllProducts, getAllErpPurchaseOrderHeaders, getAllErpPurchaseOrderLines, getUserPreferences, saveUserPreferences } from '@/modules/core/lib/db';
 import { getAllUsersForReport } from '@/modules/core/lib/auth';
 import type { DateRange, ProductionOrder, PlannerSettings, ProductionOrderHistoryEntry, Product, User, Role, ErpPurchaseOrderLine, ErpPurchaseOrderHeader, Supplier, StockInfo, PhysicalInventoryComparisonItem, ItemLocation, WarehouseLocation, InventoryUnit } from '@/modules/core/types';
 import { differenceInDays, parseISO } from 'date-fns';
 import type { ProductionReportDetail, ProductionReportData } from '../hooks/useProductionReport';
 import { logError } from '@/modules/core/lib/logger';
-import { getLocations as getWarehouseLocations, getInventory as getPhysicalInventory, getAllItemLocations, getSelectableLocations, getInventoryUnits } from '@/modules/warehouse/lib/db';
+import { getLocations as getWarehouseLocations, getInventory as getPhysicalInventory, getAllItemLocations, getSelectableLocations, getInventoryUnits, correctInventoryUnit as correctInventoryUnitServer } from '@/modules/warehouse/lib/db';
 import type { TransitReportItem } from '../hooks/useTransitsReport';
 
 
@@ -223,3 +223,9 @@ export async function getReceivingReportData({ dateRange }: { dateRange?: DateRa
         throw new Error('No se pudo generar el reporte de recepciones.');
     }
 }
+
+export async function correctInventoryUnit(originalUnit: InventoryUnit, newProductId: string, correctedByUserId: number): Promise<void> {
+    return correctInventoryUnitServer(originalUnit, newProductId, correctedByUserId);
+}
+
+    

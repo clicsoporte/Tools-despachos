@@ -1,4 +1,3 @@
-
 /**
  * @fileoverview This file centralizes all permission-related constants and logic.
  * Separating this from data.ts breaks a problematic dependency cycle.
@@ -16,7 +15,7 @@ export const allAdminPermissions = [
     "planner:priority:update", "planner:machine:assign", "planner:schedule",
     "cost-assistant:access", "cost-assistant:drafts:read-write",
     "warehouse:access", "warehouse:search:full", "warehouse:search:simple", 
-    "warehouse:receiving-wizard:use", "warehouse:population-wizard:use", "warehouse:inventory-count:create",
+    "warehouse:receiving-wizard:use", "warehouse:population-wizard:use", "warehouse:inventory-count:create", "warehouse:inventory-count:edit",
     "warehouse:item-assignment:create", "warehouse:item-assignment:delete",
     "warehouse:locations:create", "warehouse:locations:update", "warehouse:locations:delete",
     "warehouse:units:create", "warehouse:units:delete", "warehouse:locks:manage",
@@ -47,7 +46,7 @@ export const permissionGroups = {
     "Asistente de Costos": ["cost-assistant:access", "cost-assistant:drafts:read-write"],
     "Gestión de Almacenes": [
         "warehouse:access", "warehouse:search:full", "warehouse:search:simple",
-        "warehouse:receiving-wizard:use", "warehouse:population-wizard:use", "warehouse:inventory-count:create",
+        "warehouse:receiving-wizard:use", "warehouse:population-wizard:use", "warehouse:inventory-count:create", "warehouse:inventory-count:edit",
         "warehouse:item-assignment:create", "warehouse:item-assignment:delete",
         "warehouse:locations:create", "warehouse:locations:update", "warehouse:locations:delete",
         "warehouse:units:create", "warehouse:units:delete", "warehouse:locks:manage",
@@ -81,7 +80,7 @@ export const permissionTranslations: { [key: string]: string } = {
     "planner:status:completed": "Plan.: Cambiar a Completada", "planner:status:cancel": "Plan.: Cancelar (Pendientes)", "planner:status:cancel-approved": "Plan.: Cancelar (Aprobadas)", "planner:priority:update": "Plan.: Cambiar Prioridad", "planner:machine:assign": "Plan.: Asignar Máquina", "planner:status:unapprove-request": "Plan.: Solicitar Desaprobación", "planner:status:unapprove-request:approve": "Plan.: Aprobar Desaprobación", "planner:schedule": "Plan.: Programar Fechas",
     "cost-assistant:access": "Asist. Costos: Acceso", "cost-assistant:drafts:read-write": "Asist. Costos: Guardar Borradores",
     "warehouse:access": "Almacén: Acceso General", "warehouse:search:full": "Almacén: Consulta Completa", "warehouse:search:simple": "Almacén: Búsqueda Rápida", 
-    "warehouse:receiving-wizard:use": "Almacén: Usar Asist. Recepción", "warehouse:population-wizard:use": "Almacén: Usar Asist. Poblado", "warehouse:inventory-count:create": "Almacén: Registrar Conteo",
+    "warehouse:receiving-wizard:use": "Almacén: Usar Asist. Recepción", "warehouse:population-wizard:use": "Almacén: Usar Asist. Poblado", "warehouse:inventory-count:create": "Almacén: Registrar Conteo", "warehouse:inventory-count:edit": "Almacén: Corregir Ingresos",
     "warehouse:item-assignment:create": "Almacén: Asignar Ubic./Prod.", "warehouse:item-assignment:delete": "Almacén: Eliminar Asignación",
     "warehouse:locations:create": "Almacén: Crear Ubicaciones", "warehouse:locations:update": "Almacén: Editar Ubicaciones", "warehouse:locations:delete": "Almacén: Eliminar Ubicaciones",
     "warehouse:units:create": "Almacén: Crear Lotes/QR", "warehouse:units:delete": "Almacén: Eliminar Lotes/QR", "warehouse:locks:manage": "Almacén: Gestionar Bloqueos",
@@ -168,13 +167,10 @@ export const permissionTree: Record<string, string[]> = {
     "planner:status:cancel-approved": ["planner:reopen"],
     "planner:status:unapprove-request": ["planner:status:unapprove-request:approve"],
 
-
+    "warehouse:inventory-count:create": ["warehouse:inventory-count:edit"],
     "warehouse:locations:create": ["warehouse:locations:update", "warehouse:locations:delete"],
     "warehouse:item-assignment:create": ["warehouse:item-assignment:delete"],
     "warehouse:units:create": ["warehouse:units:delete"],
     "warehouse:dispatch-check:use": ["warehouse:dispatch-check:manual-override", "warehouse:dispatch-check:switch-mode", "warehouse:dispatch-check:send-email", "warehouse:dispatch-check:move-document", "warehouse:dispatch-check:reopen"],
     "warehouse:dispatch-check:send-email": ["warehouse:dispatch-check:send-email-external"],
-    "warehouse:dispatch-classifier:use": ["warehouse:dispatch:reset"],
-};
-
-
+    "warehouse:dispatch-classifier:use": ["warehouse:dispatch
