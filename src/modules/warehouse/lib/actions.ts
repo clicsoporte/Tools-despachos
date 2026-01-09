@@ -50,20 +50,20 @@ import {
     unassignDocumentFromContainer as unassignDocumentFromContainerServer,
     getVehicles as getVehiclesServer,
     getEmployees as getEmployeesServer,
-    getInventory as getPhysicalInventory,
+    getInventory as getPhysicalInventoryServer,
     getSelectableLocations as getSelectableLocationsServer,
     correctInventoryUnit as correctInventoryUnitServer,
-    renderLocationPathAsString,
 } from './db';
 import { sendEmail as sendEmailServer } from '@/modules/core/lib/email-service';
 import { getStockSettings as getStockSettingsDb, saveStockSettings as saveStockSettingsDb, getAllProducts, getAllStock, getAllItemLocations as getAllItemLocationsCore, getAllErpPurchaseOrderHeaders, getAllErpPurchaseOrderLines } from '@/modules/core/lib/db';
-import type { WarehouseSettings, WarehouseLocation, WarehouseInventoryItem, MovementLog, ItemLocation, InventoryUnit, StockSettings, User, ErpInvoiceHeader, ErpInvoiceLine, DispatchLog, Company, VerificationItem, DateRange, DispatchContainer, DispatchAssignment, Vehiculo, Empleado, PhysicalInventoryComparisonItem, StockInfo, Product } from '@/modules/core/types';
+import type { WarehouseSettings, WarehouseLocation, WarehouseInventoryItem, MovementLog, ItemLocation, InventoryUnit, StockSettings, User, ErpInvoiceHeader, ErpInvoiceLine, DispatchLog, Company, VerificationItem, DateRange, DispatchContainer, DispatchAssignment, Vehiculo, Empleado, PhysicalInventoryComparisonItem, Product, StockInfo } from '@/modules/core/types';
 import { logInfo, logWarn, logError } from '@/modules/core/lib/logger';
 import { generateDocument } from '@/modules/core/lib/pdf-generator';
 import { format } from 'date-fns';
 import type { HAlignType, FontStyle, RowInput } from 'jspdf-autotable';
 import { triggerNotificationEvent } from '@/modules/notifications/lib/notifications-engine';
-
+import path from 'path';
+import { renderLocationPathAsString } from './utils';
 
 export const getWarehouseSettings = async (): Promise<WarehouseSettings> => getWarehouseSettingsServer();
 export async function saveWarehouseSettings(settings: WarehouseSettings): Promise<void> {
@@ -245,7 +245,7 @@ export const getEmployees = async (): Promise<Empleado[]> => getEmployeesServer(
 export async function getPhysicalInventoryReportData({ dateRange }: { dateRange?: DateRange }): Promise<{ comparisonData: PhysicalInventoryComparisonItem[], allLocations: WarehouseLocation[] }> {
     try {
         const [physicalInventory, erpStock, allProducts, allLocations, allItemLocations, selectableLocations] = await Promise.all([
-            getPhysicalInventory(dateRange),
+            getPhysicalInventoryServer(dateRange),
             getAllStock(),
             getAllProducts(),
             getLocationsServer(),
@@ -288,4 +288,17 @@ export async function getPhysicalInventoryReportData({ dateRange }: { dateRange?
 
 export async function correctInventoryUnit(originalUnit: InventoryUnit, newProductId: string, correctedByUserId: number): Promise<void> {
     return correctInventoryUnitServer(originalUnit, newProductId, correctedByUserId);
+}
+
+export async function getReceivingReportData({ dateRange }: { dateRange?: DateRange }): Promise<{ units: InventoryUnit[], locations: WarehouseLocation[] }> {
+    try {
+        const [units, locations] = await Promise.all([
+            getInventoryUnits(dateRange),
+            getLocationsServer(),
+        ]);
+        return JSON.parse(JSON.stringify({ units, locations }));
+    } catch (error) {
+        logError('Failed to generate receiving report data', { error });
+        throw new Error('No se pudo generar el reporte de recepciones.');
+    }
 }

@@ -8,7 +8,7 @@ import { useToast } from '@/modules/core/hooks/use-toast';
 import { usePageTitle } from '@/modules/core/hooks/usePageTitle';
 import { useAuthorization } from '@/modules/core/hooks/useAuthorization';
 import { logError } from '@/modules/core/lib/logger';
-import { getReceivingReportData, correctInventoryUnit } from '@/modules/analytics/lib/actions';
+import { getReceivingReportData, correctInventoryUnit } from '@/modules/warehouse/lib/actions';
 import type { DateRange, InventoryUnit, Product, WarehouseLocation, UserPreferences } from '@/modules/core/types';
 import { subDays, startOfDay, format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -17,6 +17,7 @@ import { useAuth } from '@/modules/core/hooks/useAuth';
 import { exportToExcel } from '@/modules/core/lib/excel-export';
 import { generateDocument } from '@/modules/core/lib/pdf-generator';
 import { getUserPreferences, saveUserPreferences } from '@/modules/core/lib/db';
+import React from 'react';
 
 const normalizeText = (text: string | null | undefined): string => {
     if (!text) return "";
@@ -234,7 +235,7 @@ export function useReceivingReport() {
                     case 'productDescription': cellValue = getProductDescription(item.productId); break;
                     case 'humanReadableId': cellValue = item.humanReadableId || 'N/A'; break;
                     case 'unitCode': cellValue = item.unitCode || 'N/A'; break;
-                    case 'documentId': cellValue = item.documentId || 'N/A'; break;
+                    case 'documentId': cellValue = item.documentId || 'N/A';
                     case 'locationPath': cellValue = getLocationPath(item.locationId); break;
                     case 'quantity': return String((item as any).quantity ?? 1);
                     case 'createdBy': cellValue = item.createdBy; break;
