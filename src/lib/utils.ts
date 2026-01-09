@@ -35,8 +35,8 @@ export function reformatEmployeeName(name: string | null | undefined): string {
   }
 
   // The logic is to take the first two words as last names and move them to the end.
-  const firstNames = parts.slice(2);
   const lastNames = parts.slice(0, 2);
+  const firstNames = parts.slice(2);
   
   return [...firstNames, ...lastNames].join(' ');
 }

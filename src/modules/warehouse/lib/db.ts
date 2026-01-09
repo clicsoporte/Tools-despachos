@@ -9,7 +9,6 @@ import type { WarehouseLocation, WarehouseInventoryItem, MovementLog, WarehouseS
 import { logError, logInfo, logWarn } from '../../core/lib/logger';
 import { triggerNotificationEvent } from '@/modules/notifications/lib/notifications-engine';
 import path from 'path';
-import { reformatEmployeeName } from '@/lib/utils';
 
 const WAREHOUSE_DB_FILE = 'warehouse.db';
 
@@ -817,7 +816,7 @@ export async function unassignDocumentFromContainer(assignmentId: number): Promi
     db.prepare('DELETE FROM dispatch_assignments WHERE id = ?').run(assignmentId);
 }
 
-export async function finalizeDispatch(containerId: number, vehiclePlate: string, driverName: string, helper1Name?: string, helper2Name?: string): Promise<void> {
+export async function finalizeDispatch(containerId: number, vehiclePlate: string, driverName: string, helper1Name: string, helper2Name: string): Promise<void> {
     const db = await connectDb(WAREHOUSE_DB_FILE);
     const logs = db.prepare(`
         SELECT dl.* 
@@ -842,7 +841,8 @@ export async function getEmployees(): Promise<Empleado[]> {
     const db = await connectDb();
     try {
         const employees = db.prepare('SELECT * FROM empleados WHERE ACTIVO = ? ORDER BY NOMBRE').all('S') as Empleado[];
-        return employees;
+        // Format names at the source
+        return employees.map(e => ({...e, NOMBRE: e.NOMBRE}));
     } catch (error) {
         console.error("Failed to get all employees:", error);
         return [];

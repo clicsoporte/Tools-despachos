@@ -30,7 +30,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { format, parseISO, startOfDay, subDays } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { cn, reformatEmployeeName } from '@/lib/utils';
+import { cn } from '@/lib/utils';
 import { useAuthorization } from '@/modules/core/hooks/useAuthorization';
 import { getInvoicesByIds } from '@/modules/core/lib/db';
 import { Badge } from '@/components/ui/badge';
@@ -490,7 +490,7 @@ export default function DispatchCenterPage() {
         await finalizeDispatch(
             selectedContainer.id!,
             selectedVehicle,
-            driver ? driver.NOMBRE : '', // Pass the original name format
+            driver ? driver.NOMBRE : '',
             helper1 ? helper1.NOMBRE : '',
             helper2 ? helper2.NOMBRE : ''
         );
@@ -501,29 +501,29 @@ export default function DispatchCenterPage() {
     const driverOptions = useMemo(() => {
         const searchLower = debouncedDriverSearch.toLowerCase();
         return employees
-            .filter(e => reformatEmployeeName(e.NOMBRE).toLowerCase().includes(searchLower))
-            .map(e => ({ value: e.EMPLEADO, label: reformatEmployeeName(e.NOMBRE) }));
+            .filter(e => e.NOMBRE.toLowerCase().includes(searchLower))
+            .map(e => ({ value: e.EMPLEADO, label: e.NOMBRE }));
     }, [employees, debouncedDriverSearch]);
 
     const helper1Options = useMemo(() => {
         const searchLower = debouncedHelper1Search.toLowerCase();
         return employees
-            .filter(e => reformatEmployeeName(e.NOMBRE).toLowerCase().includes(searchLower))
-            .map(e => ({ value: e.EMPLEADO, label: reformatEmployeeName(e.NOMBRE) }));
+            .filter(e => e.NOMBRE.toLowerCase().includes(searchLower))
+            .map(e => ({ value: e.EMPLEADO, label: e.NOMBRE }));
     }, [employees, debouncedHelper1Search]);
 
     const helper2Options = useMemo(() => {
         const searchLower = debouncedHelper2Search.toLowerCase();
         return employees
-            .filter(e => reformatEmployeeName(e.NOMBRE).toLowerCase().includes(searchLower))
-            .map(e => ({ value: e.EMPLEADO, label: reformatEmployeeName(e.NOMBRE) }));
+            .filter(e => e.NOMBRE.toLowerCase().includes(searchLower))
+            .map(e => ({ value: e.EMPLEADO, label: e.NOMBRE }));
     }, [employees, debouncedHelper2Search]);
     
     const handleSelectDriver = (driverEmployeeId: string) => {
         const driver = employees.find(e => e.EMPLEADO === driverEmployeeId);
         if (driver) {
             setSelectedDriver(driver.EMPLEADO);
-            setDriverSearchTerm(reformatEmployeeName(driver.NOMBRE));
+            setDriverSearchTerm(driver.NOMBRE);
         }
         setIsDriverSearchOpen(false);
     };
@@ -532,7 +532,7 @@ export default function DispatchCenterPage() {
         const helper = employees.find(e => e.EMPLEADO === helperEmployeeId);
         if (helper) {
             setSelectedHelper1(helper.EMPLEADO);
-            setHelper1SearchTerm(reformatEmployeeName(helper.NOMBRE));
+            setHelper1SearchTerm(helper.NOMBRE);
         }
         setIsHelper1SearchOpen(false);
     };
@@ -541,7 +541,7 @@ export default function DispatchCenterPage() {
         const helper = employees.find(e => e.EMPLEADO === helperEmployeeId);
         if (helper) {
             setSelectedHelper2(helper.EMPLEADO);
-            setHelper2SearchTerm(reformatEmployeeName(helper.NOMBRE));
+            setHelper2SearchTerm(helper.NOMBRE);
         }
         setIsHelper2SearchOpen(false);
     };
@@ -729,7 +729,7 @@ export default function DispatchCenterPage() {
                                 <div className="flex justify-between items-start">
                                     <CardTitle className="flex items-center gap-2"><Truck className="h-5 w-5"/>{c.name}</CardTitle>
                                     {isLocked ? (
-                                        <Badge variant="destructive"><Lock className="mr-1 h-3 w-3"/> En Uso</Badge>
+                                        <Badge variant="destructive"><Lock className="mr-1 h-3 w-3"/> En Uso por: {c.lockedBy}</Badge>
                                     ) : isCompleted ? (
                                         <Badge variant="default" className="bg-green-600"><CheckCircle className="mr-1 h-3 w-3"/> Completada</Badge>
                                     ) : (assignmentCount > 0) ? (
@@ -761,4 +761,3 @@ export default function DispatchCenterPage() {
         </div>
     );
 }
-
