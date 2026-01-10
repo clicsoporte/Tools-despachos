@@ -102,18 +102,22 @@ export function useReceivingReport() {
                try {
                    const prefs = await getUserPreferences(user.id, 'receivingReportPrefs');
                    if (prefs && prefs.visibleColumns) {
+                       // This state update is safe because it's inside a useEffect that runs once.
                        updateState({ visibleColumns: prefs.visibleColumns });
                    }
                } catch (error) {
                    logError("Failed to load user preferences for receiving report", { error });
+               } finally {
+                   setIsInitialLoading(false);
                }
+           } else {
+                setIsInitialLoading(false);
            }
-           setIsInitialLoading(false);
         };
         
         loadPrefs();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [setTitle, isAuthorized, user]);
+    }, []); // Empty dependency array ensures this runs only once on mount.
     
     const getAllChildLocationIds = useCallback((locationId: number): number[] => {
         let children: number[] = [];
