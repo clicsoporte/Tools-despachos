@@ -96,13 +96,9 @@ export function useReceivingReport() {
     
     useEffect(() => {
         setTitle("Reporte de Recepciones");
-        if (!isAuthorized) {
-            setIsInitialLoading(false);
-            return;
-        }
         
         const loadPrefs = async () => {
-           if (user) {
+           if (isAuthorized && user) {
                try {
                    const prefs = await getUserPreferences(user.id, 'receivingReportPrefs');
                    if (prefs && prefs.visibleColumns) {
@@ -116,7 +112,8 @@ export function useReceivingReport() {
         };
         
         loadPrefs();
-    }, [setTitle, isAuthorized, user, updateState]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [setTitle, isAuthorized, user]);
     
     const getAllChildLocationIds = useCallback((locationId: number): number[] => {
         let children: number[] = [];

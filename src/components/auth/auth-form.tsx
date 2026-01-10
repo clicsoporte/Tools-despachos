@@ -33,7 +33,7 @@ import {
   login,
   getAllUsers,
   saveAllUsers,
-  sendPasswordRecoveryEmail,
+  sendRecoveryEmail,
 } from "@/modules/core/lib/auth-client";
 import { logInfo, logWarn, logError } from "@/modules/core/lib/logger";
 import { useAuth } from "@/modules/core/hooks/useAuth";
@@ -158,7 +158,7 @@ export function AuthForm({ clientInfo, initialData }: AuthFormProps) {
     if (!recoveryEmail) return;
     setIsProcessing(true);
     try {
-      await sendPasswordRecoveryEmail(recoveryEmail, clientInfo);
+      await sendRecoveryEmail(recoveryEmail, clientInfo);
       toast({ title: "Correo de Recuperación Enviado", description: "Si el correo existe, recibirás una contraseña temporal." });
       setRecoveryDialogOpen(false);
       setRecoveryEmail("");
