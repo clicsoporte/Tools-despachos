@@ -94,30 +94,28 @@ export function useReceivingReport() {
         }
     }, [state.dateRange, toast, updateState, isAuthorized]);
     
+    const loadPrefs = useCallback(async () => {
+        if (user) {
+            try {
+                const prefs = await getUserPreferences(user.id, 'receivingReportPrefs');
+                if (prefs && prefs.visibleColumns) {
+                    updateState({ visibleColumns: prefs.visibleColumns });
+                }
+            } catch (error) {
+                logError("Failed to load user preferences for receiving report", { error });
+            }
+        }
+    }, [user, updateState]);
+    
     useEffect(() => {
         setTitle("Reporte de Recepciones");
-        
-        const loadPrefs = async () => {
-           if (isAuthorized && user) {
-               try {
-                   const prefs = await getUserPreferences(user.id, 'receivingReportPrefs');
-                   if (prefs && prefs.visibleColumns) {
-                       // This state update is safe because it's inside a useEffect that runs once.
-                       updateState({ visibleColumns: prefs.visibleColumns });
-                   }
-               } catch (error) {
-                   logError("Failed to load user preferences for receiving report", { error });
-               } finally {
-                   setIsInitialLoading(false);
-               }
-           } else {
-                setIsInitialLoading(false);
-           }
-        };
-        
-        loadPrefs();
+        if (isAuthorized) {
+            loadPrefs().finally(() => setIsInitialLoading(false));
+        } else {
+            setIsInitialLoading(false);
+        }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []); // Empty dependency array ensures this runs only once on mount.
+    }, [setTitle, isAuthorized]); 
     
     const getAllChildLocationIds = useCallback((locationId: number): number[] => {
         let children: number[] = [];
