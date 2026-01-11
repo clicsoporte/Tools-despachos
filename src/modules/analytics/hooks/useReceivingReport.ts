@@ -41,7 +41,6 @@ const availableColumns = [
 
 interface State {
     isLoading: boolean;
-    isInitialLoading: boolean;
     data: InventoryUnit[];
     allLocations: WarehouseLocation[];
     dateRange: DateRange;
@@ -57,9 +56,10 @@ export function useReceivingReport() {
     const { toast } = useToast();
     const { companyData, user, products } = useAuth();
     
+    const [isInitialLoading, setIsInitialLoading] = useState(true);
+
     const [state, setState] = useState<State>({
-        isLoading: false,
-        isInitialLoading: true,
+        isLoading: true, // Start with true for initial skeleton
         data: [],
         allLocations: [],
         dateRange: {
@@ -74,15 +74,15 @@ export function useReceivingReport() {
 
     const [debouncedSearchTerm] = useDebounce(state.searchTerm, 500);
 
-    const updateState = (newState: Partial<State>) => {
+    const updateState = useCallback((newState: Partial<State>) => {
         setState(prevState => ({ ...prevState, ...newState }));
-    };
+    }, []);
 
     useEffect(() => {
         setTitle("Reporte de Recepciones");
         
         const loadPrefs = async () => {
-            if (user) {
+            if (user && isAuthorized) {
                 try {
                     const prefs = await getUserPreferences(user.id, 'receivingReportPrefs');
                     if (prefs && prefs.visibleColumns) {
@@ -92,16 +92,14 @@ export function useReceivingReport() {
                     logError('Failed to load user preferences for receiving report.', { error });
                 }
             }
-            updateState({ isInitialLoading: false });
+            setIsInitialLoading(false);
+            updateState({ isLoading: false }); // Done with initial loading
         };
         
-        if (isAuthorized) {
-           loadPrefs();
-        } else {
-            updateState({ isInitialLoading: false });
-        }
+        loadPrefs();
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [setTitle, isAuthorized, user]);
+
 
     const fetchData = async () => {
         if (!isAuthorized) return;
@@ -282,13 +280,10 @@ export function useReceivingReport() {
     };
     
     return {
-        state: {
-            ...state,
-            isLoading: state.isLoading || state.isInitialLoading
-        },
+        state,
         actions,
         selectors,
         isAuthorized,
-        isInitialLoading: state.isInitialLoading,
+        isInitialLoading,
     };
 }
