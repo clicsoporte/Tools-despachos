@@ -57,7 +57,7 @@ export function useReceivingReport() {
     const { companyData, user, products } = useAuth();
     
     const [state, setState] = useState<State>({
-        isLoading: true, // Start with true for initial skeleton
+        isLoading: true,
         data: [],
         allLocations: [],
         dateRange: {
@@ -72,52 +72,48 @@ export function useReceivingReport() {
 
     const [debouncedSearchTerm] = useDebounce(state.searchTerm, 500);
 
-    const updateState = useCallback((newState: Partial<State>) => {
-        setState(prevState => ({ ...prevState, ...newState }));
-    }, []);
+    const loadPrefs = useCallback(async () => {
+        if (!user) {
+            setState(prevState => ({ ...prevState, isLoading: false }));
+            return;
+        }
+        try {
+            const prefs = await getUserPreferences(user.id, 'receivingReportPrefs');
+            if (prefs && prefs.visibleColumns) {
+                setState(prevState => ({ ...prevState, visibleColumns: prefs.visibleColumns }));
+            }
+        } catch (error) {
+            logError('Failed to load user preferences for receiving report.', { error });
+        } finally {
+            setState(prevState => ({ ...prevState, isLoading: false }));
+        }
+    }, [user]);
 
     useEffect(() => {
         setTitle("Reporte de Recepciones");
-        
-        const loadPrefs = async () => {
-            if (user && isAuthorized) {
-                try {
-                    const prefs = await getUserPreferences(user.id, 'receivingReportPrefs');
-                    if (prefs && prefs.visibleColumns) {
-                        updateState({ visibleColumns: prefs.visibleColumns, isLoading: false });
-                    } else {
-                         updateState({ isLoading: false });
-                    }
-                } catch (error) {
-                    logError('Failed to load user preferences for receiving report.', { error });
-                    updateState({ isLoading: false });
-                }
-            } else if (!isAuthorized) {
-                 updateState({ isLoading: false });
-            }
-        };
-        
-        loadPrefs();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [setTitle, isAuthorized, user]);
+        if (isAuthorized) {
+            loadPrefs();
+        }
+    }, [setTitle, isAuthorized, loadPrefs]);
 
 
     const fetchData = useCallback(async () => {
         if (!isAuthorized) return;
-        updateState({ isLoading: true });
+        setState(prevState => ({...prevState, isLoading: true }));
         try {
             const data = await getReceivingReportData({ dateRange: state.dateRange });
-            updateState({ 
+            setState(prevState => ({
+                ...prevState,
                 data: data.units, 
                 allLocations: data.locations 
-            });
+            }));
         } catch (error: any) {
             logError("Failed to fetch receiving report data", { error: error.message });
             toast({ title: 'Error', description: 'No se pudieron cargar los registros de recepción.', variant: 'destructive' });
         } finally {
-            updateState({ isLoading: false });
+            setState(prevState => ({...prevState, isLoading: false }));
         }
-    }, [isAuthorized, state.dateRange, toast, updateState]);
+    }, [isAuthorized, state.dateRange, toast]);
     
     const getAllChildLocationIds = useCallback((locationId: number): number[] => {
         let children: number[] = [];
@@ -251,21 +247,18 @@ export function useReceivingReport() {
 
     const actions = {
         fetchData,
-        setDateRange: (range: DateRange | undefined) => {
-            if (range) {
-                updateState({ dateRange: range });
-            }
-        },
-        setSearchTerm: (term: string) => updateState({ searchTerm: term }),
-        setUserFilter: (filter: string[]) => updateState({ userFilter: filter }),
-        setLocationFilter: (filter: string[]) => updateState({ locationFilter: filter }),
-        handleClearFilters: () => updateState({ searchTerm: '', userFilter: [], locationFilter: [] }),
+        setDateRange: (range: DateRange | undefined) => setState(prevState => ({ ...prevState, dateRange: range || { from: undefined, to: undefined } })),
+        setSearchTerm: (term: string) => setState(prevState => ({ ...prevState, searchTerm: term })),
+        setUserFilter: (filter: string[]) => setState(prevState => ({ ...prevState, userFilter: filter })),
+        setLocationFilter: (filter: string[]) => setState(prevState => ({ ...prevState, locationFilter: filter })),
+        handleClearFilters: () => setState(prevState => ({ ...prevState, searchTerm: '', userFilter: [], locationFilter: [] })),
         handleExportExcel,
         handleExportPDF,
         handleColumnVisibilityChange: (columnId: string, checked: boolean) => {
-            updateState({
-                visibleColumns: checked ? [...state.visibleColumns, columnId] : state.visibleColumns.filter(id => id !== columnId)
-            });
+            setState(prevState => ({
+                ...prevState,
+                visibleColumns: checked ? [...prevState.visibleColumns, columnId] : prevState.visibleColumns.filter(id => id !== columnId)
+            }));
         },
         handleSavePreferences,
     };
@@ -285,6 +278,6 @@ export function useReceivingReport() {
         actions,
         selectors,
         isAuthorized,
-        isInitialLoading: state.isLoading,
+        isInitialLoading: state.isLoading && state.data.length === 0,
     };
 }

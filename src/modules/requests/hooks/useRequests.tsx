@@ -1,3 +1,4 @@
+
 // This file was restored to its stable version.
 // The previous content was causing compilation issues.
 'use client';
@@ -516,4 +517,3 @@ export default function PurchaseRequestPage() {
         </main>
     );
 }
-```

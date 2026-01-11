@@ -9,6 +9,7 @@ import { useReceivingReport } from '@/modules/analytics/hooks/useReceivingReport
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { Loader2, CalendarIcon, Search, FileDown, FileSpreadsheet, FilterX, Columns3 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -43,7 +44,7 @@ export default function ReceivingReportPage() {
         );
     }
     
-    if (isAuthorized === false) return null;
+    if (!isAuthorized) return null;
 
     return (
         <main className="flex-1 p-4 md:p-6 lg:p-8 space-y-6">
