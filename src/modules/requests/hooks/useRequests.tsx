@@ -205,7 +205,7 @@ export default function useRequests() {
         // ... other actions
     } as any;
 
-    const selectors = {} as any;
+    const selectors = { hasPermission } as any;
 
     return { state, actions, selectors, isAuthorized };
 }

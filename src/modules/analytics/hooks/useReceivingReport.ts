@@ -56,8 +56,6 @@ export function useReceivingReport() {
     const { toast } = useToast();
     const { companyData, user, products } = useAuth();
     
-    const [isInitialLoading, setIsInitialLoading] = useState(true);
-
     const [state, setState] = useState<State>({
         isLoading: true, // Start with true for initial skeleton
         data: [],
@@ -86,14 +84,17 @@ export function useReceivingReport() {
                 try {
                     const prefs = await getUserPreferences(user.id, 'receivingReportPrefs');
                     if (prefs && prefs.visibleColumns) {
-                        updateState({ visibleColumns: prefs.visibleColumns });
+                        updateState({ visibleColumns: prefs.visibleColumns, isLoading: false });
+                    } else {
+                         updateState({ isLoading: false });
                     }
                 } catch (error) {
                     logError('Failed to load user preferences for receiving report.', { error });
+                    updateState({ isLoading: false });
                 }
+            } else if (!isAuthorized) {
+                 updateState({ isLoading: false });
             }
-            setIsInitialLoading(false);
-            updateState({ isLoading: false }); // Done with initial loading
         };
         
         loadPrefs();
@@ -101,7 +102,7 @@ export function useReceivingReport() {
     }, [setTitle, isAuthorized, user]);
 
 
-    const fetchData = async () => {
+    const fetchData = useCallback(async () => {
         if (!isAuthorized) return;
         updateState({ isLoading: true });
         try {
@@ -116,7 +117,7 @@ export function useReceivingReport() {
         } finally {
             updateState({ isLoading: false });
         }
-    };
+    }, [isAuthorized, state.dateRange, toast, updateState]);
     
     const getAllChildLocationIds = useCallback((locationId: number): number[] => {
         let children: number[] = [];
@@ -284,6 +285,6 @@ export function useReceivingReport() {
         actions,
         selectors,
         isAuthorized,
-        isInitialLoading,
+        isInitialLoading: state.isLoading,
     };
 }

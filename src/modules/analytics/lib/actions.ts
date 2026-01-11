@@ -10,7 +10,7 @@ import { differenceInDays, parseISO } from 'date-fns';
 import type { ProductionReportDetail, ProductionReportData } from '../hooks/useProductionReport';
 import { logError } from '@/modules/core/lib/logger';
 import type { TransitReportItem } from '../hooks/useTransitsReport';
-import { getPlannerSettings, getCompletedOrdersByDateRange as getCompletedOrdersByDateRangePlanner } from '@/modules/planner/lib/actions';
+import { getPlannerSettings, getCompletedOrdersByDateRange } from '@/modules/planner/lib/actions';
 import { reformatEmployeeName } from '@/lib/utils';
 import { renderLocationPathAsString } from '@/modules/warehouse/lib/utils';
 import { getAllUsersForReport } from '@/modules/core/lib/auth';
@@ -35,7 +35,7 @@ interface FullProductionReportData {
 export async function getProductionReportData(options: { dateRange: DateRange, filters?: ReportFilters }): Promise<FullProductionReportData> {
     const { dateRange, filters } = options;
     
-    let allOrders = await getCompletedOrdersByDateRangePlanner(dateRange, filters);
+    let allOrders = await getCompletedOrdersByDateRange(dateRange, filters);
 
     const details: ProductionReportDetail[] = allOrders.map((order) => {
         const history = order.history || [];

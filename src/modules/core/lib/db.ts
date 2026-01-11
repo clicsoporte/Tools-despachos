@@ -90,7 +90,7 @@ export async function initializeMainDatabase(db: import('better-sqlite3').Databa
         CREATE TABLE IF NOT EXISTS import_queries (type TEXT PRIMARY KEY, query TEXT);
         CREATE TABLE IF NOT EXISTS suggestions (id INTEGER PRIMARY KEY AUTOINCREMENT, content TEXT, userId INTEGER, userName TEXT, isRead INTEGER DEFAULT 0, timestamp TEXT);
         CREATE TABLE IF NOT EXISTS user_preferences (userId INTEGER NOT NULL, key TEXT NOT NULL, value TEXT NOT NULL, PRIMARY KEY (userId, key));
-        CREATE TABLE IF NOT EXISTS notifications (id INTEGER PRIMARY KEY AUTOINCREMENT, userId INTEGER NOT NULL, message TEXT NOT NULL, href TEXT, isRead INTEGER DEFAULT 0, timestamp TEXT NOT NULL, entityId INTEGER, entityType TEXT, taskType TEXT, FOREIGN KEY (userId) REFERENCES users(id) ON DELETE CASCADE);
+        CREATE TABLE IF NOT EXISTS notifications (id INTEGER PRIMARY KEY AUTOINCREMENT, userId INTEGER NOT NULL, message TEXT NOT NULL, href TEXT, isRead INTEGER DEFAULT 0, timestamp TEXT NOT NULL, entityId INTEGER, entityType TEXT, taskType TEXT, entityStatus TEXT, FOREIGN KEY (userId) REFERENCES users(id) ON DELETE CASCADE);
         CREATE TABLE IF NOT EXISTS email_settings (key TEXT PRIMARY KEY, value TEXT);
         CREATE TABLE IF NOT EXISTS suppliers (id TEXT PRIMARY KEY, name TEXT, alias TEXT, email TEXT, phone TEXT);
         CREATE TABLE IF NOT EXISTS erp_order_headers (PEDIDO TEXT PRIMARY KEY, ESTADO TEXT, CLIENTE TEXT, FECHA_PEDIDO TEXT, FECHA_PROMETIDA TEXT, ORDEN_COMPRA TEXT, TOTAL_UNIDADES REAL, MONEDA_PEDIDO TEXT, USUARIO TEXT);
@@ -275,6 +275,7 @@ async function checkAndApplyMigrations(db: import('better-sqlite3').Database) {
                     entityId INTEGER,
                     entityType TEXT,
                     taskType TEXT,
+                    entityStatus TEXT,
                     FOREIGN KEY (userId) REFERENCES users(id) ON DELETE CASCADE
                 );
             `);
@@ -285,6 +286,7 @@ async function checkAndApplyMigrations(db: import('better-sqlite3').Database) {
             if (!notificationsColumns.has('entityId')) db.exec('ALTER TABLE notifications ADD COLUMN entityId INTEGER');
             if (!notificationsColumns.has('entityType')) db.exec('ALTER TABLE notifications ADD COLUMN entityType TEXT');
             if (!notificationsColumns.has('taskType')) db.exec('ALTER TABLE notifications ADD COLUMN taskType TEXT');
+            if (!notificationsColumns.has('entityStatus')) db.exec('ALTER TABLE notifications ADD COLUMN entityStatus TEXT');
         }
         
         const userPrefsTable = db.prepare(`SELECT name FROM sqlite_master WHERE type='table' AND name='user_preferences'`).get();
