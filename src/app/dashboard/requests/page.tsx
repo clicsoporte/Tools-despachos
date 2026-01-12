@@ -1,5 +1,3 @@
-// This file was restored to its stable version.
-// The previous content was causing compilation issues.
 'use client';
 
 import React from 'react';
@@ -35,7 +33,6 @@ import { Separator } from '@/components/ui/separator';
 import { usePageTitle } from '@/modules/core/hooks/usePageTitle';
 import { MultiSelectFilter } from '@/components/ui/multi-select-filter';
 
-
 const HighlightedText = ({ text, highlight }: { text: string; highlight: string }) => {
     if (!highlight) {
         return <span>{text}</span>;
@@ -56,13 +53,12 @@ const HighlightedText = ({ text, highlight }: { text: string; highlight: string 
     );
 };
 
-
 export default function PurchaseRequestPage() {
     const { state, actions, selectors, isAuthorized } = useRequests();
     const { isReady } = useAuth();
 
     const {
-        isLoading, isSubmitting, isNewRequestDialogOpen, isEditRequestDialogOpen, viewingArchived,
+        isLoading, isSubmitting, isRefreshing, isNewRequestDialogOpen, isEditRequestDialogOpen, viewingArchived,
         currentPage, requestSettings, newRequest, requestToEdit,
         searchTerm, statusFilter, classificationFilter, dateFilter, showOnlyMyRequests,
         clientSearchTerm, isClientSearchOpen, itemSearchTerm, isItemSearchOpen,
@@ -109,7 +105,8 @@ export default function PurchaseRequestPage() {
         const daysRemaining = selectors.getDaysRemaining(request.requiredDate);
         
         const changeStatusActions = [
-            // Placeholder: This will be populated by the full hook logic later
+            // This part should be fully implemented inside the hook,
+            // for now, it's a placeholder.
         ];
 
         return (
@@ -141,18 +138,18 @@ export default function PurchaseRequestPage() {
                 <div className="flex flex-col md:flex-row items-center justify-between gap-4">
                     <h1 className="text-lg font-semibold md:text-2xl">Solicitudes de Compra</h1>
                     <div className="flex items-center gap-2 md:gap-4 flex-wrap">
-                        {/* Buttons will be rendered by the hook */}
+                        {/* Placeholder for buttons */}
                     </div>
                 </div>
                 <Card className="hidden md:block">
                     <CardContent className="p-4">
-                        {/* Filters will be rendered by the hook */}
+                        {/* Placeholder for filters */}
                     </CardContent>
                 </Card>
             </div>
             
             <div className="flex-1 overflow-auto pt-2 space-y-4">
-                {(isLoading && !state.isRefreshing) ? (
+                {(isLoading && !isRefreshing) ? (
                     Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-40 w-full" />)
                 ) : state.requests.length > 0 ? (
                     state.requests.map(renderRequestCard)
@@ -164,6 +161,18 @@ export default function PurchaseRequestPage() {
                         </div>
                     </div>
                 )}
+            </div>
+
+             <div className="flex items-center justify-center space-x-2 py-4">
+                <Button variant="outline" size="sm" onClick={() => actions.setCurrentPage(p => Math.max(0, p - 1))} disabled={currentPage === 0}>
+                    <ChevronLeft className="mr-2 h-4 w-4" />Anterior
+                </Button>
+                <span className="text-sm text-muted-foreground">
+                    Página {currentPage + 1} de {Math.ceil(state.totalActive / rowsPerPage)}
+                </span>
+                <Button variant="outline" size="sm" onClick={() => actions.setCurrentPage(p => p + 1)} disabled={(currentPage + 1) * rowsPerPage >= state.totalActive}>
+                    Siguiente<ChevronRight className="ml-2 h-4 w-4" />
+                </Button>
             </div>
         </main>
     );

@@ -24,7 +24,7 @@ import {
     updateRequestDetails as updateRequestDetailsServer,
     saveCostAnalysis as saveCostAnalysisServer,
     getUserByName,
-} from '../lib/actions';
+} from '@/modules/requests/lib/actions';
 import type { PurchaseRequest, PurchaseRequestHistoryEntry, RequestSettings, UpdatePurchaseRequestPayload, UpdateRequestStatusPayload, RequestNotePayload, PurchaseRequestPriority, ErpOrderHeader, ErpOrderLine, User, StockInfo, DateRange, AdministrativeActionPayload, PurchaseRequestStatus, Product, ErpPurchaseOrderHeader as ErpPOHeader, ErpPurchaseOrderLine } from '@/modules/core/types';
 import { useAuth } from '@/modules/core/hooks/useAuth';
 import { useDebounce } from 'use-debounce';
@@ -183,24 +183,25 @@ export default function useRequests() {
         loadInitialData();
     }, [setTitle, loadInitialData]);
     
-    // Actions and selectors go here...
     const actions = {
-        // All actions previously in the hook
         loadInitialData,
         setNewRequest: (partialRequest: Partial<typeof state.newRequest>) => {
             updateState({ newRequest: { ...state.newRequest, ...partialRequest } });
         },
-        // ... (other actions from previous hook implementation would be placed here)
+        setCurrentPage: (page: number | ((p: number) => number)) => updateState({ currentPage: typeof page === 'function' ? page(state.currentPage) : page }),
+        setRowsPerPage: (size: number) => updateState({ rowsPerPage: size, currentPage: 0 }),
     };
 
     const selectors = {
-        // All selectors previously in the hook
         getDaysRemaining,
         statusConfig,
         priorityConfig,
         priorityOptions: Object.entries(priorityConfig).map(([value, { label }]) => ({ value, label })),
         statusOptions: Object.entries(statusConfig).map(([value, { label }]) => ({ value, label })),
-        getRequestPermissions: (request: PurchaseRequest) => ({ canEdit: { allowed: false } }), // Placeholder
+        getRequestPermissions: (request: PurchaseRequest) => ({ 
+            canEdit: { allowed: false },
+            // ... add other permission checks here
+        }), 
         hasPermission,
         stockLevels: allStock,
     };
