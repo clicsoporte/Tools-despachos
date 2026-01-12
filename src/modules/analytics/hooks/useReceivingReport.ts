@@ -56,6 +56,8 @@ export function useReceivingReport() {
     const { toast } = useToast();
     const { companyData, user, products } = useAuth();
     
+    const [isInitialLoading, setIsInitialLoading] = useState(true);
+
     const [state, setState] = useState<State>({
         isLoading: true,
         data: [],
@@ -72,32 +74,33 @@ export function useReceivingReport() {
 
     const [debouncedSearchTerm] = useDebounce(state.searchTerm, 500);
 
-    const updateState = useCallback((newState: Partial<State>) => {
-        setState(prevState => ({ ...prevState, ...newState }));
-    }, []);
-
     useEffect(() => {
         setTitle("Reporte de Recepciones");
-        
+    }, [setTitle]);
+
+    useEffect(() => {
+        if (isAuthorized === null) return;
+
         const loadPrefs = async () => {
             if (isAuthorized && user) {
                 try {
                     const prefs = await getUserPreferences(user.id, 'receivingReportPrefs');
                     if (prefs && prefs.visibleColumns) {
-                        updateState({ visibleColumns: prefs.visibleColumns });
+                        setState(prev => ({ ...prev, visibleColumns: prefs.visibleColumns, isLoading: false }));
+                    } else {
+                        setState(prev => ({ ...prev, isLoading: false }));
                     }
                 } catch (error) {
                     logError('Failed to load user preferences for receiving report.', { error });
-                } finally {
-                    updateState({ isLoading: false });
+                    setState(prev => ({ ...prev, isLoading: false }));
                 }
-            } else if (isAuthorized === false) {
-                 updateState({ isLoading: false });
+            } else {
+                 setState(prev => ({ ...prev, isLoading: false }));
             }
         };
 
         loadPrefs();
-    }, [setTitle, isAuthorized, user, updateState]);
+    }, [isAuthorized, user]);
 
 
     const fetchData = useCallback(async () => {
@@ -108,12 +111,12 @@ export function useReceivingReport() {
             setState(prevState => ({
                 ...prevState,
                 data: data.units, 
-                allLocations: data.locations 
+                allLocations: data.locations,
+                isLoading: false,
             }));
         } catch (error: any) {
             logError("Failed to fetch receiving report data", { error: error.message });
             toast({ title: 'Error', description: 'No se pudieron cargar los registros de recepción.', variant: 'destructive' });
-        } finally {
             setState(prevState => ({...prevState, isLoading: false }));
         }
     }, [isAuthorized, state.dateRange, toast]);
@@ -258,10 +261,14 @@ export function useReceivingReport() {
         handleExportExcel,
         handleExportPDF,
         handleColumnVisibilityChange: (columnId: string, checked: boolean) => {
-            setState(prevState => ({
-                ...prevState,
-                visibleColumns: checked ? [...prevState.visibleColumns, columnId] : prevState.visibleColumns.filter(id => id !== columnId)
-            }));
+            setState(prevState => {
+                const changed = JSON.stringify(prevState.visibleColumns) !== JSON.stringify(checked ? [...prevState.visibleColumns, columnId] : prevState.visibleColumns.filter(id => id !== columnId));
+                if (!changed) return prevState;
+                return {
+                    ...prevState,
+                    visibleColumns: checked ? [...prevState.visibleColumns, columnId] : prevState.visibleColumns.filter(id => id !== columnId)
+                };
+            });
         },
         handleSavePreferences,
     };

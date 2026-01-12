@@ -4,8 +4,8 @@
  */
 'use client';
 
-import React from 'react';
-import { useReceivingReport } from '@/modules/analytics/hooks/useReceivingReport';
+import React, { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -21,20 +21,52 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { MultiSelectFilter } from '@/components/ui/multi-select-filter';
 import { SearchInput } from '@/components/ui/search-input';
 import { DialogColumnSelector } from '@/components/ui/dialog-column-selector';
+import { useReceivingReport } from '@/modules/analytics/hooks/useReceivingReport';
 
 export default function ReceivingReportPage() {
-    const {
-        state,
-        actions,
-        selectors,
-        isAuthorized,
-        isInitialLoading,
+    const router = useRouter();
+    const [shouldRedirect, setShouldRedirect] = useState(false);
+
+    const { 
+        state, 
+        actions, 
+        selectors, 
+        isAuthorized, 
+        isInitialLoading 
     } = useReceivingReport();
 
     const { isLoading, dateRange, searchTerm, userFilter, locationFilter, visibleColumns, data } = state;
     const { sortedData, availableColumns, visibleColumnsData } = selectors;
 
-    if (isInitialLoading) {
+    useEffect(() => {
+        if (isAuthorized === false) {
+            setShouldRedirect(true);
+        }
+    }, [isAuthorized]);
+
+    useEffect(() => {
+        if (shouldRedirect) {
+            const timer = setTimeout(() => {
+                router.push('/dashboard');
+            }, 100);
+            return () => clearTimeout(timer);
+        }
+    }, [shouldRedirect, router]);
+
+    if (shouldRedirect || isAuthorized === false) {
+        return (
+            <main className="flex-1 p-4 md:p-6 lg:p-8">
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Redirigiendo...</CardTitle>
+                        <CardDescription>No tienes permisos para acceder a esta página.</CardDescription>
+                    </CardHeader>
+                </Card>
+            </main>
+        );
+    }
+    
+    if (isInitialLoading || isAuthorized === null) {
         return (
             <main className="flex-1 p-4 md:p-6 lg:p-8">
                 <Card><CardHeader><Skeleton className="h-8 w-64" /><Skeleton className="h-5 w-96 mt-2" /></CardHeader>
@@ -43,8 +75,10 @@ export default function ReceivingReportPage() {
             </main>
         );
     }
-    
-    if (!isAuthorized) return null;
+
+    if (isAuthorized !== true) {
+        return null; // Safe fallback
+    }
 
     return (
         <main className="flex-1 p-4 md:p-6 lg:p-8 space-y-6">

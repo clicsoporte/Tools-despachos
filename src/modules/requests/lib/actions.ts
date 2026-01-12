@@ -17,11 +17,10 @@ import {
     saveSettings,
     updatePendingAction as updatePendingActionServer,
     getErpOrderData as getErpOrderDataServer,
-    getUserByName as getUserByNameServer,
-    getRolesWithPermission,
     addNote as addNoteServer,
     updateRequestDetails as updateRequestDetailsServer,
     saveCostAnalysis as saveCostAnalysisServer,
+    getUserByName,
 } from './db';
 import {
     getAllProducts, 

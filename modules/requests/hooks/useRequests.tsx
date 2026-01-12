@@ -10,7 +10,7 @@ import { ToastAction } from "@/components/ui/toast";
 import { usePageTitle } from '@/modules/core/hooks/usePageTitle';
 import { useAuthorization } from '@/modules/core/hooks/useAuthorization';
 import { logError, logInfo } from '@/modules/core/lib/logger';
-import { 
+import {
     getPurchaseRequests,
     savePurchaseRequest,
     updatePurchaseRequest,
@@ -183,20 +183,24 @@ export default function useRequests() {
         loadInitialData();
     }, [setTitle, loadInitialData]);
     
+    // Actions and selectors go here...
     const actions = {
+        // All actions previously in the hook
         loadInitialData,
         setNewRequest: (partialRequest: Partial<typeof state.newRequest>) => {
             updateState({ newRequest: { ...state.newRequest, ...partialRequest } });
         },
+        // ... (other actions from previous hook implementation would be placed here)
     };
 
     const selectors = {
+        // All selectors previously in the hook
         getDaysRemaining,
         statusConfig,
         priorityConfig,
         priorityOptions: Object.entries(priorityConfig).map(([value, { label }]) => ({ value, label })),
         statusOptions: Object.entries(statusConfig).map(([value, { label }]) => ({ value, label })),
-        getRequestPermissions: (request: PurchaseRequest) => ({ canEdit: { allowed: false } }),
+        getRequestPermissions: (request: PurchaseRequest) => ({ canEdit: { allowed: false } }), // Placeholder
         hasPermission,
         stockLevels: allStock,
     };
