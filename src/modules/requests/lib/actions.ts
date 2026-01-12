@@ -20,7 +20,7 @@ import {
     addNote as addNoteServer,
     updateRequestDetails as updateRequestDetailsServer,
     saveCostAnalysis as saveCostAnalysisServer,
-    getUserByName,
+    getUserByName as getUserByNameServer,
 } from './db';
 import {
     getAllProducts, 
