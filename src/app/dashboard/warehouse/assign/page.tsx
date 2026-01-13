@@ -1,4 +1,3 @@
-
 /**
  * @fileoverview Page for associating products with clients and warehouse locations.
  * This tool allows users to create a catalog-like mapping, indicating where
@@ -265,7 +264,8 @@ export default function AssignItemPage() {
         }
     
         try {
-            const qrCodeDataUrl = await QRCode.toDataURL(product.id, { errorCorrectionLevel: 'H', width: 200 });
+            const qrContent = `${assignment.locationId}>${product.id}`;
+            const qrCodeDataUrl = await QRCode.toDataURL(qrContent, { errorCorrectionLevel: 'H', width: 200 });
             
             const doc = new jsPDF({ orientation: "landscape", unit: "pt", format: "letter" });
             const margin = 40;
