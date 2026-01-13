@@ -169,45 +169,80 @@ export function useLabelCenter() {
         if (!state.selectedRootLocationId) {
             return { levelOptions: [], positionOptions: [], depthOptions: [], filteredLocations: [] };
         }
-
-        const descendants = new Set<number>();
-        const queue = [state.selectedRootLocationId];
+    
+        const descendants: WarehouseLocation[] = [];
+        const queue: number[] = [state.selectedRootLocationId];
         const visited = new Set<number>();
+    
         while(queue.length > 0) {
             const currentId = queue.shift()!;
             if (visited.has(currentId)) continue;
             visited.add(currentId);
-            descendants.add(currentId);
+    
+            const location = state.allLocations.find(l => l.id === currentId);
+            if (location) {
+                descendants.push(location);
+            }
+    
             const children = state.allLocations.filter(l => l.parentId === currentId);
             queue.push(...children.map(c => c.id));
         }
         
-        const allDescendantLocations = state.allLocations.filter(l => descendants.has(l.id));
-
+        const leafLocations = descendants.filter(l => 
+            !descendants.some(other => other.parentId === l.id)
+        );
+    
         const levels = new Set<string>();
         const positions = new Set<string>();
         const depths = new Set<string>();
-
-        const finalLocations = allDescendantLocations.filter(l => !state.allLocations.some(c => c.parentId === l.id));
-        
-        finalLocations.forEach(loc => {
+    
+        descendants.forEach(loc => {
             if (loc.type === 'shelf') levels.add(loc.name);
-            else if (loc.type === 'bin' && loc.name.startsWith('Posición')) positions.add(loc.name.split(' ')[1]);
-            else if (loc.type === 'bin' && (loc.name === 'Frente' || loc.name === 'Fondo')) depths.add(loc.name);
+            if (loc.type === 'bin') {
+                const nameParts = loc.name.split(' ');
+                if (nameParts[0] === 'Posición') positions.add(nameParts[1]);
+                else if (nameParts[0] === 'Frente' || nameParts[0] === 'Fondo') depths.add(nameParts[0]);
+            }
         });
-
-        let filtered = finalLocations;
-        if(state.levelFilter.length > 0) filtered = filtered.filter(l => l.type === 'shelf' && state.levelFilter.includes(l.name));
-        if(state.positionFilter.length > 0) filtered = filtered.filter(l => l.type === 'bin' && state.positionFilter.includes(l.name.split(' ')[1]));
-        if(state.depthFilter.length > 0) filtered = filtered.filter(l => l.type === 'bin' && state.depthFilter.includes(l.name));
-
+        
+        let filtered = [...leafLocations];
+        if (state.levelFilter.length > 0) {
+            const levelIds = new Set(descendants.filter(l => l.type === 'shelf' && state.levelFilter.includes(l.name)).map(l => l.id));
+            filtered = filtered.filter(l => {
+                let current = l;
+                while(current.parentId) {
+                    if (levelIds.has(current.parentId)) return true;
+                    const parent = descendants.find(d => d.id === current.parentId);
+                    if (!parent) break;
+                    current = parent;
+                }
+                return false;
+            });
+        }
+        if (state.positionFilter.length > 0) {
+             const positionIds = new Set(descendants.filter(l => l.type === 'bin' && l.name.startsWith('Posición') && state.positionFilter.includes(l.name.split(' ')[1])).map(l => l.id));
+             filtered = filtered.filter(l => {
+                let current = l;
+                while(current.parentId) {
+                    if (positionIds.has(current.parentId)) return true;
+                    const parent = descendants.find(d => d.id === current.parentId);
+                    if (!parent || parent.id === state.selectedRootLocationId) break;
+                    current = parent;
+                }
+                return false;
+            });
+        }
+        if (state.depthFilter.length > 0) {
+            filtered = filtered.filter(l => state.depthFilter.includes(l.name));
+        }
+        
         return {
-            levelOptions: Array.from(levels).map(l => ({ value: l, label: l })),
-            positionOptions: Array.from(positions).sort().map(p => ({ value: p, label: p })),
+            levelOptions: Array.from(levels).sort().map(l => ({ value: l, label: l })),
+            positionOptions: Array.from(positions).sort((a,b) => a.localeCompare(b, undefined, { numeric: true })).map(p => ({ value: p, label: p })),
             depthOptions: Array.from(depths).map(d => ({ value: d, label: d })),
             filteredLocations: filtered
         };
-
+    
     }, [state.selectedRootLocationId, state.allLocations, state.levelFilter, state.positionFilter, state.depthFilter]);
     
     const selectors = {
