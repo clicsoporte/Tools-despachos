@@ -183,25 +183,26 @@ export default function useRequests() {
         loadInitialData();
     }, [setTitle, loadInitialData]);
     
+    // Actions and selectors go here...
     const actions = {
+        // All actions previously in the hook
         loadInitialData,
+        setCurrentPage: (page: number | ((p: number) => number)) => updateState({ currentPage: typeof page === 'function' ? page(state.currentPage) : page }),
+        setRowsPerPage: (size: number) => updateState({ rowsPerPage: size, currentPage: 0 }),
         setNewRequest: (partialRequest: Partial<typeof state.newRequest>) => {
             updateState({ newRequest: { ...state.newRequest, ...partialRequest } });
         },
-        setCurrentPage: (page: number | ((p: number) => number)) => updateState({ currentPage: typeof page === 'function' ? page(state.currentPage) : page }),
-        setRowsPerPage: (size: number) => updateState({ rowsPerPage: size, currentPage: 0 }),
+        // ... (other actions from previous hook implementation would be placed here)
     };
 
     const selectors = {
+        // All selectors previously in the hook
         getDaysRemaining,
         statusConfig,
         priorityConfig,
         priorityOptions: Object.entries(priorityConfig).map(([value, { label }]) => ({ value, label })),
         statusOptions: Object.entries(statusConfig).map(([value, { label }]) => ({ value, label })),
-        getRequestPermissions: (request: PurchaseRequest) => ({ 
-            canEdit: { allowed: false },
-            // ... add other permission checks here
-        }), 
+        getRequestPermissions: (request: PurchaseRequest) => ({ canEdit: { allowed: false } }), // Placeholder
         hasPermission,
         stockLevels: allStock,
     };

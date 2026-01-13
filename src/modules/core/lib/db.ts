@@ -1,4 +1,3 @@
-
 /**
  * @fileoverview This file handles the SQLite database connection and provides
  * server-side functions for all database operations. It includes initialization,
@@ -1651,8 +1650,18 @@ export async function saveAllErpPurchaseOrderHeaders(data: ErpPurchaseOrderHeade
     await saveAllGeneric(data, 'erp_purchase_order_headers', ['ORDEN_COMPRA', 'PROVEEDOR', 'FECHA_HORA', 'ESTADO', 'CreatedBy']);
 }
 
+export async function getAllErpPurchaseOrderHeaders(): Promise<ErpPurchaseOrderHeader[]> {
+    const db = await connectDb();
+    return db.prepare('SELECT * FROM erp_purchase_order_headers').all() as ErpPurchaseOrderHeader[];
+}
+
 export async function saveAllErpPurchaseOrderLines(data: ErpPurchaseOrderLine[]): Promise<void> {
     await saveAllGeneric(data, 'erp_purchase_order_lines', ['ORDEN_COMPRA', 'ARTICULO', 'CANTIDAD_ORDENADA']);
+}
+
+export async function getAllErpPurchaseOrderLines(): Promise<ErpPurchaseOrderLine[]> {
+    const db = await connectDb();
+    return db.prepare('SELECT * FROM erp_purchase_order_lines').all() as ErpPurchaseOrderLine[];
 }
 
 export async function saveAllErpInvoiceHeaders(data: ErpInvoiceHeader[]): Promise<void> {
@@ -1688,5 +1697,3 @@ export async function getAllItemLocations(itemId?: string): Promise<ItemLocation
     const itemLocations = stmt.all(...params) as ItemLocation[];
     return JSON.parse(JSON.stringify(itemLocations));
 }
-
-    

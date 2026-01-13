@@ -468,7 +468,7 @@ export default function AssignItemPage() {
                             <div className="flex items-center gap-4">
                                 <div className="flex items-center gap-2">
                                     <Label htmlFor="rows-per-page">Filas:</Label>
-                                    <Select value={String(rowsPerPage)} onValueChange={setRowsPerPage}>
+                                    <Select value={String(rowsPerPage)} onValueChange={(value) => setRowsPerPage(Number(value))}>
                                         <SelectTrigger id="rows-per-page" className="w-20"><SelectValue /></SelectTrigger>
                                         <SelectContent>{[10, 25, 50, 100].map(size => <SelectItem key={size} value={String(size)}>{size}</SelectItem>)}</SelectContent>
                                     </Select>
