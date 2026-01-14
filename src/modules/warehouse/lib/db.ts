@@ -76,7 +76,7 @@ function getAllFinalChildren(locationId: number, allLocations: WarehouseLocation
 export async function getLocations(): Promise<(WarehouseLocation & { isCompleted?: boolean })[]> {
     const db = await connectDb(WAREHOUSE_DB_FILE);
     const allLocations = db.prepare('SELECT * FROM locations ORDER BY parentId, name').all() as WarehouseLocation[];
-    const allItemLocations = db.prepare('SELECT locationId FROM item_locations').all() as { locationId: number }[];
+    const allItemLocations = await getAllItemLocations();
     const populatedLocationIds = new Set(allItemLocations.map(il => il.locationId));
 
     const enrichedLocations = allLocations.map(loc => {
@@ -322,7 +322,7 @@ export async function getWarehouseData(): Promise<{ locations: WarehouseLocation
     
     const locations = db.prepare('SELECT * FROM locations').all() as WarehouseLocation[];
     const inventory = db.prepare('SELECT * FROM inventory').all() as WarehouseInventoryItem[];
-    const itemLocations = db.prepare('SELECT * FROM item_locations').all() as ItemLocation[];
+    const itemLocations = await getAllItemLocations();
     
     const stock = mainDb.prepare('SELECT * FROM stock').all() as {itemId: string; stockByWarehouse: string, totalStock: number}[];
     const parsedStock = stock.map(s => ({...s, stockByWarehouse: JSON.parse(s.stockByWarehouse)}));
@@ -356,9 +356,15 @@ export async function getMovements(itemId?: string): Promise<MovementLog[]> {
 
 export async function getItemLocations(itemId?: string): Promise<ItemLocation[]> {
     const db = await connectDb(WAREHOUSE_DB_FILE);
-    const stmt = itemId ? db.prepare('SELECT * FROM item_locations WHERE itemId = ?') : db.prepare('SELECT * FROM item_locations');
-    const itemLocations = stmt.all(itemId) as ItemLocation[];
-    return JSON.parse(JSON.stringify(itemLocations));
+    
+    let stmt;
+    if (itemId) {
+        stmt = db.prepare('SELECT * FROM item_locations WHERE itemId = ?');
+        return JSON.parse(JSON.stringify(stmt.all(itemId)));
+    } else {
+        stmt = db.prepare('SELECT * FROM item_locations');
+        return JSON.parse(JSON.stringify(stmt.all()));
+    }
 }
 
 export async function assignItemToLocation(itemId: string, locationId: number, clientId: string | null, updatedBy: string): Promise<ItemLocation> {
@@ -515,7 +521,7 @@ export async function getChildLocations(parentIds: number[]): Promise<WarehouseL
 }
 
 // --- Dispatch Check Actions ---
-export async function searchDocuments(searchTerm: string): Promise<{ id: string, type: string, clientId: string, clientName: string }[]> {
+export const searchDocuments = async (searchTerm: string): Promise<{ id: string, type: string, clientId: string, clientName: string }[]> => {
     const db = await connectDb();
     const likeTerm = `%${searchTerm}%`;
 
@@ -539,19 +545,19 @@ export async function searchDocuments(searchTerm: string): Promise<{ id: string,
     })).slice(0, 10);
 
     return JSON.parse(JSON.stringify(combinedResults));
-}
+};
 
 
-export async function getInvoiceData(documentId: string): Promise<{ header: ErpInvoiceHeader, lines: ErpInvoiceLine[] } | null> {
+export const getInvoiceData = async (documentId: string): Promise<{ header: ErpInvoiceHeader, lines: ErpInvoiceLine[] } | null> => {
     const db = await connectDb();
     const header = db.prepare(`SELECT * FROM erp_invoice_headers WHERE FACTURA = ?`).get(documentId) as ErpInvoiceHeader | undefined;
     if (!header) return null;
     const lines = db.prepare(`SELECT * FROM erp_invoice_lines WHERE FACTURA = ? ORDER BY LINEA ASC`).all(documentId) as ErpInvoiceLine[];
     return JSON.parse(JSON.stringify({ header, lines }));
-}
+};
 
 
-export async function logDispatch(dispatchData: any): Promise<void> {
+export const logDispatch = async (dispatchData: any): Promise<void> => {
     const db = await connectDb(WAREHOUSE_DB_FILE);
     db.prepare(`
         INSERT INTO dispatch_logs (documentId, documentType, verifiedAt, verifiedByUserId, verifiedByUserName, items, notes, vehiclePlate, driverName, helper1Name, helper2Name)
@@ -564,9 +570,9 @@ export async function logDispatch(dispatchData: any): Promise<void> {
         helper1Name: dispatchData.helper1Name || null,
         helper2Name: dispatchData.helper2Name || null,
     });
-}
+};
 
-export async function getDispatchLogs(dateRange?: DateRange): Promise<DispatchLog[]> {
+export const getDispatchLogs = async (dateRange?: DateRange): Promise<DispatchLog[]> => {
     const warehouseDb = await connectDb(WAREHOUSE_DB_FILE);
     
     warehouseDb.exec(`ATTACH DATABASE '${path.join(process.cwd(), 'dbs', 'intratool.db')}' AS main_db`);
@@ -609,9 +615,9 @@ export async function getDispatchLogs(dateRange?: DateRange): Promise<DispatchLo
         ...log,
         items: JSON.parse(log.items),
     }));
-}
+};
 
-export async function getContainers(): Promise<DispatchContainer[]> {
+export const getContainers = async (): Promise<DispatchContainer[]> => {
     const db = await connectDb(WAREHOUSE_DB_FILE);
     const rows = db.prepare(`
         SELECT 
@@ -625,21 +631,21 @@ export async function getContainers(): Promise<DispatchContainer[]> {
         ORDER BY c.name ASC
     `).all() as (DispatchContainer & { assignmentCount: number, completedAssignmentCount: number, lastVerifiedBy: string | null, lastVerifiedAt: string | null })[];
     return JSON.parse(JSON.stringify(rows));
-}
+};
 
-export async function saveContainer(container: Omit<DispatchContainer, 'id' | 'createdAt'>, updatedBy: string): Promise<DispatchContainer> {
+export const saveContainer = async (container: Omit<DispatchContainer, 'id' | 'createdAt'>, updatedBy: string): Promise<DispatchContainer> => {
     const db = await connectDb(WAREHOUSE_DB_FILE);
     const info = db.prepare('INSERT INTO dispatch_containers (name, createdBy, createdAt) VALUES (?, ?, ?)').run(container.name, updatedBy, new Date().toISOString());
     const newContainer = db.prepare('SELECT * FROM dispatch_containers WHERE id = ?').get(info.lastInsertRowid) as DispatchContainer;
     return newContainer;
-}
+};
 
-export async function deleteContainer(id: number): Promise<void> {
+export const deleteContainer = async (id: number): Promise<void> => {
     const db = await connectDb(WAREHOUSE_DB_FILE);
     db.prepare('DELETE FROM dispatch_containers WHERE id = ?').run(id);
-}
+};
 
-export async function getUnassignedDocuments(dateRange: DateRange): Promise<ErpInvoiceHeader[]> {
+export const getUnassignedDocuments = async (dateRange: DateRange): Promise<ErpInvoiceHeader[]> => {
     const mainDb = await connectDb();
     
     let query = `SELECT * FROM erp_invoice_headers WHERE TIPO_DOCUMENTO IN ('F', 'R')`;
@@ -661,9 +667,9 @@ export async function getUnassignedDocuments(dateRange: DateRange): Promise<ErpI
     const allInvoices = mainDb.prepare(query).all(...params) as ErpInvoiceHeader[];
     
     return JSON.parse(JSON.stringify(allInvoices));
-}
+};
 
-export async function assignDocumentsToContainer(documentIds: string[], containerId: number, updatedBy: string): Promise<void> {
+export const assignDocumentsToContainer = async (documentIds: string[], containerId: number, updatedBy: string): Promise<void> => {
     const mainDb = await connectDb();
     const warehouseDb = await connectDb(WAREHOUSE_DB_FILE);
 
@@ -699,9 +705,9 @@ export async function assignDocumentsToContainer(documentIds: string[], containe
     });
 
     transaction(invoices);
-}
+};
 
-export async function updateAssignmentOrder(containerId: number, orderedDocumentIds: string[]): Promise<void> {
+export const updateAssignmentOrder = async (containerId: number, orderedDocumentIds: string[]): Promise<void> => {
     const db = await connectDb(WAREHOUSE_DB_FILE);
     const updateStmt = db.prepare('UPDATE dispatch_assignments SET sortOrder = ? WHERE documentId = ? AND containerId = ?');
     const transaction = db.transaction(() => {
@@ -710,22 +716,22 @@ export async function updateAssignmentOrder(containerId: number, orderedDocument
         }
     });
     transaction();
-}
+};
 
-export async function getAssignmentsForContainer(containerId: number): Promise<DispatchAssignment[]> {
+export const getAssignmentsForContainer = async (containerId: number): Promise<DispatchAssignment[]> => {
     const db = await connectDb(WAREHOUSE_DB_FILE);
     return db.prepare('SELECT * FROM dispatch_assignments WHERE containerId = ? ORDER BY sortOrder ASC').all(containerId) as DispatchAssignment[];
-}
+};
 
-export async function getAssignmentsByIds(documentIds: string[]): Promise<DispatchAssignment[]> {
+export const getAssignmentsByIds = async (documentIds: string[]): Promise<DispatchAssignment[]> => {
     if (documentIds.length === 0) return [];
     const db = await connectDb(WAREHOUSE_DB_FILE);
     const placeholders = documentIds.map(() => '?').join(',');
     const rows = db.prepare(`SELECT * FROM dispatch_assignments WHERE documentId IN (${placeholders})`).all(...documentIds) as DispatchAssignment[];
     return JSON.parse(JSON.stringify(rows));
-}
+};
 
-export async function getNextDocumentInContainer(containerId: number, currentDocumentId: string): Promise<string | null> {
+export const getNextDocumentInContainer = async (containerId: number, currentDocumentId: string): Promise<string | null> => {
     const db = await connectDb(WAREHOUSE_DB_FILE);
     const assignments = await getAssignmentsForContainer(containerId);
     const currentIndex = assignments.findIndex(a => a.documentId === currentDocumentId);
@@ -747,9 +753,9 @@ export async function getNextDocumentInContainer(containerId: number, currentDoc
     }
 
     return null; // All documents are completed
-}
+};
 
-export async function moveAssignmentToContainer(assignmentId: number, targetContainerId: number, documentId?: string): Promise<void> {
+export const moveAssignmentToContainer = async (assignmentId: number, targetContainerId: number, documentId?: string): Promise<void> => {
     const db = await connectDb(WAREHOUSE_DB_FILE);
 
     let docId = documentId;
@@ -763,31 +769,31 @@ export async function moveAssignmentToContainer(assignmentId: number, targetCont
     
     // Update the containerId for the assignment with the given documentId
     db.prepare('UPDATE dispatch_assignments SET containerId = ?, status = ? WHERE documentId = ?').run(targetContainerId, 'pending', docId);
-}
+};
 
-export async function updateAssignmentStatus(documentId: string, status: 'pending' | 'in-progress' | 'completed' | 'discrepancy' | 'partial'): Promise<void> {
+export const updateAssignmentStatus = async (documentId: string, status: 'pending' | 'in-progress' | 'completed' | 'discrepancy' | 'partial'): Promise<void> => {
     const db = await connectDb(WAREHOUSE_DB_FILE);
     db.prepare('UPDATE dispatch_assignments SET status = ? WHERE documentId = ?').run(status, documentId);
-}
+};
 
-export async function resetContainerAssignments(containerId: number): Promise<void> {
+export const resetContainerAssignments = async (containerId: number): Promise<void> => {
     const db = await connectDb(WAREHOUSE_DB_FILE);
     db.prepare("UPDATE dispatch_assignments SET status = 'pending' WHERE containerId = ?").run(containerId);
     logInfo(`Container ${containerId} has been reset.`);
-}
+};
 
-export async function unassignAllFromContainer(containerId: number): Promise<void> {
+export const unassignAllFromContainer = async (containerId: number): Promise<void> => {
     const db = await connectDb(WAREHOUSE_DB_FILE);
     db.prepare('DELETE FROM dispatch_assignments WHERE containerId = ?').run(containerId);
     logInfo(`All assignments cleared from container ${containerId}.`);
-}
+};
 
-export async function unassignDocumentFromContainer(assignmentId: number): Promise<void> {
+export const unassignDocumentFromContainer = async (assignmentId: number): Promise<void> => {
     const db = await connectDb(WAREHOUSE_DB_FILE);
     db.prepare('DELETE FROM dispatch_assignments WHERE id = ?').run(assignmentId);
-}
+};
 
-export async function finalizeDispatch(containerId: number, vehiclePlate: string, driverName: string, helper1Name: string, helper2Name: string): Promise<void> {
+export const finalizeDispatch = async (containerId: number, vehiclePlate: string, driverName: string, helper1Name: string, helper2Name: string): Promise<void> => {
     const db = await connectDb(WAREHOUSE_DB_FILE);
     const logs = db.prepare(`
         SELECT dl.* 
@@ -806,7 +812,7 @@ export async function finalizeDispatch(containerId: number, vehiclePlate: string
 
     transaction(logs);
     logInfo(`Finalized dispatch for container ${containerId}`, { vehiclePlate, driverName, helper1Name, helper2Name });
-}
+};
 
 export async function getEmployees(): Promise<Empleado[]> {
     const db = await connectDb();
