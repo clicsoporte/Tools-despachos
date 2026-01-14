@@ -14,7 +14,6 @@ import {
     getInventoryForItem as getInventoryForItemServer,
     logMovement as logMovementServer,
     updateInventory as updateInventoryServer,
-    getItemLocations as getAllItemLocationsServer, // Corrected alias
     assignItemToLocation as assignItemToLocationServer,
     unassignItemFromLocation as unassignItemFromLocationServer,
     unassignAllFromContainer as unassignAllFromContainerServer,
@@ -108,8 +107,11 @@ export const updateInventory = async(itemId: string, locationId: number, newQuan
     return updateInventoryServer(itemId, locationId, newQuantity, userId);
 };
 
-// --- Simple Mode Actions ---
-export const getAllItemLocations = async (itemId?: string): Promise<ItemLocation[]> => getAllItemLocationsFromCore(itemId);
+// Simple action to re-export the function from the core db module.
+export async function getAllItemLocations(itemId?: string): Promise<ItemLocation[]> {
+    return getAllItemLocationsFromCore(itemId);
+}
+
 export const assignItemToLocation = async (itemId: string, locationId: number, clientId: string | null, updatedBy: string): Promise<ItemLocation> => assignItemToLocationServer(itemId, locationId, clientId, updatedBy);
 export async function unassignItemFromLocation(assignmentId: number): Promise<void> {
     return unassignItemFromLocationServer(assignmentId);
@@ -257,3 +259,5 @@ export const searchInventoryUnits = async (filters: {
     unitCode?: string;
     documentId?: string;
 }): Promise<InventoryUnit[]> => searchInventoryUnitsServer(filters);
+
+    
