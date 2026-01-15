@@ -166,7 +166,7 @@ export async function sendDispatchEmail(payload: {
     const tableRows = items.map(item => {
         const difference = item.verifiedQuantity - item.requiredQuantity;
         let statusColor = '#000000'; // Black
-        let diffText = difference === 0 ? '0' : (difference > 0 ? `+${difference}` : String(difference));
+        let diffText = difference === 0 ? 'OK' : (difference > 0 ? `+${difference}` : String(difference));
 
         if (difference !== 0) {
             statusColor = '#dc2626'; // Red
@@ -257,5 +257,3 @@ export const searchInventoryUnits = async (filters: {
     unitCode?: string;
     documentId?: string;
 }): Promise<InventoryUnit[]> => searchInventoryUnitsServer(filters);
-
-    
