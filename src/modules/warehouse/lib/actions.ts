@@ -53,9 +53,10 @@ import {
     getSelectableLocations as getSelectableLocationsServer,
     correctInventoryUnit as correctInventoryUnitServer,
     searchInventoryUnits as searchInventoryUnitsServer,
+    getAllItemLocations as getAllItemLocationsFromDb,
 } from './db';
 import { sendEmail as sendEmailServer } from '@/modules/core/lib/email-service';
-import { getStockSettings as getStockSettingsDb, saveStockSettings as saveStockSettingsDb, getAllItemLocations as getAllItemLocationsFromCore } from '@/modules/core/lib/db';
+import { getStockSettings as getStockSettingsDb, saveStockSettings as saveStockSettingsDb } from '@/modules/core/lib/db';
 import type { WarehouseSettings, WarehouseLocation, WarehouseInventoryItem, MovementLog, ItemLocation, InventoryUnit, StockSettings, User, ErpInvoiceHeader, ErpInvoiceLine, DispatchLog, Company, VerificationItem, DateRange, DispatchContainer, DispatchAssignment, Vehiculo, Empleado, PhysicalInventoryComparisonItem, Product } from '@/modules/core/types';
 import { logInfo, logWarn, logError } from '@/modules/core/lib/logger';
 import { generateDocument } from '@/modules/core/lib/pdf-generator';
@@ -107,10 +108,11 @@ export const updateInventory = async(itemId: string, locationId: number, newQuan
     return updateInventoryServer(itemId, locationId, newQuantity, userId);
 };
 
-// Simple action to re-export the function from the core db module.
+// Re-exporting the function from its correct location in the warehouse db module.
 export async function getAllItemLocations(itemId?: string): Promise<ItemLocation[]> {
-    return getAllItemLocationsFromCore(itemId);
+    return getAllItemLocationsFromDb(itemId);
 }
+
 
 export const assignItemToLocation = async (itemId: string, locationId: number, clientId: string | null, updatedBy: string): Promise<ItemLocation> => assignItemToLocationServer(itemId, locationId, clientId, updatedBy);
 export async function unassignItemFromLocation(assignmentId: number): Promise<void> {
@@ -259,5 +261,3 @@ export const searchInventoryUnits = async (filters: {
     unitCode?: string;
     documentId?: string;
 }): Promise<InventoryUnit[]> => searchInventoryUnitsServer(filters);
-
-    
