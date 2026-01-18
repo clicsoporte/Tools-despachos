@@ -409,7 +409,7 @@ export default function HelpPage() {
                         <strong>Paso 3: Ajustar y Calcular Precios.</strong>
                         <ul className="list-[circle] space-y-2 pl-5 mt-2 text-sm">
                             <li>En la tabla de &quot;Artículos Extraídos&quot;, puedes editar la mayoría de los campos.</li>
-                            <li><strong>Costo Unit. (s/IVA):</strong> Este es el costo real del artículo (costo de factura + costo prorrateado +/- efecto del descuento). Puedes **sobrescribirlo manually** si necesitas ajustar el costo base para un artículo específico.</li>
+                            <li><strong>Costo Unit. (s/IVA):</strong> Este es el costo real del artículo (costo de factura + costo prorrateado +/- efecto del descuento). Puedes **sobrescribirlo manualmente** si necesitas ajustar el costo base para un artículo específico.</li>
                             <li><strong>Imp. %:</strong> El sistema extrae el impuesto del XML, pero puedes editarlo aquí si es necesario (ej. de &quot;13&quot; a &quot;1&quot;).</li>
                             <li><strong>Margen:</strong> Introduce el margen de ganancia deseado (ej. &quot;20&quot; para un 20%).</li>
                             <li>El sistema calculará automáticamente el **P.V.P. Unitario Sugerido** y la **Ganancia por Línea** en tiempo real.</li>
@@ -513,7 +513,7 @@ export default function HelpPage() {
                     <strong>Tooltips Informativos:</strong> Si un botón de acción (como &quot;Aprobar&quot; o &quot;Reabrir&quot;) está desactivado, ahora puedes pasar el cursor sobre él para ver un mensaje que explica por qué no está disponible (ej: &quot;Solo para solicitudes aprobadas&quot;).
                 </li>
                 <li>
-                    <strong>Pasos Opcionales:</strong> En <strong>Administración &gt; Config. Compras</strong>, puedes activar el paso de &quot;Recibido en Bodega&quot; y el paso final &quot;Ingresado en ERP&quot; para un control más detallado del proceso logístico.
+                    <strong>Pasos Opcionales:</strong> En <strong>Administración > Config. Compras</strong>, puedes activar el paso de &quot;Recibido en Bodega&quot; y el paso final &quot;Ingresado en ERP&quot; para un control más detallado del proceso logístico.
                 </li>
                 <li>
                     <strong>Exportación:</strong> Puedes generar un archivo **PDF** o **Excel (.xlsx)** del reporte actual, incluyendo los filtros que hayas aplicado.
@@ -640,13 +640,13 @@ export default function HelpPage() {
                  <p>Esta es la funcionalidad más importante añadida en la v2.2.0. Digitaliza el proceso de alistamiento y verificación de mercadería, reemplazando el papel.</p>
                 <ol className="list-decimal space-y-3 pl-6">
                     <li>
-                        <strong>Paso 1: Configurar Rutas (Admin).</strong> Un administrador debe ir a <strong>Administración &gt; Config. Almacenes</strong> y crear los "Contenedores de Despacho", que son tus rutas (ej: "Ruta San José", "Ruta Heredia").
+                        <strong>Paso 1: Configurar Rutas (Admin).</strong> Un administrador debe ir a <strong>Administración > Config. Almacenes</strong> y crear los &quot;Contenedores de Despacho&quot;, que son tus rutas (ej: &quot;Ruta San José&quot;, &quot;Ruta Heredia&quot;).
                     </li>
                     <li>
-                        <strong>Paso 2: Asignar Facturas (Logística).</strong> En <strong>Almacén &gt; Clasificador de Despachos</strong>, el personal de logística ve las facturas del ERP sin asignar. Pueden seleccionarlas y moverlas al contenedor de ruta correcto. En la pestaña "Ordenar", pueden arrastrar las facturas para definir el orden de entrega.
+                        <strong>Paso 2: Asignar Facturas (Logística).</strong> En <strong>Almacén > Clasificador de Despachos</strong>, el personal de logística ve las facturas del ERP sin asignar. Pueden seleccionarlas y moverlas al contenedor de ruta correcto. En la pestaña &quot;Ordenar&quot;, pueden arrastrar las facturas para definir el orden de entrega.
                     </li>
                     <li>
-                        <strong>Paso 3: Verificar (Bodega).</strong> En <strong>Almacén &gt; Centro de Despacho</strong>, el bodeguero hace clic en una ruta. Esto **bloquea la ruta** para él.
+                        <strong>Paso 3: Verificar (Bodega).</strong> En <strong>Almacén > Centro de Despacho</strong>, el bodeguero hace clic en una ruta. Esto **bloquea la ruta** para él.
                     </li>
                     <li>
                         <strong>Paso 4: Chequeo Inteligente.</strong> Al hacer clic en un documento dentro de la ruta, se abre la pantalla de verificación. El bodeguero escanea los artículos. Cuando termina, el sistema lo pasa automáticamente al siguiente documento de la lista.
@@ -655,7 +655,7 @@ export default function HelpPage() {
                         <strong>Manejo de Errores:</strong>
                         <ul className="list-[circle] space-y-2 pl-5 mt-2 text-sm">
                            <li><strong>Facturas Anuladas (<AlertTriangle className="inline h-4 w-4 text-red-600"/>):</strong> Si una factura es anulada en el ERP después de ser asignada, aparecerá con una alerta visual roja y no se podrá verificar.</li>
-                           <li><strong>Mover a Otra Ruta:</strong> Si una factura se asignó mal, el bodeguero puede usar el botón "Mover" para enviarla a otro contenedor.</li>
+                           <li><strong>Mover a Otra Ruta:</strong> Si una factura se asignó mal, el bodeguero puede usar el botón &quot;Mover&quot; para enviarla a otro contenedor.</li>
                         </ul>
                     </li>
                 </ol>
@@ -800,7 +800,7 @@ export default function HelpPage() {
                             <ul className="list-disc pl-5 text-sm space-y-1 mt-2">
                                 <li><strong>Centro de Verificación:</strong> Audita la integridad y estructura de todas las bases de datos para asegurar que las tablas y columnas sean correctas, una herramienta vital después de una actualización.</li>
                                 <li><strong>Backups y Puntos de Restauración:</strong> Gestiona backups de **todo el sistema**. Crea un &quot;Punto de Restauración&quot; antes de una actualización y restáuralo si algo sale mal.</li>
-                                <li><strong>Zona de Peligro:</strong> Acciones que afectan módulos **individuales**. Aquí puedes restaurar la base de datos de un solo módulo (ej: `planner.db`) desde un archivo que subas, o resetear un módulo a su estado de fábrica. Estas acciones requieren confirmación estricta para evitar accidentes.</li>
+                                <li><strong>Zona de Peligro:</strong> Acciones que afectan módulos **individuales**. Aquí puedes restaurar la base de datos de un solo módulo (ej: `planner.db`) desde un archivo que subas, o resetear un módulo a su &quot;estado de fábrica&quot;. Estas acciones requieren confirmación estricta para evitar accidentes.</li>
                             </ul>
                         </div>
                     </div>
